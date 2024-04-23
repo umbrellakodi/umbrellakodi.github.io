@@ -334,19 +334,19 @@
 </addon><addon id="repository.umbrellakodi" name="Umbrella Kodi Repository" version="1.0" provider-name="Umbrella">
     <extension point="xbmc.addon.repository" name="Umbrella Kodi Repository">
         <dir minversion="19.0.0" maxversion="19.5.0">
-            <info compressed="false">https://raw.githubusercontent.com/umbrellakodi/umbrellakodi/master/matrix/zips/addons.xml</info>
-            <checksum>https://raw.githubusercontent.com/umbrellakodi/umbrellakodi/master/matrix/zips/addons.xml.md5</checksum>
-            <datadir zip="true">https://raw.githubusercontent.com/umbrellakodi/umbrellakodi/master/matrix/zips/</datadir>
+            <info compressed="false">https://raw.githubusercontent.com/umbrellakodi/umbrellakodi/main/matrix/zips/addons.xml</info>
+            <checksum>https://raw.githubusercontent.com/umbrellakodi/umbrellakodi/main/matrix/zips/addons.xml.md5</checksum>
+            <datadir zip="true">https://raw.githubusercontent.com/umbrellakodi/umbrellakodi/main/matrix/zips/</datadir>
         </dir>
 		<dir minversion="19.8.0" maxversion="20.89.0">
-            <info compressed="false">https://raw.githubusercontent.com/umbrellakodi/umbrellakodi/master/nexus/zips/addons.xml</info>
-            <checksum>https://raw.githubusercontent.com/umbrellakodi/umbrellakodi/master/nexus/zips/addons.xml.md5</checksum>
-            <datadir zip="true">https://raw.githubusercontent.com/umbrellakodi/umbrellakodi/master/nexus/zips/</datadir>
+            <info compressed="false">https://raw.githubusercontent.com/umbrellakodi/umbrellakodi/main/nexus/zips/addons.xml</info>
+            <checksum>https://raw.githubusercontent.com/umbrellakodi/umbrellakodi/main/nexus/zips/addons.xml.md5</checksum>
+            <datadir zip="true">https://raw.githubusercontent.com/umbrellakodi/umbrellakodi/main/nexus/zips/</datadir>
         </dir>
 		<dir minversion="20.90.0">
-            <info compressed="false">https://raw.githubusercontent.com/umbrellakodi/umbrellakodi/master/omega/zips/addons.xml</info>
-            <checksum>https://raw.githubusercontent.com/umbrellakodi/umbrellakodi/master/omega/zips/addons.xml.md5</checksum>
-            <datadir zip="true">https://raw.githubusercontent.com/umbrellakodi/umbrellakodi/master/omega/zips/</datadir>
+            <info compressed="false">https://raw.githubusercontent.com/umbrellakodi/umbrellakodi/main/omega/zips/addons.xml</info>
+            <checksum>https://raw.githubusercontent.com/umbrellakodi/umbrellakodi/main/omega/zips/addons.xml.md5</checksum>
+            <datadir zip="true">https://raw.githubusercontent.com/umbrellakodi/umbrellakodi/main/omega/zips/</datadir>
         </dir>
     </extension>
     <extension point="xbmc.addon.metadata">
