@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<addon id="repository.umbrellakodi" name="Umbrella Kodi Repository" version="1.0" provider-name="Umbrella">
+<addon id="repository.umbrellakodi" name="Umbrella Kodi Repository" version="1.1" provider-name="Umbrella">
     <extension point="xbmc.addon.repository" name="Umbrella Kodi Repository">
         <dir minversion="19.0.0" maxversion="19.5.0">
             <info compressed="false">https://raw.githubusercontent.com/umbrellakodi/umbrellakodi.github.io/main/matrix/zips/addons.xml</info>
