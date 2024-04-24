@@ -1,4 +1,5 @@
-[B]Update - v6.6.498 - April 22nd, 2024[/B]
+[B]Update - v6.6.499 - April 24th, 2024[/B]
+--[Fix] Made changes to mdblist to allow for static lists with no list type to still show.
 --[Enhancement] Removed previous changes made for fanart.
 --[Change] Removed Title of Show from Episode Progress in widgets.
 --[Fix] Made changes to pagination for lists equal to the limit.
