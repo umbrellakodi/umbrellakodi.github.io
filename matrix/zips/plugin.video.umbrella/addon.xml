@@ -1,4 +1,4 @@
-<addon id="plugin.video.umbrella" name="Umbrella" provider-name="Umbrella" version="6.6.499">
+<addon id="plugin.video.umbrella" name="Umbrella" provider-name="Umbrella" version="6.6.500">
 	<requires>
 		<import addon="xbmc.python" version="3.0.0"/>
 		<import addon="script.module.requests"/>
@@ -181,7 +181,8 @@
 			<screenshot>resources/screenshots/screenshot003.jpg</screenshot>
 		</assets>
 		<news>
-[B]Update - v6.6.499 - April 24th, 2024[/B]
+[B]Update - v6.6.500 - April 30th, 2024[/B]
+--[Settings] More changes for settings.
 --[Fix] Made changes to mdblist to allow for static lists with no list type to still show.
 --[Enhancement] Removed previous changes made for fanart.
 --[Change] Removed Title of Show from Episode Progress in widgets.
