@@ -1,4 +1,11 @@
-[B]Update - v6.6.500 - April 30th, 2024[/B]
+[B]Update - v6.6.512 - May 13th, 2024[/B]
+--[Fix] Change made to database detection code.
+
+[B]Update - v6.6.51 - May 9th, 2024[/B]
+--[Fix] Removed code for pagination changes.
+
+[B]Update - v6.6.50 - May 8th, 2024[/B]
+--[Fix] Removed unused import.
 --[Settings] More changes for settings.
 --[Fix] Made changes to mdblist to allow for static lists with no list type to still show.
 --[Enhancement] Removed previous changes made for fanart.
@@ -10,7 +17,7 @@
 --[Fix] Removed subscene module and moved delete all function to tools.
 --[Enhancement] Changes to TMDb api url to add images. credit -onEMoAr
 --[Enhancement] Changes to Episodes, Seasons to include clearlogo. credit -onEMoAr
---[Enhancement] Changes to Movies to include clearlogo, except I did it correctly. credit -onEMoAr
+--[Enhancement] Changes to Movies to include clearlogo correctly. credit -onEMoAr
 --[Enhancement] Changes made to allow user fanart background. credit -onEMoAr
 --[Fix] Changes made to control module for checking external modules. credit -onEMoAr
 --[Fix] Changes made to service module for settings module. credit -onEMoAr

@@ -115,7 +115,7 @@
 					</constraints>
 					<dependencies>
 						<dependency type="visible">
-							<condition operator="is" setting="trakt.isauthed">true</condition>
+							<condition operator="is" setting="trakt.isauthed"/>
 						</dependency>
 					</dependencies>
 					<control type="spinner" format="string"/>
@@ -4833,7 +4833,7 @@
 							<condition on="property" name="infoBool">false</condition>
 						</dependency>
 						<dependency type="visible">
-							<condition operator="is" setting="library.autoimportlists">True</condition>
+							<condition operator="is" setting="library.autoimportlists">true</condition>
 						</dependency>
 						<dependency type="visible">
 							<condition operator="is" setting="trakt.isauthed">true</condition>
@@ -4852,7 +4852,7 @@
 					</constraints>
 					<dependencies>
 						<dependency type="visible">
-							<condition operator="is" setting="library.autoimportlists">True</condition>
+							<condition operator="is" setting="library.autoimportlists">true</condition>
 						</dependency>
 						<dependency type="enable">
 							<condition on="property" name="infoBool">false</condition>
@@ -4912,7 +4912,7 @@
 					</constraints>
 					<dependencies>
 						<dependency type="visible">
-							<condition operator="is" setting="trakt.isauthed">true</condition>
+							<condition operator="is" setting="trakt.isauthed"/>
 						</dependency>
 					</dependencies>
 					<control type="button" format="action">
