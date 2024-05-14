@@ -1,4 +1,4 @@
-<addon id="plugin.video.umbrella" name="Umbrella" provider-name="Umbrella" version="6.6.512">
+<addon id="plugin.video.umbrella" name="Umbrella" provider-name="Umbrella" version="6.6.540">
 	<requires>
 		<import addon="xbmc.python" version="3.0.0"/>
 		<import addon="script.module.requests"/>
@@ -180,8 +180,8 @@
 			<screenshot>resources/screenshots/screenshot003.jpg</screenshot>
 		</assets>
 		<news>
-[B]Update - v6.6.512 - May 13th, 2024[/B]
---[Fix] Change made to database detection code.
+[B]Update - v6.6.540 - May 14th, 2024[/B]
+--[Fix] Change made to MDBList pagination code.
 		</news>
 	</extension>
 
