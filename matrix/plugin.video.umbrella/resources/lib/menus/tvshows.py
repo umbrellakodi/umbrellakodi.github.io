@@ -1550,6 +1550,7 @@ class TVshows:
 				control.notification(title=32002, message=33049)
 		sysaddon, syshandle = 'plugin://plugin.video.umbrella/', int(argv[1])
 		is_widget = 'plugin' not in control.infoLabel('Container.PluginName')
+		settingClearLogo = getSetting('use.clearlogo') == 'true'
 		settingFanart = getSetting('fanart') == 'true'
 		addonPoster, addonFanart, addonBanner = control.addonPoster(), control.addonFanart(), control.addonBanner()
 		flatten = int(getSetting('flatten.tvshows'))
@@ -1596,7 +1597,11 @@ class TVshows:
 				if self.prefer_tmdbArt: 
 					poster = meta.get('poster3') or meta.get('poster') or meta.get('poster2') or addonPoster
 					clearlogo = meta.get('tmdblogo') or meta.get('clearlogo', '')
-					meta.update({'clearlogo': clearlogo})
+					if settingClearLogo:
+						meta.update({'clearlogo': clearlogo})
+					else:
+						poster = meta.get('poster2') or meta.get('poster3') or meta.get('poster') or addonPoster
+						clearlogo = meta.get('clearlogo') or meta.get('tmdblogo', '')
 				else: 
 					poster = meta.get('poster2') or meta.get('poster3') or meta.get('poster') or addonPoster
 					clearlogo = meta.get('clearlogo') or meta.get('tmdblogo', '')
@@ -1674,7 +1679,6 @@ class TVshows:
 								item.setProperties({'UnWatchedEpisodes': str(count['unwatched'])})
 								item.setProperty('WatchedProgress', str(0))
 							item.setProperties({'TotalSeasons': str(meta.get('total_seasons', '')), 'TotalEpisodes': str(count['total'])})
-							
 						else:
 							if control.getKodiVersion() >= 20:
 								item.setProperties({'UnWatchedEpisodes': ''}) # for shows never watched

@@ -1937,6 +1937,7 @@ class Movies:
 		play_mode = getSetting('play.mode.movie')
 		rescrape_useDefault = getSetting('rescrape.default') == 'true'
 		rescrape_method = getSetting('rescrape.default2')
+		settingClearLogo = getSetting('use.clearlogo') == 'true'
 		
 		settingFanart = getSetting('fanart') == 'true'
 		addonPoster, addonFanart, addonBanner = control.addonPoster(), control.addonFanart(), control.addonBanner()
@@ -1991,7 +1992,10 @@ class Movies:
 				if self.prefer_tmdbArt: 
 					poster = meta.get('poster3') or meta.get('poster') or meta.get('poster2') or addonPoster
 					clearlogo = meta.get('tmdblogo') or meta.get('clearlogo','')
-					meta.update({'clearlogo': clearlogo})
+					if settingClearLogo:
+						meta.update({'clearlogo': clearlogo})
+					else:
+						clearlogo = meta.get('clearlogo') or meta.get('tmdblogo','')
 				else: 
 					poster = meta.get('poster2') or meta.get('poster3') or meta.get('poster') or addonPoster
 					clearlogo = meta.get('clearlogo') or meta.get('tmdblogo','')
