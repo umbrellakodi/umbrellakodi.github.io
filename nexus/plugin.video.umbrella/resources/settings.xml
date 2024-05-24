@@ -348,16 +348,6 @@
 					</dependencies>
 					<control type="toggle"/>
 				</setting>
-				<setting id="use.clearlogo" type="boolean" label="40517" help="" parent="prefer.tmdbArt">
-					<level>0</level>
-					<default>false</default>
-					<dependencies>
-						<dependency type="visible">
-							<condition operator="is" setting="prefer.tmdbArt">true</condition>
-						</dependency>
-					</dependencies>
-					<control type="toggle"/>
-				</setting>
 				<setting id="tmdb.imageResolutions" type="integer" label="32233" help="">
 					<level>0</level>
 					<default>1</default>
