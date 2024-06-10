@@ -576,6 +576,8 @@ class Navigator:
 					cache.cache_clear()
 					cache.cache_clear_search()
 					# cache.cache_clear_bookmarks()
+					from resources.lib.database import fanarttv_cache
+					fanarttv_cache.cache_clear()
 					return True
 				except:
 					from resources.lib.modules import log_utils
