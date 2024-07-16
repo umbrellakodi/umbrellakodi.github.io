@@ -1,3 +1,10 @@
+[B]Update - v6.6.601 - July 16th, 2024[/B]
+--[Fix] Added code to use season artwork for unreleased episodes.
+--[Fix] Added urlencoding to real debrid magnet links.
+
+[B]Update - v6.6.59 - July 10th, 2024[/B]
+--[Fix] Added code to catch blank values on clearlogo for seasons.
+
 [B]Update - v6.6.58 - July 8th, 2024[/B]
 --[Change] Added option to use custom background for addon fanart. General settings.
 --[Fix] Corrected anime section to new imdb website format and urls.

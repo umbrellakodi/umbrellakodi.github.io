@@ -135,6 +135,7 @@ def router(argv2):
 	elif action == 'moviePersons':
 		from resources.lib.menus import movies
 		movies.Movies().persons(url, folderName=folderName)
+		#movies.Movies().persons_tmdb(url, folderName=folderName) new shit coming.
 	elif action == 'actorSearchMovies':
 		link = 'https://www.imdb.com/search/name/?count=100&name='
 		name = params.get('name')

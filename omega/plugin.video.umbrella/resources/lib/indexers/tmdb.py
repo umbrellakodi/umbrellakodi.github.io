@@ -478,6 +478,21 @@ class Movies(TMDb):
 			log_utils.error()
 		return result
 
+	def actorSearch(self, url):
+		if not url: return
+		try:
+			result = None
+			find_url = url
+			result = self.get_request(url)
+			if result is None: return
+			if '404:NOT FOUND' in result: return result
+			try: result = result['movie_results'][0]
+			except: return None
+		except:
+			from resources.lib.modules import log_utils
+			log_utils.error()
+		return result
+
 
 class TVshows(TMDb):
 	def __init__(self):

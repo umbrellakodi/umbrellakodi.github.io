@@ -94,6 +94,8 @@ class RealDebrid:
 		return response
 
 	def _post(self, url, data):
+		#pause for real debrid api restriction of 1 request per second
+		#control.sleep(1000)
 		try:
 			original_url = url
 			url = rest_base_url + url
@@ -469,7 +471,7 @@ class RealDebrid:
 				except: log_utils.error()
 			if match:
 				rd_link = torrent_info['links'][index]
-				file_url = self.unrestrict_link(rd_link)
+				file_url = quote_plus(self.unrestrict_link(rd_link))
 				if file_url.endswith('rar'):
 					file_url, failed_reason = None, 'RD returned unsupported .rar file --> %s' % file_url
 				try:
