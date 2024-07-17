@@ -79,7 +79,7 @@ class Movies:
 		self.tmdb_recentday = 'https://api.themoviedb.org/3/trending/movie/day?api_key=%s&language=en-US&region=US&page=1'
 		self.tmdb_recentweek = 'https://api.themoviedb.org/3/trending/movie/week?api_key=%s&language=en-US&region=US&page=1'
 		self.search_tmdb_link = 'https://api.themoviedb.org/3/search/movie?api_key=%s&language=en-US&query=%s&region=US&page=1'% ('%s','%s')
-		self.tmdb_person_search = 'https://api.themoviedb.org/3/search/person?api_key=%s&query=%s&language=en-US&page=1' % ('%s','%s')
+		self.tmdb_person_search = 'https://api.themoviedb.org/3/search/person?api_key=%s&query=%s&language=en-US&page=1&include_adult=true' % ('%s','%s')
 
 		self.imdb_link = 'https://www.imdb.com'
 		self.persons_link = 'https://www.imdb.com/search/name/?count=100&name='
@@ -246,6 +246,8 @@ class Movies:
 				self.sort()
 			elif u in self.tmdb_link and '/list/' not in url:
 				self.list = tmdb_indexer().tmdb_list(url) # caching handled in list indexer
+			# elif u in self.tmdb_link and 'person' in url:
+			# 	self.list = tmdb_indexer().tmdb_list_actor(url)
 			if self.list is None: self.list = []
 			if create_directory: self.movieDirectory(self.list, folderName=folderName)
 			return self.list
@@ -775,8 +777,8 @@ class Movies:
 		k.doModal()
 		q = k.getText().strip() if k.isConfirmed() else None
 		if not q: return control.closeAll()
-		url = self.persons_link + quote_plus(q)
-		#url = self.tmdb_person_search % ('%s', quote_plus(q))
+		#url = self.persons_link + quote_plus(q)
+		url = self.tmdb_person_search % ('%s', quote_plus(q))
 		control.closeAll()
 		control.execute('ActivateWindow(Videos,plugin://plugin.video.umbrella/?action=moviePersons&url=%s,return)' % (quote_plus(url)))
 
@@ -792,29 +794,11 @@ class Movies:
 
 	def persons_tmdb(self, url, folderName=''):
 		if url is None: return None
-		self.list = self.tmdbpersonslist(url)
-
-	def tmdbpersonslist(self, url):
-		self.list = []
-		try:
-			result = client.request(url)
-			#items = client.parseDOM(result, 'div', attrs = {'class': '.+?etail'})
-			items = client.parseDOM(result, 'div', attrs = {'class': 'ipc-metadata-list-summary-item__tc'})
-		except: return
-		for item in items:
-			try:
-				name = client.parseDOM(item, 'img', ret='alt')[0]
-				url = client.parseDOM(item, 'a', ret='href')[0]
-				url = re.findall(r'(nm\d*)', url, re.I)[0]
-				url = self.person_link % url
-				url = client.replaceHTMLCodes(url)
-				image = client.parseDOM(item, 'img', ret='src')[0]
-				image = re.sub(r'(?:_SX|_SY|_UX|_UY|_CR|_AL)(?:\d+|_).+?\.', '_SX500.', image)
-				image = client.replaceHTMLCodes(image)
-				self.list.append({'name': name, 'url': url, 'image': image})
-			except:
-				from resources.lib.modules import log_utils
-				log_utils.error()
+		from resources.lib.indexers import tmdb
+		self.list = tmdb.Movies().actorSearch(url)
+		if self.list:
+			for i in range(0, len(self.list)): self.list[i].update({'content': 'actors', 'icon': 'DefaultActor.png', 'action': 'movies&folderName=%s' % quote_plus(self.list[i]['name'])})
+		self.addDirectory(self.list, folderName=folderName)
 		return self.list
 
 	def genres(self, url, folderName=''):
