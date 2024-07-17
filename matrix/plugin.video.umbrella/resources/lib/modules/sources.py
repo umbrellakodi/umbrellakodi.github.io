@@ -217,8 +217,6 @@ class Sources:
 						homeWindow.clearProperty(self.metaProperty)
 						homeWindow.setProperty(self.metaProperty, jsdumps(self.meta))
 				self.total_seasons, self.season_isAiring = self.get_season_info(imdb, tmdb, tvdb, meta, season)
-			#added for user for special scenario
-			if tmdb == '64978': season = str(int(season)+8)
 			if rescrape: self.clr_item_providers(title, year, imdb, tmdb, tvdb, season, episode, tvshowtitle, premiered)
 			items = providerscache.get(self.getSources, self.providercache_hours, title, year, imdb, tmdb, tvdb, season, episode, tvshowtitle, premiered)
 			if not items:

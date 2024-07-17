@@ -246,8 +246,6 @@ class Movies:
 				self.sort()
 			elif u in self.tmdb_link and '/list/' not in url:
 				self.list = tmdb_indexer().tmdb_list(url) # caching handled in list indexer
-			# elif u in self.tmdb_link and 'person' in url:
-			# 	self.list = tmdb_indexer().tmdb_list_actor(url)
 			if self.list is None: self.list = []
 			if create_directory: self.movieDirectory(self.list, folderName=folderName)
 			return self.list
