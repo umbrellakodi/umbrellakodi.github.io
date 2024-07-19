@@ -1,3 +1,6 @@
+[B]Update - v6.6.622 - July 19th, 2024[/B]
+--[Change] Added ability to use tmdb.org for api calls instead of themoviedb.org.
+
 [B]Update - v6.6.62 - July 18th, 2024[/B]
 --[Fix] Fixed setting for building playlist for next season when playnext was not enabled.
 

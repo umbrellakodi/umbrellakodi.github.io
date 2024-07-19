@@ -100,27 +100,34 @@ class TVshows:
 		self.traktrecommendations_link = 'https://api.trakt.tv/recommendations/shows?limit=40'
 		self.trakt_popularLists_link = 'https://api.trakt.tv/lists/popular?limit=40&page=1' # use limit=40 due to filtering out Movie only lists
 		self.trakt_trendingLists_link = 'https://api.trakt.tv/lists/trending?limit=40&page=1'
-		self.tmdb_similar = 'https://api.themoviedb.org/3/tv/%s/similar?api_key=%s&language=en-US&region=US&page=1'
-		self.tmdb_recentday = 'https://api.themoviedb.org/3/trending/tv/day?api_key=%s&language=en-US&region=US&page=1'
-		self.tmdb_recentweek = 'https://api.themoviedb.org/3/trending/tv/week?api_key=%s&language=en-US&region=US&page=1'
-		self.search_tmdb_link = 'https://api.themoviedb.org/3/search/tv?api_key=%s&language=en-US&query=%s&region=US&page=1'% ('%s','%s')
+		
 
 		self.tvmaze_link = 'https://www.tvmaze.com'
 		self.tmdb_key = getSetting('tmdb.apikey')
 		if self.tmdb_key == '' or self.tmdb_key is None:
 			self.tmdb_key = 'edde6b5e41246ab79a2697cd125e1781'
 		self.tmdb_session_id = getSetting('tmdb.sessionid')
-		self.tmdb_link = 'https://api.themoviedb.org'
-		self.tmdb_userlists_link = 'https://api.themoviedb.org/3/account/{account_id}/lists?api_key=%s&language=en-US&session_id=%s&page=1' % ('%s', self.tmdb_session_id) # used by library import only
-		self.tmdb_popular_link = 'https://api.themoviedb.org/3/tv/popular?api_key=%s&language=en-US&region=US&page=1'
-		self.tmdb_toprated_link = 'https://api.themoviedb.org/3/tv/top_rated?api_key=%s&language=en-US&region=US&page=1'
-		self.tmdb_ontheair_link = 'https://api.themoviedb.org/3/tv/on_the_air?api_key=%s&language=en-US&region=US&page=1'
-		self.tmdb_airingtoday_link = 'https://api.themoviedb.org/3/tv/airing_today?api_key=%s&language=en-US&region=US&page=1'
-		self.tmdb_networks_link = 'https://api.themoviedb.org/3/discover/tv?api_key=%s&with_networks=%s&sort_by=%s&page=1' % ('%s', '%s', self.tmdb_DiscoverSort())
-		self.tmdb_genre_link = 'https://api.themoviedb.org/3/discover/tv?api_key=%s&with_genres=%s&include_null_first_air_dates=false&sort_by=%s&page=1' % ('%s', '%s', self.tmdb_DiscoverSort())
-		self.tmdb_year_link = 'https://api.themoviedb.org/3/discover/tv?api_key=%s&language=en-US&include_null_first_air_dates=false&first_air_date_year=%s&sort_by=%s&page=1' % ('%s', '%s', self.tmdb_DiscoverSort())
-		self.tmdb_recommendations = 'https://api.themoviedb.org/3/tv/%s/recommendations?api_key=%s&language=en-US&region=US&page=1'
-		self.tmdb_person_search = 'https://api.themoviedb.org/3/search/person?api_key=%s&query=%s&language=en-US&page=1&include_adult=true' % ('%s','%s')
+		use_tmdb = getSetting('tmdb.baseaddress') == 'true'
+		if use_tmdb:
+			tmdb_base = "https://api.tmdb.org"
+			self.tmdb_link = 'https://api.tmdb.org'
+		else:
+			tmdb_base = "https://api.themoviedb.org"
+			self.tmdb_link = 'https://api.themoviedb.org'
+		self.tmdb_similar = tmdb_base+'/3/tv/%s/similar?api_key=%s&language=en-US&region=US&page=1'
+		self.tmdb_recentday = tmdb_base+'/3/trending/tv/day?api_key=%s&language=en-US&region=US&page=1'
+		self.tmdb_recentweek = tmdb_base+'/3/trending/tv/week?api_key=%s&language=en-US&region=US&page=1'
+		self.search_tmdb_link = tmdb_base+'/3/search/tv?api_key=%s&language=en-US&query=%s&region=US&page=1'% ('%s','%s')
+		self.tmdb_userlists_link = tmdb_base+'/3/account/{account_id}/lists?api_key=%s&language=en-US&session_id=%s&page=1' % ('%s', self.tmdb_session_id) # used by library import only
+		self.tmdb_popular_link = tmdb_base+'/3/tv/popular?api_key=%s&language=en-US&region=US&page=1'
+		self.tmdb_toprated_link = tmdb_base+'/3/tv/top_rated?api_key=%s&language=en-US&region=US&page=1'
+		self.tmdb_ontheair_link = tmdb_base+'/3/tv/on_the_air?api_key=%s&language=en-US&region=US&page=1'
+		self.tmdb_airingtoday_link = tmdb_base+'/3/tv/airing_today?api_key=%s&language=en-US&region=US&page=1'
+		self.tmdb_networks_link = tmdb_base+'/3/discover/tv?api_key=%s&with_networks=%s&sort_by=%s&page=1' % ('%s', '%s', self.tmdb_DiscoverSort())
+		self.tmdb_genre_link = tmdb_base+'/3/discover/tv?api_key=%s&with_genres=%s&include_null_first_air_dates=false&sort_by=%s&page=1' % ('%s', '%s', self.tmdb_DiscoverSort())
+		self.tmdb_year_link = tmdb_base+'/3/discover/tv?api_key=%s&language=en-US&include_null_first_air_dates=false&first_air_date_year=%s&sort_by=%s&page=1' % ('%s', '%s', self.tmdb_DiscoverSort())
+		self.tmdb_recommendations = tmdb_base+'/3/tv/%s/recommendations?api_key=%s&language=en-US&region=US&page=1'
+		self.tmdb_person_search = tmdb_base+'/3/search/person?api_key=%s&query=%s&language=en-US&page=1&include_adult=true' % ('%s','%s')
 		self.mbdlist_list_items = 'https://mdblist.com/api/lists/%s/items?apikey=%s&limit=%s&page=1' % ('%s', mdblist.mdblist_api, self.page_limit)
 		self.simkltrendingtoday_link = 'https://api.simkl.com/tv/trending/today?client_id=%s&extended=tmdb' % '%s'
 		self.simkltrendingweek_link = 'https://api.simkl.com/tv/trending/week?client_id=%s&extended=tmdb' % '%s'
