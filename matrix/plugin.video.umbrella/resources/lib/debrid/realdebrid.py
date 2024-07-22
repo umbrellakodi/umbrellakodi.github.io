@@ -384,6 +384,7 @@ class RealDebrid:
 			# log_utils.log('torrent_files = %s' % torrent_files, __name__)
 			if not torrent_files: return log_utils.log('Real-Debrid: Error RESOLVE MAGNET "%s" : (Server Failed to respond)' % magnet_url, __name__, log_utils.LOGWARNING)
 			if info_hash not in torrent_files: return log_utils.log('Real-Debrid: Error RESOLVE MAGNET "%s" : (info_hash no longer cached)' % magnet_url, __name__, log_utils.LOGWARNING)
+			log_utils.log('magnet = %s' % magnet_url, __name__)
 			torrent_id = self.add_magnet(magnet_url) # add_magent() returns id
 			torrent_files = torrent_files[info_hash]['rd']
 			if not torrent_files: failed_reason = 'magnet is no longer cached'
@@ -471,6 +472,7 @@ class RealDebrid:
 				except: log_utils.error()
 			if match:
 				rd_link = torrent_info['links'][index]
+				log_utils.log('Real-Debrid: rd link being sent: %s' % str(rd_link))
 				file_url = self.unrestrict_link(rd_link)
 				if file_url.endswith('rar'):
 					file_url, failed_reason = None, 'RD returned unsupported .rar file --> %s' % file_url
@@ -662,6 +664,7 @@ class RealDebrid:
 	def add_magnet(self, magnet):
 		try:
 			data = {'magnet': magnet}
+
 			response = self._post(add_magnet_url, data)
 			log_utils.log('Real-Debrid: Sending MAGNET to cloud: %s' % magnet, __name__, log_utils.LOGDEBUG)
 			return response.get('id', "")
