@@ -1,5 +1,7 @@
-[B]Update - v6.6.622 - July 19th, 2024[/B]
+[B]Update - v6.6.624 - July 23rd, 2024[/B]
+--[Fix] Added formatting to remove spaces in url sent to debrid providers for magnet files.
 --[Change] Added ability to use tmdb.org for api calls instead of themoviedb.org.
+--[Logging] Logging added for instances with urls being sent with spaces to real-debrid.
 
 [B]Update - v6.6.62 - July 18th, 2024[/B]
 --[Fix] Fixed setting for building playlist for next season when playnext was not enabled.
