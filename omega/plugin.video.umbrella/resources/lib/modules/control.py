@@ -15,6 +15,7 @@ from threading import Thread
 from xml.dom.minidom import parse as mdParse
 from urllib.parse import unquote, unquote_plus
 from re import sub as re_sub
+from requests.utils import requote_uri
 
 # Kodi JSON-RPC API endpoint
 api_url = 'http://localhost:8080/jsonrpc'
@@ -757,3 +758,11 @@ def timeFunction(function, *args):
 
 def _get_function_name(function_instance):
 	return re_sub(r'.+\smethod\s|.+function\s|\sat\s.+|\sof\s.+', '', repr(function_instance))
+
+def uriEncode(url):
+    url = url
+    try:
+        url = requote_uri(url)
+        return url
+    except:
+        return url

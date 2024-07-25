@@ -1,3 +1,6 @@
+[B]Update - v6.6.625 - July 25th, 2024[/B]
+--[Fix] Changed resolveSource to use requote_url. (thanks kodifitzwell)
+
 [B]Update - v6.6.624 - July 23rd, 2024[/B]
 --[Fix] Added formatting to remove spaces in url sent to debrid providers for magnet files.
 --[Change] Added ability to use tmdb.org for api calls instead of themoviedb.org.

@@ -1264,6 +1264,10 @@ class Sources:
 			self.url = None
 			debrid_provider = item['debrid'] if item.get('debrid') else ''
 		except: log_utils.error()
+		try:
+			url = control.uriEncode(url)
+		except:
+			url = url
 		if 'magnet:' in url:
 			if not 'uncached' in item['source']:
 				try:
@@ -1282,8 +1286,6 @@ class Sources:
 					elif debrid_provider == 'AllDebrid':
 						from resources.lib.debrid.alldebrid import AllDebrid as debrid_function
 					else: return
-					#change made to resolve spaces in URL being sent to debrid providers.
-					url = url.replace(" ",".")
 					url = debrid_function().resolve_magnet(url, item['hash'], season, episode, title)
 					self.url = url
 					return url

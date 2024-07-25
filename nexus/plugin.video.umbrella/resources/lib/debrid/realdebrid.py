@@ -384,9 +384,6 @@ class RealDebrid:
 			# log_utils.log('torrent_files = %s' % torrent_files, __name__)
 			if not torrent_files: return log_utils.log('Real-Debrid: Error RESOLVE MAGNET "%s" : (Server Failed to respond)' % magnet_url, __name__, log_utils.LOGWARNING)
 			if info_hash not in torrent_files: return log_utils.log('Real-Debrid: Error RESOLVE MAGNET "%s" : (info_hash no longer cached)' % magnet_url, __name__, log_utils.LOGWARNING)
-			log_utils.log('magnet = %s' % magnet_url, __name__)
-			#possible spaces in name fix.
-			
 			torrent_id = self.add_magnet(magnet_url) # add_magent() returns id
 			torrent_files = torrent_files[info_hash]['rd']
 			if not torrent_files: failed_reason = 'magnet is no longer cached'

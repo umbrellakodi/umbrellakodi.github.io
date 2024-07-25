@@ -1,5 +1,5 @@
 <?xml version='1.0' encoding='utf-8'?>
-<addons><addon id="plugin.video.umbrella" name="Umbrella" provider-name="Umbrella" version="6.6.624">
+<addons><addon id="plugin.video.umbrella" name="Umbrella" provider-name="Umbrella" version="6.6.625">
 	<requires>
 		<import addon="xbmc.python" version="3.0.0" />
 		<import addon="script.module.requests" />
@@ -181,10 +181,8 @@
 			<screenshot>resources/screenshots/screenshot003.jpg</screenshot>
 		</assets>
 		<news>
-[B]Update - v6.6.624 - July 23rd, 2024[/B]
---[Fix] Added formatting to remove spaces in url sent to debrid providers for magnet files.
---[Change] Added ability to use tmdb.org for api calls instead of themoviedb.org.
---[Logging] Logging added for instances with urls being sent with spaces to real-debrid.
+[B]Update - v6.6.625 - July 25th, 2024[/B]
+--[Fix] Changed resolveSource to use requote_url. (thanks kodifitzwell)
 		</news>
 	</extension>
 
