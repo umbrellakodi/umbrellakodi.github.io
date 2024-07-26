@@ -758,11 +758,3 @@ def timeFunction(function, *args):
 
 def _get_function_name(function_instance):
 	return re_sub(r'.+\smethod\s|.+function\s|\sat\s.+|\sof\s.+', '', repr(function_instance))
-
-def uriEncode(url):
-    url = url
-    try:
-        url = requote_uri(url)
-        return url
-    except:
-        return url
