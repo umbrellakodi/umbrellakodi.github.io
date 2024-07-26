@@ -63,21 +63,22 @@ class Player(xbmc.Player):
 		playerWindow.setProperty('umbrella.playnextPlayPressed', str(0))
 
 	def play_source(self, title, year, season, episode, imdb, tmdb, tvdb, url, meta, debridPackCall=False):
-		# if self.debuglog:
-		# 	try:
-		# 		log_utils.log('play_source Title: %s Type: %s' % (str(title), type(title)), level=log_utils.LOGDEBUG)
-		# 		log_utils.log('play_source Year: %s Type: %s' % (str(year), type(year)), level=log_utils.LOGDEBUG)
-		# 		log_utils.log('play_source Season: %s Type: %s' % (str(season), type(season)), level=log_utils.LOGDEBUG)
-		# 		log_utils.log('play_source Episode: %s Type: %s' % (str(episode), type(episode)), level=log_utils.LOGDEBUG)
-		# 		log_utils.log('play_source IMDB: %s Type: %s TMDB: %s Type: %s TVDB: %s Type: %s' % (str(imdb), type(imdb), str(tmdb), type(tmdb), str(tvdb), type(tvdb)), level=log_utils.LOGDEBUG)
-		# 		log_utils.log('play_source URL: %s Type: %s' % (str(url), type(url)), level=log_utils.LOGDEBUG)
-		# 		log_utils.log('play_source Meta: %s Type: %s' % (str(self.meta), type(self.meta)), level=log_utils.LOGDEBUG)
-		# 	except:
-		# 		log_utils.error()
+		#import web_pdb; web_pdb.set_trace()
+		if self.debuglog:
+			try:
+				#log_utils.log('play_source Title: %s Type: %s' % (str(title), type(title)), level=log_utils.LOGDEBUG)
+				#log_utils.log('play_source Year: %s Type: %s' % (str(year), type(year)), level=log_utils.LOGDEBUG)
+				#log_utils.log('play_source Season: %s Type: %s' % (str(season), type(season)), level=log_utils.LOGDEBUG)
+				#log_utils.log('play_source Episode: %s Type: %s' % (str(episode), type(episode)), level=log_utils.LOGDEBUG)
+				#log_utils.log('play_source IMDB: %s Type: %s TMDB: %s Type: %s TVDB: %s Type: %s' % (str(imdb), type(imdb), str(tmdb), type(tmdb), str(tvdb), type(tvdb)), level=log_utils.LOGDEBUG)
+				log_utils.log('play_source URL: %s Type: %s' % (str(url), type(url)), level=log_utils.LOGDEBUG)
+				#log_utils.log('play_source Meta: %s Type: %s' % (str(self.meta), type(self.meta)), level=log_utils.LOGDEBUG)
+			except:
+				log_utils.error()
 		try:
 			from sys import argv # some functions like ActivateWindow() throw invalid handle less this is imported here.
 			if not url: raise Exception
-			url = quote_plus(url)
+			url = control.uriEncode(url)
 			# if self.debuglog:
 			# 	log_utils.log('Play Source Received title: %s year: %s metatype: %s' % (title, year, type(meta)), level=log_utils.LOGDEBUG)
 			self.media_type = 'movie' if season is None or episode is None else 'episode'
@@ -226,7 +227,6 @@ class Player(xbmc.Player):
 				meta.update({'mediatype': 'episode' if self.episode else 'movie'})
 				if self.episode: meta.update({'tvshowtitle': self.title, 'season': self.season, 'episode': self.episode})
 			self.DBID = getDBID(meta)
-			log_utils.log('dbid set. dbid: %s' % self.DBID, level=LOGINFO)
 			return (poster, thumb, season_poster, fanart, banner, clearart, clearlogo, discart, meta)
 		except: log_utils.error()
 		try:
@@ -485,7 +485,6 @@ class Player(xbmc.Player):
 			elif self.getWatchedPercent() >= int(self.markwatched_percentage): self._end_playback()
 
 	def buildPlaylist(self):
-		log_utils.log('Building Regular Playlist',1)
 		if self.debuglog:
 			log_utils.log('Playnext build playlist.', level=log_utils.LOGDEBUG)
 		currentEpisode = self.episode

@@ -1,5 +1,5 @@
 <?xml version='1.0' encoding='utf-8'?>
-<addons><addon id="plugin.video.umbrella" name="Umbrella" provider-name="Umbrella" version="6.6.626">
+<addons><addon id="plugin.video.umbrella" name="Umbrella" provider-name="Umbrella" version="6.6.627">
 	<requires>
 		<import addon="xbmc.python" version="3.0.0" />
 		<import addon="script.module.requests" />
@@ -181,8 +181,8 @@
 			<screenshot>resources/screenshots/screenshot003.jpg</screenshot>
 		</assets>
 		<news>
-[B]Update - v6.6.626 - July 26th, 2024[/B]
---[Fix] Added quote_plus encoding to url in player file.
+[B]Update - v6.6.627 - July 26th, 2024[/B]
+--[Fix] Changed player to use requote_url. (thanks kodifitzwell)
 --[Change] Added ability to use tmdb.org for api calls instead of themoviedb.org.
 --[Logging] Removed logging not being used anymore.
 		</news>
