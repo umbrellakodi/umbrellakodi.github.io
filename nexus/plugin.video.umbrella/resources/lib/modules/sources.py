@@ -1264,10 +1264,6 @@ class Sources:
 			self.url = None
 			debrid_provider = item['debrid'] if item.get('debrid') else ''
 		except: log_utils.error()
-		try:
-			url = control.uriEncode(url)
-		except:
-			url = url
 		if 'magnet:' in url:
 			if not 'uncached' in item['source']:
 				try:

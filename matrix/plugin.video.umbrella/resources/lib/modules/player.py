@@ -77,6 +77,7 @@ class Player(xbmc.Player):
 		try:
 			from sys import argv # some functions like ActivateWindow() throw invalid handle less this is imported here.
 			if not url: raise Exception
+			url = quote_plus(url)
 			# if self.debuglog:
 			# 	log_utils.log('Play Source Received title: %s year: %s metatype: %s' % (title, year, type(meta)), level=log_utils.LOGDEBUG)
 			self.media_type = 'movie' if season is None or episode is None else 'episode'
