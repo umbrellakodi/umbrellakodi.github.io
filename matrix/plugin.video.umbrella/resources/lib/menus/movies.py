@@ -268,8 +268,7 @@ class Movies:
 	def getMBDTopLists(self, create_directory=True, folderName=''): 
 		self.list = []
 		try:
-			self.list = cache.get(self.mbd_top_lists, 6)
-			#self.list = self.mbd_top_lists()
+			self.list = cache.get(self.mbd_top_lists, self.mdblist_hours)
 			if self.list is None: self.list = []
 			if create_directory: self.addDirectory(self.list, folderName=folderName)
 			return self.list
@@ -301,7 +300,6 @@ class Movies:
 		self.list = []
 		try:
 			self.list = cache.get(self.mbd_user_lists, self.mdblist_hours)
-			#self.list = self.mbd_user_lists()
 			if self.list is None: self.list = []
 			return self.addDirectory(self.list, folderName=folderName)
 
@@ -346,38 +344,6 @@ class Movies:
 		except:
 			from resources.lib.modules import log_utils
 			log_utils.error()
-	def getMBDTopLists(self, create_directory=True, folderName=''): 
-		self.list = []
-		try:
-			#self.list = cache.get(self.mbd_top_lists, 0)
-			self.list = self.mbd_top_lists()
-			if self.list is None: self.list = []
-			if create_directory: self.addDirectory(self.list, folderName=folderName)
-			return self.list
-		except:
-			from resources.lib.modules import log_utils
-			log_utils.error()
-	def mbd_top_lists(self):
-		try:
-			listType = 'movie'
-			items = mdblist.getMDBTopList(self, listType)
-			next = ''
-		except:
-			from resources.lib.modules import log_utils
-			log_utils.error()
-		for item in items:
-			try:
-				list_name = item.get('params', {}).get('list_name', '')
-				list_id = item.get('params', {}).get('list_id', '')
-				list_owner = item.get('unique_ids', {}).get('user', '')
-				list_count = item.get('params', {}).get('list_count', '')
-				list_url = self.mbdlist_list_items % (list_id)
-				label = '%s - (%s)' % (list_name, list_count)
-				self.list.append({'name': label, 'url': list_url, 'list_owner': list_owner, 'list_name': list_name, 'list_id': list_id, 'context': list_url, 'next': next, 'image': 'mdblist.png', 'icon': 'mdblist.png', 'action': 'movies&folderName=%s' % quote_plus(list_name)})
-			except:
-				from resources.lib.modules import log_utils
-				log_utils.error()
-		return self.list
 
 	def mdb_list_items(self, url, create_directory=True, folderName=''):
 		self.list = []

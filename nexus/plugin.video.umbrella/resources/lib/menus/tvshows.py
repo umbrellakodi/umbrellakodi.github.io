@@ -216,8 +216,7 @@ class TVshows:
 	def getMBDTopLists(self, create_directory=True, folderName=''):
 		self.list = []
 		try:
-			self.list = cache.get(self.mbd_top_lists, 6)
-			#self.list = self.mbd_top_lists()
+			self.list = cache.get(self.mbd_top_lists, self.mdblist_hours)
 			if self.list is None: self.list = []
 			if create_directory: self.addDirectory(self.list, folderName=folderName)
 			return self.list
@@ -1209,9 +1208,7 @@ class TVshows:
 		
 		self.list = []
 		try:
-			#self.list = cache.get(self.mbd_top_lists, 0)
 			self.list = cache.get(self.mbd_user_lists, self.mdblist_hours)
-			#self.list = self.mbd_user_lists()
 			if self.list is None: self.list = []
 			return self.addDirectory(self.list, folderName=folderName)
 
