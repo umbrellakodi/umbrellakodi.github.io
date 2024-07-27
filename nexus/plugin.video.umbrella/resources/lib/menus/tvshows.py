@@ -855,12 +855,16 @@ class TVshows:
 			except:
 				q = dict(parse_qsl(urlsplit(url).query))
 			self.list = traktsync.fetch_collection('shows_collection')
+			useNext = True
 			if create_directory:
 				self.sort() # sort before local pagination
 				if getSetting('trakt.paginate.lists') == 'true' and self.list:
+					if len(self.list) == int(self.page_limit):
+						useNext = False
 					paginated_ids = [self.list[x:x + int(self.page_limit)] for x in range(0, len(self.list), int(self.page_limit))]
 					self.list = paginated_ids[index]
 			try:
+				if useNext == False: raise Exception()
 				if int(q['limit']) != len(self.list): raise Exception()
 				q.update({'page': str(int(q['page']) + 1)})
 				q = (urlencode(q)).replace('%2C', ',')
@@ -885,14 +889,17 @@ class TVshows:
 			except:
 				q = dict(parse_qsl(urlsplit(url).query))
 			self.list = traktsync.fetch_watch_list('shows_watchlist')
+			useNext = True
 			if create_directory:
 				self.sort(type='shows.watchlist') # sort before local pagination
 				if getSetting('trakt.paginate.lists') == 'true' and self.list:
+					if len(self.list) == int(self.page_limit):
+						useNext = False
 					paginated_ids = [self.list[x:x + int(self.page_limit)] for x in range(0, len(self.list), int(self.page_limit))]
 					self.list = paginated_ids[index]
 			try:
+				if useNext == False: raise Exception()
 				if int(q['limit']) != len(self.list): raise Exception()
-			
 				q.update({'page': str(int(q['page']) + 1)})
 				q = (urlencode(q)).replace('%2C', ',')
 				next = url.replace('?' + urlparse(url).query, '') + '?' + q
@@ -1053,11 +1060,15 @@ class TVshows:
 		if not self.list: return
 		self.sort() # sort before local pagination
 		total_pages = 1
+		useNext = True
 		if getSetting('trakt.paginate.lists') == 'true':
+			if len(self.list) == int(self.page_limit):
+				useNext = False
 			paginated_ids = [self.list[x:x + int(self.page_limit)] for x in range(0, len(self.list), int(self.page_limit))]
 			total_pages = len(paginated_ids)
 			self.list = paginated_ids[index]
 		try:
+			if useNext == False: raise Exception()
 			if int(q['limit']) != len(self.list): raise Exception()
 			if int(q['page']) == total_pages: raise Exception()
 			q.update({'page': str(int(q['page']) + 1)})
@@ -1188,10 +1199,15 @@ class TVshows:
 		if not self.list: return
 		self.sort() # sort before local pagination
 		total_pages = 1
+		if len(self.list) == int(self.page_limit):
+			useNext = False
+		else:
+			useNext = True
 		paginated_ids = [self.list[x:x + int(self.page_limit)] for x in range(0, len(self.list), int(self.page_limit))]
 		total_pages = len(paginated_ids)
 		self.list = paginated_ids[index]
 		try:
+			if useNext == False: raise Exception()
 			if int(q['limit']) != len(self.list): raise Exception()
 			if int(q['page']) == total_pages: raise Exception()
 			q.update({'page': str(int(q['page']) + 1)})
