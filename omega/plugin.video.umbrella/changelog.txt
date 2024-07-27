@@ -1,5 +1,5 @@
-[B]Update - v6.6.628 - July 26th, 2024[/B]
---[Fix] Changed player to use quote_plus with safe parameters to protect pre-encoded urls.
+[B]Update - v6.6.629 - July 27th, 2024[/B]
+--[Fix] Changed set_info function to no longer unquote paths.
 --[Change] Added ability to use tmdb.org for api calls instead of themoviedb.org.
 --[Logging] Removed logging not being used anymore.
 

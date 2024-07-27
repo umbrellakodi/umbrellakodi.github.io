@@ -507,9 +507,8 @@ def set_info(item, meta, setUniqueIDs=None, resumetime='', fileNameandPath=None)
 				info_tag.setUniqueIDs(setUniqueIDs)
 			#log('unique id title:%s imdb:%s filenameandpath: %s'%(meta_get('title'), setUniqueIDs.get('imdb'), fileNameandPath), 1)
 			if fileNameandPath:
-				info_tag.setPath(unquote(fileNameandPath))
-			if fileNameandPath:
-				info_tag.setFilenameAndPath(unquote(fileNameandPath))
+				info_tag.setPath(fileNameandPath)
+				info_tag.setFilenameAndPath(fileNameandPath)
 			if meta_get('title') == None:
 				info_title = item.getLabel()
 			else:

@@ -77,7 +77,6 @@ class Player(xbmc.Player):
 		try:
 			from sys import argv # some functions like ActivateWindow() throw invalid handle less this is imported here.
 			if not url: raise Exception
-			url = quote_plus(url, safe='/:~_-.*')
 			# if self.debuglog:
 			# 	log_utils.log('Play Source Received title: %s year: %s metatype: %s' % (title, year, type(meta)), level=log_utils.LOGDEBUG)
 			self.media_type = 'movie' if season is None or episode is None else 'episode'
@@ -134,6 +133,7 @@ class Player(xbmc.Player):
 			#if 'castandart' in meta: item.setCast(meta.get('castandart', '')) #changed for kodi20 setinfo method
 			#item.setInfo(type='video', infoLabels=control.metadataClean(meta))
 			control.set_info(item, meta, setUniqueIDs=setUniqueIDs, fileNameandPath=self.playing_file) #changed for kodi20 setinfo method
+
 			item.setProperty('IsPlayable', 'true')
 			playlistAdded = self.checkPlaylist(item)
 			if debridPackCall: 
@@ -154,6 +154,7 @@ class Player(xbmc.Player):
 						self.buildPlaylist()
 						self.playlist_built = True
 			else:
+
 				control.resolve(int(argv[1]), True, item)
 				if self.media_type == 'episode' and self.enable_playnext and self.multi_season and self.playlist_built == False:
 					try:
