@@ -9,6 +9,18 @@ from resources.lib.modules import control
 
 def router(argv2):
 	try:
+		if argv2 == '':
+			import xbmc
+			argv4 = xbmc.getInfoLabel('ListItem.FileNameAndPath')
+			argv5 = argv4.split('plugin://plugin.video.umbrella/?')[1]
+			params = dict(parse_qsl(argv5.replace('?', '')))
+			if params.get('action') == 'play_Item':
+				argv4 = argv4.split('plugin://plugin.video.umbrella/?')[1]
+				argv2 = argv4
+	except:
+		argv2 = argv2
+
+	try:
 		params = dict(parse_qsl(argv2.replace('?', '')))
 	except:
 		from resources.lib.modules import log_utils

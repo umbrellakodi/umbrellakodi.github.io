@@ -154,7 +154,6 @@ class Player(xbmc.Player):
 						self.buildPlaylist()
 						self.playlist_built = True
 			else:
-
 				control.resolve(int(argv[1]), True, item)
 				if self.media_type == 'episode' and self.enable_playnext and self.multi_season and self.playlist_built == False:
 					try:

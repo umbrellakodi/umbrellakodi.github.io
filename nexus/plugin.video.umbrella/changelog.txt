@@ -1,3 +1,7 @@
+[B]Update - v6.6.642 - July 29th, 2024[/B]
+--[Workaround] Added code to router to look for blank links sent from kodi info button use.
+--[Info] For those of you watching my test repo for changes. I would not recommend stealing this change yet.
+
 [B]Update - v6.6.641 - July 29th, 2024[/B]
 --[Fix] Fixed removed function from TMDb movie class.
 
