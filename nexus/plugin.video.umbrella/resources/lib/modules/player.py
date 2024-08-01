@@ -306,22 +306,34 @@ class Player(xbmc.Player):
 	def checkPlaylist(self, item):
 		#need to check for exisiting playlist here and handle that.
 		#movie needs to clear the playlist
-		if self.media_type != "episode":
-			log_utils.log('checkPlaylist() Item is movie, clearing playlist.', level=log_utils.LOGDEBUG)
-			control.playlist.clear()
-			return False
-		#item paths for current items on playlist.
-		current_playlist_uris = [ control.playlist[i].getPath() for i in range(control.playlist.size())]
+		try:
+			if self.media_type != "episode":
+				log_utils.log('checkPlaylist() Item is movie, clearing playlist.', level=log_utils.LOGDEBUG)
+				control.playlist.clear()
+				return False
+			#item paths for current items on playlist.
+			current_playlist_uris = [ control.playlist[i].getPath() for i in range(control.playlist.size())]
 
-		#check if new playlist or already built
-		from sys import argv
-		action = argv[2].lstrip('?/')
-		if len(current_playlist_uris) == 1 and current_playlist_uris[0].split('/')[-1].lstrip('?') == action:
+			#check if new playlist or already built
+			from sys import argv
+			action = argv[2].lstrip('?/')
+			try:
+				isAction = current_playlist_uris[0].split('/')[-1].lstrip('?') == action
+			except:
+				isAction = False
+			if len(current_playlist_uris) == 1 and isAction:
+				return False
+			try:
+				getCurrentUri = current_playlist_uris[0]
+			except:
+				getCurrentUri = ''
+			if getCurrentUri == 'plugin://plugin.video.umbrella/VIDEO_TS/VIDEO_TS.IFO':
+				return self.singleItemPlaylist(item)
+			#check if no playlist is currently added.
+			if control.playlist.getposition() == -1:
+				return self.singleItemPlaylist(item)
+		except:
 			return False
-
-		#check if no playlist is currently added.
-		if control.playlist.getposition() == -1:
-			return self.singleItemPlaylist(item)
 
 		#todo build playlist for single item that matches resolve.
 

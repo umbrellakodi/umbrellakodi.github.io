@@ -1,4 +1,5 @@
-[B]Update - v6.6.642 - July 29th, 2024[/B]
+[B]Update - v6.6.644 - August 1st, 2024[/B]
+--[Workaround] Building playlist for playnext with info button. Some hacky shit.
 --[Workaround] Added code to router to look for blank links sent from kodi info button use.
 --[Info] For those of you watching my test repo for changes. I would not recommend stealing this change yet.
 
