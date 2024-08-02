@@ -1,4 +1,4 @@
-<addon id="plugin.video.umbrella" name="Umbrella" provider-name="Umbrella" version="6.6.646">
+<addon id="plugin.video.umbrella" name="Umbrella" provider-name="Umbrella" version="6.6.647">
 	<requires>
 		<import addon="xbmc.python" version="3.0.0"/>
 		<import addon="script.module.requests"/>
@@ -180,7 +180,7 @@
 			<screenshot>resources/screenshots/screenshot003.jpg</screenshot>
 		</assets>
 		<news>
-[B]Update - v6.6.646 - August 2nd, 2024[/B]
+[B]Update - v6.6.647 - August 2nd, 2024[/B]
 --[Workaround] Building playlist for playnext with info button. Some hacky shit.
 --[Workaround] Added code to router to look for blank links sent from kodi info button use.
 --[Info] For those of you watching my test repo for changes. I would not recommend stealing this change yet.

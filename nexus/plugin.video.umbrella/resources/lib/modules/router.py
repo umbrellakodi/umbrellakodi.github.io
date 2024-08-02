@@ -14,7 +14,7 @@ def router(argv2):
 			argv4 = xbmc.getInfoLabel('ListItem.FileNameAndPath')
 			argv5 = argv4.split('plugin://plugin.video.umbrella/?')[1]
 			params = dict(parse_qsl(argv5.replace('?', '')))
-			if params.get('action') == 'play_Item':
+			if params.get('action') == 'play_Item' and params.get('mediatype') == 'episode':
 				from resources.lib.modules import log_utils
 				log_utils.log('Umbrella hacky workaround for blank paths being used.', 1)
 				argv4 = argv4.split('plugin://plugin.video.umbrella/?')[1]
