@@ -341,6 +341,9 @@ class Player(xbmc.Player):
 			if control.playlist.getposition() == -1:
 				log_utils.log('checkPlaylist() current playlist position is -1 sending to singleItemPlaylist', level=log_utils.LOGDEBUG)
 				return self.singleItemPlaylist(item)
+			if getCurrentUri == '':
+				log_utils.log('checkPlaylist() current uri is blank sending to singleItemPlaylist', level=log_utils.LOGDEBUG)
+				return self.singleItemPlaylist(item)
 		except:
 			log_utils.log('checkPlaylist() exception: returning false.', level=log_utils.LOGDEBUG)
 			return False
