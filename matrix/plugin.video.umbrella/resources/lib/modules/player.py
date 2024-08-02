@@ -136,6 +136,7 @@ class Player(xbmc.Player):
 
 			item.setProperty('IsPlayable', 'true')
 			playlistAdded = self.checkPlaylist(item)
+			log_utils.log('play_source() playlistAdded variable: %s' % playlistAdded, level=log_utils.LOGDEBUG)
 			if debridPackCall: 
 				control.player.play(url, item) # seems this is only way browseDebrid pack files will play and have meta marked as watched
 				if self.debuglog:
@@ -306,6 +307,7 @@ class Player(xbmc.Player):
 	def checkPlaylist(self, item):
 		#need to check for exisiting playlist here and handle that.
 		#movie needs to clear the playlist
+		log_utils.log('checkPlaylist() function started.', level=log_utils.LOGDEBUG)
 		try:
 			if self.media_type != "episode":
 				log_utils.log('checkPlaylist() Item is movie, clearing playlist.', level=log_utils.LOGDEBUG)
@@ -313,31 +315,40 @@ class Player(xbmc.Player):
 				return False
 			#item paths for current items on playlist.
 			current_playlist_uris = [ control.playlist[i].getPath() for i in range(control.playlist.size())]
+			log_utils.log('checkPlaylist() current_playlist_uris: %s' % str(current_playlist_uris), level=log_utils.LOGDEBUG)
 
 			#check if new playlist or already built
 			from sys import argv
 			action = argv[2].lstrip('?/')
 			try:
 				isAction = current_playlist_uris[0].split('/')[-1].lstrip('?') == action
+				log_utils.log('checkPlaylist() isAction is: %s' % str(isAction), level=log_utils.LOGDEBUG)
 			except:
+				log_utils.log('checkPlaylist() exception splitting current_playlist_uri isAction will be false', level=log_utils.LOGDEBUG)
 				isAction = False
+
 			if len(current_playlist_uris) == 1 and isAction:
+				log_utils.log('checkPlaylist() current_playlist_uris length is 1 and isAction is true. Returning false.', level=log_utils.LOGDEBUG)
 				return False
 			try:
 				getCurrentUri = current_playlist_uris[0]
 			except:
 				getCurrentUri = ''
 			if getCurrentUri == 'plugin://plugin.video.umbrella/VIDEO_TS/VIDEO_TS.IFO':
+				log_utils.log('checkPlaylist() currentUri variable matched VIDEO_TS sending to single item playlist.', level=log_utils.LOGDEBUG)
 				return self.singleItemPlaylist(item)
 			#check if no playlist is currently added.
 			if control.playlist.getposition() == -1:
+				log_utils.log('checkPlaylist() current playlist position is -1 sending to singleItemPlaylist', level=log_utils.LOGDEBUG)
 				return self.singleItemPlaylist(item)
 		except:
+			log_utils.log('checkPlaylist() exception: returning false.', level=log_utils.LOGDEBUG)
 			return False
 
 		#todo build playlist for single item that matches resolve.
 
 	def singleItemPlaylist(self, item):
+		log_utils.log('singleItemPlaylist() started.', level=log_utils.LOGDEBUG)
 		try:
 			control.cancelPlayback()
 			episodelabel = '%sx%02d %s' % (int(self.season), int(self.episode), self.meta.get('title'))
@@ -347,9 +358,12 @@ class Player(xbmc.Player):
 			#action = argv[2].lstrip('?/')
 			#base = argv[0]
 			newurl = item.getVideoInfoTag().getFilenameAndPath()
+			log_utils.log('singleItemPlaylist() url: %s' % str(newurl), level=log_utils.LOGDEBUG)
 			control.playlist.add(url=newurl, listitem=item)
+			log_utils.log('singleItemPlaylist() returning true.', level=log_utils.LOGDEBUG)
 			return True
 		except:
+			log_utils.log('singleItemPlaylist() exception: returning false', level=log_utils.LOGDEBUG)
 			return False
 
 	def getWatchedPercent(self):
