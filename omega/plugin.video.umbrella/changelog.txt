@@ -1,8 +1,9 @@
-[B]Update - v6.6.648 - August 5th, 2024[/B]
+[B]Update - v6.6.649 - August 5th, 2024[/B]
 --[Workaround] Building playlist for playnext with info button. Some hacky shit.
 --[Workaround] Added code to router to look for blank links sent from kodi info button use.
 --[Workaround] Made change to workaround and how it detected episodes vs movies.
 --[Info] For those of you watching my test repo for changes. I would not recommend stealing this change yet.
+--[Fix] Made exception scenario in downloading subtitles for playnext return default time.
 
 [B]Update - v6.6.641 - July 29th, 2024[/B]
 --[Fix] Fixed removed function from TMDb movie class.

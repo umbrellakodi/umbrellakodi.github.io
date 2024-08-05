@@ -472,6 +472,7 @@ class Player(xbmc.Player):
 								elif self.playnext_method== '2':
 									if self.subtitletime is None:
 										self.subtitletime = Subtitles().downloadForPlayNext(self.title, self.year, self.imdb, self.season, self.episode, self.media_length)
+									log_utils.log('Player keepActive() function self.subtitletime: %s' % str(self.subtitletime), level=log_utils.LOGDEBUG)
 									if str(self.subtitletime) == 'default':
 										if getSetting('playnext.sub.backupmethod')== '0': #subtitle failed use seconds as backup
 											subtitletimeumb = int(getSetting('playnext.sub.seconds'))
@@ -1159,6 +1160,7 @@ class Subtitles:
 				return playnextTime
 		except:
 			log_utils.error()
+			return 'default'
 		try:
 			langDict = {'Afrikaans': 'afr', 'Albanian': 'alb', 'Arabic': 'ara', 'Armenian': 'arm', 'Basque': 'baq', 'Bengali': 'ben',
 			'Bosnian': 'bos', 'Breton': 'bre', 'Bulgarian': 'bul', 'Burmese': 'bur', 'Catalan': 'cat', 'Chinese': 'chi', 'Croatian': 'hrv',
