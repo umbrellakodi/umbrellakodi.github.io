@@ -472,7 +472,6 @@ class Player(xbmc.Player):
 								elif self.playnext_method== '2':
 									if self.subtitletime is None:
 										self.subtitletime = Subtitles().downloadForPlayNext(self.title, self.year, self.imdb, self.season, self.episode, self.media_length)
-									log_utils.log('Player keepActive() function self.subtitletime: %s' % str(self.subtitletime), level=log_utils.LOGDEBUG)
 									if str(self.subtitletime) == 'default':
 										if getSetting('playnext.sub.backupmethod')== '0': #subtitle failed use seconds as backup
 											subtitletimeumb = int(getSetting('playnext.sub.seconds'))
@@ -1187,12 +1186,15 @@ class Subtitles:
 			if opensubs.Opensubs().auth():
 				pass
 			else:
-				return None
+				log_utils.log('opensubs is not authorized but is set for playnext. please authorize open subs in addon. returning default', level=log_utils.LOGDEBUG)
+				return 'default'
 			if not (season is None or episode is None):
 				from resources.lib.modules import opensubs
 				result = opensubs.Opensubs().getSubs(title, imdb, year, season, episode)
 				fmt = ['hdtv']
-
+				if not result:
+					log_utils.log('no results from opensubs for title: %s imdb: %s year: %s season: %s episode: %s returning default' % (title, imdb, year, season, episode), level=log_utils.LOGDEBUG)
+					return 'default'
 			else:
 				#movie
 				from resources.lib.modules import opensubs

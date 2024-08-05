@@ -1644,9 +1644,6 @@ class Movies:
 							from resources.lib.modules import log_utils
 							log_utils.error()
 						try:
-							if control.setting('debug.level') == '1':
-								from resources.lib.modules import log_utils
-								log_utils.log('Getting Movies from cached database list.', level=log_utils.LOGDEBUG)
 							sameGenreMoviesSelect = dbcur.execute('''SELECT * FROM movies WHERE %s;'''% localCache).fetchall()
 							if not sameGenreMoviesSelect: 
 								return
