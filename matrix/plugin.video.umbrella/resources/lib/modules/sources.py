@@ -74,10 +74,10 @@ class Sources:
 
 	def play(self, title, year, imdb, tmdb, tvdb, season, episode, tvshowtitle, premiered, meta, select, rescrape=None):
 		self.premiered = premiered
-		try:
-			control.checkPlayNextEpisodes()
-		except:
-			log_utils.error()
+		#try:
+		#	control.checkPlayNextEpisodes()
+		#except:
+		#	log_utils.error()
 		if not self.prem_providers:
 			control.sleep(200) ; control.hide()
 			return control.notification(message=33034)
@@ -738,7 +738,8 @@ class Sources:
 					#line2f = string4f % source_total_label + '     ' + string1f % round(time() - start_time, 1)
 					current_time = time()
 					current_progress = current_time - start_time
-					percent = int((current_progress / float(timeout)) * 100)
+					#percent = int((current_progress / float(timeout)) * 100)
+					percent = int((len(sourceDict) - len(info)) * 100 / len(sourceDict))
 					if progressDialog != control.progressDialog and progressDialog != control.progressDialogBG:
 						progressDialog.update(max(1, percent), line1 + '[CR]' + line2 + '[CR]' + line3)
 					elif progressDialog != control.progressDialogBG: progressDialog.update(max(1, percent), line1 + '[CR]' + line2 + '[CR]' + line3)
@@ -1198,8 +1199,8 @@ class Sources:
 		return filter
 
 	def sourcesAutoPlay(self, items):
-		control.hide()
-		control.sleep(200)
+		#control.hide()
+		#control.sleep(200)
 		if getSetting('autoplay.sd') == 'true': items = [i for i in items if not i['quality'] in ('4K', '1080p', '720p')]
 		header = homeWindow.getProperty(self.labelProperty) + ': Resolving...'
 		try:
@@ -1518,7 +1519,7 @@ class Sources:
 				#no external_provider_module
 				control.notification(message=control.lang(40447))
 				self.sourceDict = internalSources()
-				self.sourceDict.extend = cloudSources()
+				self.sourceDict.extend(cloudSources())
 			else:
 				try:
 					from sys import path

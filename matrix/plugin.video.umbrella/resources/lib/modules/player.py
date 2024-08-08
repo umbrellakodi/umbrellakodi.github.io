@@ -16,6 +16,7 @@ from resources.lib.modules import control
 from resources.lib.modules import log_utils
 from resources.lib.modules import playcount
 from resources.lib.modules import trakt
+from resources.lib.modules import opensubs
 from difflib import SequenceMatcher
 from resources.lib.modules.source_utils import seas_ep_filter, seas_filter
 from urllib.request import urlopen, Request
@@ -36,8 +37,6 @@ class Player(xbmc.Player):
 		xbmc.Player.__init__(self)
 		self.play_next_triggered = False
 		self.preScrape_triggered = False
-		self.playnextSeasons_triggered = False
-		self.playlist_built = False
 		self.playbackStopped_triggered = False
 		self.playback_resumed = False
 		self.onPlayBackStopped_ran = False
@@ -52,7 +51,6 @@ class Player(xbmc.Player):
 		self.playnext_percentage = int(getSetting('playnext.percent')) or 80
 		self.markwatched_percentage = int(getSetting('markwatched.percent')) or 85
 		self.traktCredentials = trakt.getTraktCredentialsInfo()
-		self.onPlayBackEnded_ran = False
 		self.prefer_tmdbArt = getSetting('prefer.tmdbArt') == 'true'
 		self.subtitletime = None
 		self.debuglog = getSetting('debug.level') == '1'
@@ -122,7 +120,6 @@ class Player(xbmc.Player):
 					log_utils.log('User requested playback cancel', level=log_utils.LOGDEBUG)
 				control.notification(message=32328)
 				return control.cancelPlayback()
-			self.playing_file = url
 			item = control.item(path=url)
 			#item.setUniqueIDs(self.ids) #changed for kodi20 setinfo method
 			setUniqueIDs = self.ids #changed for kodi20 setinfo method
@@ -132,45 +129,21 @@ class Player(xbmc.Player):
 				item.setArt({'clearart': clearart, 'clearlogo': clearlogo, 'discart': discart, 'thumb': thumb, 'poster': poster, 'fanart': fanart})
 			#if 'castandart' in meta: item.setCast(meta.get('castandart', '')) #changed for kodi20 setinfo method
 			#item.setInfo(type='video', infoLabels=control.metadataClean(meta))
-			control.set_info(item, meta, setUniqueIDs=setUniqueIDs, fileNameandPath=self.playing_file) #changed for kodi20 setinfo method
+			control.set_info(item, meta, setUniqueIDs=setUniqueIDs, fileNameandPath=url) #changed for kodi20 setinfo method
 
 			item.setProperty('IsPlayable', 'true')
 			playlistAdded = self.checkPlaylist(item)
-			log_utils.log('play_source() playlistAdded variable: %s' % playlistAdded, level=log_utils.LOGDEBUG)
+			#log_utils.log('play_source() playlistAdded variable: %s' % playlistAdded, level=log_utils.LOGDEBUG)
 			if debridPackCall: 
 				control.player.play(url, item) # seems this is only way browseDebrid pack files will play and have meta marked as watched
 				if self.debuglog:
-					log_utils.log('Played file as player.play', level=log_utils.LOGDEBUG)
-			elif playlistAdded and self.enable_playnext:
-				control.player.play(control.playlist)
-				if self.debuglog:
-					log_utils.log('Played file as playlist.', level=log_utils.LOGDEBUG)
-				if self.multi_season and self.enable_playnext:
-					if self.playlist_built == False:
-						log_utils.log('Building Season Playlist platlistAdded and enabled playnext and multi season enabled and playlist_built false.', 1)
-						self.buildSeasonPlaylist(fromEpisode=True)
-						self.playlist_built = True
-				else:
-					if self.playlist_built == False:
-						self.buildPlaylist()
-						self.playlist_built = True
+					log_utils.log('debridPackCallPlayed file as player.play', level=log_utils.LOGDEBUG)
 			else:
-				control.resolve(int(argv[1]), True, item)
-				if self.media_type == 'episode' and self.enable_playnext and self.multi_season and self.playlist_built == False:
-					try:
-						episodeCount = int(meta.get('seasons')[int(season)].get('episode_count'))
-					except:
-						#failed to get episode counts for season. try another method
-						log_utils.log('Failed to find episode counts for playlist construction. trying backup check.', 1)
-						try:
-							episodeCount = int(meta.get('counts')[self.season])
-						except:
-							episodeCount = None
-					if episodeCount:
-						if int(control.playlist.size()) <= episodeCount:
-							log_utils.log('Building Season Playlist on resolve playlist_built false.', 1)
-							self.buildSeasonPlaylist()
-							self.playlist_built = True
+				if playlistAdded:
+					control.player.play(control.playlist)
+				else:
+					control.resolve(int(argv[1]), True, item)
+				if self.media_type == 'episode' and self.enable_playnext: self.addEpisodetoPlaylist()
 				if self.debuglog:
 					log_utils.log('Played file as resolve.', level=log_utils.LOGDEBUG)
 			homeWindow.setProperty('script.trakt.ids', jsdumps(self.ids))
@@ -179,6 +152,26 @@ class Player(xbmc.Player):
 		except:
 			log_utils.error()
 			return control.cancelPlayback()
+
+	def addEpisodetoPlaylist(self):
+		#sorry i renamed the function to more accurately reflect what it was doing.
+		try:
+			from resources.lib.menus import seasons, episodes
+			seasons = seasons.Seasons().tmdb_list(tvshowtitle='', imdb='', tmdb=self.tmdb, tvdb='', art=None)
+			seasons = [int(i['season']) for i in seasons]
+			ep_data = [episodes.Episodes().get(self.meta.get('tvshowtitle'), self.meta.get('year'), self.imdb, self.tmdb, self.tvdb, self.meta, season=i, create_directory=False) for i in seasons]
+			items = [i for e in ep_data for i in e]
+			index = next((idx for idx, i in enumerate(items) if i['season'] == int(self.season) and i['episode'] == int(self.episode)), None)
+			if index is None: return
+			try: item = items[index+1]
+			except: return
+			
+			if item.get('unaired') == 'true': return
+			if item.get('season') and item.get('season') > int(self.season) and not self.multi_season: return
+			items = episodes.Episodes().episodeDirectory([item], next=False, playlist=True)
+			for idx, (url, li, folder) in enumerate(items, 1):
+				control.playlist.add(url=url, listitem=li, index=control.playlist.getposition()+idx)
+		except: log_utils.error()
 
 	def getMeta(self, meta):
 		try:
@@ -206,9 +199,10 @@ class Player(xbmc.Player):
 						if show_meta: show_meta = show_meta[0]
 						else: raise Exception()
 						tvshowid = show_meta['tvshowid']
-						meta = control.jsonrpc('{"jsonrpc": "2.0", "method": "VideoLibrary.GetEpisodes", "params":{"tvshowid": %d, "filter":{"and": [{"field": "season", "operator": "is", "value": "%s"}, {"field": "episode", "operator": "is", "value": "%s"}]}, "properties": ["showtitle", "title", "season", "episode", "firstaired", "runtime", "rating", "director", "writer", "cast", "plot", "thumbnail", "art", "file"]}, "id": 1}' % (tvshowid, self.season, self.episode))
-						meta = jsloads(meta)['result']['episodes']
-						if meta: meta = meta[0]
+						if tvshowid:
+							dbidmetameta = control.jsonrpc('{"jsonrpc": "2.0", "method": "VideoLibrary.GetEpisodes", "params":{"tvshowid": %d, "filter":{"and": [{"field": "season", "operator": "is", "value": "%s"}, {"field": "episode", "operator": "is", "value": "%s"}]}, "properties": ["showtitle", "title", "season", "episode", "firstaired", "runtime", "rating", "director", "writer", "cast", "plot", "thumbnail", "art", "file"]}, "id": 1}' % (tvshowid, self.season, self.episode))
+							dbidmetameta = jsloads(meta)['result']['episodes']
+						if dbidmetameta: meta = meta[0]
 						else: raise Exception()
 						return meta.get('episodeid')
 				except:
@@ -305,50 +299,21 @@ class Player(xbmc.Player):
 			return (poster, thumb, season_poster, fanart, banner, clearart, clearlogo, discart, meta)
 
 	def checkPlaylist(self, item):
-		#need to check for exisiting playlist here and handle that.
-		#movie needs to clear the playlist
-		log_utils.log('checkPlaylist() function started.', level=log_utils.LOGDEBUG)
+		#just checking here for an empty playlist.
 		try:
-			if self.media_type != "episode":
-				log_utils.log('checkPlaylist() Item is movie, clearing playlist.', level=log_utils.LOGDEBUG)
-				control.playlist.clear()
-				return False
-			#item paths for current items on playlist.
-			current_playlist_uris = [ control.playlist[i].getPath() for i in range(control.playlist.size())]
-			log_utils.log('checkPlaylist() current_playlist_uris: %s' % str(current_playlist_uris), level=log_utils.LOGDEBUG)
-
-			#check if new playlist or already built
-			from sys import argv
-			action = argv[2].lstrip('?/')
-			try:
-				isAction = current_playlist_uris[0].split('/')[-1].lstrip('?') == action
-				log_utils.log('checkPlaylist() isAction is: %s' % str(isAction), level=log_utils.LOGDEBUG)
-			except:
-				log_utils.log('checkPlaylist() exception splitting current_playlist_uri isAction will be false', level=log_utils.LOGDEBUG)
-				isAction = False
-
-			if len(current_playlist_uris) == 1 and isAction:
-				log_utils.log('checkPlaylist() current_playlist_uris length is 1 and isAction is true. Returning false.', level=log_utils.LOGDEBUG)
-				return False
-			try:
-				getCurrentUri = current_playlist_uris[0]
-			except:
-				getCurrentUri = ''
-			if getCurrentUri == 'plugin://plugin.video.umbrella/VIDEO_TS/VIDEO_TS.IFO':
-				log_utils.log('checkPlaylist() currentUri variable matched VIDEO_TS sending to single item playlist.', level=log_utils.LOGDEBUG)
-				return self.singleItemPlaylist(item)
 			#check if no playlist is currently added.
-			if control.playlist.getposition() == -1:
+			log_utils.log('checkPlaylist() item media type: %s' % str(self.media_type), level=log_utils.LOGDEBUG)
+			if control.playlist.getposition() == -1 and self.media_type == 'episode':
 				log_utils.log('checkPlaylist() current playlist position is -1 sending to singleItemPlaylist', level=log_utils.LOGDEBUG)
+				control.playlist.clear()
 				return self.singleItemPlaylist(item)
-			if getCurrentUri == '':
-				log_utils.log('checkPlaylist() current uri is blank sending to singleItemPlaylist', level=log_utils.LOGDEBUG)
-				return self.singleItemPlaylist(item)
+			else:
+				if self.media != 'episode':
+					log_utils.log('checkPlaylist() else statement and item is not an episode. returning FALSE', level=log_utils.LOGDEBUG)
+				return False
 		except:
 			log_utils.log('checkPlaylist() exception: returning false.', level=log_utils.LOGDEBUG)
 			return False
-
-		#todo build playlist for single item that matches resolve.
 
 	def singleItemPlaylist(self, item):
 		log_utils.log('singleItemPlaylist() started.', level=log_utils.LOGDEBUG)
@@ -358,8 +323,6 @@ class Player(xbmc.Player):
 			if self.meta.get('title'):
 				item.setLabel(episodelabel)
 			from sys import argv
-			#action = argv[2].lstrip('?/')
-			#base = argv[0]
 			newurl = item.getVideoInfoTag().getFilenameAndPath()
 			log_utils.log('singleItemPlaylist() url: %s' % str(newurl), level=log_utils.LOGDEBUG)
 			control.playlist.add(url=newurl, listitem=item)
@@ -415,7 +378,6 @@ class Player(xbmc.Player):
 
 		xbmc.sleep(5000)
 		playlist_skip = False
-		self.onPlayBackEnded_ran = False
 		try: running_path = self.getPlayingFile() # original video that playlist playback started with
 		except: running_path = ''
 		if playerWindow.getProperty('umbrella.playlistStart_position'): pass
@@ -488,6 +450,10 @@ class Player(xbmc.Player):
 												xbmc.executebuiltin('RunPlugin(plugin://plugin.video.umbrella/?action=play_nextWindowXML)')
 												self.play_next_triggered = True
 									elif self.subtitletime != None and str(self.subtitletime) != 'default':
+										if int(self.subtitletime > 600 ):
+											#subtitle time is greater than 10 minutes we need to use the default now.
+											log_utils.log('Playnext triggered by method subtitle but the time is over 10 minutes. IMDB: %s Title: %s Time Attempting to Use Was: %s Changed to: %s Current Time: %s' % (self.imdb, self.title, self.subtitletime, int(getSetting('playnext.sub.seconds')), remaining_time), level=log_utils.LOGDEBUG)
+											self.subtitletime = int(getSetting('playnext.sub.seconds'))
 										if (remaining_time < (int(self.subtitletime) + 1) or remaining_time < int(self.playnext_min)) and remaining_time != 0:
 											if self.debuglog:
 													log_utils.log('Playnext triggered by method subtitle. IMDB: %s Title: %s Subtitle Time Used: %s Current Time: %s' % (self.imdb, self.title, self.subtitletime, remaining_time), level=log_utils.LOGDEBUG)
@@ -510,135 +476,7 @@ class Player(xbmc.Player):
 			if (int(self.current_time) > 180 and (self.getWatchedPercent() < int(self.markwatched_percentage))): # kodi is unreliable issuing callback "onPlayBackStopped" and "onPlayBackEnded"
 				self.playbackStopped_triggered = True
 				self.onPlayBackStopped()
-			elif self.getWatchedPercent() >= int(self.markwatched_percentage): self._end_playback()
-
-	def buildPlaylist(self):
-		if self.debuglog:
-			log_utils.log('Playnext build playlist.', level=log_utils.LOGDEBUG)
-		currentEpisode = self.episode
-		currentSeason = self.season
-		from resources.lib.menus import episodes
-		items = episodes.Episodes().get(self.meta.get('tvshowtitle'), self.meta.get('year'), self.imdb, self.tmdb, self.tvdb, self.meta, self.season, create_directory=False)
-		sysaddon, syshandle = 'plugin://plugin.video.umbrella/', int(argv[1])
-		try:
-			for count, i in enumerate(items):
-				try:
-					tvshowtitle, title, imdb, tmdb, tvdb = i.get('tvshowtitle'), i.get('title'), i.get('imdb', ''), i.get('tmdb', ''), i.get('tvdb', '')
-					year, season, episode, premiered = i.get('year', ''), i.get('season'), i.get('episode'), i.get('premiered', '')
-					runtime = i.get('duration')
-					if 'label' not in i: i['label'] = title
-					if (not i['label'] or i['label'] == '0'): label = '%sx%02d  %s %s' % (season, int(episode), 'Episode', episode)
-					else: label = '%sx%02d  %s' % (season, int(episode), i['label'])
-					systitle, systvshowtitle, syspremiered = quote_plus(title), quote_plus(tvshowtitle), quote_plus(premiered)
-					meta = dict((k, v) for k, v in iter(i.items()) if v is not None and v != '')
-					mediatype = 'episode'
-					meta.update({'code': imdb, 'imdbnumber': imdb, 'mediatype': mediatype, 'tag': [imdb, tmdb]}) # "tag" and "tagline" for movies only, but works in my skin mod so leave
-					try: meta.update({'title': i['label']})
-					except: pass
-					if self.prefer_tmdbArt: poster = meta.get('poster3') or meta.get('poster') or meta.get('poster2')
-					else: poster = meta.get('poster2') or meta.get('poster3') or meta.get('poster')
-					season_poster = meta.get('season_poster') or poster
-					landscape = meta.get('landscape')
-					fanart = ''
-					thumb = meta.get('thumb') or landscape or fanart or season_poster
-					icon = meta.get('icon') or season_poster or poster
-					banner = meta.get('banner')
-					art = {}
-					art.update({'poster': season_poster, 'tvshow.poster': poster, 'season.poster': season_poster, 'fanart': fanart, 'icon': icon, 'thumb': thumb, 'banner': banner,
-							'clearlogo': meta.get('clearlogo', ''), 'tvshow.clearlogo': meta.get('clearlogo', ''), 'clearart': meta.get('clearart', ''), 'tvshow.clearart': meta.get('clearart', ''), 'landscape': thumb})
-					for k in ('metacache', 'poster2', 'poster3', 'fanart2', 'fanart3', 'banner2', 'banner3', 'trailer'): meta.pop(k, None)
-					meta.update({'poster': poster, 'fanart': fanart, 'banner': banner, 'thumb': thumb, 'icon': icon})
-					sysmeta = quote_plus(jsdumps(meta))
-					url = '%s?action=play_Item&title=%s&year=%s&imdb=%s&tmdb=%s&tvdb=%s&season=%s&episode=%s&tvshowtitle=%s&premiered=%s&meta=%s' % (
-											sysaddon, systitle, year, imdb, tmdb, tvdb, season, episode, systvshowtitle, syspremiered, sysmeta)
-					item = control.item(label=label, offscreen=True)
-					#if 'castandart' in i: item.setCast(i['castandart'])
-					#item.setUniqueIDs({'imdb': imdb, 'tmdb': tmdb, 'tvdb': tvdb})
-					setUniqueIDs = {'imdb': imdb, 'tmdb': tmdb, 'tvdb': tvdb}
-					info = {'episode': int(episode), 'sortepisode': int(episode), 'season': int(season), 'sortseason': int(season), 'year': str(year), 'premiered': i.get('premiered', ''), 'aired': meta.get('airtime', ''), 'imdbnumber': imdb, 'duration': runtime, 'dateadded': '', 'rating': i.get('rating'), 'votes': i.get('votes'), 'mediatype': self.media_type, 'title': i.get('title'), 'originaltitle': i.get('title'), 'sorttitle': i.get('title'), 'plot': i.get('plot'), 'plotoutline': i.get('plot'), 'tvshowtitle': tvshowtitle, 'director': [i.get('director')], 'writer': [i.get('writer')], 'genre': [i.get('genre')], 'studio': [i.get('studio')], 'playcount': 0}
-					if int(episode) > int(currentEpisode):
-						if not i.get('unaired')== 'true':
-							item.setContentLookup(False)
-							# if control.getKodiVersion() < 20:
-							# 	item.addStreamInfo("video", {})
-							# else:
-							# 	info_tag = item.getVideoInfoTag()
-							# 	info_tag.addVideoStream()
-							cm = []
-							item.addContextMenuItems(cm)
-							#item.setInfo("video", info)
-							control.set_info(item, info, setUniqueIDs=setUniqueIDs)
-							item.setArt(art)
-							item.setProperty('IsPlayable', 'true')
-							item.setProperty('tvshow.tmdb_id', tmdb)
-							control.playlist.add(url=url, listitem=item)
-				except:
-					log_utils.error()
-		except:
-			log_utils.error()
-
-	def buildSeasonPlaylist(self, fromEpisode=False):
-		#get all seasons
-		#get every season greater than current season
-		#get every episode for each season and add to playlist
-		log_utils.log('Building Season Playlist',1)
-		currentSeason = self.season
-		currentEpisode = self.episode
-		items = []
-		from resources.lib.menus import seasons, episodes
-		seasons = seasons.Seasons().tmdb_list(tvshowtitle='', imdb='', tmdb=self.tmdb, tvdb='', art=None)
-		
-		shows = episodes.Episodes().get(self.meta.get('tvshowtitle'), self.meta.get('year'), self.imdb, self.tmdb, self.tvdb, self.meta, create_directory=False)
-		items.extend(shows)
-		sysaddon, syshandle = 'plugin://plugin.video.umbrella/', int(argv[1])
-		try:
-			for count, i in enumerate(items):
-				try:
-					tvshowtitle, title, imdb, tmdb, tvdb = i.get('tvshowtitle'), i.get('title'), i.get('imdb', ''), i.get('tmdb', ''), i.get('tvdb', '')
-					year, season, episode, premiered = i.get('year', ''), i.get('season'), i.get('episode'), i.get('premiered', '')
-					runtime = i.get('duration')
-					if 'label' not in i: i['label'] = title
-					if (not i['label'] or i['label'] == '0'): label = '%sx%02d  %s %s' % (season, int(episode), 'Episode', episode)
-					else: label = '%sx%02d  %s' % (season, int(episode), i['label'])
-					systitle, systvshowtitle, syspremiered = quote_plus(title), quote_plus(tvshowtitle), quote_plus(premiered)
-					meta = dict((k, v) for k, v in iter(i.items()) if v is not None and v != '')
-					mediatype = 'episode'
-					meta.update({'code': imdb, 'imdbnumber': imdb, 'mediatype': mediatype, 'tag': [imdb, tmdb]}) # "tag" and "tagline" for movies only, but works in my skin mod so leave
-					try: meta.update({'title': i['label']})
-					except: pass
-					if self.prefer_tmdbArt: poster = meta.get('poster3') or meta.get('poster') or meta.get('poster2')
-					else: poster = meta.get('poster2') or meta.get('poster3') or meta.get('poster')
-					season_poster = meta.get('season_poster') or poster
-					landscape = meta.get('landscape')
-					fanart = ''
-					thumb = meta.get('thumb') or landscape or fanart or season_poster
-					icon = meta.get('icon') or season_poster or poster
-					banner = meta.get('banner')
-					art = {}
-					art.update({'poster': season_poster, 'tvshow.poster': poster, 'season.poster': season_poster, 'fanart': fanart, 'icon': icon, 'thumb': thumb, 'banner': banner,
-							'clearlogo': meta.get('clearlogo', ''), 'tvshow.clearlogo': meta.get('clearlogo', ''), 'clearart': meta.get('clearart', ''), 'tvshow.clearart': meta.get('clearart', ''), 'landscape': thumb})
-					for k in ('metacache', 'poster2', 'poster3', 'fanart2', 'fanart3', 'banner2', 'banner3', 'trailer'): meta.pop(k, None)
-					meta.update({'poster': poster, 'fanart': fanart, 'banner': banner, 'thumb': thumb, 'icon': icon})
-					sysmeta = quote_plus(jsdumps(meta))
-					url = '%s?action=play_Item&title=%s&year=%s&imdb=%s&tmdb=%s&tvdb=%s&season=%s&episode=%s&tvshowtitle=%s&premiered=%s&meta=%s' % (
-											sysaddon, systitle, year, imdb, tmdb, tvdb, season, episode, systvshowtitle, syspremiered, sysmeta)
-					item = control.item(label=label, offscreen=True)
-					setUniqueIDs = {'imdb': imdb, 'tmdb': tmdb, 'tvdb': tvdb}
-					info = {'episode': int(episode), 'sortepisode': int(episode), 'season': int(season), 'sortseason': int(season), 'year': str(year), 'premiered': i.get('premiered', ''), 'aired': meta.get('airtime', ''), 'imdbnumber': imdb, 'duration': runtime, 'dateadded': '', 'rating': i.get('rating'), 'votes': i.get('votes'), 'mediatype': self.media_type, 'title': i.get('title'), 'originaltitle': i.get('title'), 'sorttitle': i.get('title'), 'plot': i.get('plot'), 'plotoutline': i.get('plot'), 'tvshowtitle': tvshowtitle, 'director': [i.get('director')], 'writer': [i.get('writer')], 'genre': [i.get('genre')], 'studio': [i.get('studio')], 'playcount': 0}
-					if int(season) > int(currentSeason) or ((int(season) == int(currentSeason) and int(episode) > int(self.episode)) and fromEpisode) and int(season) != 0:
-						item.setContentLookup(False)
-						cm = []
-						item.addContextMenuItems(cm)
-						control.set_info(item, info, setUniqueIDs=setUniqueIDs)
-						item.setArt(art)
-						item.setProperty('IsPlayable', 'true')
-						item.setProperty('tvshow.tmdb_id', tmdb)
-						control.playlist.add(url=url, listitem=item)
-				except:
-					log_utils.error()
-		except:
-			log_utils.error()
-
+			
 	def isPlayingFile(self):
 		if self._running_path is None or self._running_path.startswith("plugin://"):
 			return False
@@ -670,16 +508,12 @@ class Player(xbmc.Player):
 			control.jsonrpc(rpc)
 		except: log_utils.error()
 
-	def _end_playback(self):
-		self.onPlayBackEnded()
-		self.onPlayBackEnded_ran = True
-
 ### Kodi player callback methods ###
 	def onAVStarted(self): # Kodi docs suggests "Use onAVStarted() instead of onPlayBackStarted() as of v18"
-		control.sleep(200)
+		#control.sleep(200)
 		for i in range(0, 500):
 			if self.isPlayback():
-				control.closeAll()
+				#control.closeAll() #i cannot remember what this was for.
 				break
 			else: control.sleep(200)
 		if self.offset != '0' and self.playback_resumed is False:
@@ -699,6 +533,9 @@ class Player(xbmc.Player):
 		if self.traktCredentials:
 			trakt.scrobbleReset(imdb=self.imdb, tmdb=self.tmdb, tvdb=self.tvdb, season=self.season, episode=self.episode, refresh=False) # refresh issues container.refresh()
 		log_utils.log('onAVStarted callback', level=log_utils.LOGDEBUG)
+
+	def onPlayBackStarted(self):
+		control.hide() #this is new.
 
 	def onPlayBackSeek(self, time, seekOffset):
 		seekOffset /= 1000
@@ -763,15 +600,6 @@ class Player(xbmc.Player):
 
 	def onPlayBackPaused(self):
 		log_utils.log('onPlayBackPaused callback', level=log_utils.LOGDEBUG)
-		# watcher = self.getWatchedPercent()
-		# if watcher <= int(self.markwatched_percentage):
-		# 	Bookmarks().reset(self.current_time, self.media_length, self.name, self.year)
-		# 	if self.traktCredentials and (getSetting('trakt.scrobble') == 'true'):
-		# 		log_utils.log('Paused: Sending scrobble to trakt.', level=log_utils.LOGDEBUG)
-		# 		Bookmarks().set_scrobble(self.current_time, self.media_length, self.media_type, self.imdb, self.tmdb, self.tvdb, self.season, self.episode)
-		# else:
-		# 	log_utils.log('Paused, but no scrobble due to being past mark watched percentage.', level=log_utils.LOGDEBUG)
-##############################
 
 class PlayNext(xbmc.Player):
 	def __init__(self):
@@ -949,22 +777,7 @@ class Subtitles:
 			import re
 		except: return log_utils.error()
 		try:
-			langDict = {'Afrikaans': 'afr', 'Albanian': 'alb', 'Arabic': 'ara', 'Armenian': 'arm', 'Basque': 'baq', 'Bengali': 'ben',
-			'Bosnian': 'bos', 'Breton': 'bre', 'Bulgarian': 'bul', 'Burmese': 'bur', 'Catalan': 'cat', 'Chinese': 'chi', 'Croatian': 'hrv',
-			'Czech': 'cze', 'Danish': 'dan', 'Dutch': 'dut', 'English': 'eng', 'Esperanto': 'epo', 'Estonian': 'est', 'Finnish': 'fin',
-			'French': 'fre', 'Galician': 'glg', 'Georgian': 'geo', 'German': 'ger', 'Greek': 'ell', 'Hebrew': 'heb', 'Hindi': 'hin',
-			'Hungarian': 'hun', 'Icelandic': 'ice', 'Indonesian': 'ind', 'Italian': 'ita', 'Japanese': 'jpn', 'Kazakh': 'kaz', 'Khmer': 'khm',
-			'Korean': 'kor', 'Latvian': 'lav', 'Lithuanian': 'lit', 'Luxembourgish': 'ltz', 'Macedonian': 'mac', 'Malay': 'may',
-			'Malayalam': 'mal', 'Manipuri': 'mni', 'Mongolian': 'mon', 'Montenegrin': 'mne', 'Norwegian': 'nor', 'Occitan': 'oci',
-			'Persian': 'per', 'Polish': 'pol', 'Portuguese': 'por,pob', 'Portuguese(Brazil)': 'pob,por', 'Romanian': 'rum', 'Russian': 'rus',
-			'Serbian': 'scc', 'Sinhalese': 'sin', 'Slovak': 'slo', 'Slovenian': 'slv', 'Spanish': 'spa', 'Swahili': 'swa', 'Swedish': 'swe',
-			'Syriac': 'syr', 'Tagalog': 'tgl', 'Tamil': 'tam', 'Telugu': 'tel', 'Thai': 'tha', 'Turkish': 'tur', 'Ukrainian': 'ukr', 'Urdu': 'urd'}
-			codePageDict = {'ara': 'cp1256', 'ar': 'cp1256', 'ell': 'cp1253', 'el': 'cp1253', 'heb': 'cp1255',
-									'he': 'cp1255', 'tur': 'cp1254', 'tr': 'cp1254', 'rus': 'cp1251', 'ru': 'cp1251'}
 			quality = ['bluray', 'hdrip', 'brrip', 'bdrip', 'dvdrip', 'webrip', 'hdtv']
-
-			#langs = langDict[getSetting('subtitles.lang.1')].split(',')
-			#langs = langs + langDict[getSetting('subtitles.lang.2')].split(',')
 			langs = []
 			langs.append(getSetting('subtitles.lang.1'))
 			langs.append(getSetting('subtitles.lang.2'))
@@ -991,20 +804,19 @@ class Subtitles:
 						control.sleep(1000)
 						control.notification(message=getLS(32394) % subLang.upper(), time=5000)
 				return log_utils.log(getLS(32394) % subLang.upper(), level=log_utils.LOGDEBUG)
-			from resources.lib.modules import opensubs
 			if opensubs.Opensubs().auth():
 				log_utils.log('OpenSubs Authorized.', level=log_utils.LOGDEBUG)
 			else:
 				return control.notification(message=getLS(40509), time=5000)
 			if not (season is None or episode is None):
 				#tv show
-				from resources.lib.modules import opensubs
+
 				result = opensubs.Opensubs().getSubs(title, imdb, year, season, episode)
 				fmt = ['hdtv']
 
 			else:
 				#movie
-				from resources.lib.modules import opensubs
+
 				result = opensubs.Opensubs().getSubs(title, imdb, year, season, episode)
 				if not result: return
 				try: vidPath = xbmc.Player().getPlayingFile()
@@ -1041,7 +853,6 @@ class Subtitles:
 			filename = filter[0]['fileName']
 			if self.debuglog:
 				log_utils.log('downloaded subtitle=%s' % filename, level=log_utils.LOGDEBUG)
-			from resources.lib.modules import opensubs
 			try:
 				downloadURL, downloadFileName = opensubs.Opensubs().downloadSubs(filter[0]['fileID'], filter[0]['fileName'])
 			except:
@@ -1063,12 +874,9 @@ class Subtitles:
 				http_response = urlopen(reqqqq)
 				response = http_response.read()
 				response = response.decode('utf-8')
-				log_utils.log('built http_response opensubs.', level=log_utils.LOGDEBUG)
 				srtFile = os.path.join(download_path, downloadFileName+'.srt')
 				file = open(srtFile, 'w')
-				log_utils.log('opened file %s' % srtFile, level=log_utils.LOGDEBUG)
 				file.write(response)
-				log_utils.log('wrote to file.', level=log_utils.LOGDEBUG)
 				file.close()
 			from resources.lib.modules import tools
 			tools.delete_all_subs()
@@ -1161,35 +969,19 @@ class Subtitles:
 			log_utils.error()
 			return 'default'
 		try:
-			langDict = {'Afrikaans': 'afr', 'Albanian': 'alb', 'Arabic': 'ara', 'Armenian': 'arm', 'Basque': 'baq', 'Bengali': 'ben',
-			'Bosnian': 'bos', 'Breton': 'bre', 'Bulgarian': 'bul', 'Burmese': 'bur', 'Catalan': 'cat', 'Chinese': 'chi', 'Croatian': 'hrv',
-			'Czech': 'cze', 'Danish': 'dan', 'Dutch': 'dut', 'English': 'eng', 'Esperanto': 'epo', 'Estonian': 'est', 'Finnish': 'fin',
-			'French': 'fre', 'Galician': 'glg', 'Georgian': 'geo', 'German': 'ger', 'Greek': 'ell', 'Hebrew': 'heb', 'Hindi': 'hin',
-			'Hungarian': 'hun', 'Icelandic': 'ice', 'Indonesian': 'ind', 'Italian': 'ita', 'Japanese': 'jpn', 'Kazakh': 'kaz', 'Khmer': 'khm',
-			'Korean': 'kor', 'Latvian': 'lav', 'Lithuanian': 'lit', 'Luxembourgish': 'ltz', 'Macedonian': 'mac', 'Malay': 'may',
-			'Malayalam': 'mal', 'Manipuri': 'mni', 'Mongolian': 'mon', 'Montenegrin': 'mne', 'Norwegian': 'nor', 'Occitan': 'oci',
-			'Persian': 'per', 'Polish': 'pol', 'Portuguese': 'por,pob', 'Portuguese(Brazil)': 'pob,por', 'Romanian': 'rum', 'Russian': 'rus',
-			'Serbian': 'scc', 'Sinhalese': 'sin', 'Slovak': 'slo', 'Slovenian': 'slv', 'Spanish': 'spa', 'Swahili': 'swa', 'Swedish': 'swe',
-			'Syriac': 'syr', 'Tagalog': 'tgl', 'Tamil': 'tam', 'Telugu': 'tel', 'Thai': 'tha', 'Turkish': 'tur', 'Ukrainian': 'ukr', 'Urdu': 'urd'}
-			codePageDict = {'ara': 'cp1256', 'ar': 'cp1256', 'ell': 'cp1253', 'el': 'cp1253', 'heb': 'cp1255',
-									'he': 'cp1255', 'tur': 'cp1254', 'tr': 'cp1254', 'rus': 'cp1251', 'ru': 'cp1251'}
 			quality = ['bluray', 'hdrip', 'brrip', 'bdrip', 'dvdrip', 'webrip', 'hdtv']
 
 			langs = []
 			langs.append(getSetting('subtitles.lang.1'))
 			langs.append(getSetting('subtitles.lang.2'))
 
-			try: subLang = xbmc.Player().getSubtitles()
-			except: subLang = ''
-
-			from resources.lib.modules import opensubs
 			if opensubs.Opensubs().auth():
 				pass
 			else:
 				log_utils.log('opensubs is not authorized but is set for playnext. please authorize open subs in addon. returning default', level=log_utils.LOGDEBUG)
 				return 'default'
 			if not (season is None or episode is None):
-				from resources.lib.modules import opensubs
+
 				result = opensubs.Opensubs().getSubs(title, imdb, year, season, episode)
 				fmt = ['hdtv']
 				if not result:
@@ -1197,7 +989,7 @@ class Subtitles:
 					return 'default'
 			else:
 				#movie
-				from resources.lib.modules import opensubs
+
 				result = opensubs.Opensubs().getSubs(title, imdb, year, season, episode)
 				if not result: return
 				try: vidPath = xbmc.Player().getPlayingFile()
@@ -1230,7 +1022,7 @@ class Subtitles:
 			filename = filter[0]['fileName']
 			if self.debuglog:
 				log_utils.log('downloaded subtitle=%s' % filename, level=log_utils.LOGDEBUG)
-			from resources.lib.modules import opensubs
+
 			downloadURL, downloadFileName = opensubs.Opensubs().downloadSubs(filter[0]['fileID'], filter[0]['fileName'])
 			subtitle = control.transPath(download_path)
 			
