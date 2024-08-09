@@ -1,11 +1,13 @@
-[B]Update - v6.6.654 - August 8th, 2024[/B]
+[B]Update - v6.6.655 - August 9th, 2024[/B]
+--[Fix] Please go to kodi settings and clear any settings set for "Play next video automatically". This is likely been set to "Episodes" previously by Umbrella.
+--[Fix] A lot of code changes around playlist generation and show information combined with other settings. -thanks and credit to kodifitzwell
 --[Workaround] Building playlist for playnext with info button. Some hacky shit.
 --[Workaround] Added code to router to look for blank links sent from kodi info button use.
 --[Workaround] Made change to workaround and how it detected episodes vs movies.
 --[Fix] Made exception scenario in downloading subtitles for playnext return default time.
 --[Fix] Changes made to subtitle playnext time if time is greater than 10 minutes use default.
 
-[B]Update - v6.6.641 - July 29th, 2024[/B]
+[B]Update - v6.6.64 - July 29th, 2024[/B]
 --[Fix] Fixed removed function from TMDb movie class.
 
 [B]Update - v6.6.63 - July 27th, 2024[/B]

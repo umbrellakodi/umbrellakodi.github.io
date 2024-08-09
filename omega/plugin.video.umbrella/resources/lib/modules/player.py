@@ -132,20 +132,23 @@ class Player(xbmc.Player):
 			control.set_info(item, meta, setUniqueIDs=setUniqueIDs, fileNameandPath=url) #changed for kodi20 setinfo method
 
 			item.setProperty('IsPlayable', 'true')
-			playlistAdded = self.checkPlaylist(item)
+			#playlistAdded = self.checkPlaylist(item)
 			#log_utils.log('play_source() playlistAdded variable: %s' % playlistAdded, level=log_utils.LOGDEBUG)
+			if self.media_type == 'episode' and self.enable_playnext: self.buildSeasonPlaylist(url, item) #changed to make playlist building happen before play.
 			if debridPackCall: 
 				control.player.play(url, item) # seems this is only way browseDebrid pack files will play and have meta marked as watched
 				if self.debuglog:
 					log_utils.log('debridPackCallPlayed file as player.play', level=log_utils.LOGDEBUG)
-			else:
-				if playlistAdded:
-					control.player.play(control.playlist)
-				else:
-					control.resolve(int(argv[1]), True, item)
-				if self.media_type == 'episode' and self.enable_playnext: self.addEpisodetoPlaylist()
-				if self.debuglog:
-					log_utils.log('Played file as resolve.', level=log_utils.LOGDEBUG)
+			#elif control.playlist.getposition() == -1: control.player.play(control.playlist)
+			elif control.playlist.getposition() == -1 and control.playlist.size(): control.player.play(control.playlist)
+			else: control.resolve(int(argv[1]), True, item)
+			#else:
+			#	if playlistAdded:
+			#		control.player.play(control.playlist)
+			#		control.resolve(int(argv[1]), True, item)
+			#	
+			#	if self.debuglog:
+			#		log_utils.log('Played file as resolve.', level=log_utils.LOGDEBUG)
 			homeWindow.setProperty('script.trakt.ids', jsdumps(self.ids))
 			self.keepAlive()
 			homeWindow.clearProperty('script.trakt.ids')
@@ -153,24 +156,24 @@ class Player(xbmc.Player):
 			log_utils.error()
 			return control.cancelPlayback()
 
-	def addEpisodetoPlaylist(self):
-		#sorry i renamed the function to more accurately reflect what it was doing.
+	def buildSeasonPlaylist(self, link, link_item):
 		try:
+			if control.playlist.getposition() == -1:
+				control.player.stop()
+				control.playlist.clear()
+				control.playlist.add(url=link, listitem=link_item)
 			from resources.lib.menus import seasons, episodes
 			seasons = seasons.Seasons().tmdb_list(tvshowtitle='', imdb='', tmdb=self.tmdb, tvdb='', art=None)
 			seasons = [int(i['season']) for i in seasons]
 			ep_data = [episodes.Episodes().get(self.meta.get('tvshowtitle'), self.meta.get('year'), self.imdb, self.tmdb, self.tvdb, self.meta, season=i, create_directory=False) for i in seasons]
-			items = [i for e in ep_data for i in e]
+			items = [i for e in ep_data for i in e if i.get('unaired') != 'true']
 			index = next((idx for idx, i in enumerate(items) if i['season'] == int(self.season) and i['episode'] == int(self.episode)), None)
 			if index is None: return
 			try: item = items[index+1]
 			except: return
-			
-			if item.get('unaired') == 'true': return
 			if item.get('season') and item.get('season') > int(self.season) and not self.multi_season: return
 			items = episodes.Episodes().episodeDirectory([item], next=False, playlist=True)
-			for idx, (url, li, folder) in enumerate(items, 1):
-				control.playlist.add(url=url, listitem=li, index=control.playlist.getposition()+idx)
+			for url, li, folder in items: control.playlist.add(url=url, listitem=li)
 		except: log_utils.error()
 
 	def getMeta(self, meta):

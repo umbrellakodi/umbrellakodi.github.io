@@ -794,7 +794,7 @@ class Episodes:
 			control.hide() ; control.notification(title=32326, message=33049)
 		sysaddon, syshandle = 'plugin://plugin.video.umbrella/', int(argv[1])
 		is_widget = 'plugin' not in control.infoLabel('Container.PluginName')
-		#if not is_widget: control.playlist.clear()
+		if not is_widget and not playlist: control.playlist.clear()
 		settingFanart = getSetting('fanart') == 'true'
 		addonPoster, addonFanart, addonBanner = control.addonPoster(), control.addonFanart(), control.addonBanner()
 

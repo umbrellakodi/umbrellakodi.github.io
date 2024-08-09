@@ -10,8 +10,7 @@ from resources.lib.modules import control
 def router(argv2):
 	try:
 		if argv2 == '':
-			import xbmc
-			argv4 = xbmc.getInfoLabel('ListItem.FileNameAndPath')
+			argv4 = control.infoLabel('ListItem.FileNameAndPath')
 			argv5 = argv4.split('plugin://plugin.video.umbrella/?')[1]
 			params = dict(parse_qsl(argv5.replace('?', '')))
 			episode = params.get('episode')
