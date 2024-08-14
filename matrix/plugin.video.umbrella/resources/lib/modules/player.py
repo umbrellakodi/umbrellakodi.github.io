@@ -7,7 +7,7 @@ from hashlib import md5
 from json import dumps as jsdumps, loads as jsloads
 from sys import argv, exit as sysexit
 from sqlite3 import dbapi2 as database
-from urllib.parse import quote_plus, unquote
+from urllib.parse import unquote
 import xbmc
 from resources.lib.database.cache import clear_local_bookmarks
 from resources.lib.database.metacache import fetch as fetch_metacache
@@ -18,10 +18,8 @@ from resources.lib.modules import playcount
 from resources.lib.modules import trakt
 from resources.lib.modules import opensubs
 from difflib import SequenceMatcher
-from resources.lib.modules.source_utils import seas_ep_filter, seas_filter
+from resources.lib.modules.source_utils import seas_ep_filter
 from urllib.request import urlopen, Request
-from io import BytesIO
-from zipfile import ZipFile
 import fnmatch
 import os
 
@@ -61,6 +59,7 @@ class Player(xbmc.Player):
 		playerWindow.setProperty('umbrella.playnextPlayPressed', str(0))
 
 	def play_source(self, title, year, season, episode, imdb, tmdb, tvdb, url, meta, debridPackCall=False):
+		
 		#if self.debuglog:
 			#try:
 				#log_utils.log('play_source Title: %s Type: %s' % (str(title), type(title)), level=log_utils.LOGDEBUG)
@@ -133,22 +132,13 @@ class Player(xbmc.Player):
 
 			item.setProperty('IsPlayable', 'true')
 			#playlistAdded = self.checkPlaylist(item)
-			#log_utils.log('play_source() playlistAdded variable: %s' % playlistAdded, level=log_utils.LOGDEBUG)
 			if self.media_type == 'episode' and self.enable_playnext: self.buildSeasonPlaylist(url, item) #changed to make playlist building happen before play.
 			if debridPackCall: 
 				control.player.play(url, item) # seems this is only way browseDebrid pack files will play and have meta marked as watched
 				if self.debuglog:
 					log_utils.log('debridPackCallPlayed file as player.play', level=log_utils.LOGDEBUG)
-			#elif control.playlist.getposition() == -1: control.player.play(control.playlist)
-			elif control.playlist.getposition() == -1 and control.playlist.size(): control.player.play(control.playlist)
+			#elif control.playlist.getposition() == -1 and control.playlist.size(): control.player.play(control.playlist)
 			else: control.resolve(int(argv[1]), True, item)
-			#else:
-			#	if playlistAdded:
-			#		control.player.play(control.playlist)
-			#		control.resolve(int(argv[1]), True, item)
-			#	
-			#	if self.debuglog:
-			#		log_utils.log('Played file as resolve.', level=log_utils.LOGDEBUG)
 			homeWindow.setProperty('script.trakt.ids', jsdumps(self.ids))
 			self.keepAlive()
 			homeWindow.clearProperty('script.trakt.ids')
@@ -519,6 +509,7 @@ class Player(xbmc.Player):
 				#control.closeAll() #i cannot remember what this was for.
 				break
 			else: control.sleep(200)
+		homeWindow.clearProperty('umbrella.window_keep_alive')
 		if self.offset != '0' and self.playback_resumed is False:
 			control.sleep(200)
 			if self.traktCredentials and getSetting('resume.source') == '1': # re-adjust the resume point since dialog is based on meta runtime vs. getTotalTime() and inaccurate
@@ -594,6 +585,7 @@ class Player(xbmc.Player):
 	def onPlayBackError(self):
 		playerWindow.clearProperty('umbrella.preResolved_nextUrl')
 		playerWindow.clearProperty('umbrella.playlistStart_position')
+		homeWindow.clearProperty('umbrella.window_keep_alive')
 
 		Bookmarks().reset(self.current_time, self.media_length, self.name, self.year)
 		log_utils.error()

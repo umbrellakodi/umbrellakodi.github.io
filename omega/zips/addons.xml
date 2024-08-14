@@ -1,5 +1,5 @@
 <?xml version='1.0' encoding='utf-8'?>
-<addons><addon id="plugin.video.umbrella" name="Umbrella" provider-name="Umbrella" version="6.6.656">
+<addons><addon id="plugin.video.umbrella" name="Umbrella" provider-name="Umbrella" version="6.6.657">
 	<requires>
 		<import addon="xbmc.python" version="3.0.0" />
 		<import addon="script.module.requests" />
@@ -181,7 +181,10 @@
 			<screenshot>resources/screenshots/screenshot003.jpg</screenshot>
 		</assets>
 		<news>
-[B]Update - v6.6.656 - August 11th, 2024[/B]
+[B]Update - v6.6.657 - August 13th, 2024[/B]
+--[Warning] There are a large amount of change in this version please be aware there may be bugs.
+--[Changes] Used changes for progress windows and scrape/resolve windows from Infinity. -thanks kodifitzwell
+--[Changes] More under the hood changes I do not feel like listing out. -thanks kodifitzwell
 --[Fix] Please go to kodi settings and clear any settings set for "Play next video automatically". This is likely been set to "Episodes" previously by Umbrella.
 --[Fix] A lot of code changes around playlist generation and show information combined with other settings. -thanks and credit to kodifitzwell
 --[Fix] Made exception scenario in downloading subtitles for playnext return default time.
