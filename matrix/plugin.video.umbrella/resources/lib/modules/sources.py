@@ -6,11 +6,10 @@
 from datetime import datetime, timedelta
 from json import dumps as jsdumps, loads as jsloads
 import re
-import _strptime # import _strptime to workaround python 2 bug with threads
 from sys import exit as sysexit
 from threading import Thread
 from time import time
-from urllib.parse import unquote, urlencode, quote_plus
+from urllib.parse import unquote, quote_plus
 from sqlite3 import dbapi2 as database
 from resources.lib.database import metacache, providerscache
 from resources.lib.modules import cleandate
@@ -428,7 +427,12 @@ class Sources:
 					if getSetting('progress.dialog') == '0':
 						label = '[COLOR %s]%s[CR]%s[CR]%s[/COLOR]' % (self.highlight_color, src_provider.upper(), resolve_items[i]['provider'].upper(), resolve_items[i]['info'])
 					elif getSetting('progress.dialog') == '2':
-						label = '[COLOR %s]%s[CR]%s[CR]%s[CR]%02d - %s[/COLOR]' % (self.highlight_color, src_provider.upper(), resolve_items[i]['provider'].upper(), resolve_items[i]['info'], resolve_index, resolve_items[i]['name'][:30])
+						resolveInfo = resolve_items[i]['info'].replace('/',' ')
+						if meta.get('plot'):
+							plotLabel = '[COLOR %s]%s[/COLOR][CR][CR][CR]' %  (getSetting('sources.highlight.color'),meta.get('plot'))
+						else:
+							plotLabel = ''
+						label = plotLabel + '[COLOR %s]%s[CR]%s[CR]%s[CR]%02d - %s[/COLOR]' % (self.highlight_color, src_provider.upper(), resolve_items[i]['provider'].upper(), resolveInfo, resolve_index, resolve_items[i]['name'][:30])
 					else:
 						label = '[COLOR %s]%s[CR]%02d - %s[CR]%s[/COLOR]' % (self.highlight_color, src_provider.upper(), resolve_index, resolve_items[i]['name'], str(round(resolve_items[i]['size'], 2)) + ' GB') # using "[CR]" has some weird delay with progressDialog.update() at times
 					control.sleep(100)
@@ -436,7 +440,7 @@ class Sources:
 						if progressDialog.iscanceled(): break
 						progressDialog.update(int((100 / float(len(resolve_items))) * i), label)
 					except: 
-							progressDialog.update(int((100 / float(len(resolve_items))) * i), '[COLOR %s]Resolving...[/COLOR]%s' % (self.highlight_color, resolve_items[i]['name']))
+						progressDialog.update(int((100 / float(len(resolve_items))) * i), '[COLOR %s]Resolving...[/COLOR]%s' % (self.highlight_color, resolve_items[i]['name']))
 					w = Thread(target=self.sourcesResolve, args=(resolve_items[i],))
 					w.start()
 					for x in range(40):
@@ -1208,7 +1212,15 @@ class Sources:
 		for i in range(len(items)):
 			try:
 				src_provider = items[i]['debrid'] if items[i].get('debrid') else ('%s - %s' % (items[i]['source'], items[i]['provider']))
-				label = '[B][COLOR %s]%s[CR]%s[CR]%s[/COLOR][/B]' % (self.highlight_color, src_provider.upper(), items[i]['provider'].upper(), items[i]['info'])
+				if getSetting('progress.dialog') == '2':
+					resolveInfo = items[i]['info'].replace('/',' ')
+					if self.meta.get('plot'):
+						plotLabel = '[COLOR %s]%s[/COLOR][CR][CR][CR]' % (getSetting('sources.highlight.color'), self.meta.get('plot'))
+					else:
+						plotLabel = ''
+					label = plotLabel + '[B][COLOR %s]%s[CR]%s[CR]%s[/COLOR][/B]' % (self.highlight_color, src_provider.upper(), items[i]['provider'].upper(), resolveInfo)
+				else:
+					label = '[B][COLOR %s]%s[CR]%s[CR]%s[/COLOR][/B]' % (self.highlight_color, src_provider.upper(), items[i]['provider'].upper(), items[i]['info'])
 				control.sleep(100)
 				try:
 					if progressDialog.iscanceled(): break

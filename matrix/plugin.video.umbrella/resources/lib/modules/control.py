@@ -590,7 +590,6 @@ def set_info(item, meta, setUniqueIDs=None, resumetime='', fileNameandPath=None)
 				info_tag.setEpisode(convert_type(int, meta_get('episode')))
 				info_tag.setSeason(convert_type(int, meta_get('season')))
 			info_tag.setCast([xbmc.Actor(name=item['name'], role=item['role'], thumbnail=item['thumbnail']) for item in meta_get('castandart', [])])
-			#info_tag.setCast([xbmc_actor(name=item['name'], role=item['role'], thumbnail=item['thumbnail']) for item in meta_get('castandart', [])])
 		except:
 			from resources.lib.modules import log_utils
 			log_utils.error()
