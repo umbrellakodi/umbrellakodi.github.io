@@ -1,5 +1,5 @@
 <?xml version='1.0' encoding='utf-8'?>
-<addons><addon id="plugin.video.umbrella" name="Umbrella" provider-name="Umbrella" version="6.6.658">
+<addons><addon id="plugin.video.umbrella" name="Umbrella" provider-name="Umbrella" version="6.6.659">
 	<requires>
 		<import addon="xbmc.python" version="3.0.0" />
 		<import addon="script.module.requests" />
@@ -181,16 +181,20 @@
 			<screenshot>resources/screenshots/screenshot003.jpg</screenshot>
 		</assets>
 		<news>
-[B]Update - v6.6.658 - August 15th, 2024[/B]
+[B]Update - v6.6.659 - August 17th, 2024[/B]
 --[Warning] There are a large amount of change in this version please be aware there may be bugs.
 --[Changes] Used changes for progress windows and scrape/resolve windows from Infinity. -thanks kodifitzwell
 --[Changes] More under the hood changes I do not feel like listing out. -thanks kodifitzwell
 --[Changes] Style changes to windows. Switched to gif for spinner.
+--[Changes] Added quality to fullscreen.
+--[Fix] Added clear for window property on cancel playback to resolve cancel causing window to stick.
 --[Fix] Please go to kodi settings and clear any settings set for "Play next video automatically". This is likely been set to "Episodes" previously by Umbrella.
 --[Fix] A lot of code changes around playlist generation and show information combined with other settings. -thanks and credit to kodifitzwell
 --[Fix] Made exception scenario in downloading subtitles for playnext return default time.
 --[Fix] Changes made to subtitle playnext time if time is greater than 10 minutes use default.
 --[Workaround Removed] Removed code written in router as workaround for using info as default play action with episodes set to automatically play in kodi 21.
+--[Fix] Made exception scenario in downloading subtitles for playnext return default time.
+--[Fix] Changes made to subtitle playnext time if time is greater than 10 minutes use default.
 		</news>
 	</extension>
 

@@ -383,6 +383,7 @@ def cancelPlayback():
 	playlist.clear()
 	resolve(int(argv[1]), False, item(offscreen=True))
 	closeOk()
+	homeWindow.clearProperty('umbrella.window_keep_alive')
 
 def apiLanguage(ret_name=None):
 	langDict = {'Arabic Saudi Arabia': 'ar-SA', 'Bulgarian': 'bg', 'Chinese': 'zh', 'Croatian': 'hr', 'Czech': 'cs', 'Danish': 'da', 'Dutch': 'nl', 'English': 'en', 'Finnish': 'fi',

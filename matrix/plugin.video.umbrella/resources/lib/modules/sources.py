@@ -429,10 +429,10 @@ class Sources:
 					elif getSetting('progress.dialog') == '2':
 						resolveInfo = resolve_items[i]['info'].replace('/',' ')
 						if meta.get('plot'):
-							plotLabel = '[COLOR %s]%s[/COLOR][CR][CR][CR]' %  (getSetting('sources.highlight.color'),meta.get('plot'))
+							plotLabel = '[COLOR %s]%s[/COLOR][CR][CR]' %  (getSetting('sources.highlight.color'),meta.get('plot'))
 						else:
 							plotLabel = ''
-						label = plotLabel + '[COLOR %s]%s[CR]%s[CR]%s[CR]%02d - %s[/COLOR]' % (self.highlight_color, src_provider.upper(), resolve_items[i]['provider'].upper(), resolveInfo, resolve_index, resolve_items[i]['name'][:30])
+						label = plotLabel + '[COLOR %s]%s[CR]%s[CR]%s[CR]%s[CR]%02d - %s[/COLOR]' % (self.highlight_color, src_provider.upper(), resolve_items[i]['provider'].upper(), resolve_items[i]['quality'].upper(), resolveInfo, resolve_index, resolve_items[i]['name'][:30])
 					else:
 						label = '[COLOR %s]%s[CR]%02d - %s[CR]%s[/COLOR]' % (self.highlight_color, src_provider.upper(), resolve_index, resolve_items[i]['name'], str(round(resolve_items[i]['size'], 2)) + ' GB') # using "[CR]" has some weird delay with progressDialog.update() at times
 					control.sleep(100)
@@ -677,7 +677,8 @@ class Sources:
 			try:
 				if control.monitor.abortRequested(): return sysexit()
 				try:
-					if progressDialog.iscanceled(): break
+					if progressDialog.iscanceled(): 
+						break
 				except: pass
 
 				if terminate_onCloud:
@@ -1215,10 +1216,10 @@ class Sources:
 				if getSetting('progress.dialog') == '2':
 					resolveInfo = items[i]['info'].replace('/',' ')
 					if self.meta.get('plot'):
-						plotLabel = '[COLOR %s]%s[/COLOR][CR][CR][CR]' % (getSetting('sources.highlight.color'), self.meta.get('plot'))
+						plotLabel = '[COLOR %s]%s[/COLOR][CR][CR]' % (getSetting('sources.highlight.color'), self.meta.get('plot'))
 					else:
 						plotLabel = ''
-					label = plotLabel + '[B][COLOR %s]%s[CR]%s[CR]%s[/COLOR][/B]' % (self.highlight_color, src_provider.upper(), items[i]['provider'].upper(), resolveInfo)
+					label = plotLabel + '[B][COLOR %s]%s[CR]%s[CR]%s[CR]%s[/COLOR][/B]' % (self.highlight_color, src_provider.upper(), items[i]['provider'].upper(),items[i]['quality'].upper(), resolveInfo)
 				else:
 					label = '[B][COLOR %s]%s[CR]%s[CR]%s[/COLOR][/B]' % (self.highlight_color, src_provider.upper(), items[i]['provider'].upper(), items[i]['info'])
 				control.sleep(100)
