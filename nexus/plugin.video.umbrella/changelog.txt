@@ -1,4 +1,4 @@
-[B]Update - v6.6.662 - August 20th, 2024[/B]
+[B]Update - v6.6.663 - August 20th, 2024[/B]
 --[Fix] Playlist generation code changed for kodi 21.1 changes.
 --[Changes] Scraping windows and progress windows updated and changed. -thanks kodifitzwell
 --[Changes] Window monitor implemented. -thanks kodifitzwell

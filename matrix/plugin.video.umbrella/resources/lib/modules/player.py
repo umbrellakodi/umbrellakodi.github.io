@@ -571,7 +571,6 @@ class Player(xbmc.Player):
 		except: log_utils.error()
 
 	def onPlayBackEnded(self):
-		if self.onPlayBackEnded_ran: return
 		Bookmarks().reset(self.current_time, self.media_length, self.name, self.year)
 		self.libForPlayback()
 		try:
