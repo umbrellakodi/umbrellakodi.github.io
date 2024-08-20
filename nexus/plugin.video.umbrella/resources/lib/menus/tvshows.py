@@ -1773,7 +1773,7 @@ class TVshows:
 				if 'imdb.com' in url and 'start' in url_params:
 					page = '  [I](%s)[/I]' % str(int(((int(url_params.get('start')) - 1) / int(self.page_limit)) + 1))
 				else: page = '  [I](%s)[/I]' % url_params.get('page')
-				nextMenu = '[COLOR skyblue]' + nextMenu + page + '[/COLOR]'
+				nextMenu = '[COLOR %s]' + nextMenu + page + '[/COLOR]' % getSetting('highlight.color')
 				u = urlparse(url).netloc.lower()
 				if u in self.imdb_link or u in self.trakt_link:
 					url = '%s?action=tvshowPage&url=%s&folderName=%s' % (sysaddon, quote_plus(url), quote_plus(folderName))
@@ -1863,7 +1863,7 @@ class TVshows:
 			url_params = dict(parse_qsl(urlsplit(url).query))
 			nextMenu = getLS(32053)
 			page = '  [I](%s)[/I]' % url_params.get('page')
-			nextMenu = '[COLOR skyblue]' + nextMenu + page + '[/COLOR]'
+			nextMenu = '[COLOR %s]' + nextMenu + page + '[/COLOR]' % getSetting('highlight.color')
 			icon = control.addonNext()
 			url = '%s?action=tv_PublicLists&url=%s' % (sysaddon, quote_plus(url))
 			item = control.item(label=nextMenu, offscreen=True)

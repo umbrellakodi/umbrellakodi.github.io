@@ -1,5 +1,6 @@
-[B]Update - v6.6.663 - August 20th, 2024[/B]
+[B]Update - v6.6.664 - August 20th, 2024[/B]
 --[Fix] Playlist generation code changed for kodi 21.1 changes.
+--[Changes] Metahandler requirement removed and local tracking added from Infinity. big thanks kodifitzwell
 --[Changes] Scraping windows and progress windows updated and changed. -thanks kodifitzwell
 --[Changes] Window monitor implemented. -thanks kodifitzwell
 --[Changes] episodes use a global variable instead of checking kodi version multiple times. -thanks kodifitzwell
