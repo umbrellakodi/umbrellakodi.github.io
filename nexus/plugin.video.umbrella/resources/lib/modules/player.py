@@ -131,14 +131,19 @@ class Player(xbmc.Player):
 			control.set_info(item, meta, setUniqueIDs=setUniqueIDs, fileNameandPath=url) #changed for kodi20 setinfo method
 
 			item.setProperty('IsPlayable', 'true')
-			#playlistAdded = self.checkPlaylist(item)
-			if self.media_type == 'episode' and self.enable_playnext: self.buildSeasonPlaylist(url, item) #changed to make playlist building happen before play.
+			playlistAdded = self.checkPlaylist(item)
 			if debridPackCall: 
 				control.player.play(url, item) # seems this is only way browseDebrid pack files will play and have meta marked as watched
 				if self.debuglog:
 					log_utils.log('debridPackCallPlayed file as player.play', level=log_utils.LOGDEBUG)
-			#elif control.playlist.getposition() == -1 and control.playlist.size(): control.player.play(control.playlist)
-			else: control.resolve(int(argv[1]), True, item)
+			else:
+				if playlistAdded:
+					control.player.play(control.playlist)
+				else:
+					control.resolve(int(argv[1]), True, item)
+				if self.media_type == 'episode' and self.enable_playnext: self.addEpisodetoPlaylist()
+				if self.debuglog:
+					log_utils.log('Played file as resolve.', level=log_utils.LOGDEBUG)
 			homeWindow.setProperty('script.trakt.ids', jsdumps(self.ids))
 			self.keepAlive()
 			homeWindow.clearProperty('script.trakt.ids')
@@ -146,12 +151,8 @@ class Player(xbmc.Player):
 			log_utils.error()
 			return control.cancelPlayback()
 
-	def buildSeasonPlaylist(self, link, link_item):
+	def addEpisodetoPlaylist(self):
 		try:
-			if control.playlist.getposition() == -1:
-				control.player.stop()
-				control.playlist.clear()
-				control.playlist.add(url=link, listitem=link_item)
 			from resources.lib.menus import seasons, episodes
 			seasons = seasons.Seasons().tmdb_list(tvshowtitle='', imdb='', tmdb=self.tmdb, tvdb='', art=None)
 			seasons = [int(i['season']) for i in seasons]
@@ -298,6 +299,7 @@ class Player(xbmc.Player):
 			log_utils.log('checkPlaylist() item media type: %s' % str(self.media_type), level=log_utils.LOGDEBUG)
 			if control.playlist.getposition() == -1 and self.media_type == 'episode':
 				log_utils.log('checkPlaylist() current playlist position is -1 sending to singleItemPlaylist', level=log_utils.LOGDEBUG)
+				control.player.stop()
 				control.playlist.clear()
 				return self.singleItemPlaylist(item)
 			else:
@@ -641,11 +643,7 @@ class PlayNext(xbmc.Player):
 			#next_meta = jsloads(params.get('meta')) if params.get('meta') else '' # not available for library playback
 			next_meta = {}
 			#tmdbhelperbs
-			if self.debuglog:
-				log_utils.log('Playnext getMeta nextUrl is: %s' % str(next_url), level=log_utils.LOGDEBUG)
 			if 'plugin.video.themoviedb.helper' in next_url and not control.addonInstalled('service.upnext'):
-				if self.debuglog:
-					log_utils.log('Playnext getMeta Detected tmdbhelper.', level=log_utils.LOGDEBUG)
 				tmdb = params.get('tmdb_id')
 				helper_season = params.get('season')
 				helper_episode = params.get('episode')
@@ -661,13 +659,10 @@ class PlayNext(xbmc.Player):
 				next_meta = {'tvshowtitle': item.get('tvshowtitle'), 'title': item.get('title'), 'year': item.get('year'), 'premiered': item.get('premiered'), 'season': helper_season, 'episode': helper_episode, 'imdb': item.get('imdb'),
 									'tmdb': item.get('tmdb'), 'tvdb': item.get('tvdb'), 'rating': item.get('rating'), 'landscape': '', 'fanart': item.get('fanart'), 'thumb': item.get('thumb'), 'duration': item.get('duration'), 'episode_type': item.get('episode_type')}
 			elif 'plugin.video.umbrella' in next_url:
-				if self.debuglog:
-					log_utils.log('Playnext getMeta Detected umbrella.', level=log_utils.LOGDEBUG)
 				next_meta = jsloads(params.get('meta')) if params.get('meta') else ''
 			elif 'videob://' in next_url and not control.addonInstalled('service.upnext'):
 				log_utils.log('Library not supported currently.', level=log_utils.LOGDEBUG)
 		except:
-			log_utils.log('Exception in getNext_meta().', level=log_utils.LOGDEBUG)
 			log_utils.error()
 		return next_meta
 
@@ -678,8 +673,6 @@ class PlayNext(xbmc.Player):
 				log_utils.log('Next Meta Missing TMDB: %s Season: %s Episode: %s' % str(self.title, self.season, self.episode), level=log_utils.LOGDEBUG)
 				raise Exception()
 			#some changes here for playnext and themes.
-			if self.debuglog:
-				log_utils.log('Playnext Meta for Title:%s Meta: %s' % str(self.title), str(next_meta), level=log_utils.LOGDEBUG)
 			from resources.lib.windows.playnext import PlayNextXML
 			if self.playnext_theme == '2'and control.skin in ('skin.auramod'):
 				if self.debuglog:
@@ -942,16 +935,146 @@ class Subtitles:
 
 	def downloadForPlayNext(self,  title, year, imdb, season, episode, media_length):
 		try:
-			import re
-		except: return log_utils.error()
-		try: lang = xbmc.convertLanguage(getSetting('subtitles.lang.1'), xbmc.ISO_639_1)
-		except: lang = getSetting('subtitles.lang.1')
-		if not control.existsPath(control.subtitlesPath): control.makeFile(control.subtitlesPath)
-		download_path = control.subtitlesPath
-		try:
-			tempFileName = control.joinPath(download_path,'TemporarySubs.%s.srt' % lang)
-			if os.path.isfile(tempFileName):
-				log_utils.log('downloaded subtitle file found. getting time from file.', level=log_utils.LOGDEBUG)
+			try:
+				import re
+			except: return log_utils.error()
+			try: lang = xbmc.convertLanguage(getSetting('subtitles.lang.1'), xbmc.ISO_639_1)
+			except: lang = getSetting('subtitles.lang.1')
+			if not control.existsPath(control.subtitlesPath): control.makeFile(control.subtitlesPath)
+			download_path = control.subtitlesPath
+			try:
+				tempFileName = control.joinPath(download_path,'TemporarySubs.%s.srt' % lang)
+				if os.path.isfile(tempFileName):
+					log_utils.log('downloaded subtitle file found. getting time from file.', level=log_utils.LOGDEBUG)
+					xbmc.sleep(1000)
+					times = []
+					pattern = r'(\d{2}:\d{2}:\d{2},d{3}$)|(\d{2}:\d{2}:\d{2})'
+					with control.openFile(tempFileName) as file:
+						text = file.read()
+						times = re.findall(pattern, text)
+						times = times[len(times)-4][-1]
+						file.close()
+					if len(times) > 0:
+						total_time = media_length
+						h, m, s = str(times).split(':')
+						totalSeconds =  int(h) * 3600 + int(m) * 60 + int(s)
+						playnextTime = int(total_time) - int(totalSeconds)
+					else:
+						log_utils.log('subtitle time not found returning default', level=log_utils.LOGDEBUG)
+						playnextTime = 'default'
+					return playnextTime
+			except:
+				log_utils.error()
+				return 'default'
+			try:
+				quality = ['bluray', 'hdrip', 'brrip', 'bdrip', 'dvdrip', 'webrip', 'hdtv']
+
+				langs = []
+				langs.append(getSetting('subtitles.lang.1'))
+				langs.append(getSetting('subtitles.lang.2'))
+
+				if opensubs.Opensubs().auth():
+					pass
+				else:
+					log_utils.log('opensubs is not authorized but is set for playnext. please authorize open subs in addon. returning default', level=log_utils.LOGDEBUG)
+					return 'default'
+				if not (season is None or episode is None):
+
+					result = opensubs.Opensubs().getSubs(title, imdb, year, season, episode)
+					fmt = ['hdtv']
+					if not result:
+						log_utils.log('no results from opensubs for title: %s imdb: %s year: %s season: %s episode: %s returning default' % (title, imdb, year, season, episode), level=log_utils.LOGDEBUG)
+						return 'default'
+				else:
+					#movie
+
+					result = opensubs.Opensubs().getSubs(title, imdb, year, season, episode)
+					if not result: return
+					try: vidPath = xbmc.Player().getPlayingFile()
+					except: vidPath = ''
+					fmt = re.split(r'\.|\(|\)|\[|\]|\s|\-', vidPath)
+					fmt = [i.lower() for i in fmt]
+					fmt = [i for i in fmt if i in quality]
+				filter = []
+				try: vidPath = xbmc.Player().getPlayingFile()
+				except: vidPath = ''
+				pFileName = unquote(os.path.basename(vidPath))
+				pFileName = os.path.splitext(pFileName)[0]
+				matches = []
+				if result:
+					for j in result:
+						if season:
+								if seas_ep_filter(season, episode, j['fileName']):
+									seq = SequenceMatcher(None, pFileName.lower(), j['fileName'].lower())
+									matches.append({'fileName': j['fileName'], 'fileID': j['fileID'],  'ratio': seq.ratio()})
+						else:
+							seq = SequenceMatcher(None, pFileName.lower(), j['fileName'].lower())
+							matches.append({'fileName': j['fileName'], 'fileID': j['fileID'], 'ratio': seq.ratio()})
+				matches.sort(key = lambda i: i['ratio'], reverse = True)
+
+				filter = matches
+				if not filter: return None
+				
+				try: lang = xbmc.convertLanguage(getSetting('subtitles.lang.1'), xbmc.ISO_639_1)
+				except: lang = getSetting('subtitles.lang.1')
+				filename = filter[0]['fileName']
+				if self.debuglog:
+					log_utils.log('downloaded subtitle=%s' % filename, level=log_utils.LOGDEBUG)
+
+				downloadURL, downloadFileName = opensubs.Opensubs().downloadSubs(filter[0]['fileID'], filter[0]['fileName'])
+				subtitle = control.transPath(download_path)
+				
+				def find(pattern, path):
+					result = []
+					for root, dirs, files in os.walk(path):
+						for name in files:
+							if fnmatch.fnmatch(name, pattern):
+								result.append(os.path.join(root, name))
+					return result
+				def download_opensubs(downloadURL, downloadFileName):
+					log_utils.log('downloading srt file from opensubs.', level=log_utils.LOGDEBUG)
+					reqqqq = Request(downloadURL, headers={'User-Agent' : "Magic Browser"})
+					http_response = urlopen(reqqqq)
+					response = http_response.read()
+					response = response.decode('utf-8')
+					log_utils.log('built http_response opensubs.', level=log_utils.LOGDEBUG)
+					srtFile = os.path.join(download_path, downloadFileName+'.srt')
+					file = open(srtFile, 'w')
+					log_utils.log('opened file %s' % srtFile, level=log_utils.LOGDEBUG)
+					file.write(response)
+					log_utils.log('wrote to file.', level=log_utils.LOGDEBUG)
+					file.close()
+				from resources.lib.modules import tools
+				tools.delete_all_subs()
+				download_opensubs(downloadURL, downloadFileName)
+				subtitles = find('*.srt', subtitle)
+				subtitle_matches = []
+				if len(subtitles) > 1:
+					if season:
+						for count, i in enumerate(subtitles):
+							sFileName = unquote(os.path.basename(i))
+							sFileName = os.path.splitext(sFileName)[0]
+							if seas_ep_filter(season, episode, sFileName.lower()):
+								seq = SequenceMatcher(None, pFileName.lower(), sFileName.lower())
+								subtitle_matches.append({'fullPath': subtitles[count], 'matchRatio': seq.ratio()})
+					else:
+						for count, i in enumerate(subtitles):
+							sFileName = unquote(os.path.basename(i))
+							sFileName = os.path.splitext(sFileName)[0]
+							seq = SequenceMatcher(None, pFileName.lower(), sFileName.lower())
+							subtitle_matches.append({'fullPath': subtitles[count], 'matchRatio': seq.ratio()})
+					subtitle_matches.sort(key = lambda i: i['matchRatio'], reverse = True)
+					subtitles = subtitle_matches[0]['fullPath']
+				else:
+					subtitles = subtitles[0]
+				xbmc.sleep(1000)
+				tempFileName = control.joinPath(download_path,'TemporarySubs2.%s.srt' % lang)
+				f = open(subtitles,"r")
+				f1 = open(tempFileName,"a")
+				for line in f.readlines():
+					f1.write(line)
+				f.close()
+				f1.close()
 				xbmc.sleep(1000)
 				times = []
 				pattern = r'(\d{2}:\d{2}:\d{2},d{3}$)|(\d{2}:\d{2}:\d{2})'
@@ -966,138 +1089,12 @@ class Subtitles:
 					totalSeconds =  int(h) * 3600 + int(m) * 60 + int(s)
 					playnextTime = int(total_time) - int(totalSeconds)
 				else:
-					log_utils.log('subtitle time not found returning default', level=log_utils.LOGDEBUG)
 					playnextTime = 'default'
+				log_utils.log('Playnext Returning %s for time.' % playnextTime, level=log_utils.LOGDEBUG)
 				return playnextTime
-		except:
-			log_utils.error()
-			return 'default'
-		try:
-			quality = ['bluray', 'hdrip', 'brrip', 'bdrip', 'dvdrip', 'webrip', 'hdtv']
-
-			langs = []
-			langs.append(getSetting('subtitles.lang.1'))
-			langs.append(getSetting('subtitles.lang.2'))
-
-			if opensubs.Opensubs().auth():
-				pass
-			else:
-				log_utils.log('opensubs is not authorized but is set for playnext. please authorize open subs in addon. returning default', level=log_utils.LOGDEBUG)
+			except:
+				log_utils.error()
 				return 'default'
-			if not (season is None or episode is None):
-
-				result = opensubs.Opensubs().getSubs(title, imdb, year, season, episode)
-				fmt = ['hdtv']
-				if not result:
-					log_utils.log('no results from opensubs for title: %s imdb: %s year: %s season: %s episode: %s returning default' % (title, imdb, year, season, episode), level=log_utils.LOGDEBUG)
-					return 'default'
-			else:
-				#movie
-
-				result = opensubs.Opensubs().getSubs(title, imdb, year, season, episode)
-				if not result: return
-				try: vidPath = xbmc.Player().getPlayingFile()
-				except: vidPath = ''
-				fmt = re.split(r'\.|\(|\)|\[|\]|\s|\-', vidPath)
-				fmt = [i.lower() for i in fmt]
-				fmt = [i for i in fmt if i in quality]
-			filter = []
-			try: vidPath = xbmc.Player().getPlayingFile()
-			except: vidPath = ''
-			pFileName = unquote(os.path.basename(vidPath))
-			pFileName = os.path.splitext(pFileName)[0]
-			matches = []
-			if result:
-				for j in result:
-					if season:
-							if seas_ep_filter(season, episode, j['fileName']):
-								seq = SequenceMatcher(None, pFileName.lower(), j['fileName'].lower())
-								matches.append({'fileName': j['fileName'], 'fileID': j['fileID'],  'ratio': seq.ratio()})
-					else:
-						seq = SequenceMatcher(None, pFileName.lower(), j['fileName'].lower())
-						matches.append({'fileName': j['fileName'], 'fileID': j['fileID'], 'ratio': seq.ratio()})
-			matches.sort(key = lambda i: i['ratio'], reverse = True)
-
-			filter = matches
-			if not filter: return None
-			
-			try: lang = xbmc.convertLanguage(getSetting('subtitles.lang.1'), xbmc.ISO_639_1)
-			except: lang = getSetting('subtitles.lang.1')
-			filename = filter[0]['fileName']
-			if self.debuglog:
-				log_utils.log('downloaded subtitle=%s' % filename, level=log_utils.LOGDEBUG)
-
-			downloadURL, downloadFileName = opensubs.Opensubs().downloadSubs(filter[0]['fileID'], filter[0]['fileName'])
-			subtitle = control.transPath(download_path)
-			
-			def find(pattern, path):
-				result = []
-				for root, dirs, files in os.walk(path):
-					for name in files:
-						if fnmatch.fnmatch(name, pattern):
-							result.append(os.path.join(root, name))
-				return result
-			def download_opensubs(downloadURL, downloadFileName):
-				log_utils.log('downloading srt file from opensubs.', level=log_utils.LOGDEBUG)
-				reqqqq = Request(downloadURL, headers={'User-Agent' : "Magic Browser"})
-				http_response = urlopen(reqqqq)
-				response = http_response.read()
-				response = response.decode('utf-8')
-				log_utils.log('built http_response opensubs.', level=log_utils.LOGDEBUG)
-				srtFile = os.path.join(download_path, downloadFileName+'.srt')
-				file = open(srtFile, 'w')
-				log_utils.log('opened file %s' % srtFile, level=log_utils.LOGDEBUG)
-				file.write(response)
-				log_utils.log('wrote to file.', level=log_utils.LOGDEBUG)
-				file.close()
-			from resources.lib.modules import tools
-			tools.delete_all_subs()
-			download_opensubs(downloadURL, downloadFileName)
-			subtitles = find('*.srt', subtitle)
-			subtitle_matches = []
-			if len(subtitles) > 1:
-				if season:
-					for count, i in enumerate(subtitles):
-						sFileName = unquote(os.path.basename(i))
-						sFileName = os.path.splitext(sFileName)[0]
-						if seas_ep_filter(season, episode, sFileName.lower()):
-							seq = SequenceMatcher(None, pFileName.lower(), sFileName.lower())
-							subtitle_matches.append({'fullPath': subtitles[count], 'matchRatio': seq.ratio()})
-				else:
-					for count, i in enumerate(subtitles):
-						sFileName = unquote(os.path.basename(i))
-						sFileName = os.path.splitext(sFileName)[0]
-						seq = SequenceMatcher(None, pFileName.lower(), sFileName.lower())
-						subtitle_matches.append({'fullPath': subtitles[count], 'matchRatio': seq.ratio()})
-				subtitle_matches.sort(key = lambda i: i['matchRatio'], reverse = True)
-				subtitles = subtitle_matches[0]['fullPath']
-			else:
-				subtitles = subtitles[0]
-			xbmc.sleep(1000)
-			tempFileName = control.joinPath(download_path,'TemporarySubs2.%s.srt' % lang)
-			f = open(subtitles,"r")
-			f1 = open(tempFileName,"a")
-			for line in f.readlines():
-				f1.write(line)
-			f.close()
-			f1.close()
-			xbmc.sleep(1000)
-			times = []
-			pattern = r'(\d{2}:\d{2}:\d{2},d{3}$)|(\d{2}:\d{2}:\d{2})'
-			with control.openFile(tempFileName) as file:
-				text = file.read()
-				times = re.findall(pattern, text)
-				times = times[len(times)-4][-1]
-				file.close()
-			if len(times) > 0:
-				total_time = media_length
-				h, m, s = str(times).split(':')
-				totalSeconds =  int(h) * 3600 + int(m) * 60 + int(s)
-				playnextTime = int(total_time) - int(totalSeconds)
-			else:
-				playnextTime = 'default'
-			log_utils.log('Playnext Returning %s for time.' % playnextTime, level=log_utils.LOGDEBUG)
-			return playnextTime
 		except:
 			log_utils.error()
 			return 'default'

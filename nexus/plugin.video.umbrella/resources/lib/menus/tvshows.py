@@ -1657,7 +1657,7 @@ class TVshows:
 				meta.update({'poster': poster, 'fanart': fanart, 'banner': banner, 'thumb': thumb, 'icon': icon})
 				sysmeta, sysart = quote_plus(jsdumps(meta)), quote_plus(jsdumps(art))
 				if flatten > 0:
-					total_seasons = meta.get('total_seasons', 2)
+					total_seasons = meta.get('total_seasons') or 2
 					if flatten == 2 and total_seasons < 2: url = '%s?action=episodes&tvshowtitle=%s&year=%s&imdb=%s&tmdb=%s&tvdb=%s&meta=%s' % (sysaddon, systitle, year, imdb, tmdb, tvdb, sysmeta)
 					elif flatten == 1: url = '%s?action=episodes&tvshowtitle=%s&year=%s&imdb=%s&tmdb=%s&tvdb=%s&meta=%s' % (sysaddon, systitle, year, imdb, tmdb, tvdb, sysmeta)
 					else: url = '%s?action=seasons&tvshowtitle=%s&year=%s&imdb=%s&tmdb=%s&tvdb=%s&art=%s' % (sysaddon, systitle, year, imdb, tmdb, tvdb, sysart)

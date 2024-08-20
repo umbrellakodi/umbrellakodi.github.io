@@ -1,16 +1,17 @@
-[B]Update - v6.6.660 - August 20th, 2024[/B]
-[Changes] Scraping windows and progress windows updated and changed. -thanks kodifitzwell
-[Changes] Window monitor implemented. -thanks kodifitzwell
-[Changes] episodes use a global variable instead of checking kodi version multiple times. -thanks kodifitzwell
-[Changes] episodes handle playlists. -thanks kodifitzwell
-[Changes] epsiodes use highlight color for next button text color.
-[Changes] added getProviderColors function to control. -thanks kodifitzwell
-[Changes] added refresh_contextProperties to control. -thanks kodifitzwell
-[Changes] modified darkColor function in control. -thanks kodifitzwell
-[Changes] large amount of changes to the player module and how playlists are built for playnext. -thanks kodifitzwell
-[Fix] TVShows tvshowDirectory function modified for situations where meta was not passed in so flatten function had no total seasons to compare to.
-[Fix] Made changes to playnext using subtitles to return default time when no subtitles are found.
-[Changes] More under the hood changes.
+[B]Update - v6.6.662 - August 20th, 2024[/B]
+--[Fix] Playlist generation code changed for kodi 21.1 changes.
+--[Changes] Scraping windows and progress windows updated and changed. -thanks kodifitzwell
+--[Changes] Window monitor implemented. -thanks kodifitzwell
+--[Changes] episodes use a global variable instead of checking kodi version multiple times. -thanks kodifitzwell
+--[Changes] episodes handle playlists. -thanks kodifitzwell
+--[Changes] epsiodes use highlight color for next button text color.
+--[Changes] added getProviderColors function to control. -thanks kodifitzwell
+--[Changes] added refresh_contextProperties to control. -thanks kodifitzwell
+--[Changes] modified darkColor function in control. -thanks kodifitzwell
+--[Changes] large amount of changes to the player module and how playlists are built for playnext. -thanks kodifitzwell
+--[Fix] TVShows tvshowDirectory function modified for situations where meta was not passed in so flatten function had no total seasons to compare to.
+--[Fix] Made changes to playnext using subtitles to return default time when no subtitles are found.
+--[Changes] More under the hood changes.
 
 [B]Update - v6.6.64 - July 29th, 2024[/B]
 --[Fix] Fixed removed function from TMDb movie class.
