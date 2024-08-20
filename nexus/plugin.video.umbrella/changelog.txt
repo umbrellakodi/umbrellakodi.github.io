@@ -1,17 +1,16 @@
-[B]Update - v6.6.659 - August 17th, 2024[/B]
---[Warning] There are a large amount of change in this version please be aware there may be bugs.
---[Changes] Used changes for progress windows and scrape/resolve windows from Infinity. -thanks kodifitzwell
---[Changes] More under the hood changes I do not feel like listing out. -thanks kodifitzwell
---[Changes] Style changes to windows. Switched to gif for spinner.
---[Changes] Added quality to fullscreen.
---[Fix] Added clear for window property on cancel playback to resolve cancel causing window to stick.
---[Fix] Please go to kodi settings and clear any settings set for "Play next video automatically". This is likely been set to "Episodes" previously by Umbrella.
---[Fix] A lot of code changes around playlist generation and show information combined with other settings. -thanks and credit to kodifitzwell
---[Fix] Made exception scenario in downloading subtitles for playnext return default time.
---[Fix] Changes made to subtitle playnext time if time is greater than 10 minutes use default.
---[Workaround Removed] Removed code written in router as workaround for using info as default play action with episodes set to automatically play in kodi 21.
---[Fix] Made exception scenario in downloading subtitles for playnext return default time.
---[Fix] Changes made to subtitle playnext time if time is greater than 10 minutes use default.
+[B]Update - v6.6.660 - August 20th, 2024[/B]
+[Changes] Scraping windows and progress windows updated and changed. -thanks kodifitzwell
+[Changes] Window monitor implemented. -thanks kodifitzwell
+[Changes] episodes use a global variable instead of checking kodi version multiple times. -thanks kodifitzwell
+[Changes] episodes handle playlists. -thanks kodifitzwell
+[Changes] epsiodes use highlight color for next button text color.
+[Changes] added getProviderColors function to control. -thanks kodifitzwell
+[Changes] added refresh_contextProperties to control. -thanks kodifitzwell
+[Changes] modified darkColor function in control. -thanks kodifitzwell
+[Changes] large amount of changes to the player module and how playlists are built for playnext. -thanks kodifitzwell
+[Fix] TVShows tvshowDirectory function modified for situations where meta was not passed in so flatten function had no total seasons to compare to.
+[Fix] Made changes to playnext using subtitles to return default time when no subtitles are found.
+[Changes] More under the hood changes.
 
 [B]Update - v6.6.64 - July 29th, 2024[/B]
 --[Fix] Fixed removed function from TMDb movie class.

@@ -642,6 +642,8 @@ class PlayNext(xbmc.Player):
 			next_meta = {}
 			#tmdbhelperbs
 			if 'plugin.video.themoviedb.helper' in next_url and not control.addonInstalled('service.upnext'):
+				if self.debuglog:
+					log_utils.log('Playnext getMeta Detected tmdbhelper.', level=log_utils.LOGDEBUG)
 				tmdb = params.get('tmdb_id')
 				helper_season = params.get('season')
 				helper_episode = params.get('episode')
@@ -657,6 +659,8 @@ class PlayNext(xbmc.Player):
 				next_meta = {'tvshowtitle': item.get('tvshowtitle'), 'title': item.get('title'), 'year': item.get('year'), 'premiered': item.get('premiered'), 'season': helper_season, 'episode': helper_episode, 'imdb': item.get('imdb'),
 									'tmdb': item.get('tmdb'), 'tvdb': item.get('tvdb'), 'rating': item.get('rating'), 'landscape': '', 'fanart': item.get('fanart'), 'thumb': item.get('thumb'), 'duration': item.get('duration'), 'episode_type': item.get('episode_type')}
 			elif 'plugin.video.umbrella' in next_url:
+				if self.debuglog:
+					log_utils.log('Playnext getMeta Detected umbrella.', level=log_utils.LOGDEBUG)
 				next_meta = jsloads(params.get('meta')) if params.get('meta') else ''
 			elif 'videob://' in next_url and not control.addonInstalled('service.upnext'):
 				log_utils.log('Library not supported currently.', level=log_utils.LOGDEBUG)
@@ -671,6 +675,8 @@ class PlayNext(xbmc.Player):
 				log_utils.log('Next Meta Missing TMDB: %s Season: %s Episode: %s' % str(self.title, self.season, self.episode), level=log_utils.LOGDEBUG)
 				raise Exception()
 			#some changes here for playnext and themes.
+			if self.debuglog:
+				log_utils.log('Playnext Meta for Title:%s Meta: %s' % str(self.title), str(next_meta), level=log_utils.LOGDEBUG)
 			from resources.lib.windows.playnext import PlayNextXML
 			if self.playnext_theme == '2'and control.skin in ('skin.auramod'):
 				if self.debuglog:
