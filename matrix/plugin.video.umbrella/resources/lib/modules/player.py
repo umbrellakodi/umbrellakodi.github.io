@@ -641,6 +641,8 @@ class PlayNext(xbmc.Player):
 			#next_meta = jsloads(params.get('meta')) if params.get('meta') else '' # not available for library playback
 			next_meta = {}
 			#tmdbhelperbs
+			if self.debuglog:
+				log_utils.log('Playnext getMeta nextUrl is: %s' % str(next_url), level=log_utils.LOGDEBUG)
 			if 'plugin.video.themoviedb.helper' in next_url and not control.addonInstalled('service.upnext'):
 				if self.debuglog:
 					log_utils.log('Playnext getMeta Detected tmdbhelper.', level=log_utils.LOGDEBUG)
@@ -665,6 +667,7 @@ class PlayNext(xbmc.Player):
 			elif 'videob://' in next_url and not control.addonInstalled('service.upnext'):
 				log_utils.log('Library not supported currently.', level=log_utils.LOGDEBUG)
 		except:
+			log_utils.log('Exception in getNext_meta().', level=log_utils.LOGDEBUG)
 			log_utils.error()
 		return next_meta
 

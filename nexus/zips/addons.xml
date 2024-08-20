@@ -1,5 +1,5 @@
 <?xml version='1.0' encoding='utf-8'?>
-<addons><addon id="plugin.video.umbrella" name="Umbrella" provider-name="Umbrella" version="6.6.660">
+<addons><addon id="plugin.video.umbrella" name="Umbrella" provider-name="Umbrella" version="6.6.661">
 	<requires>
 		<import addon="xbmc.python" version="3.0.0" />
 		<import addon="script.module.requests" />
@@ -181,7 +181,7 @@
 			<screenshot>resources/screenshots/screenshot003.jpg</screenshot>
 		</assets>
 		<news>
-[B]Update - v6.6.660 - August 20th, 2024[/B]
+[B]Update - v6.6.661 - August 20th, 2024[/B]
 --[Changes] Scraping windows and progress windows updated and changed. -thanks kodifitzwell
 --[Changes] Window monitor implemented. -thanks kodifitzwell
 --[Changes] episodes use a global variable instead of checking kodi version multiple times. -thanks kodifitzwell
