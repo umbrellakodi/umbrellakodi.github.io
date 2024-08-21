@@ -1120,7 +1120,8 @@ class Episodes:
 				else:
 					page = url_params.get('page')
 					page = '  [I](%s)[/I]' % page
-				nextMenu = '[COLOR %s]' + nextMenu + page + '[/COLOR]' % self.highlight_color
+				nextColor = '[COLOR %s]' % getSetting('highlight.color')
+				nextMenu = nextColor + nextMenu + page + '[/COLOR]'
 				if '/users/me/history/' in url: url = '%s?action=calendar&url=%s&folderName=%s' % (sysaddon, quote_plus(url), quote_plus(folderName))
 				item = control.item(label=nextMenu, offscreen=True)
 				icon = control.addonNext()

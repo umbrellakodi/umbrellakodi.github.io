@@ -100,7 +100,7 @@
 					</constraints>
 					<dependencies>
 						<dependency type="visible">
-							<condition operator="is" setting="trakt.isauthed"></condition>
+							<condition operator="is" setting="trakt.isauthed">true</condition>
 						</dependency>
 					</dependencies>
 					<control type="spinner" format="string"/>
@@ -115,7 +115,7 @@
 					</constraints>
 					<dependencies>
 						<dependency type="visible">
-							<condition operator="is" setting="trakt.isauthed">true</condition>
+							<condition operator="is" setting="trakt.isauthed"></condition>
 						</dependency>
 					</dependencies>
 					<control type="spinner" format="string"/>
@@ -2642,7 +2642,7 @@
 							<option label="40396">4</option> <!-- Hidden -->
 						</options>
 					</constraints>
-					<control type="spinner" format="string"/>
+					<control type="list" format="string"/>
 				</setting>
 				<setting id="sources.dialog.fanartBG" type="boolean" label="40338" help="">
 					<level>0</level>

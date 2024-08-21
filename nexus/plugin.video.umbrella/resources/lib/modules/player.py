@@ -445,6 +445,9 @@ class Player(xbmc.Player):
 												xbmc.executebuiltin('RunPlugin(plugin://plugin.video.umbrella/?action=play_nextWindowXML)')
 												self.play_next_triggered = True
 									elif self.subtitletime != None and str(self.subtitletime) != 'default':
+										if int(self.subtitletime) < 0:
+											#negative time for subtitles
+											self.subtitletime = int(getSetting('playnext.sub.seconds'))
 										if int(self.subtitletime > 600 ):
 											#subtitle time is greater than 10 minutes we need to use the default now.
 											log_utils.log('Playnext triggered by method subtitle but the time is over 10 minutes. IMDB: %s Title: %s Time Attempting to Use Was: %s Changed to: %s Current Time: %s' % (self.imdb, self.title, self.subtitletime, int(getSetting('playnext.sub.seconds')), remaining_time), level=log_utils.LOGDEBUG)
