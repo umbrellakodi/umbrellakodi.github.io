@@ -30,6 +30,7 @@ class UncachedResultsXML(BaseDialog):
 		self.gdriveHighlightColor = self.colors['gdrive']
 		#self.furkHighlightColor = self.colors['furk']
 		self.filePursuitHighlightColor = self.colors['filepursuit']
+		self.offcloudHighlightColor = self.colors['offcloud']
 		self.source_color = self.source_color = getSetting('sources.highlight.color')
 		self.make_items()
 		self.set_properties()
@@ -134,7 +135,7 @@ class UncachedResultsXML(BaseDialog):
 
 	def debrid_abv(self, debrid):
 		try:
-			d_dict = {'AllDebrid': 'AD', 'Premiumize.me': 'PM', 'Real-Debrid': 'RD'}
+			d_dict = {'AllDebrid': 'AD','Offcloud': 'OC', 'Premiumize.me': 'PM', 'Real-Debrid': 'RD'}
 			d = d_dict[debrid]
 		except:
 			d = ''
@@ -142,7 +143,7 @@ class UncachedResultsXML(BaseDialog):
 
 	def debrid_name(self, debrid):
 		try:
-			d_dict = {'AllDebrid': 'AllDebrid', 'Premiumize.me': 'Premiumize', 'Real-Debrid': 'Real-Debrid'}
+			d_dict = {'AllDebrid': 'AllDebrid','Offcloud': 'Offcloud', 'Premiumize.me': 'Premiumize', 'Real-Debrid': 'Real-Debrid'}
 			d = d_dict[debrid]
 		except:
 			d = ''
@@ -165,6 +166,8 @@ class UncachedResultsXML(BaseDialog):
 								providerHighlight = self.alldebridHighlightColor
 							elif str(item.get('debrid')).lower()== 'premiumize.me':
 								providerHighlight = self.premiumizeHighlightColor
+							elif str(item.get('provider')).lower() == 'offcloud':
+								providerHighlight = self.offcloudHighlightColor
 						else:
 							if item.get('provider') == 'easynews':
 								providerHighlight = self.easynewsHighlightColor
@@ -249,6 +252,7 @@ class UncachedResultsXML(BaseDialog):
 				self.setProperty('umbrella.gdrivecolor', self.gdriveHighlightColor)
 				#self.setProperty('umbrella.furkcolor', self.furkHighlightColor)
 				self.setProperty('umbrella.filepursuitcolor', self.filePursuitHighlightColor)
+				self.setProperty('umbrella.offcloudcolor', self.offcloudHighlightColor)
 				
 				if getSetting('sources.usecoloricons') == 'true':
 					self.setProperty('umbrella.usecoloricons', '1')

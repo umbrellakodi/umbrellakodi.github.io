@@ -31,6 +31,7 @@ class SourceResultsXML(BaseDialog):
 		self.gdriveHighlightColor = self.colors['gdrive']
 		#self.furkHighlightColor = self.colors['furk']
 		self.filePursuitHighlightColor = self.colors['filepursuit']
+		self.offcloudHighlightColor = self.colors['offcloud']
 		self.dialogColor = getSetting('scraper.dialog.color')
 		self.highlight_color = getSetting('highlight.color')
 		self.make_items()
@@ -151,6 +152,10 @@ class SourceResultsXML(BaseDialog):
 						from resources.lib.debrid import realdebrid
 						transfer_function = realdebrid.RealDebrid
 						debrid_icon = realdebrid.rd_icon
+					elif debrid == 'Offcloud':
+						from resources.lib.debrid import offcloud
+						transfer_function = offcloud.Offcloud
+						debrid_icon = offcloud.oc_icon
 					result = transfer_function().create_transfer(magnet)
 					if result: notification(message='Sending MAGNET to the %s cloud' % debrid, icon=debrid_icon)
 			elif action in self.closing_actions:
@@ -190,7 +195,7 @@ class SourceResultsXML(BaseDialog):
 
 	def debrid_abv(self, debrid):
 		try:
-			d_dict = {'AllDebrid': 'AD', 'Premiumize.me': 'PM', 'Real-Debrid': 'RD'}
+			d_dict = {'AllDebrid': 'AD','OFFCLOUD': 'OC', 'Premiumize.me': 'PM', 'Real-Debrid': 'RD'}
 			d = d_dict[debrid]
 		except:
 			d = ''
@@ -198,7 +203,7 @@ class SourceResultsXML(BaseDialog):
 
 	def debrid_name(self, debrid):
 		try:
-			d_dict = {'AllDebrid': 'AllDebrid', 'Premiumize.me': 'Premiumize', 'Real-Debrid': 'Real-Debrid'}
+			d_dict = {'AllDebrid': 'AllDebrid','Offcloud': 'Offcloud', 'Premiumize.me': 'Premiumize', 'Real-Debrid': 'Real-Debrid'}
 			d = d_dict[debrid]
 		except:
 			d = ''
@@ -223,6 +228,8 @@ class SourceResultsXML(BaseDialog):
 								providerHighlight = self.alldebridHighlightColor
 							elif str(item.get('debrid')).lower()== 'premiumize.me':
 								providerHighlight = self.premiumizeHighlightColor
+							elif str(item.get('debrid')).lower() == 'offcloud':
+								providerHighlight = self.offcloudHighlightColor
 						else:
 							if item.get('provider') == 'easynews':
 								providerHighlight = self.easynewsHighlightColor
@@ -312,6 +319,7 @@ class SourceResultsXML(BaseDialog):
 				self.setProperty('umbrella.easynewscolor', self.easynewsHighlightColor)
 				self.setProperty('umbrella.gdrivecolor', self.gdriveHighlightColor)
 				self.setProperty('umbrella.filepursuitcolor', self.filePursuitHighlightColor)
+				self.setProperty('umbrella.offcloudcolor', self.offcloudHighlightColor)
 				
 				if getSetting('sources.usecoloricons') == 'true':
 					self.setProperty('umbrella.usecoloricons', '1')

@@ -497,6 +497,32 @@ def router(argv2):
 			from resources.lib.debrid import easynews
 			easynews.EasyNews().account_info_to_dialog()
 
+	elif action and action.startswith('oc_'):
+		if action == 'oc_ServiceNavigator':
+			from resources.lib.menus import navigator
+			navigator.Navigator().offcloud_service()
+		elif action == 'oc_AccountInfo':
+			from resources.lib.debrid import offcloud
+			offcloud.Offcloud().account_info_to_dialog()
+		elif action == 'oc_Authorize':
+			from resources.lib.debrid import offcloud
+			offcloud.Offcloud().auth()
+		elif action == 'oc_Deauthorize':
+			from resources.lib.debrid import offcloud
+			offcloud.Offcloud().remove_auth()
+		elif action == 'oc_CloudStorage':
+			from resources.lib.debrid import offcloud
+			offcloud.Offcloud().user_cloud_to_listItem()
+		elif action == 'oc_BrowseUserTorrents':
+			from resources.lib.debrid import offcloud
+			offcloud.Offcloud().browse_user_torrents(params.get('id'))
+		elif action == 'oc_DeleteUserTorrent':
+			from resources.lib.debrid import offcloud
+			offcloud.Offcloud().delete_user_torrent(params.get('id'), name)
+		elif action == 'oc_UserCloudClear':
+			from resources.lib.debrid import offcloud
+			offcloud.Offcloud().user_cloud_clear()
+
 	# elif action and action.startswith('furk_'):
 	# 	if action == "furk_ServiceNavigator":
 	# 		from resources.lib.menus import navigator
@@ -686,6 +712,14 @@ def router(argv2):
 				try:
 					from resources.lib.modules import downloader
 					downloader.download(name, image, url)
+				except:
+					import traceback
+					traceback.print_exc()
+			if caller == 'offcloud':
+				control.busy()
+				try:
+					from resources.lib.modules import downloader
+					downloader.download(name, image, url.replace(' ', '%20'))
 				except:
 					import traceback
 					traceback.print_exc()
@@ -1060,6 +1094,8 @@ def router(argv2):
 			from resources.lib.debrid.premiumize import Premiumize as debrid_function
 		elif caller == 'AllDebrid':
 			from resources.lib.debrid.alldebrid import AllDebrid as debrid_function
+		elif caller == 'Offcloud':
+			from resources.lib.debrid.offcloud import Offcloud as debrid_function
 		success = debrid_function().add_uncached_torrent(url, pack=pack)
 		if success:
 			from resources.lib.modules import sources

@@ -195,7 +195,7 @@ msgid "No Trakt or IMDb account found."
 msgstr ""
 
 msgctxt "#32043"
-msgid "[B]SETTINGS[/B] : General"
+msgid "[B]SETTINGS[/B]"
 msgstr ""
 
 msgctxt "#32044"
@@ -5041,4 +5041,28 @@ msgstr ""
 
 msgctxt "#40524"
 msgid "Use tmdb.org instead of themoviedb.org for API"
+msgstr ""
+
+msgctxt "#40525"
+msgid "Simkl service sync interval (in minutes)"
+msgstr "Simkl service sync interval (in minutes)"
+
+msgctxt "#40526"
+msgid "SIMKL"
+msgstr ""
+
+msgctxt "#40527"
+msgid "OffCloud"
+msgstr ""
+
+msgctxt "#40528"
+msgid "Offcloud Token"
+msgstr ""
+
+msgctxt "#40529"
+msgid "Enable OffCloud Menu"
+msgstr ""
+
+msgctxt "#40530"
+msgid "Offcloud Highlight Color"
 msgstr ""

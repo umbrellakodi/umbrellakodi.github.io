@@ -1517,7 +1517,7 @@ def trakt_service_sync():
 			if getSetting('bookmarks') == 'true' and getSetting('resume.source') == '1':
 				sync_playbackProgress(activities)
 			sync_watchedProgress(activities)
-			if getSetting('indicators.alt') == '1':
+			if getSetting('indicators.alt') == '1' or getSetting('indicators.alt3') =='1':
 				sync_watched(activities) # writes to traktsync.db as of 1-19-2022
 			sync_user_lists(activities)
 			sync_liked_lists(activities)

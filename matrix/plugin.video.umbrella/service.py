@@ -379,6 +379,14 @@ class PremAccntNotification:
 			control.setSetting('%s.notification.range' % debrid_provider, '')
 			return False
 
+class SyncSIMKLService:
+	def run(self):
+		service_syncInterval = control.setting('simkl.service.syncInterval') or '15'
+		control.log('[ plugin.video.umbrella ]  SIMKL Sync Service Starting (sync check every %s minutes)...' % service_syncInterval, LOGINFO)
+		from resources.lib.modules import simkl
+		simkl.simkl_service_sync()
+
+
 def main():
 	while not control.monitor.abortRequested():
 		control.log('[ plugin.video.umbrella ]  Service Started', LOGINFO)
@@ -401,6 +409,9 @@ def main():
 		syncTraktService = Thread(target=SyncTraktService().run) # run service in case user auth's trakt later, sync will loop and do nothing without valid auth'd account
 		syncTraktService.start()
 
+		#syncSIMKLService = Thread(target=SyncSIMKLService().run) # run service in case user auth's simkl later, sync will loop and do nothing without valid auth'd account
+		#syncSIMKLService.start()
+
 		# if getTraktCredentialsInfo():
 		# 	if control.setting('autoTraktOnStart') == 'true':
 		# 		SyncTraktCollection().run()
@@ -417,6 +428,8 @@ def main():
 	control.log('[ plugin.video.umbrella ]  Settings Monitor Service Stopping...', LOGINFO)
 	del syncTraktService # prob does not kill a running thread
 	control.log('[ plugin.video.umbrella ]  Trakt Sync Service Stopping...', LOGINFO)
+	del syncSIMKLService # prob does not kill a running thread
+	control.log('[ plugin.video.umbrella ]  SIMKL Sync Service Stopping...', LOGINFO)
 	if libraryService:
 		del libraryService # prob does not kill a running thread
 		control.log('[ plugin.video.umbrella ]  Library Update Service Stopping...', LOGINFO)

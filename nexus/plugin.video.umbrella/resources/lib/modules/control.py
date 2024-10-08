@@ -454,7 +454,8 @@ def getProviderColors():
 		'easynews': getProviderHighlightColor('easynews'),
 		'plexshare': getProviderHighlightColor('plexshare'),
 		'gdrive': getProviderHighlightColor('gdrive'),
-		'filepursuit': getProviderHighlightColor('filepursuit')
+		'filepursuit': getProviderHighlightColor('filepursuit'),
+		'offcloud': getProviderHighlightColor('offcloud')
 	}
 
 def getColorPicker(params):

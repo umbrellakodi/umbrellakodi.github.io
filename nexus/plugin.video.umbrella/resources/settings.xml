@@ -89,6 +89,40 @@
 						<heading/>
 					</control>
 				</setting>
+				<setting id="indicators.alt3" type="integer" label="32313" help="">
+					<level>0</level>
+					<default>1</default>
+					<constraints>
+						<options>
+							<option label="32314">0</option>
+							<option label="32315">1</option>
+							<option label="40526">2</option>
+						</options>
+					</constraints>
+					<dependencies>
+						<dependency type="visible">
+							<condition operator="is" setting="trakt.isauthed">true</condition>
+							<condition operator="is" setting="simkltoken">true</condition>
+						</dependency>
+					</dependencies>
+					<control type="spinner" format="string"/>
+				</setting>
+				<setting id="indicators.alt2" type="integer" label="32313" help="">
+					<level>0</level>
+					<default>1</default>
+					<constraints>
+						<options>
+							<option label="32314">0</option>
+							<option label="40526">1</option>
+						</options>
+					</constraints>
+					<dependencies>
+						<dependency type="visible">
+							<condition operator="is" setting="simkltoken">true</condition>
+						</dependency>
+					</dependencies>
+					<control type="spinner" format="string"/>
+				</setting>
 				<setting id="indicators.alt" type="integer" label="32313" help="">
 					<level>0</level>
 					<default>1</default>
@@ -883,6 +917,16 @@
 					<control type="toggle"/>
 				</setting>
 				<setting id="navi.easynews" type="boolean" label="32224" help="" parent="navi.prem.services">
+					<level>0</level>
+					<default>true</default>
+					<dependencies>
+						<dependency type="visible">
+							<condition operator="is" setting="navi.prem.services">true</condition>
+						</dependency>
+					</dependencies>
+					<control type="toggle"/>
+				</setting>
+				<setting id="navi.offcloud" type="boolean" label="40529" help="" parent="navi.prem.services">
 					<level>0</level>
 					<default>true</default>
 					<dependencies>
@@ -2850,6 +2894,31 @@
 					</dependencies>
 					<control type="edit" format="string"></control>
 				</setting>
+				<setting id="sources.offcloud.color.display" type="string" label="40530" help="">
+					<level>0</level>
+					<default>[COLOR=FF006400]FF006400[/COLOR]</default> <!-- dark green -->
+					<dependencies>
+						<dependency type="visible">
+							<and>
+								<condition operator="is" setting="sources.highlightmethod">1</condition>
+								<condition operator="!is" setting="offcloudtoken"/>
+							</and>
+						</dependency>
+					</dependencies>
+					<control type="button" format="action">
+						<data>RunPlugin(plugin://plugin.video.umbrella/?action=colorpicker&amp;setting=sources.offcloud.color)</data>
+					</control>
+				</setting>
+				<setting id="sources.offcloud.color" type="string" label="40530" help="">
+					<level>0</level>
+					<default>FF006400</default> <!-- dark green -->
+					<dependencies>
+						<dependency type="visible">
+							<condition on="property" name="InfoBool">false</condition>
+						</dependency>
+					</dependencies>
+					<control type="edit" format="string"></control>
+				</setting>
 				<setting id="sources.premiumize.me.color.display" type="string" label="40273" help="">
 					<level>0</level>
 					<default>[COLOR=FF4700B4]FF4700B4[/COLOR]</default> <!-- purple blue -->
@@ -3471,6 +3540,22 @@
 						<close>true</close>
 					</control>
 				</setting>
+				<setting id="simkl.service.syncInterval" type="integer" label="40232" help="">
+					<level>0</level>
+					<default>15</default>
+					<constraints>
+						<minimum>5</minimum>
+						<maximum>60</maximum>
+					</constraints>
+					<dependencies>
+						<dependency type="visible">
+							<condition operator="!is" setting="simkltoken"/>
+						</dependency>
+					</dependencies>
+					<control type="slider" format="integer">
+						<popup>false</popup>
+					</control>
+				</setting>
 				<setting id="revokeSIMKLbutton" type="action" label="40110" help="">
 					<level>0</level>
 					<data>RunPlugin(plugin://plugin.video.umbrella/?action=simkl_Revoke)</data>
@@ -3717,7 +3802,134 @@
 					<control type="button" format="action"/>
 				</setting>
 			</group>
-			<group id="2" label="40057">
+			<group id="2" label="40527">
+				<setting id="offcloud.enable" type="boolean" label="32301" help="">
+					<level>0</level>
+					<default>false</default>
+					<dependencies>
+						<dependency type="visible">
+							<and>
+								<condition operator="!is" setting="offcloudtoken"/>
+							</and>
+						</dependency>
+					</dependencies>
+					<control type="toggle"/>
+				</setting>
+				<setting id="offcloudtoken" type="string" label="40528" help="">
+					<level>0</level>
+					<default/>
+					<constraints>
+						<allowempty>true</allowempty>
+					</constraints>
+					<dependencies>
+						<dependency type="visible">
+							<condition on="property" name="InfoBool">false</condition>
+						</dependency>
+					</dependencies>
+					<control type="edit" format="string">
+						<heading>40528</heading>
+					</control>
+				</setting>
+				<setting id="offcloudusername" type="string" label="40006" help="">
+					<level>0</level>
+					<default/>
+					<constraints>
+						<allowempty>true</allowempty>
+					</constraints>
+					<dependencies>
+						<dependency type="enable">
+							<condition on="property" name="InfoBool">false</condition>
+						</dependency>
+						<dependency type="visible">
+							<condition operator="is" setting="offcloud.enable">true</condition>
+							<condition operator="!is" setting="offcloudtoken"></condition>
+						</dependency>
+					</dependencies>
+					<control type="edit" format="string">
+						<heading>40006</heading>
+					</control>
+				</setting>
+				<setting id="offcloud.priority" type="integer" label="40005" help="">
+					<level>0</level>
+					<default>10</default>
+					<constraints>
+						<minimum>1</minimum>
+						<step>1</step>
+						<maximum>10</maximum>
+					</constraints>
+					<dependencies>
+						<dependency type="visible">
+							<and>
+								<condition operator="!is" setting="offcloudtoken"/>
+								<condition operator="is" setting="offcloud.enable">true</condition>
+							</and>
+						</dependency>
+					</dependencies>
+					<control type="slider" format="integer">
+						<popup>false</popup>
+					</control>
+				</setting>
+				<setting id="oc_cloud.enabled" type="boolean" label="32050" help="">
+					<level>0</level>
+					<default>false</default>
+					<dependencies>
+						<dependency type="visible">
+							<and>
+								<condition operator="!is" setting="offcloudtoken"/>
+								<condition operator="is" setting="offcloud.enable">true</condition>
+							</and>
+						</dependency>
+					</dependencies>
+					<control type="toggle"/>
+				</setting>
+				<setting id="offcloudAuthorizeButton" type="action" label="40121" help="">
+					<level>0</level>
+					<data>RunPlugin(plugin://plugin.video.umbrella/?action=oc_Authorize)</data>
+					<constraints>
+						<allowempty>true</allowempty>
+					</constraints>
+					<dependencies>
+						<dependency type="visible">
+							<condition operator="is" setting="offcloudtoken"/>
+						</dependency>
+					</dependencies>
+					<control type="button" format="action">
+						<close>true</close>
+					</control>
+				</setting>
+				<setting id="offcloudRevokeButton" type="action" label="40110" help="">
+					<level>0</level>
+					<data>RunPlugin(plugin://plugin.video.umbrella/?action=oc_Revoke)</data>
+					<constraints>
+						<allowempty>true</allowempty>
+					</constraints>
+					<dependencies>
+						<dependency type="visible">
+							<condition operator="!is" setting="offcloudtoken"/>
+						</dependency>
+					</dependencies>
+					<control type="button" format="action">
+						<close>true</close>
+					</control>
+				</setting>
+				<setting id="offcloudAccountInfoButton" type="action" label="32153" help="">
+					<level>0</level>
+					<data>RunPlugin(plugin://plugin.video.umbrella/?action=oc_AccountInfo)</data>
+					<constraints>
+						<allowempty>true</allowempty>
+					</constraints>
+					<dependencies>
+						<dependency type="visible">
+							<and>
+								<condition operator="is" setting="offcloudtoken"/>
+								<condition operator="is" setting="offcloud.enable">true</condition>
+							</and>
+						</dependency>
+					</dependencies>
+					<control type="button" format="action"/>
+				</setting>
+			</group>
+			<group id="3" label="40057">
 				<setting id="premiumAuthorizeButton" type="action" label="40121" help="">
 					<level>0</level>
 					<data>RunPlugin(plugin://plugin.video.umbrella/?action=pm_Authorize)</data>
@@ -3911,7 +4123,7 @@
 					<control type="button" format="action"/>
 				</setting>
 			</group>
-			<group id="3" label="40058">
+			<group id="4" label="40058">
 				<setting id="rdAuthorizeButton" type="action" label="40121" help="">
 					<level>0</level>
 					<data>RunPlugin(plugin://plugin.video.umbrella/?action=rd_Authorize)</data>

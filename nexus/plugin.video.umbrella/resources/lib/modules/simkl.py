@@ -20,6 +20,7 @@ session = requests.Session()
 retries = Retry(total=5, backoff_factor=0.1, status_forcelist=[500, 502, 503, 504])
 session.mount('https://api.simkl.com', HTTPAdapter(max_retries=retries, pool_maxsize=100))
 sim_qr = control.joinPath(control.artPath(), 'simklqr.png')
+service_syncInterval = int(getSetting('simkl.service.syncInterval')) if getSetting('simkl.service.syncInterval') else 15
 
 
 class SIMKL:
@@ -77,7 +78,7 @@ class SIMKL:
 		self.auth_timeout = int(response['expires_in'])
 		self.auth_step = int(response['interval'])
 		self.device_code = response['device_code']
-		self.user_code = response['user_code']        
+		self.user_code = response['user_code']
 		while self.secret == '':
 			if self.progressDialog.iscanceled():
 				self.progressDialog.close()
@@ -167,3 +168,37 @@ class SIMKL:
 				from resources.lib.modules import log_utils
 				log_utils.error()
 		return self.list
+
+	def getSIMKLCredentialsInfo():
+		token = getSetting('simklusername').strip(), getSetting('simkltoken')
+		if (token == ''): return False
+		return True
+
+##################Service SYNC##################
+def simkl_service_sync():
+	
+	while not control.monitor.abortRequested():
+		control.sleep(5000) # wait 5sec in case of device wake from sleep
+		try:
+			internets = control.condVisibility('System.InternetState') #added for some systems have removed Internet State apparently.
+			if internets == False:
+				internets = control.condVisibility('System.HasNetwork')
+		except:
+			internets = None
+			log_utils.error()
+		if internets and SIMKL.getSIMKLCredentialsInfo(): # run service in case user auth's trakt later
+			log_utils.log('SIMKL sync service going.. now we need to start building all the syncs.', log_utils.LOGDEBUG)
+			#activities = getTraktAsJson('/sync/last_activities', silent=True)
+		# 	if getSetting('bookmarks') == 'true' and getSetting('resume.source') == '1':
+		# 		sync_playbackProgress(activities)
+		# 	sync_watchedProgress(activities)
+		# 	if getSetting('indicators.alt') == '1':
+		# 		sync_watched(activities) # writes to traktsync.db as of 1-19-2022
+		# 	sync_user_lists(activities)
+		# 	sync_liked_lists(activities)
+		# 	sync_hidden_progress(activities)
+		# 	sync_collection(activities)
+		# 	sync_watch_list(activities)
+		# 	sync_popular_lists()
+		# 	sync_trending_lists()
+		if control.monitor.waitForAbort(60*service_syncInterval): break

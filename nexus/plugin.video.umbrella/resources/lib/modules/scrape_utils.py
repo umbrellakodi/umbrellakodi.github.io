@@ -38,33 +38,33 @@ unwanted_tags = ('tamilrockers.com', 'www.tamilrockers.com', 'www.tamilrockers.w
 			'www.1tamilmv.work', 'www.xbay.me',
 			'crazy4tv-com', '(es)')
 
-def info_from_name(release_title, title, year, hdlr=None, episode_title=None, season=None, pack=None):
-	try:
-		release_title = release_title.lower().replace('&', 'and').replace("'", "")
-		release_title = re.sub(r'[^a-z0-9]+', '.', release_title)
-		title = title.lower().replace('&', 'and').replace("'", "")
-		title = re.sub(r'[^a-z0-9]+', '.', title)
-		name_info = release_title.replace(title, '').replace(year, '')
-		if hdlr: name_info = name_info.replace(hdlr.lower(), '')
-		if episode_title:
-			episode_title = episode_title.lower().replace('&', 'and').replace("'", "")
-			episode_title = re.sub(r'[^a-z0-9]+', '.', episode_title)
-			name_info = name_info.replace(episode_title, '')
-		if pack:
-			if pack == 'season':
-				season_fill = season.zfill(2)
-				str1_replace = ('.s%s' % season, '.s%s' % season_fill, '.season.%s' % season, '.season%s' % season, '.season.%s' % season_fill, '.season%s' % season_fill, 'complete')
-				for i in str1_replace: name_info = name_info.replace(i, '')
-			elif pack == 'show':
-				str2_replace = ('.all.seasons', 'seasons', 'season', 'the.complete', 'complete', 'all.torrent', 'total.series', 'tv.series', 'series', 'edited', 's1', 's01')
-				for i in str2_replace: name_info = name_info.replace(i, '')
-		name_info = name_info.lstrip('.').rstrip('.')
-		name_info = '.%s.' % name_info
-		return name_info
-	except:
-		from resources.lib.modules import log_utils
-		log_utils.error()
-		return release_title
+# def info_from_name(release_title, title, year, hdlr=None, episode_title=None, season=None, pack=None):
+# 	try:
+# 		release_title = release_title.lower().replace('&', 'and').replace("'", "")
+# 		release_title = re.sub(r'[^a-z0-9]+', '.', release_title)
+# 		title = title.lower().replace('&', 'and').replace("'", "")
+# 		title = re.sub(r'[^a-z0-9]+', '.', title)
+# 		name_info = release_title.replace(title, '').replace(year, '')
+# 		if hdlr: name_info = name_info.replace(hdlr.lower(), '')
+# 		if episode_title:
+# 			episode_title = episode_title.lower().replace('&', 'and').replace("'", "")
+# 			episode_title = re.sub(r'[^a-z0-9]+', '.', episode_title)
+# 			name_info = name_info.replace(episode_title, '')
+# 		if pack:
+# 			if pack == 'season':
+# 				season_fill = season.zfill(2)
+# 				str1_replace = ('.s%s' % season, '.s%s' % season_fill, '.season.%s' % season, '.season%s' % season, '.season.%s' % season_fill, '.season%s' % season_fill, 'complete')
+# 				for i in str1_replace: name_info = name_info.replace(i, '')
+# 			elif pack == 'show':
+# 				str2_replace = ('.all.seasons', 'seasons', 'season', 'the.complete', 'complete', 'all.torrent', 'total.series', 'tv.series', 'series', 'edited', 's1', 's01')
+# 				for i in str2_replace: name_info = name_info.replace(i, '')
+# 		name_info = name_info.lstrip('.').rstrip('.')
+# 		name_info = '.%s.' % name_info
+# 		return name_info
+# 	except:
+# 		from resources.lib.modules import log_utils
+# 		log_utils.error()
+# 		return release_title
 
 def get_qual(term):
 	if any(i in term for i in SCR): return 'SCR'
