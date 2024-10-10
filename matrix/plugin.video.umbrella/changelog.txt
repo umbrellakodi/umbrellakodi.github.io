@@ -1,5 +1,5 @@
-[B]Update - v6.7.222 - October 10th, 2024[/B]
---[Fix] Modified rescrape with all providers to work with progress screen changes.
+[B]Update - v6.7.223 - October 10th, 2024[/B]
+--[Fix] Modified rescrape with all providers.
 
 [B]Update - v6.7.22 - October 8th, 2024[/B]
 --[Changes] Added code needed for comet debrid tokens.

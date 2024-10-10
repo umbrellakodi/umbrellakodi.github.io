@@ -254,6 +254,8 @@ class Sources:
 			#except:
 			#	log_utils.error()
 			#log_utils.log('Playing from play which indicates pre-scrape or autoplay source url is: %s' % url, level=log_utils.LOGDEBUG)
+			if season == 'None': season = None
+			if episode == 'None': episode = None
 			from resources.lib.modules import player
 			player.Player().play_source(title, year, season, episode, imdb, tmdb, tvdb, url, self.meta)
 		except:
@@ -1401,10 +1403,11 @@ class Sources:
 
 	def errorForSources(self,title=None, year=None, imdb=None, tmdb=None, tvdb=None, season=None, episode=None, tvshowtitle=None, premiered=None):
 		try:
+			
+			homeWindow.clearProperty('umbrella.window_keep_alive')
 			control.sleep(200)
 			control.hide()
 			if self.url == 'close://': 
-				homeWindow.clearProperty('umbrella.window_keep_alive')
 				control.notification(message=32400)
 				control.cancelPlayback()
 			else: 
@@ -1431,12 +1434,10 @@ class Sources:
 									plugin, systitle, year, imdb, tmdb, tvdb, season, episode, systvshowtitle, premiered, sysmeta, select)
 						control.execute(path)
 						#Sources(all_providers='true', rescrapeAll='true').play(title, year, imdb, tmdb, tvdb, season, episode, tvshowtitle, premiered, self.meta, select=select, rescrape='true')
-					else:
-						homeWindow.clearProperty('umbrella.window_keep_alive')
+					else:	
 						control.cancelPlayback()
 						control.notification(message=32401)
 				else:
-					homeWindow.clearProperty('umbrella.window_keep_alive')
 					control.notification(message=32401)
 					control.cancelPlayback()
 		except: log_utils.error()
