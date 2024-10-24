@@ -1,4 +1,7 @@
-[B]Update - v6.7.223 - October 10th, 2024[/B]
+[B]Update - v6.7.241 - October 24th, 2024[/B]
+--[Change] Added language filter setting to several trakt lists. Enable in Settings > Trakt
+
+[B]Update - v6.7.23 - October 16th, 2024[/B]
 --[Fix] Modified rescrape with all providers.
 
 [B]Update - v6.7.22 - October 8th, 2024[/B]
