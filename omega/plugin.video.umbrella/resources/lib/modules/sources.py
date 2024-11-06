@@ -1691,6 +1691,7 @@ class Sources:
 		except: log_utils.error()
 
 	def rd_temp_fix(hashList):
+		log_utils.log('Real-Debrid temp fix being applied for blank hash lists.', log_utils.LOGDEBUG)
 		from resources.lib.debrid.realdebrid import RealDebrid
 		import random, string
 		results, retries = [], 0
