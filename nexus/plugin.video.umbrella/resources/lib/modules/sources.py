@@ -1672,7 +1672,8 @@ class Sources:
 		try:
 			from resources.lib.debrid.realdebrid import RealDebrid
 			cached = RealDebrid().check_cache(hashList)
-			if not cached: cached = Sources().rd_temp_fix(hashList)
+			if not cached: 
+				cached = Sources().rd_temp_fix(hashList)
 			if cached: 
 				for i in torrent_List:
 					if 'rd' not in cached.get(i['hash'].lower(), {}): # i['hash'] could still be base32 here and not found due to conversion above
@@ -1690,7 +1691,7 @@ class Sources:
 				return None
 		except: log_utils.error()
 
-	def rd_temp_fix(hashList):
+	def rd_temp_fix(self, hashList):
 		log_utils.log('Real-Debrid temp fix being applied for blank hash lists.', log_utils.LOGDEBUG)
 		from resources.lib.debrid.realdebrid import RealDebrid
 		import random, string
