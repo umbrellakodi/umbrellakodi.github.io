@@ -1,6 +1,9 @@
-[B]Update - v6.7.244 - November 6th, 2024[/B]
+[B]Update - v6.7.251 - November 23rd, 2024[/B]
+--[Change] Added workaround for RD. Thank you Peter.
+
+[B]Update - v6.7.24 - November 6th, 2024[/B]
 --[Change] Added language filter setting to several trakt lists. Enable in settings Trakt section.
---[Workaround] Added workaround from Peter for RD empty lists.
+--[Workaround] Added workaround from Peter for RD returning empty hash lists.
 --[Logging] Logging added for when temp fix is used.
 
 [B]Update - v6.7.23 - October 16th, 2024[/B]
