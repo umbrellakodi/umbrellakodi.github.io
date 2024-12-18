@@ -261,7 +261,7 @@ class UncachedResultsXML(BaseDialog):
 				self.setProperty('umbrella.filepursuitcolor', self.filePursuitHighlightColor)
 				self.setProperty('umbrella.torboxcolor', self.torboxHighlightColor)
 				self.setProperty('umbrella.easydebridcolor', self.easyDebridHighlightColor)
-				self.setProperty('umbrella.offcloudcolor', self.easyDebridHighlightColor)
+				self.setProperty('umbrella.offcloudcolor', self.offcloudHighlightColor)
     
 				if getSetting('sources.usecoloricons') == 'true':
 					self.setProperty('umbrella.usecoloricons', '1')

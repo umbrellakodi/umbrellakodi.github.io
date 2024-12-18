@@ -1,7 +1,9 @@
-[B]Update - v6.7.281 - December 17th, 2024[/B]
---[Providers] Added TorBox, EasyDebrid, and Offcloud. Credit to kodifitzwell.
---[Providers] Thanks DaleAlanC for allowing use of your TorBox for testing.
---[Providers] Thanks Peter for allowing use of your Offcloud for testing.
+[B]Update - v6.7.282 - December 17th, 2024[/B]
+--[Changes] Added TorBox, EasyDebrid, and Offcloud. Credit to kodifitzwell.
+--[Info] Thanks DaleAlanC for allowing use of your TorBox for testing.
+--[Info] Thanks Peter for allowing use of your Offcloud for testing.
+--[Fix] Made authorization and revokes return to settings.
+--[Fix] Fixed provider highlight for uncached torrents from Offcloud.
 
 [B]Update - v6.7.27 - November 25th, 2024[/B]
 --[Change] AD

@@ -175,6 +175,7 @@ class Offcloud:
 		control.setSetting('offcloudtoken', api_key)
 		control.setSetting('offcloud.username', user_id)
 		control.notification(message='Offcloud succesfully authorized', icon=oc_icon)
+		control.openSettings('10.3', 'plugin.video.umbrella')
 		return True
 
 	def remove_auth(self):
@@ -183,6 +184,7 @@ class Offcloud:
 			control.setSetting('offcloudtoken', '')
 			control.setSetting('offcloud.username', '')
 			control.okDialog(title='Offcloud', message=40009)
+			control.openSettings('10.3', 'plugin.video.umbrella')
 		except: log_utils.error()
 
 	def account_info_to_dialog(self):
