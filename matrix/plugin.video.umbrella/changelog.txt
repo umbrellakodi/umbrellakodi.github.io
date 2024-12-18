@@ -1,4 +1,10 @@
-[B]Update - v6.7.261 - November 25th, 2024[/B]
+[B]Update - v6.7.281 - December 17th, 2024[/B]
+--[Providers] Added TorBox, EasyDebrid, and Offcloud. Credit to kodifitzwell.
+
+[B]Update - v6.7.27 - November 25th, 2024[/B]
+--[Change] AD
+
+[B]Update - v6.7.26 - November 25th, 2024[/B]
 --[Change] Adjustments made for rd workaround and max amount of downloads.
 
 [B]Update - v6.7.25 - November 23rd, 2024[/B]
