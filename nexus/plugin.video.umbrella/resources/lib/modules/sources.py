@@ -1079,8 +1079,6 @@ class Sources:
 		def checkStatus(function, debrid_name, valid_hoster):
 			try:
 				cached = None
-				log_utils.log('checkStatus self.sources length = %s' % len(self.sources), level=log_utils.LOGDEBUG)
-				log_utils.log('checkStatus list length = %s' % len(deepcopy_sources), level=log_utils.LOGDEBUG)
 				if deepcopy_sources: cached = function(deepcopy_sources, hashList)
 				if cached: self.filter += [dict(list(i.items()) + [('debrid', debrid_name)]) for i in cached] # this makes a new instance so no need for deepcopy beyond the one time done now
 				if valid_hoster: self.filter += [dict(list(i.items()) + [('debrid', debrid_name)]) for i in self.sources if i['source'] in valid_hoster and 'magnet:' not in i['url']]
@@ -1202,7 +1200,6 @@ class Sources:
 			a = i['url'].lower()
 			for sublist in filter:
 				try:
-					log_utils.log('Checking %s - Source:%s' % (sublist['provider'], i['source']), level=log_utils.LOGDEBUG)
 					if i['source'] == 'cloud':
 						break
 					b = sublist['url'].lower()
