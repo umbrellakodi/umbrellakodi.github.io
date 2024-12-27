@@ -1,4 +1,4 @@
-[B]Update - v6.7.313 - December 24th, 2024[/B]
+[B]Update - v6.7.31 - December 26th, 2024[/B]
 --[Change] Made changes to the cache torrent function for TorBox.
 --[Change] Made context menu use highlight color for Umbrella Settings
 --[Fix] Changes in module loads for internal and cloud scrapers.
