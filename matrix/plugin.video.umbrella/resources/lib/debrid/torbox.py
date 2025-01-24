@@ -136,7 +136,6 @@ class TorBox:
 				selected_files.sort(key=lambda k: k['size'], reverse=True)
 			if not selected_files: return None
 			file_key = selected_files[0]['link']
-			log_utils.log('TorBox: Unrestricted Link: "%s"' % magnet_url)
 			file_url = self.unrestrict_link(file_key)
 			
 			if not self.store_to_cloud: Thread(target=self.delete_torrent, args=(torrent_id,)).start()
