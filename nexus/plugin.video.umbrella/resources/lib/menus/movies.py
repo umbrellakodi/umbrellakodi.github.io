@@ -2024,34 +2024,34 @@ class Movies:
 		try:
 			if not self.list:
 				return
-			
+
 			self.meta = []
 			total = len(self.list)
-			
-			# Initialize metacache
+
+			# Initialize metacache in a single loop
 			for item in self.list:
 				item.update({'metacache': False})
-			
+
 			# Fetch metacache data
 			self.list = metacache.fetch(self.list, self.lang, self.user)
-			
-			# Use ThreadPoolExecutor for parallel processing
+
+			# Use ThreadPoolExecutor to process super_info concurrently
 			with ThreadPoolExecutor(max_workers=40) as executor:
-				futures = {executor.submit(self.super_info, i): i for i in range(total)}
+				futures = [executor.submit(self.super_info, i) for i in range(total)]
 				for future in as_completed(futures):
 					try:
-						future.result()  # Ensure exceptions are raised here
+						future.result()  # Ensure exceptions are raised if any
 					except Exception as e:
 						from resources.lib.modules import log_utils
-						log_utils.error(f"Error in super_info for index {futures[future]}: {e}")
-			
-			# Insert meta data into the cache
+						log_utils.error(f"Error processing item: {e}")
+
+			# Insert meta data into the cache if available
 			if self.meta:
 				metacache.insert(self.meta)
-			
-			# Filter the list for valid items
+
+			# Filter the list for valid tmdb entries
 			self.list = [item for item in self.list if item.get('tmdb')]
-		
+
 		except Exception as e:
 			from resources.lib.modules import log_utils
 			log_utils.error(f"Error in worker: {e}")
@@ -2060,22 +2060,20 @@ class Movies:
 		try:
 			if self.list[i]['metacache']:
 				return
-			
+
 			imdb, tmdb = self.list[i].get('imdb', ''), self.list[i].get('tmdb', '')
-			
-			# Missing IDs lookup
+
+			# Missing ID lookup
 			if not tmdb and imdb:
 				try:
 					result = cache.get(tmdb_indexer().IdLookup, 96, imdb)
 					tmdb = str(result.get('id', '')) if result.get('id') else ''
 				except:
 					tmdb = ''
-			
 			if not tmdb and imdb:
-				trakt_ids = trakt.IdLookup('imdb', imdb, 'movie')  # "trakt.IDLookup()" caches item
+				trakt_ids = trakt.IdLookup('imdb', imdb, 'movie')
 				if trakt_ids:
 					tmdb = str(trakt_ids.get('tmdb', '')) if trakt_ids.get('tmdb') else ''
-			
 			if not tmdb and not imdb:
 				try:
 					results = trakt.SearchMovie(
@@ -2089,7 +2087,6 @@ class Movies:
 						results[0]['movie']['year'] != self.list[i]['year']
 					):
 						return
-					
 					ids = results[0].get('movie', {}).get('ids', {})
 					if not tmdb:
 						tmdb = str(ids.get('tmdb', '')) if ids.get('tmdb') else ''
@@ -2097,34 +2094,28 @@ class Movies:
 						imdb = str(ids.get('imdb', '')) if ids.get('imdb') else ''
 				except:
 					pass
-			
+
 			if not tmdb:
 				return
-			
+
 			# Fetch movie metadata
 			movie_meta = tmdb_indexer().get_movie_meta(tmdb)
 			if not movie_meta or '404:NOT FOUND' in movie_meta:
-				return  # Handle junk data
-			
-			values = {}
-			values.update(movie_meta)
-			
-			# Prefer existing rating/votes if available
+				return  # Skip invalid metadata
+
+			# Prepare metadata values
+			values = movie_meta.copy()
 			if 'rating' in self.list[i] and self.list[i]['rating']:
 				values['rating'] = self.list[i]['rating']
 			if 'votes' in self.list[i] and self.list[i]['votes']:
 				values['votes'] = self.list[i]['votes']
-			
 			if 'year' in self.list[i] and self.list[i]['year'] != values.get('year'):
 				values['year'] = self.list[i]['year']
-			
 			if not imdb:
 				imdb = values.get('imdb', '')
-			if not values.get('imdb'):
-				values['imdb'] = imdb
-			if not values.get('tmdb'):
-				values['tmdb'] = tmdb
-			
+			values.setdefault('imdb', imdb)
+			values.setdefault('tmdb', tmdb)
+
 			# Handle translations
 			if self.lang != 'en':
 				try:
@@ -2133,7 +2124,6 @@ class Movies:
 						self.lang not in self.list[i]['available_translations']
 					):
 						raise Exception()
-					
 					trans_item = trakt.getMovieTranslation(imdb, self.lang, full=True)
 					if trans_item:
 						if trans_item.get('title'):
@@ -2143,20 +2133,21 @@ class Movies:
 				except:
 					from resources.lib.modules import log_utils
 					log_utils.error()
-			
+
 			# Handle FanartTV metadata
 			if self.enable_fanarttv:
 				extended_art = fanarttv_cache.get(FanartTv().get_movie_art, 336, imdb, tmdb)
 				if extended_art:
 					values.update(extended_art)
-			
+
 			# Remove empty keys
 			values = {k: v for k, v in values.items() if v is not None and v != ''}
-			
+
+			# Update item and meta
 			self.list[i].update(values)
 			meta = {'imdb': imdb, 'tmdb': tmdb, 'tvdb': '', 'lang': self.lang, 'user': self.user, 'item': values}
 			self.meta.append(meta)
-		
+
 		except Exception as e:
 			from resources.lib.modules import log_utils
 			log_utils.error(f"Error in super_info for index {i}: {e}")

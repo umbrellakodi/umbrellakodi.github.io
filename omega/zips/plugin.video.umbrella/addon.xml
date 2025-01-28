@@ -1,4 +1,4 @@
-<addon id="plugin.video.umbrella" name="Umbrella" provider-name="Umbrella" version="6.7.376">
+<addon id="plugin.video.umbrella" name="Umbrella" provider-name="Umbrella" version="6.7.377">
 	<requires>
 		<import addon="xbmc.python" version="3.0.0"/>
 		<import addon="script.module.requests"/>
@@ -179,9 +179,9 @@
 			<screenshot>resources/screenshots/screenshot003.jpg</screenshot>
 		</assets>
 		<news>
-[B]Update - v6.7.376 - Jan 28th, 2025[/B]
+[B]Update - v6.7.377 - Jan 28th, 2025[/B]
 --[Fix] Changes to using ThreadPool.
---[Change] Modifed similar from library.
+--[Change] Modifed similar from library for speed.
 		</news>
 	</extension>
 
