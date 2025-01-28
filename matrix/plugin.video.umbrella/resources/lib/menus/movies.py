@@ -1882,6 +1882,7 @@ class Movies:
 			# Score and filter movies
 			self.list = self._calculate_similarity_scores(original_movie, similar_movies)
 			self.list = sorted(self.list, key=lambda x: x['similarscore'], reverse=True)[:50]
+			self.worker()
 			if create_directory: self.movieDirectory(self.list, folderName=folderName)
 			return self.list
 

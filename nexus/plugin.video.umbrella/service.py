@@ -385,7 +385,7 @@ def main():
 		SyncMyAccounts().run()
 		PremAccntNotification().run()
 		ReuseLanguageInvokerCheck().run()
-		SyncMovieLibrary().run()
+		#SyncMovieLibrary().run()
 		#control.checkPlayNextEpisodes()
 		if control.setting('library.service.update') == 'true':
 			libraryService = Thread(target=LibraryService().run)
