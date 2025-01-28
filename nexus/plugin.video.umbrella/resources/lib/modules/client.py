@@ -18,7 +18,6 @@ from urllib.parse import quote_plus, urlencode, parse_qs, urlparse, urljoin
 from urllib.response import addinfourl
 from urllib.error import HTTPError
 from resources.lib.modules.control import setting as getSetting
-from concurrent.futures import ThreadPoolExecutor, as_completed
 
 
 def request(url, close=True, redirect=True, error=False, proxy=None, post=None, headers=None, mobile=False, XHR=False, limit=None,
@@ -361,33 +360,15 @@ class cfcookie:
 	def __init__(self):
 		self.cookie = None
 
-	# def get(self, netloc, ua, timeout):
-	# 	from threading import Thread
-	# 	threads = []
-	# 	for i in list(range(0, 15)):
-	# 		threads.append(Thread(target=self.get_cookie, args=(netloc, ua, timeout)))
-	# 	[i.start() for i in threads]
-	# 	for i in list(range(0, 30)):
-	# 		if self.cookie is not None: return self.cookie
-	# 		sleep(1)
 	def get(self, netloc, ua, timeout):
-		def worker():
-			self.get_cookie(netloc, ua, timeout)
-
-		try:
-			with ThreadPoolExecutor(max_workers=15) as executor:
-				futures = [executor.submit(worker) for _ in range(15)]
-
-				for _ in range(30):
-					if self.cookie is not None:
-						return self.cookie
-					sleep(1)
-
-				for future in as_completed(futures):
-					future.result()
-		except Exception as e:
-			from resources.lib.modules import log_utils
-			log_utils.error(f"Error in get function: {e}")
+		from threading import Thread
+		threads = []
+		for i in list(range(0, 15)):
+			threads.append(Thread(target=self.get_cookie, args=(netloc, ua, timeout)))
+		[i.start() for i in threads]
+		for i in list(range(0, 30)):
+			if self.cookie is not None: return self.cookie
+			sleep(1)
 
 	def get_cookie(self, netloc, ua, timeout):
 		try:

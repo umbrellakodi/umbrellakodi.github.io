@@ -9,8 +9,7 @@ import calendar
 from json import dumps as jsdumps, loads as jsloads
 import re
 import xbmc
-#from threading import Thread
-from concurrent.futures import ThreadPoolExecutor, as_completed
+from threading import Thread
 from urllib.parse import quote_plus, urlencode, parse_qsl, urlparse, urlsplit
 from resources.lib.database import cache, metacache, fanarttv_cache, traktsync
 from resources.lib.indexers.tmdb import Movies as tmdb_indexer
@@ -1590,11 +1589,281 @@ class Movies:
 		self.movieDirectory(self.list, folderName=folderName)
 		return self.list
 
-	# new optimized function for this
-	def similar_from_library(self, tmdb=None, create_directory=True, folder_name=''):
+
+	# def similarFromLibrary(self, tmdb=None, create_directory=True, folderName=''):
+	# 	#from resources.lib.modules import log_utils
+	# 	#log_utils.log('Similiar List From Library', 1)
+	# 	try:
+	# 		historyurl = 'https://api.trakt.tv/users/me/history/movies?limit=50&page=1'
+	# 		if tmdb == None:
+	# 			if self.traktCredentials:
+	# 				randomItems = self.trakt_list(historyurl, self.trakt_user, folderName)
+	# 			else:
+	# 				randomItems = None
+	# 		else:
+	# 			randomItems = {"tmdb": tmdb}
+	# 		if not randomItems:
+	# 			#no random item found from trakt history check library history
+	# 			randomMovies = control.jsonrpc('{"jsonrpc": "2.0", "method": "VideoLibrary.GetMovies", "params": { "filter": {"field": "playcount", "operator": "is", "value": "0"}, "properties" : ["art", "rating", "thumbnail", "playcount", "file", "uniqueid"], "sort": { "order": "ascending", "method": "label", "ignorearticle": true } }, "id": "libMovies"}')
+	# 			randomMovies = jsloads(randomMovies)['result']['movies']
+	# 			randomItems = [({"tmdb": x.get('uniqueid').get('tmdb')}) for x in randomMovies]
+	# 		if not randomItems:
+	# 			originalMovie = None
+	# 			control.notification('No History', 'No watch history found to use.')
+	# 		else:
+	# 			item = randomItems[random.randint(0, len(randomItems) - 1)]
+	# 			originalMovie = tmdb_indexer().get_movie_meta(item.get('tmdb'))
+	# 		self.list = []
+	# 		all_titles = list()
+	# 		if originalMovie:
+	# 			#log_utils.log('[plugin.video.umbrella] Original Movie properties %s.'% str(originalMovie),1)
+	# 			# get all movies for the genres in the movie
+	# 			neOriginal = originalMovie['genre'].split('/')
+	# 			genres = [x.strip() for x in neOriginal]
+	# 			similar_title = originalMovie["title"]
+				
+	# 			########################################## more than 1 genre
+	# 			if len(genres) > 1:
+	# 				#contruct a batch for jsonrpc instead of a bunch of calls.
+	# 				orFilterGenre = ''
+	# 				localCache = ''
+	# 				for genre in genres:
+	# 					if genre == genres[0]:
+	# 						orFilterGenre += '{"operator": "is", "field": "genre", "value": "%s"},' % genre
+	# 						localCache += 'genre like "%' + genre + '%"' #localCache += 'genre like "%' + genre + '%"'
+	# 					elif genre == genres[-1]:
+	# 						orFilterGenre += '{"operator": "is", "field": "genre", "value": "%s"}' % genre
+	# 						#localCache += 'OR genre like %%s%' % genre
+	# 						localCache += 'OR genre like "%' + genre + '%"'
+	# 					else:
+	# 						orFilterGenre += '{"operator": "is", "field": "genre", "value": "%s"},' % genre
+	# 						#localCache += 'OR genre like %%s% ' % genre
+	# 						localCache += 'OR genre like "%' + genre + '%"'
+	# 				if control.setting('library.cachesimilar') == 'false':
+	# 					genreResults = control.jsonrpc('{"jsonrpc": "2.0", "method": "VideoLibrary.GetMovies", "params": {"filter": {"or": [%s]}, "properties" : ["title", "genre", "uniqueid", "art", "rating", "thumbnail", "playcount", "file", "director", "writer", "year", "mpaa", "set", "studio", "cast"] }, "id": "1"}'% orFilterGenre)
+	# 				#without watched
+	# 				#genreResults = control.jsonrpc('{"jsonrpc": "2.0", "method": "VideoLibrary.GetMovies", "params": { "filter": {"and": [{"or": [%s]},{"operator": "lessthan", "field": "playcount", "value": "1"}]},  "properties": ["title", "genre", "uniqueid", "art", "rating", "thumbnail", "playcount", "file", "director", "writer", "year", "mpaa"]}, "id": "libGenresUnwatched"}'% orFilterGenre)
+	# 					sameGenreMovies = jsloads(genreResults)['result']['movies']
+	# 				else:
+	# 					try:
+	# 						if not control.existsPath(control.dataPath): control.makeFile(control.dataPath)
+	# 						dbcon = database.connect(control.libCacheSimilar)
+	# 						dbcur = dbcon.cursor()
+	# 						dbcur.execute('''CREATE TABLE IF NOT EXISTS movies (title TEXT, genre TEXT, uniqueid TEXT UNIQUE, rating TEXT, thumbnail TEXT, playcount TEXT, file TEXT, director TEXT, writer TEXT, year TEXT, mpaa TEXT, "set" TEXT, studio TEXT, cast TEXT);''')
+	# 						dbcur.connection.commit()
+	# 					except: 
+	# 						from resources.lib.modules import log_utils
+	# 						log_utils.error()
+	# 					try:
+	# 						sameGenreMoviesSelect = dbcur.execute('''SELECT * FROM movies WHERE %s;'''% localCache).fetchall()
+	# 						if not sameGenreMoviesSelect: 
+	# 							return
+	# 						sameGenreMoviesStr = ''
+	# 						sameGenreMovies = []
+	# 						for dick in sameGenreMoviesSelect:
+	# 							sameGenreMoviesStr = ''
+	# 							sameGenreMoviesStr += '{"title":"'+ dick[0] +'",'
+	# 							batman = dick[1].split(",")
+	# 							batman = ', '.join(map(str, map(lambda x: f'"{x}"' if isinstance(x, str) else x, batman)))
+	# 							sameGenreMoviesStr += '"genre":['+ batman +'],'
+	# 							robin = dick[2].replace("'",'"').replace("{","").replace("}","")
+	# 							sameGenreMoviesStr += '"uniqueid":{'+ robin +'},'
+	# 							sameGenreMoviesStr += '"rating":'+ dick[3] +','
+	# 							alfred = dick[7].split(",")
+	# 							alfred = ', '.join(map(str, map(lambda x: f'"{x}"' if isinstance(x, str) else x, alfred)))
+	# 							sameGenreMoviesStr += '"director":['+ alfred +'],'
+	# 							penguin = dick[8].split(",")
+	# 							penguin = ', '.join(map(str, map(lambda x: f'"{x}"' if isinstance(x, str) else x, penguin)))
+	# 							sameGenreMoviesStr += '"writer":['+ penguin +'],'
+	# 							sameGenreMoviesStr += '"year":"'+ dick[9] +'",'
+	# 							sameGenreMoviesStr += '"mpaa":"'+ dick[10] +'",'
+	# 							sameGenreMoviesStr += '"set":"'+ dick[11] +'",'
+	# 							joker = dick[12].split(",")
+	# 							mrfreeze = []
+	# 							for x in joker: x = mrfreeze.append(x.replace('"',""))
+	# 							mrfreeze = ', '.join(map(str, map(lambda x: f'"{x}"' if isinstance(x, str) else x, mrfreeze)))
+	# 							sameGenreMoviesStr += '"studio":['+ mrfreeze +'],'
+	# 							castor = dick[13].split(",")
+	# 							for count, dicks in enumerate(castor):
+	# 								castor[count] = {"name": str(dicks).replace("'",'').replace('"','')}
+	# 							castor = ', '.join(map(str, map(lambda x: f'"{x}"' if isinstance(x, str) else x, castor)))
+	# 							castor = castor.replace("'",'"')
+	# 							sameGenreMoviesStr += '"cast":['+ castor +']}'
+	# 							try:
+	# 								#trying to append value
+	# 								sameGenreMovies.append(jsloads(sameGenreMoviesStr))
+	# 							except:
+	# 								from resources.lib.modules import log_utils
+	# 								if control.setting('debug.level') == '1':
+	# 									log_utils.log('sameGenreMoviesStr: %s' % sameGenreMoviesStr, level=log_utils.LOGDEBUG)
+	# 								log_utils.error()
+	# 					except: 
+	# 						from resources.lib.modules import log_utils
+	# 						log_utils.error()
+	# 					finally:
+	# 						dbcur.close() ; dbcon.close()
+	# 			########################################## 1 genre
+	# 			else:
+	# 				if control.setting('library.cachesimilar') == 'false':
+	# 					genreResults = control.jsonrpc('{"jsonrpc": "2.0", "method": "VideoLibrary.GetMovies", "params": {"filter": %s, "properties" : ["title", "genre", "uniqueid", "art", "rating", "thumbnail", "playcount", "file", "director", "writer", "year", "mpaa", "set", "studio", "cast"] }, "id": "1"}'% genre)
+	# 				#without watched
+	# 				#genreResults = control.jsonrpc('{"jsonrpc": "2.0", "method": "VideoLibrary.GetMovies", "params": { "filter": {"and": [{"or": [%s]},{"operator": "lessthan", "field": "playcount", "value": "1"}]},  "properties": ["title", "genre", "uniqueid", "art", "rating", "thumbnail", "playcount", "file", "director", "writer", "year", "mpaa"]}, "id": "libGenresUnwatched"}'% orFilterGenre)
+	# 					sameGenreMovies = jsloads(genreResults)['result']['movies']
+	# 				else:
+	# 					try:
+	# 						if not control.existsPath(control.dataPath): control.makeFile(control.dataPath)
+	# 						dbcon = database.connect(control.libCacheSimilar)
+	# 						dbcur = dbcon.cursor()
+	# 						dbcur.execute('''CREATE TABLE IF NOT EXISTS movies (title TEXT, genre TEXT, uniqueid TEXT UNIQUE, rating TEXT, thumbnail TEXT, playcount TEXT, file TEXT, director TEXT, writer TEXT, year TEXT, mpaa TEXT, "set" TEXT, studio TEXT, cast TEXT);''')
+	# 						dbcur.connection.commit()
+	# 					except: 
+	# 						from resources.lib.modules import log_utils
+	# 						log_utils.error()
+	# 					try:
+	# 						localGenre = 'genre like "%' + genres[0] + '%"'
+	# 						sameGenreMoviesSelect = dbcur.execute('''SELECT * FROM movies WHERE %s;'''% localGenre).fetchall()
+	# 						if not sameGenreMoviesSelect: 
+	# 							return
+	# 						sameGenreMoviesStr = ''
+	# 						sameGenreMovies = []
+	# 						for dick in sameGenreMoviesSelect:
+	# 							sameGenreMoviesStr = ''
+	# 							sameGenreMoviesStr += '{"title":"'+ dick[0] +'",'
+	# 							batman = dick[1].split(",")
+	# 							batman = ', '.join(map(str, map(lambda x: f'"{x}"' if isinstance(x, str) else x, batman)))
+	# 							sameGenreMoviesStr += '"genre":['+ batman +'],'
+	# 							robin = dick[2].replace("'",'"').replace("{","").replace("}","")
+	# 							sameGenreMoviesStr += '"uniqueid":{'+ robin +'},'
+	# 							sameGenreMoviesStr += '"rating":'+ dick[3] +','
+	# 							alfred = dick[7].split(",")
+	# 							alfred = ', '.join(map(str, map(lambda x: f'"{x}"' if isinstance(x, str) else x, alfred)))
+	# 							sameGenreMoviesStr += '"director":['+ alfred +'],'
+	# 							penguin = dick[8].split(",")
+	# 							penguin = ', '.join(map(str, map(lambda x: f'"{x}"' if isinstance(x, str) else x, penguin)))
+	# 							sameGenreMoviesStr += '"writer":['+ penguin +'],'
+	# 							sameGenreMoviesStr += '"year":"'+ dick[9] +'",'
+	# 							sameGenreMoviesStr += '"mpaa":"'+ dick[10] +'",'
+	# 							sameGenreMoviesStr += '"set":"'+ dick[11] +'",'
+	# 							joker = dick[12].split(",")
+	# 							mrfreeze = []
+	# 							for x in joker: x = mrfreeze.append(x.replace('"',""))
+	# 							mrfreeze = ', '.join(map(str, map(lambda x: f'"{x}"' if isinstance(x, str) else x, mrfreeze)))
+	# 							sameGenreMoviesStr += '"studio":['+ mrfreeze +'],'
+	# 							castor = dick[13].split(",")
+	# 							for count, dicks in enumerate(castor):
+	# 								castor[count] = {"name": str(dicks).replace("'",'').replace('"','')}
+	# 							castor = ', '.join(map(str, map(lambda x: f'"{x}"' if isinstance(x, str) else x, castor)))
+	# 							castor = castor.replace("'",'"')
+	# 							sameGenreMoviesStr += '"cast":['+ castor +']}'
+	# 							try:
+	# 								#trying to append value
+	# 								sameGenreMovies.append(jsloads(sameGenreMoviesStr))
+	# 							except:
+	# 								from resources.lib.modules import log_utils
+	# 								if control.setting('debug.level') == '1':
+	# 									log_utils.log('sameGenreMoviesStr: %s' % sameGenreMoviesStr, level=log_utils.LOGDEBUG)
+	# 								log_utils.error()
+	# 					except: 
+	# 						from resources.lib.modules import log_utils
+	# 						log_utils.error()
+	# 					finally:
+	# 						dbcur.close() ; dbcon.close()
+	# 			set_genres = set(genres)
+	# 			set_directors = set([originalMovie["director"]])
+	# 			set_writers = set([originalMovie["writer"]])
+	# 			castList = [x["name"] for x in originalMovie["castandart"]]
+	# 			set_cast = set(castList)
+	# 			for item in sameGenreMovies:
+	# 				# prevent duplicates so skip reference movie and titles already in the list
+	# 				if not item["title"] in all_titles and not item["title"] == similar_title:
+	# 					item['tmdb'] = item.get('uniqueid').get('tmdb')
+	# 					item['imdb'] = item.get('uniqueid').get('imdb')
+	# 					itemcastList = [x["name"] for x in item["cast"]]
+	# 					genre_score = 0 if not set_genres else (float(len(set_genres.intersection(item["genre"])) / len(set_genres.union(item["genre"])))) * 1
+	# 					director_score = 0 if not set_directors else float(len(set_directors.intersection(item["director"]))) / len(set_directors.union(item["director"]))
+	# 					writer_score = 0 if not set_writers else float(len(set_writers.intersection(item["writer"]))) / len(set_writers.union(item["writer"]))
+	# 					if originalMovie["rating"] and item["rating"] and abs(float(originalMovie["rating"])-item["rating"]) < 3:
+	# 						rating_score = 1 - abs(float(originalMovie["rating"])-item["rating"])//3
+	# 					else:
+	# 						rating_score = 0
+	# 					#studio
+	# 					try:
+	# 						studio_score = 1 if originalMovie["studio"] and originalMovie["studio"] == str(item.get("studio")[0]) else 0
+	# 						#log_utils.log('item similar scores item:%s studio score: %s original studio: %s compare studio: %s'% (item["title"], studio_score,originalMovie["studio"], item.get("studio")[0]))
+	# 					except:
+	# 						studio_score = 0
+	# 						#log_utils.log('EXCEPTION: item similar scores item:%s studio score: %s original studio: %s compare studio: %s'% (item["title"], studio_score,originalMovie["studio"], item.get("studio")))
+						
+	# 					#cast score
+	# 					try:
+	# 						cast_score = 0 if not set_cast else (float(len(set_cast.intersection(set(itemcastList)))) / len(set_cast.union(set(itemcastList)))) *1
+	# 					except:
+	# 						cast_score = 0
+	# 					#log_utils.log('item similar scores item:%s cast score: %s'% (item["title"], cast_score))
+	# 					try:
+	# 						set_score = 1 if originalMovie["belongs_to_collection"] and originalMovie["belongs_to_collection"]["name"] == item["set"] else 0
+	# 					except:
+	# 						set_score = 0
+	# 					# year_score is "closeness" in release year, scaled to 1 (0 if not from same decade)
+	# 					if int(originalMovie["year"]) and int(item["year"]) and abs(float(originalMovie["rating"])-int(item["year"])) < 10:
+	# 						year_score = 1 - abs(originalMovie["year"]-int(item["year"]))//10
+	# 					else:
+	# 						year_score = 0
+	# 					# mpaa_score gets 1 if same mpaa rating, otherwise 0
+	# 					mpaa_score = 1 if originalMovie["mpaa"] and ('Rated '+str(originalMovie["mpaa"])) == item["mpaa"] else 0
+	# 					# calculate overall score using weighted average
+	# 					similarscore = .75*set_score+.5*genre_score + .15*director_score + .1*writer_score +.1*cast_score+.025*studio_score+ .05*rating_score + .075*year_score + .025*mpaa_score
+	# 					item["similarscore"] = similarscore
+	# 					item["cast"] = None
+	# 					self.list.append(item) 
+	# 					all_titles.append(item["title"])
+	# 		# return the list sorted by number of matching genres then rating
+	# 		similar_score_dict = {}
+	# 		self.list = sorted(self.list, key=itemgetter("similarscore"), reverse=True)
+	# 		for item in self.list:
+	# 			similar_score = item['similarscore']
+	# 			if not similar_score in similar_score_dict:
+	# 				matches = [i for i in self.list if i['similarscore'] == similar_score]
+	# 				similar_score_dict[similar_score] = matches
+	# 		similar_list = []
+	# 		if len(similar_score_dict)>1:
+	# 			#for x in similar_score_dict:
+	# 			for count, x in enumerate(similar_score_dict):
+	# 				if len(similar_list) > 200 and count > 0: break
+	# 				for z in similar_score_dict[x]:
+	# 					similar_list.append(z)
+	# 			self.list = similar_list
+	# 		else:
+	# 			if control.setting('debug.level') == '1':
+	# 				from resources.lib.modules import log_utils
+	# 				log_utils.log('Only one similar score found.',level=log_utils.LOGDEBUG)
+
+	# 		random.shuffle(self.list)
+	# 		self.list = self.list[:50]
+	# 		self.list = sorted(self.list, key=itemgetter("similarscore"), reverse=True)
+	# 		next = ''
+	# 		for i in range(len(self.list)): 
+	# 			self.list[i]['next'] = next
+	# 			#log_utils.log('item similar scores item:%s score: %s'% (self.list[i]["title"], self.list[i]["similarscore"]))
+	# 		#self.list = [x for x in self.list if x.get('playcount') == 0]
+	# 		self.worker()
+	# 		if originalMovie:
+	# 			try: 
+	# 				folderName = getLS(40257)+' '+originalMovie["title"]
+	# 				control.setHomeWindowProperty('umbrella.moviesimilarlibrary', str(getLS(40257)+' '+originalMovie["title"]))
+	# 			except: pass
+	# 		if self.list is None: self.list = []
+	# 		is_widget = 'plugin' not in control.infoLabel('Container.PluginName')
+	# 		if create_directory: self.movieDirectory(self.list, folderName=folderName)
+	# 		return self.list
+	# 	except:
+	# 		from resources.lib.modules import log_utils
+	# 		log_utils.error()
+	# 		return
+	def similarFromLibrary(self, tmdb=None, create_directory=True, folderName=''):
 		try:
 			# Fetch random item from history or library
-			random_items = self._get_random_items(tmdb, folder_name)
+			random_items = self._get_random_items(tmdb, folderName)
 			if not random_items:
 				control.notification('No History', 'No watch history found to use.')
 				return []
@@ -1607,12 +1876,13 @@ class Movies:
 				return []
 
 			genres = set(original_movie['genre'].split('/'))
+			genres = [genre.strip() for genre in genres]
 			similar_movies = self._fetch_movies_by_genres(genres)
 
 			# Score and filter movies
 			self.list = self._calculate_similarity_scores(original_movie, similar_movies)
 			self.list = sorted(self.list, key=lambda x: x['similarscore'], reverse=True)[:50]
-
+			if create_directory: self.movieDirectory(self.list, folderName=folderName)
 			return self.list
 
 		except Exception as e:
@@ -1620,7 +1890,7 @@ class Movies:
 			log_utils.error(str(e))
 			return []
 
-	def _get_random_items(self, tmdb, folder_name):
+	def _get_random_items(self, tmdb, folderName):
 		"""
 		Retrieve random items from Trakt or the library.
 		"""
@@ -1628,7 +1898,7 @@ class Movies:
 			return [{"tmdb": tmdb}]
 		
 		if self.traktCredentials:
-			return self.trakt_list('https://api.trakt.tv/users/me/history/movies?limit=50&page=1', self.trakt_user, folder_name)
+			return self.trakt_list('https://api.trakt.tv/users/me/history/movies?limit=50&page=1', self.trakt_user, folderName)
 
 		library_movies = control.jsonrpc('{"jsonrpc": "2.0", "method": "VideoLibrary.GetMovies", "params": {"filter": {"field": "playcount", "operator": "is", "value": "0"}, "properties": ["uniqueid"]}, "id": "libMovies"}')
 		return [{"tmdb": movie.get('uniqueid').get('tmdb')} for movie in jsloads(library_movies).get('result', {}).get('movies', [])]
@@ -1671,27 +1941,23 @@ class Movies:
 		return [movie for movie in movies if movie['similarscore'] > 0]
 
 	def worker(self):
+		
 		try:
-			if not self.list:
-				return
+			if not self.list: return
 			self.meta = []
 			total = len(self.list)
-			for item in self.list:
-				item.update({'metacache': False})
+			for i in range(0, total): self.list[i].update({'metacache': False})
 			self.list = metacache.fetch(self.list, self.lang, self.user)
-			chunk_size = 40
-			for start_index in range(0, total, chunk_size):
-				end_index = min(start_index + chunk_size, total)
-				items_chunk = self.list[start_index:end_index]
-				with ThreadPoolExecutor() as executor:
-					futures = [executor.submit(self.super_info, idx) for idx in range(start_index, end_index)]
-					for future in as_completed(futures):
-						pass
-			if self.meta:
-				metacache.insert(self.meta)
-			self.list = [item for item in self.list if item.get('tmdb')]
-
-		except Exception:
+			for r in range(0, total, 40):
+				threads = []
+				append = threads.append
+				for i in range(r, r + 40):
+					if i < total: append(Thread(target=self.super_info, args=(i,)))
+				[i.start() for i in threads]
+				[i.join() for i in threads]
+			if self.meta: metacache.insert(self.meta)
+			self.list = [i for i in self.list if i.get('tmdb')]
+		except:
 			from resources.lib.modules import log_utils
 			log_utils.error()
 

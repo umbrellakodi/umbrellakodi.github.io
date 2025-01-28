@@ -20,7 +20,6 @@ from resources.lib.modules import string_tools
 from resources.lib.modules.source_utils import supported_video_extensions, getFileType, aliases_check
 from resources.lib.cloud_scrapers import cloudSources
 from resources.lib.internal_scrapers import internalSources
-from concurrent.futures import ThreadPoolExecutor, as_completed
 
 homeWindow = control.homeWindow
 playerWindow = control.playerWindow
@@ -497,158 +496,64 @@ class Sources:
 		else:
 			return self.getSources_dialog(title, year, imdb, tvdb, season, episode, tvshowtitle, premiered)
 
-	# def getSources_silent(self, title, year, imdb, tvdb, season, episode, tvshowtitle, premiered, timeout=90):
-	# 	try:
-	# 		p_label = '[COLOR %s]%s (S%02dE%02d)[/COLOR]' % (self.highlight_color, tvshowtitle, int(season), int(episode))
-	# 		homeWindow.clearProperty(self.labelProperty)
-	# 		homeWindow.setProperty(self.labelProperty, p_label)
-	# 		self.prepareSources()
-	# 		sourceDict = self.sourceDict
-	# 		sourceDict = [(i[0], i[1], i[1].hasEpisodes) for i in sourceDict]
-	# 		sourceDict = [(i[0], i[1]) for i in sourceDict if i[2]]
-	# 		aliases = []
-	# 		try:
-	# 			meta = self.meta
-	# 			aliases = meta.get('aliases', [])
-	# 		except: pass
-	# 		threads = []
-	# 		scraperDict = [(i[0], i[1], '') for i in sourceDict]
-	# 		if self.season_isAiring == 'false':
-	# 			scraperDict.extend([(i[0], i[1], 'season') for i in sourceDict if i[1].pack_capable])
-	# 			scraperDict.extend([(i[0], i[1], 'show') for i in sourceDict if i[1].pack_capable])
-	# 		trakt_aliases = self.getAliasTitles(imdb, 'episode')
-	# 		try: aliases.extend([i for i in trakt_aliases if not i in aliases]) # combine TMDb and Trakt aliases
-	# 		except: pass
-	# 		try: country_codes = meta.get('country_codes', [])
-	# 		except: country_codes = []
-	# 		for i in country_codes:
-	# 			if i in ('CA', 'US', 'UK', 'GB'):
-	# 				if i == 'GB': i = 'UK'
-	# 				alias = {'title': tvshowtitle + ' ' + i, 'country': i.lower()}
-	# 				if not alias in aliases: aliases.append(alias)
-	# 		data = {'title': title, 'year': year, 'imdb': imdb, 'tvdb': tvdb, 'season': season, 'episode': episode, 'tvshowtitle': tvshowtitle, 'aliases': aliases, 'premiered': premiered}
-	# 		if self.debrid_service: data.update({'debrid_service': self.debrid_service, 'debrid_token': self.debrid_token})
-	# 		for i in scraperDict:
-	# 			name, pack = i[0].upper(), i[2]
-	# 			if pack == 'season': name = '%s (season pack)' % name
-	# 			elif pack == 'show': name = '%s (show pack)' % name
-	# 			threads.append(Thread(target=self.getEpisodeSource, args=(imdb, season, episode, data, i[0], i[1], pack), name=name))
-	# 		[i.start() for i in threads]
-	# 		end_time = time() + timeout
-	# 	except: return log_utils.error()
-	# 	while True:
-	# 		try:
-	# 			if control.monitor.abortRequested(): return sysexit()
-	# 			try:
-	# 				info = [x.getName() for x in threads if x.is_alive() is True]
-	# 				if len(info) == 0: break
-	# 				if end_time < time(): break
-	# 			except:
-	# 				log_utils.error()
-	# 				break
-	# 			control.sleep(100)
-	# 		except: log_utils.error()
-	# 	del threads[:] # Make sure any remaining providers are stopped.
-	# 	self.sources.extend(self.scraper_sources)
-	# 	self.tvshowtitle = tvshowtitle
-	# 	self.year = year
-	# 	homeWindow.clearProperty('fs_filterless_search')
-	# 	if len(self.sources) > 0: self.sourcesFilter()
-	# 	return self.sources
-
 	def getSources_silent(self, title, year, imdb, tvdb, season, episode, tvshowtitle, premiered, timeout=90):
 		try:
-			# Set the label property
 			p_label = '[COLOR %s]%s (S%02dE%02d)[/COLOR]' % (self.highlight_color, tvshowtitle, int(season), int(episode))
 			homeWindow.clearProperty(self.labelProperty)
 			homeWindow.setProperty(self.labelProperty, p_label)
-			
 			self.prepareSources()
-			sourceDict = [(i[0], i[1], i[1].hasEpisodes) for i in self.sourceDict]
+			sourceDict = self.sourceDict
+			sourceDict = [(i[0], i[1], i[1].hasEpisodes) for i in sourceDict]
 			sourceDict = [(i[0], i[1]) for i in sourceDict if i[2]]
-			
 			aliases = []
 			try:
 				meta = self.meta
 				aliases = meta.get('aliases', [])
-			except:
-				pass
-
-			# Build scraper dictionary
+			except: pass
+			threads = []
 			scraperDict = [(i[0], i[1], '') for i in sourceDict]
 			if self.season_isAiring == 'false':
 				scraperDict.extend([(i[0], i[1], 'season') for i in sourceDict if i[1].pack_capable])
 				scraperDict.extend([(i[0], i[1], 'show') for i in sourceDict if i[1].pack_capable])
-			
 			trakt_aliases = self.getAliasTitles(imdb, 'episode')
-			try:
-				aliases.extend([i for i in trakt_aliases if i not in aliases])
-			except:
-				pass
-
-			try:
-				country_codes = meta.get('country_codes', [])
-			except:
-				country_codes = []
-
-			for code in country_codes:
-				if code in ('CA', 'US', 'UK', 'GB'):
-					if code == 'GB':
-						code = 'UK'
-					alias = {'title': tvshowtitle + ' ' + code, 'country': code.lower()}
-					if alias not in aliases:
-						aliases.append(alias)
-
-			data = {
-				'title': title,
-				'year': year,
-				'imdb': imdb,
-				'tvdb': tvdb,
-				'season': season,
-				'episode': episode,
-				'tvshowtitle': tvshowtitle,
-				'aliases': aliases,
-				'premiered': premiered
-			}
-
-			if self.debrid_service:
-				data.update({'debrid_service': self.debrid_service, 'debrid_token': self.debrid_token})
-
-			# Use ThreadPoolExecutor for parallel execution
+			try: aliases.extend([i for i in trakt_aliases if not i in aliases]) # combine TMDb and Trakt aliases
+			except: pass
+			try: country_codes = meta.get('country_codes', [])
+			except: country_codes = []
+			for i in country_codes:
+				if i in ('CA', 'US', 'UK', 'GB'):
+					if i == 'GB': i = 'UK'
+					alias = {'title': tvshowtitle + ' ' + i, 'country': i.lower()}
+					if not alias in aliases: aliases.append(alias)
+			data = {'title': title, 'year': year, 'imdb': imdb, 'tvdb': tvdb, 'season': season, 'episode': episode, 'tvshowtitle': tvshowtitle, 'aliases': aliases, 'premiered': premiered}
+			if self.debrid_service: data.update({'debrid_service': self.debrid_service, 'debrid_token': self.debrid_token})
+			for i in scraperDict:
+				name, pack = i[0].upper(), i[2]
+				if pack == 'season': name = '%s (season pack)' % name
+				elif pack == 'show': name = '%s (show pack)' % name
+				threads.append(Thread(target=self.getEpisodeSource, args=(imdb, season, episode, data, i[0], i[1], pack), name=name))
+			[i.start() for i in threads]
 			end_time = time() + timeout
-			with ThreadPoolExecutor() as executor:
-				futures = [
-					executor.submit(
-						self.getEpisodeSource,
-						imdb, season, episode, data, i[0], i[1], i[2]
-					)
-					for i in scraperDict
-				]
-				
-				# Monitor and wait for threads to finish within the timeout
-				for future in as_completed(futures, timeout=timeout):
-					if control.monitor.abortRequested():
-						return sysexit()
-					try:
-						future.result()  # Get result to raise any exceptions
-					except Exception as e:
-						log_utils.error(f"Error in thread: {e}")
-					if time() > end_time:
-						break
-
-			# Finalize sources and cleanup
-			self.sources.extend(self.scraper_sources)
-			self.tvshowtitle = tvshowtitle
-			self.year = year
-			homeWindow.clearProperty('fs_filterless_search')
-
-			if len(self.sources) > 0:
-				self.sourcesFilter()
-
-			return self.sources
-
-		except Exception as e:
-			log_utils.error(f"Error in getSources_silent: {e}")
+		except: return log_utils.error()
+		while True:
+			try:
+				if control.monitor.abortRequested(): return sysexit()
+				try:
+					info = [x.getName() for x in threads if x.is_alive() is True]
+					if len(info) == 0: break
+					if end_time < time(): break
+				except:
+					log_utils.error()
+					break
+				control.sleep(100)
+			except: log_utils.error()
+		del threads[:] # Make sure any remaining providers are stopped.
+		self.sources.extend(self.scraper_sources)
+		self.tvshowtitle = tvshowtitle
+		self.year = year
+		homeWindow.clearProperty('fs_filterless_search')
+		if len(self.sources) > 0: self.sourcesFilter()
+		return self.sources
 
 	def getSources_dialog(self, title, year, imdb, tvdb, season, episode, tvshowtitle, premiered, timeout=90):
 		try:
