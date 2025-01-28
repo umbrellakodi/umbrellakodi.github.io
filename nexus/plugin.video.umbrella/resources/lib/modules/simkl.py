@@ -3,16 +3,15 @@
 	Umbrella Add-on (added by Umbrella Dev 12/23/22)
 """
 
-import re
 import requests
 from requests.adapters import HTTPAdapter
-from sys import argv, exit as sysexit
 from urllib3.util.retry import Retry
 from resources.lib.modules import control
 from resources.lib.database import simklsync
 from resources.lib.modules import log_utils
 from datetime import datetime
-from threading import Thread
+#from threading import Thread
+from concurrent.futures import ThreadPoolExecutor
 
 getLS = control.lang
 getSetting = control.setting
@@ -147,10 +146,11 @@ class SIMKL:
 			log_utils.error()
 			return None
 
-	def post_request(self, url, data=None):
+	def post_request(url, data=None):
 		url  = 'https://api.simkl.com%s' % url
-		headers['Authorization'] = 'Bearer %s' % getSetting('self.token')
+		headers['Authorization'] = 'Bearer %s' % getSetting('simkltoken')
 		headers['simkl-api-key'] = simklclientid
+		
 		try:
 			response = session.post(url, data=data, headers=headers, timeout=20)
 		except requests.exceptions.ConnectionError:
@@ -226,13 +226,13 @@ class SIMKL:
 			update_syncMovies(imdb, remove_id=True)
 		elif content_type == 'tvshow':
 			success = markTVShowAsNotWatched(imdb, tvdb)
-			#cachesyncTV(imdb, tvdb)
+			#cachesyncTV(imdb, tvdb) new methods need to be written to sync simkl
 		elif content_type == 'season':
 			success = markSeasonAsNotWatched(imdb, tvdb, season)
-			#cachesyncTV(imdb, tvdb)
+			#cachesyncTV(imdb, tvdb) new methods need to be written to sync simkl
 		elif content_type == 'episode':
 			success = markEpisodeAsNotWatched(imdb, tvdb, season, episode)
-			#cachesyncTV(imdb, tvdb)
+			#cachesyncTV(imdb, tvdb) new methods need to be written to sync simkl
 		else: success = False
 		control.hide()
 		if refresh: control.refresh()
@@ -287,7 +287,7 @@ def markSeasonAsWatched(imdb, tvdb, season):
 		season = int('%01d' % int(season))
 		result = SIMKL.post_request('/sync/history', {"shows": [{"seasons": [{"number": season}], "ids": {"imdb": imdb, "tvdb": tvdb}}]})
 		if not result: return False
-		if result['added']['episodes'] == 0 and tvdb: # sometimes trakt fails to mark because of imdb_id issues, check tvdb only as fallback if it fails
+		if result['added']['episodes'] == 0 and tvdb: # # fail, trying again with tvdb as fallback
 			control.sleep(1000) # POST 1 call per sec rate-limit
 			result = SIMKL.post_request('/sync/history', {"shows": [{"seasons": [{"number": season}], "ids": {"tvdb": tvdb}}]})
 			if not result: return False
@@ -299,7 +299,7 @@ def markSeasonAsNotWatched(imdb, tvdb, season):
 		season = int('%01d' % int(season))
 		result = SIMKL.post_request('/sync/history/remove', {"shows": [{"seasons": [{"number": season}], "ids": {"imdb": imdb, "tvdb": tvdb}}]})
 		if not result: return False
-		if result['deleted']['episodes'] == 0 and tvdb: # sometimes trakt fails to mark because of imdb_id issues, check tvdb only as fallback if it fails
+		if result['deleted']['episodes'] == 0 and tvdb: # fail, trying again with tvdb as fallback
 			control.sleep(1000) # POST 1 call per sec rate-limit
 			result = SIMKL.post_request('/sync/history/remove', {"shows": [{"seasons": [{"number": season}], "ids": {"tvdb": tvdb}}]})
 			if not result: return False
@@ -347,9 +347,81 @@ def update_syncMovies(imdb, remove_id=False):
 def syncMovies():
 	try:
 		if not SIMKL.getSimKLCredentialsInfo(): return
-		indicators = SIMKL.post_request('/sync/all-items/movies/')
+		indicators = SIMKL.post_request('/sync/all-items/movies/') #indicators may be different with simkl
 		if not indicators: return None
 		indicators = [i['movie']['ids'] for i in indicators]
 		indicators = [str(i['imdb']) for i in indicators if 'imdb' in i]
 		return indicators
 	except: log_utils.error()
+
+# def cachesyncTV(imdb, tvdb): # sync full watched shows then sync imdb_id "season indicators" and "season counts"
+# 	try:
+# 		threads = [Thread(target=cachesyncTVShows), Thread(target=cachesyncSeasons, args=(imdb, tvdb))]
+# 		[i.start() for i in threads]
+# 		[i.join() for i in threads]
+# 		simklsync.insert_syncSeasons_at()
+# 	except: log_utils.error()
+
+def cachesyncTV(imdb, tvdb):  # Sync full watched shows then sync imdb_id "season indicators" and "season counts"
+	try:
+		with ThreadPoolExecutor() as executor:
+			# Submit tasks to the thread pool
+			executor.submit(cachesyncTVShows)
+			executor.submit(cachesyncSeasons, imdb, tvdb)
+		simklsync.insert_syncSeasons_at()
+	except Exception as e:
+		log_utils.error(f"Error in cachesyncTV: {e}")
+
+def cachesyncTVShows(timeout=0):
+	try:
+		indicators = simklsync.get(syncTVShows, timeout)
+		return indicators
+	except:
+		indicators = ''
+		return indicators
+
+def syncTVShows(): # sync all watched shows ex. [({'imdb': 'tt12571834', 'tvdb': '384435', 'tmdb': '105161', 'trakt': '163639'}, 16, [(1, 16)]), ({'imdb': 'tt11761194', 'tvdb': '377593', 'tmdb': '119845', 'trakt': '158621'}, 2, [(1, 1), (1, 2)])]
+	try:
+		if not SIMKL.getSimKLCredentialsInfo(): return
+		data = SIMKL.post_request('/sync/all-items/shows/?extended=full', None)
+		if not data: return None
+# /shows/ID/progress/watched  endpoint only accepts imdb or trakt ID so write all ID's
+		#indicators = [({'imdb': i['show']['ids']['imdb'], 'tvdb': str(i['show']['ids']['tvdb']), 'tmdb': str(i['show']['ids']['tmdb']), 'trakt': str(i['show']['ids']['trakt'])}, \
+		#									i['show']['aired_episodes'], sum([[(s['number'], e['number']) for e in s['episodes'] if i['reset_at'] is None or e['last_watched_at'] > i['reset_at']] for s in i['seasons']], [])) for i in indicators]
+		#indicators = [({'imdb': i['show']['ids']['imdb'],'tvdb': str(i['show']['ids']['tvdb']),'tmdb': str(i['show']['ids']['tmdb']),'simkl': str(i['show']['ids']['simkl'])},(int(i['total_episodes_count'])-int(i['not_aired_episodes_count'])),sum([[(s['number'], e['number']) for e in s['episodes']]for s in (i.get('seasons'), 0)])], [])) for i in indicators['shows']]
+		
+		indicators = [
+			(
+				{
+					'imdb': show['show']['ids'].get('imdb', None),
+					'tvdb': str(show['show']['ids'].get('tvdb', '')),
+					'tmdb': str(show['show']['ids'].get('tmdb', '')),
+					'simkl': str(show['show']['ids'].get('simkl', '')),
+				},
+				show['total_episodes_count'] - show['not_aired_episodes_count'],
+				[
+					(season['number'], episode['number'])
+					for season in show['seasons']
+					for episode in season.get('episodes', [])
+				],
+			)
+			for show in data['shows']
+			if show['status'] == 'watching'
+		]
+		
+		indicators = [(i[0], int(i[1]), i[2]) for i in indicators]
+		log_utils.log('SimKL Watched Shows Indicators: %s' % indicators, level=log_utils.LOGDEBUG)
+		return indicators
+	except: log_utils.error()
+
+def cachesyncSeasons(imdb, tvdb, simkl=None, timeout=0):
+	try:
+		imdb = imdb or ''
+		tvdb = tvdb or ''
+		indicators = simklsync.get(syncSeasons, timeout, imdb, tvdb, simkl=simkl) # named var not included in function md5_hash
+		return indicators
+	except: log_utils.error()
+
+def syncSeasons(imdb, tvdb, simkl=None): # season indicators and counts for watched shows ex. [['1', '2', '3'], {1: {'total': 8, 'watched': 8, 'unwatched': 0}, 2: {'total': 10, 'watched': 10, 'unwatched': 0}}]
+	pass # code needs to be written for this.
+	return None

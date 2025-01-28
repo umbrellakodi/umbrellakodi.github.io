@@ -6,7 +6,8 @@
 from datetime import datetime, timedelta
 from json import dumps as jsdumps
 import re
-from threading import Thread
+#from threading import Thread
+from concurrent.futures import ThreadPoolExecutor
 from urllib.parse import quote_plus, parse_qsl, urlparse
 from resources.lib.database import cache, metacache, fanarttv_cache
 from resources.lib.indexers.tmdb import Movies as tmdb_indexer
@@ -556,23 +557,25 @@ class Collections:
 
 	def worker(self):
 		try:
-			if not self.list: return
+			if not self.list:
+				return
 			self.meta = []
 			total = len(self.list)
-			for i in range(0, total): self.list[i].update({'metacache': False})
+			for item in self.list:
+				item.update({'metacache': False})
 			self.list = metacache.fetch(self.list, self.lang, self.user)
-			for r in range(0, total, 40):
-				threads = []
-				append = threads.append
-				for i in range(r, r + 40):
-					if i < total: append(Thread(target=self.super_imdb_info, args=(i,)))
-				[i.start() for i in threads]
-				[i.join() for i in threads]
-			if self.meta: metacache.insert(self.meta)
-			self.list = [i for i in self.list if i.get('tmdb')]
-		except:
+			def process_item(index):
+				self.super_imdb_info(index)
+
+			with ThreadPoolExecutor(max_workers=40) as executor:
+				executor.map(process_item, range(total))
+			if self.meta:
+				metacache.insert(self.meta)
+			self.list = [item for item in self.list if item.get('tmdb')]
+		except Exception as e:
 			from resources.lib.modules import log_utils
 			log_utils.error()
+
 
 	def super_imdb_info(self, i):
 		try:

@@ -9,7 +9,8 @@ import calendar
 from json import dumps as jsdumps, loads as jsloads
 import re
 import xbmc
-from threading import Thread
+#from threading import Thread
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from urllib.parse import quote_plus, urlencode, parse_qsl, urlparse, urlsplit
 from resources.lib.database import cache, metacache, fanarttv_cache, traktsync
 from resources.lib.indexers.tmdb import Movies as tmdb_indexer
@@ -1862,23 +1863,27 @@ class Movies:
 			return
 
 	def worker(self):
-		
 		try:
-			if not self.list: return
+			if not self.list:
+				return
 			self.meta = []
 			total = len(self.list)
-			for i in range(0, total): self.list[i].update({'metacache': False})
+			for item in self.list:
+				item.update({'metacache': False})
 			self.list = metacache.fetch(self.list, self.lang, self.user)
-			for r in range(0, total, 40):
-				threads = []
-				append = threads.append
-				for i in range(r, r + 40):
-					if i < total: append(Thread(target=self.super_info, args=(i,)))
-				[i.start() for i in threads]
-				[i.join() for i in threads]
-			if self.meta: metacache.insert(self.meta)
-			self.list = [i for i in self.list if i.get('tmdb')]
-		except:
+			chunk_size = 40
+			for start_index in range(0, total, chunk_size):
+				end_index = min(start_index + chunk_size, total)
+				items_chunk = self.list[start_index:end_index]
+				with ThreadPoolExecutor() as executor:
+					futures = [executor.submit(self.super_info, idx) for idx in range(start_index, end_index)]
+					for future in as_completed(futures):
+						pass
+			if self.meta:
+				metacache.insert(self.meta)
+			self.list = [item for item in self.list if item.get('tmdb')]
+
+		except Exception:
 			from resources.lib.modules import log_utils
 			log_utils.error()
 

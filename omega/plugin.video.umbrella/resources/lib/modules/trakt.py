@@ -15,6 +15,8 @@ from resources.lib.database import cache, traktsync
 from resources.lib.modules import cleandate
 from resources.lib.modules import control
 from resources.lib.modules import log_utils
+from concurrent.futures import ThreadPoolExecutor
+from datetime import timedelta, datetime
 
 getLS = control.lang
 getSetting = control.setting
@@ -948,13 +950,25 @@ def watchedShowsTime(tvdb, season, episode):
 								return e['last_watched_at']
 	except: log_utils.error()
 
-def cachesyncTV(imdb, tvdb): # sync full watched shows then sync imdb_id "season indicators" and "season counts"
-	try:
-		threads = [Thread(target=cachesyncTVShows), Thread(target=cachesyncSeasons, args=(imdb, tvdb))]
-		[i.start() for i in threads]
-		[i.join() for i in threads]
-		traktsync.insert_syncSeasons_at()
-	except: log_utils.error()
+# def cachesyncTV(imdb, tvdb): # sync full watched shows then sync imdb_id "season indicators" and "season counts"
+# 	try:
+# 		threads = [Thread(target=cachesyncTVShows), Thread(target=cachesyncSeasons, args=(imdb, tvdb))]
+# 		[i.start() for i in threads]
+# 		[i.join() for i in threads]
+# 		traktsync.insert_syncSeasons_at()
+# 	except: log_utils.error()
+
+def cachesyncTV(imdb, tvdb): 
+    try:
+        with ThreadPoolExecutor(max_workers=2) as executor:
+            # Schedule the tasks to run in the thread pool
+            executor.submit(cachesyncTVShows)
+            executor.submit(cachesyncSeasons, imdb, tvdb)
+        
+        # Ensure `traktsync.insert_syncSeasons_at()` is called after both tasks are completed
+        traktsync.insert_syncSeasons_at()
+    except Exception as e:
+        log_utils.error(e)
 
 def cachesyncTVShows(timeout=0):
 	try:
@@ -977,6 +991,9 @@ def syncTVShows(): # sync all watched shows ex. [({'imdb': 'tt12571834', 'tvdb':
 		# indicators = [({'imdb': i['show']['ids']['imdb'], 'tvdb': str(i['show']['ids']['tvdb']), 'tmdb': str(i['show']['ids']['tmdb']), 'trakt': str(i['show']['ids']['trakt'])}, \
 		# 									i['show']['aired_episodes'], sum([[(s['number'], e['number']) for e in s['episodes']] for s in i['seasons']], [])) for i in indicators]
 		indicators = [(i[0], int(i[1]), i[2]) for i in indicators]
+		log_utils.log('Trakt Watched Shows Indicators: %s' % indicators, level=log_utils.LOGDEBUG)
+		from resources.lib.modules import simkl
+		simkl.syncTVShows()
 		return indicators
 	except: log_utils.error()
 
@@ -1112,18 +1129,33 @@ def update_syncMovies(imdb, remove_id=False):
 		traktsync.cache_insert(key, repr(indicators))
 	except: log_utils.error()
 
-def service_syncSeasons(): # season indicators and counts for watched shows ex. [['1', '2', '3'], {1: {'total': 8, 'watched': 8, 'unwatched': 0}, 2: {'total': 10, 'watched': 10, 'unwatched': 0}}]
-	try:
-		indicators = traktsync.cache_existing(syncTVShows) # use cached data from service cachesyncTVShows() just written fresh
-		threads = []
-		for indicator in indicators:
-			imdb = indicator[0].get('imdb', '') if indicator[0].get('imdb') else ''
-			tvdb = str(indicator[0].get('tvdb', '')) if indicator[0].get('tvdb') else ''
-			trakt = str(indicator[0].get('trakt', '')) if indicator[0].get('trakt') else ''
-			threads.append(Thread(target=cachesyncSeasons, args=(imdb, tvdb, trakt))) # season indicators and counts for an entire show
-		[i.start() for i in threads]
-		[i.join() for i in threads]
-	except: log_utils.error()
+# def service_syncSeasons(): # season indicators and counts for watched shows ex. [['1', '2', '3'], {1: {'total': 8, 'watched': 8, 'unwatched': 0}, 2: {'total': 10, 'watched': 10, 'unwatched': 0}}]
+# 	try:
+# 		indicators = traktsync.cache_existing(syncTVShows) # use cached data from service cachesyncTVShows() just written fresh
+# 		threads = []
+# 		for indicator in indicators:
+# 			imdb = indicator[0].get('imdb', '') if indicator[0].get('imdb') else ''
+# 			tvdb = str(indicator[0].get('tvdb', '')) if indicator[0].get('tvdb') else ''
+# 			trakt = str(indicator[0].get('trakt', '')) if indicator[0].get('trakt') else ''
+# 			threads.append(Thread(target=cachesyncSeasons, args=(imdb, tvdb, trakt))) # season indicators and counts for an entire show
+# 		[i.start() for i in threads]
+# 		[i.join() for i in threads]
+# 	except: log_utils.error()
+
+def service_syncSeasons(): 
+    try:
+        # Get the indicators using the cache
+        indicators = traktsync.cache_existing(syncTVShows)
+        with ThreadPoolExecutor() as executor:
+            # Submit tasks for each indicator
+            for indicator in indicators:
+                imdb = indicator[0].get('imdb', '') if indicator[0].get('imdb') else ''
+                tvdb = str(indicator[0].get('tvdb', '')) if indicator[0].get('tvdb') else ''
+                trakt = str(indicator[0].get('trakt', '')) if indicator[0].get('trakt') else ''
+                executor.submit(cachesyncSeasons, imdb, tvdb, trakt)  # Submit the task to the thread pool
+                
+    except Exception as e:
+        log_utils.error(e)
 
 def markMovieAsWatched(imdb):
 	try:
@@ -1656,46 +1688,106 @@ def sync_user_lists(activities=None, forced=False):
 				traktsync.insert_user_lists(items)
 	except: log_utils.error()
 
+# def sync_liked_lists(activities=None, forced=False):
+# 	try:
+# 		link = '/users/likes/lists?limit=1000000'
+# 		list_link = '/users/%s/lists/%s/items/%s'
+# 		db_last_liked = traktsync.last_sync('last_liked_at')
+# 		listActivity = getListActivity(activities)
+# 		if (listActivity > db_last_liked) or forced:
+# 			if not forced: 
+# 					log_utils.log('Trakt Liked Lists Sync Update...(local db latest "liked_at" = %s, trakt api latest "liked_at" = %s)' % \
+# 								(str(db_last_liked), str(listActivity)), __name__, log_utils.LOGDEBUG)
+# 			clr_traktSync = {'bookmarks': False, 'hiddenProgress': False, 'liked_lists': True, 'movies_collection': False, 'movies_watchlist': False,
+# 							'public_lists': False, 'shows_collection': False, 'shows_watchlist': False, 'user_lists': False, 'watched': False}
+# 			traktsync.delete_tables(clr_traktSync)
+# 			items = getTraktAsJson(link, silent=True)
+# 			if not items: return
+# 			thrd_items = []
+# 			def items_list(i):
+# 				list_item = i.get('list', {})
+# 				if any(list_item.get('privacy', '') == value for value in ('private', 'friends')): return
+# 				if list_item.get('user',{}).get('private') is True:
+# 					#log_utils.log('(%s) has marked their list private in Trakt(Liked Lists) and is now causing you errors. Skipping this list' % list_item.get('user',{}).get('username'))
+# 					return
+# 				i['list']['content_type'] = ''
+# 				list_owner_slug = list_item.get('user', {}).get('ids', {}).get('slug', '')
+# 				trakt_id = list_item.get('ids', {}).get('trakt', '')
+# 				list_items = getTraktAsJson(list_link % (list_owner_slug, trakt_id, 'movies'), silent=True)
+# 				if not list_items or list_items == '[]': pass
+# 				else: i['list']['content_type'] = 'movies'
+# 				list_items = getTraktAsJson(list_link % (list_owner_slug, trakt_id, 'shows'), silent=True)
+# 				if not list_items or list_items == '[]': pass
+# 				else: i['list']['content_type'] = 'mixed' if i['list']['content_type'] == 'movies' else 'shows'
+# 				thrd_items.append(i)
+# 			threads = []
+# 			for i in items:
+# 				threads.append(Thread(target=items_list, args=(i,)))
+# 			[i.start() for i in threads]
+# 			[i.join() for i in threads]
+# 			traktsync.insert_liked_lists(thrd_items)
+# 			if forced: log_utils.log('Forced - Trakt Liked Lists Sync Complete', __name__, log_utils.LOGDEBUG)
+# 	except: log_utils.error()
+
 def sync_liked_lists(activities=None, forced=False):
-	try:
-		link = '/users/likes/lists?limit=1000000'
-		list_link = '/users/%s/lists/%s/items/%s'
-		db_last_liked = traktsync.last_sync('last_liked_at')
-		listActivity = getListActivity(activities)
-		if (listActivity > db_last_liked) or forced:
-			if not forced: 
-					log_utils.log('Trakt Liked Lists Sync Update...(local db latest "liked_at" = %s, trakt api latest "liked_at" = %s)' % \
-								(str(db_last_liked), str(listActivity)), __name__, log_utils.LOGDEBUG)
-			clr_traktSync = {'bookmarks': False, 'hiddenProgress': False, 'liked_lists': True, 'movies_collection': False, 'movies_watchlist': False,
-							'public_lists': False, 'shows_collection': False, 'shows_watchlist': False, 'user_lists': False, 'watched': False}
-			traktsync.delete_tables(clr_traktSync)
-			items = getTraktAsJson(link, silent=True)
-			if not items: return
-			thrd_items = []
-			def items_list(i):
-				list_item = i.get('list', {})
-				if any(list_item.get('privacy', '') == value for value in ('private', 'friends')): return
-				if list_item.get('user',{}).get('private') is True:
-					#log_utils.log('(%s) has marked their list private in Trakt(Liked Lists) and is now causing you errors. Skipping this list' % list_item.get('user',{}).get('username'))
-					return
-				i['list']['content_type'] = ''
-				list_owner_slug = list_item.get('user', {}).get('ids', {}).get('slug', '')
-				trakt_id = list_item.get('ids', {}).get('trakt', '')
-				list_items = getTraktAsJson(list_link % (list_owner_slug, trakt_id, 'movies'), silent=True)
-				if not list_items or list_items == '[]': pass
-				else: i['list']['content_type'] = 'movies'
-				list_items = getTraktAsJson(list_link % (list_owner_slug, trakt_id, 'shows'), silent=True)
-				if not list_items or list_items == '[]': pass
-				else: i['list']['content_type'] = 'mixed' if i['list']['content_type'] == 'movies' else 'shows'
-				thrd_items.append(i)
-			threads = []
-			for i in items:
-				threads.append(Thread(target=items_list, args=(i,)))
-			[i.start() for i in threads]
-			[i.join() for i in threads]
-			traktsync.insert_liked_lists(thrd_items)
-			if forced: log_utils.log('Forced - Trakt Liked Lists Sync Complete', __name__, log_utils.LOGDEBUG)
-	except: log_utils.error()
+    try:
+        link = '/users/likes/lists?limit=1000000'
+        list_link = '/users/%s/lists/%s/items/%s'
+        db_last_liked = traktsync.last_sync('last_liked_at')
+        listActivity = getListActivity(activities)
+
+        if (listActivity > db_last_liked) or forced:
+            if not forced:
+                log_utils.log(
+                    'Trakt Liked Lists Sync Update...(local db latest "liked_at" = %s, trakt api latest "liked_at" = %s)' % 
+                    (str(db_last_liked), str(listActivity)), 
+                    __name__, log_utils.LOGDEBUG
+                )
+
+            clr_traktSync = {
+                'bookmarks': False, 'hiddenProgress': False, 'liked_lists': True, 'movies_collection': False,
+                'movies_watchlist': False, 'public_lists': False, 'shows_collection': False, 'shows_watchlist': False,
+                'user_lists': False, 'watched': False
+            }
+            traktsync.delete_tables(clr_traktSync)
+            items = getTraktAsJson(link, silent=True)
+            if not items:
+                return
+
+            thrd_items = []
+
+            def process_item(i):
+                list_item = i.get('list', {})
+                if any(list_item.get('privacy', '') == value for value in ('private', 'friends')):
+                    return
+                if list_item.get('user', {}).get('private') is True:
+                    return
+                i['list']['content_type'] = ''
+                list_owner_slug = list_item.get('user', {}).get('ids', {}).get('slug', '')
+                trakt_id = list_item.get('ids', {}).get('trakt', '')
+
+                # Process movies
+                list_items = getTraktAsJson(list_link % (list_owner_slug, trakt_id, 'movies'), silent=True)
+                if list_items and list_items != '[]':
+                    i['list']['content_type'] = 'movies'
+
+                # Process shows
+                list_items = getTraktAsJson(list_link % (list_owner_slug, trakt_id, 'shows'), silent=True)
+                if list_items and list_items != '[]':
+                    i['list']['content_type'] = 'mixed' if i['list']['content_type'] == 'movies' else 'shows'
+
+                thrd_items.append(i)
+            with ThreadPoolExecutor() as executor:
+                executor.map(process_item, items)  # Automatically applies process_item to each item
+
+            # Insert processed items into the database
+            traktsync.insert_liked_lists(thrd_items)
+
+            if forced:
+                log_utils.log('Forced - Trakt Liked Lists Sync Complete', __name__, log_utils.LOGDEBUG)
+
+    except Exception as e:
+        log_utils.error(e)
 
 def sync_hidden_progress(activities=None, forced=False):
 	try:
@@ -1764,104 +1856,265 @@ def sync_watch_list(activities=None, forced=False):
 				traktsync.insert_watch_list(items, 'shows_watchlist')
 	except: log_utils.error()
 
+# def sync_popular_lists(forced=False):
+# 	try:
+# 		from datetime import timedelta
+# 		link = '/lists/popular?limit=300'
+# 		list_link = '/users/%s/lists/%s/items/movie,show'
+# 		official_link = '/lists/%s/items/movie,show'
+# 		db_last_popularList = traktsync.last_sync('last_popularlist_at')
+# 		cache_expiry = (datetime.utcnow() - timedelta(hours=168)).strftime("%Y-%m-%dT%H:%M:%S.000Z")
+# 		cache_expiry = int(cleandate.iso_2_utc(cache_expiry))
+# 		if (cache_expiry > db_last_popularList) or forced:
+# 			if not forced: log_utils.log('Trakt Popular Lists Sync Update...(local db latest "popularlist_at" = %s, cache expiry = %s)' % \
+# 								(str(db_last_popularList), str(cache_expiry)), __name__, log_utils.LOGDEBUG)
+# 			items = getTraktAsJson(link, silent=True)
+# 			if not items: return
+# 			thrd_items = []
+# 			def items_list(i):
+# 				list_item = i.get('list', {})
+# 				if any(list_item.get('privacy', '') == value for value in ('private', 'friends')): return
+# 				if list_item.get('user',{}).get('private') is True:
+# 					log_utils.log('(%s) has marked their list private in Trakt(Popular Lists) and would be causing you errors but we caught it and we are skipping their list.' % list_item.get('user',{}).get('username'))
+# 					return
+# 				trakt_id = list_item.get('ids', {}).get('trakt', '')
+# 				exists = traktsync.fetch_public_list(trakt_id)
+# 				if exists:
+# 					local = int(cleandate.iso_2_utc(exists.get('updated_at', '')))
+# 					remote = int(cleandate.iso_2_utc(list_item.get('updated_at', '')))
+# 					if remote > local: pass
+# 					else: return
+# 				i['list']['content_type'] = ''
+# 				list_owner_slug = list_item.get('user', {}).get('ids', {}).get('slug', '')
+# 				if not list_owner_slug: list_owner_slug = list_item.get('user',{}).get('username')
+# 				if list_item.get('type') == 'official': list_items = getTraktAsJson(official_link % trakt_id, silent=True)
+# 				else: list_items = getTraktAsJson(list_link % (list_owner_slug, trakt_id), silent=True)
+# 				if not list_items: return
+# 				movie_items = [x for x in list_items if x.get('type', '') == 'movie']
+# 				if len(movie_items) > 0: i['list']['content_type'] = 'movies'
+# 				shows_items = [x for x in list_items if x.get('type', '') == 'show']
+# 				if len(shows_items) > 0:
+# 					i['list']['content_type'] = 'mixed' if i['list']['content_type'] == 'movies' else 'shows'
+# 				thrd_items.append(i)
+# 			threads = []
+# 			for i in items:
+# 				threads.append(Thread(target=items_list, args=(i,)))
+# 			[i.start() for i in threads]
+# 			[i.join() for i in threads]
+# 			traktsync.insert_public_lists(thrd_items, service_type='last_popularlist_at', new_sync=False)
+# 			if forced: log_utils.log('Forced - Trakt Popular Lists Sync Complete', __name__, log_utils.LOGDEBUG)
+# 	except: log_utils.error()
+
 def sync_popular_lists(forced=False):
-	try:
-		from datetime import timedelta
-		link = '/lists/popular?limit=300'
-		list_link = '/users/%s/lists/%s/items/movie,show'
-		official_link = '/lists/%s/items/movie,show'
-		db_last_popularList = traktsync.last_sync('last_popularlist_at')
-		cache_expiry = (datetime.utcnow() - timedelta(hours=168)).strftime("%Y-%m-%dT%H:%M:%S.000Z")
-		cache_expiry = int(cleandate.iso_2_utc(cache_expiry))
-		if (cache_expiry > db_last_popularList) or forced:
-			if not forced: log_utils.log('Trakt Popular Lists Sync Update...(local db latest "popularlist_at" = %s, cache expiry = %s)' % \
-								(str(db_last_popularList), str(cache_expiry)), __name__, log_utils.LOGDEBUG)
-			items = getTraktAsJson(link, silent=True)
-			if not items: return
-			thrd_items = []
-			def items_list(i):
-				list_item = i.get('list', {})
-				if any(list_item.get('privacy', '') == value for value in ('private', 'friends')): return
-				if list_item.get('user',{}).get('private') is True:
-					log_utils.log('(%s) has marked their list private in Trakt(Popular Lists) and would be causing you errors but we caught it and we are skipping their list.' % list_item.get('user',{}).get('username'))
-					return
-				trakt_id = list_item.get('ids', {}).get('trakt', '')
-				exists = traktsync.fetch_public_list(trakt_id)
-				if exists:
-					local = int(cleandate.iso_2_utc(exists.get('updated_at', '')))
-					remote = int(cleandate.iso_2_utc(list_item.get('updated_at', '')))
-					if remote > local: pass
-					else: return
-				i['list']['content_type'] = ''
-				list_owner_slug = list_item.get('user', {}).get('ids', {}).get('slug', '')
-				if not list_owner_slug: list_owner_slug = list_item.get('user',{}).get('username')
-				if list_item.get('type') == 'official': list_items = getTraktAsJson(official_link % trakt_id, silent=True)
-				else: list_items = getTraktAsJson(list_link % (list_owner_slug, trakt_id), silent=True)
-				if not list_items: return
-				movie_items = [x for x in list_items if x.get('type', '') == 'movie']
-				if len(movie_items) > 0: i['list']['content_type'] = 'movies'
-				shows_items = [x for x in list_items if x.get('type', '') == 'show']
-				if len(shows_items) > 0:
-					i['list']['content_type'] = 'mixed' if i['list']['content_type'] == 'movies' else 'shows'
-				thrd_items.append(i)
-			threads = []
-			for i in items:
-				threads.append(Thread(target=items_list, args=(i,)))
-			[i.start() for i in threads]
-			[i.join() for i in threads]
-			traktsync.insert_public_lists(thrd_items, service_type='last_popularlist_at', new_sync=False)
-			if forced: log_utils.log('Forced - Trakt Popular Lists Sync Complete', __name__, log_utils.LOGDEBUG)
-	except: log_utils.error()
+    try:
+        link = '/lists/popular?limit=300'
+        list_link = '/users/%s/lists/%s/items/movie,show'
+        official_link = '/lists/%s/items/movie,show'
+
+        db_last_popularList = traktsync.last_sync('last_popularlist_at')
+        cache_expiry = (datetime.utcnow() - timedelta(hours=168)).strftime("%Y-%m-%dT%H:%M:%S.000Z")
+        cache_expiry = int(cleandate.iso_2_utc(cache_expiry))
+
+        if (cache_expiry > db_last_popularList) or forced:
+            if not forced:
+                log_utils.log(
+                    'Trakt Popular Lists Sync Update...(local db latest "popularlist_at" = %s, cache expiry = %s)' % 
+                    (str(db_last_popularList), str(cache_expiry)),
+                    __name__, log_utils.LOGDEBUG
+                )
+
+            items = getTraktAsJson(link, silent=True)
+            if not items:
+                return
+
+            thrd_items = []
+
+            # Worker function to process each item
+            def process_item(i):
+                list_item = i.get('list', {})
+                if any(list_item.get('privacy', '') == value for value in ('private', 'friends')):
+                    return
+                if list_item.get('user', {}).get('private') is True:
+                    log_utils.log(
+                        '(%s) has marked their list private in Trakt(Popular Lists), skipping.' % 
+                        list_item.get('user', {}).get('username')
+                    )
+                    return
+
+                trakt_id = list_item.get('ids', {}).get('trakt', '')
+                exists = traktsync.fetch_public_list(trakt_id)
+
+                if exists:
+                    local = int(cleandate.iso_2_utc(exists.get('updated_at', '')))
+                    remote = int(cleandate.iso_2_utc(list_item.get('updated_at', '')))
+                    if remote <= local:
+                        return
+
+                i['list']['content_type'] = ''
+                list_owner_slug = list_item.get('user', {}).get('ids', {}).get('slug', '')
+                if not list_owner_slug:
+                    list_owner_slug = list_item.get('user', {}).get('username')
+
+                # Fetch the list items
+                if list_item.get('type') == 'official':
+                    list_items = getTraktAsJson(official_link % trakt_id, silent=True)
+                else:
+                    list_items = getTraktAsJson(list_link % (list_owner_slug, trakt_id), silent=True)
+
+                if not list_items:
+                    return
+
+
+                movie_items = [x for x in list_items if x.get('type', '') == 'movie']
+                if len(movie_items) > 0:
+                    i['list']['content_type'] = 'movies'
+
+                shows_items = [x for x in list_items if x.get('type', '') == 'show']
+                if len(shows_items) > 0:
+                    i['list']['content_type'] = 'mixed' if i['list']['content_type'] == 'movies' else 'shows'
+
+                thrd_items.append(i)
+
+            with ThreadPoolExecutor() as executor:
+                executor.map(process_item, items)  # Automatically applies process_item to each item
+
+            # Insert processed items into the database
+            traktsync.insert_public_lists(thrd_items, service_type='last_popularlist_at', new_sync=False)
+
+            if forced:
+                log_utils.log('Forced - Trakt Popular Lists Sync Complete', __name__, log_utils.LOGDEBUG)
+
+    except Exception as e:
+        log_utils.error(e)
+
+# def sync_trending_lists(forced=False):
+# 	try:
+# 		from datetime import timedelta
+# 		link = '/lists/trending?limit=300'
+# 		list_link = '/users/%s/lists/%s/items/movie,show'
+# 		official_link = '/lists/%s/items/movie,show'
+
+# 		db_last_trendingList = traktsync.last_sync('last_trendinglist_at')
+# 		cache_expiry = (datetime.utcnow() - timedelta(hours=24)).strftime("%Y-%m-%dT%H:%M:%S.000Z")
+# 		cache_expiry = int(cleandate.iso_2_utc(cache_expiry))
+# 		if (cache_expiry > db_last_trendingList) or forced:
+# 			if not forced: log_utils.log('Trakt Trending Lists Sync Update...(local db latest "trendinglist_at" = %s, cache expiry = %s)' % \
+# 								(str(db_last_trendingList), str(cache_expiry)), __name__, log_utils.LOGDEBUG)
+# 			items = getTraktAsJson(link, silent=True)
+# 			if not items: return
+# 			thrd_items = []
+# 			def items_list(i):
+# 				list_item = i.get('list', {})
+# 				if any(list_item.get('privacy', '') == value for value in ('private', 'friends')): return
+# 				if list_item.get('user',{}).get('private') is True:
+# 					log_utils.log('(%s) has marked their list private in Trakt(Trending Lists) and is now causing you errors. Skipping this list' % list_item.get('user',{}).get('username'))
+# 					return
+# 				trakt_id = list_item.get('ids', {}).get('trakt', '')
+# 				exists = traktsync.fetch_public_list(trakt_id)
+# 				if exists:
+# 					local = int(cleandate.iso_2_utc(exists.get('updated_at', '')))
+# 					remote = int(cleandate.iso_2_utc(list_item.get('updated_at', '')))
+# 					if remote > local: pass
+# 					else: return
+# 				i['list']['content_type'] = ''
+# 				list_owner_slug = list_item.get('user', {}).get('ids', {}).get('slug', '')
+# 				if not list_owner_slug: list_owner_slug = list_item.get('user', {}).get('username')
+# 				if list_item.get('type') == 'official': list_items = getTraktAsJson(official_link % trakt_id, silent=True)
+# 				else: list_items = getTraktAsJson(list_link % (list_owner_slug, trakt_id), silent=True)
+# 				if not list_items: return
+# 				movie_items = [x for x in list_items if x.get('type', '') == 'movie']
+# 				if len(movie_items) != 0: i['list']['content_type'] = 'movies'
+# 				shows_items = [x for x in list_items if x.get('type', '') == 'show']
+# 				if len(shows_items) != 0:
+# 					i['list']['content_type'] = 'mixed' if i['list']['content_type'] == 'movies' else 'shows'
+# 				thrd_items.append(i)
+# 			threads = []
+# 			for i in items:
+# 				threads.append(Thread(target=items_list, args=(i,)))
+# 			[i.start() for i in threads]
+# 			[i.join() for i in threads]
+# 			traktsync.insert_public_lists(thrd_items, service_type='last_trendinglist_at', new_sync=False)
+# 			if forced: log_utils.log('Forced - Trakt Trending Lists Sync Complete', __name__, log_utils.LOGDEBUG)
+# 	except: log_utils.error()
 
 def sync_trending_lists(forced=False):
-	try:
-		from datetime import timedelta
-		link = '/lists/trending?limit=300'
-		list_link = '/users/%s/lists/%s/items/movie,show'
-		official_link = '/lists/%s/items/movie,show'
+    try:
+        link = '/lists/trending?limit=300'
+        list_link = '/users/%s/lists/%s/items/movie,show'
+        official_link = '/lists/%s/items/movie,show'
 
-		db_last_trendingList = traktsync.last_sync('last_trendinglist_at')
-		cache_expiry = (datetime.utcnow() - timedelta(hours=24)).strftime("%Y-%m-%dT%H:%M:%S.000Z")
-		cache_expiry = int(cleandate.iso_2_utc(cache_expiry))
-		if (cache_expiry > db_last_trendingList) or forced:
-			if not forced: log_utils.log('Trakt Trending Lists Sync Update...(local db latest "trendinglist_at" = %s, cache expiry = %s)' % \
-								(str(db_last_trendingList), str(cache_expiry)), __name__, log_utils.LOGDEBUG)
-			items = getTraktAsJson(link, silent=True)
-			if not items: return
-			thrd_items = []
-			def items_list(i):
-				list_item = i.get('list', {})
-				if any(list_item.get('privacy', '') == value for value in ('private', 'friends')): return
-				if list_item.get('user',{}).get('private') is True:
-					log_utils.log('(%s) has marked their list private in Trakt(Trending Lists) and is now causing you errors. Skipping this list' % list_item.get('user',{}).get('username'))
-					return
-				trakt_id = list_item.get('ids', {}).get('trakt', '')
-				exists = traktsync.fetch_public_list(trakt_id)
-				if exists:
-					local = int(cleandate.iso_2_utc(exists.get('updated_at', '')))
-					remote = int(cleandate.iso_2_utc(list_item.get('updated_at', '')))
-					if remote > local: pass
-					else: return
-				i['list']['content_type'] = ''
-				list_owner_slug = list_item.get('user', {}).get('ids', {}).get('slug', '')
-				if not list_owner_slug: list_owner_slug = list_item.get('user', {}).get('username')
-				if list_item.get('type') == 'official': list_items = getTraktAsJson(official_link % trakt_id, silent=True)
-				else: list_items = getTraktAsJson(list_link % (list_owner_slug, trakt_id), silent=True)
-				if not list_items: return
-				movie_items = [x for x in list_items if x.get('type', '') == 'movie']
-				if len(movie_items) != 0: i['list']['content_type'] = 'movies'
-				shows_items = [x for x in list_items if x.get('type', '') == 'show']
-				if len(shows_items) != 0:
-					i['list']['content_type'] = 'mixed' if i['list']['content_type'] == 'movies' else 'shows'
-				thrd_items.append(i)
-			threads = []
-			for i in items:
-				threads.append(Thread(target=items_list, args=(i,)))
-			[i.start() for i in threads]
-			[i.join() for i in threads]
-			traktsync.insert_public_lists(thrd_items, service_type='last_trendinglist_at', new_sync=False)
-			if forced: log_utils.log('Forced - Trakt Trending Lists Sync Complete', __name__, log_utils.LOGDEBUG)
-	except: log_utils.error()
+        db_last_trendingList = traktsync.last_sync('last_trendinglist_at')
+        cache_expiry = (datetime.utcnow() - timedelta(hours=24)).strftime("%Y-%m-%dT%H:%M:%S.000Z")
+        cache_expiry = int(cleandate.iso_2_utc(cache_expiry))
+
+        if (cache_expiry > db_last_trendingList) or forced:
+            if not forced:
+                log_utils.log(
+                    'Trakt Trending Lists Sync Update...(local db latest "trendinglist_at" = %s, cache expiry = %s)' % 
+                    (str(db_last_trendingList), str(cache_expiry)),
+                    __name__, log_utils.LOGDEBUG
+                )
+
+            items = getTraktAsJson(link, silent=True)
+            if not items:
+                return
+
+            thrd_items = []
+
+            def process_item(i):
+                list_item = i.get('list', {})
+                if any(list_item.get('privacy', '') == value for value in ('private', 'friends')):
+                    return
+                if list_item.get('user', {}).get('private') is True:
+                    log_utils.log(
+                        '(%s) has marked their list private in Trakt(Trending Lists), skipping.' % 
+                        list_item.get('user', {}).get('username')
+                    )
+                    return
+
+                trakt_id = list_item.get('ids', {}).get('trakt', '')
+                exists = traktsync.fetch_public_list(trakt_id)
+
+                if exists:
+                    local = int(cleandate.iso_2_utc(exists.get('updated_at', '')))
+                    remote = int(cleandate.iso_2_utc(list_item.get('updated_at', '')))
+                    if remote <= local:
+                        return
+
+                i['list']['content_type'] = ''
+                list_owner_slug = list_item.get('user', {}).get('ids', {}).get('slug', '')
+                if not list_owner_slug:
+                    list_owner_slug = list_item.get('user', {}).get('username')
+
+                if list_item.get('type') == 'official':
+                    list_items = getTraktAsJson(official_link % trakt_id, silent=True)
+                else:
+                    list_items = getTraktAsJson(list_link % (list_owner_slug, trakt_id), silent=True)
+
+                if not list_items:
+                    return
+
+                movie_items = [x for x in list_items if x.get('type', '') == 'movie']
+                if len(movie_items) > 0:
+                    i['list']['content_type'] = 'movies'
+
+                shows_items = [x for x in list_items if x.get('type', '') == 'show']
+                if len(shows_items) > 0:
+                    i['list']['content_type'] = 'mixed' if i['list']['content_type'] == 'movies' else 'shows'
+
+                thrd_items.append(i)
+
+            with ThreadPoolExecutor() as executor:
+                executor.map(process_item, items)
+
+            traktsync.insert_public_lists(thrd_items, service_type='last_trendinglist_at', new_sync=False)
+
+            if forced:
+                log_utils.log('Forced - Trakt Trending Lists Sync Complete', __name__, log_utils.LOGDEBUG)
+
+    except Exception as e:
+        log_utils.error(e)
+
 
 def traktClientID():
 	traktId = '87e3f055fc4d8fcfd96e61a47463327ca877c51e8597b448e132611c5a677b13'

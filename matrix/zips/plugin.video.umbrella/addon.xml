@@ -1,4 +1,4 @@
-<addon id="plugin.video.umbrella" name="Umbrella" provider-name="Umbrella" version="6.7.362">
+<addon id="plugin.video.umbrella" name="Umbrella" provider-name="Umbrella" version="6.7.371">
 	<requires>
 		<import addon="xbmc.python" version="3.0.0"/>
 		<import addon="script.module.requests"/>
@@ -179,9 +179,8 @@
 			<screenshot>resources/screenshots/screenshot003.jpg</screenshot>
 		</assets>
 		<news>
-[B]Update - v6.7.362 - Jan 23rd, 2025[/B]
---[Fix] Increased number of results available from real-debrid for cloud scraping.
---[Fix] Changed criteria for TorBox links.
+[B]Update - v6.7.371 - Jan 27th, 2025[/B]
+--[Change] Major refactor of code to use ThreadPools.
 		</news>
 	</extension>
 

@@ -7,7 +7,8 @@ from datetime import datetime
 import re
 import requests
 from requests.adapters import HTTPAdapter
-from threading import Thread
+#from threading import Thread
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from urllib3.util.retry import Retry
 from resources.lib.database import cache, metacache, fanarttv_cache
 from resources.lib.indexers.fanarttv import FanartTv
@@ -141,37 +142,119 @@ class Movies(TMDb):
 		self.user = str(self.API_key)
 		self.tmdblist_hours = int(getSetting('cache.tmdblist'))
 
+	# def tmdb_list(self, url):
+	# 	try:
+	# 		result = cache.get(self.get_request, self.tmdblist_hours, url % self.API_key)
+	# 		if result is None: return
+	# 		if '404:NOT FOUND' in result: return result
+	# 		if 'person' in url:
+	# 			items = result['cast']
+	# 		else:
+	# 			items = result['results']
+	# 	except: return
+	# 	self.list = [] ; sortList = []
+	# 	try:
+	# 		page = int(result['page'])
+	# 		total = int(result['total_pages'])
+	# 		if page >= total: raise Exception()
+	# 		if 'page=' not in url: raise Exception()
+	# 		next = '%s&page=%s' % (url.split('&page=', 1)[0], page+1)
+	# 	except: next = ''
+	# 	for item in items:
+	# 		try:
+	# 			values = {}
+	# 			values['next'] = next 
+	# 			values['tmdb'] = str(item.get('id', '')) if item.get('id') else ''
+	# 			sortList.append(values['tmdb'])
+	# 			values['imdb'] = ''
+	# 			values['tvdb'] = ''
+	# 			values['metacache'] = False
+	# 			if 'recommendations' in url or 'similar' in url:
+	# 				if int(item.get('vote_count')) < 50:
+	# 					continue
+	# 				else:
+	# 					self.list.append(values)
+	# 			else:
+	# 				self.list.append(values)
+	# 		except:
+	# 			from resources.lib.modules import log_utils
+	# 			log_utils.error()
+
+	# 	def items_list(i):
+	# 		if self.list[i]['metacache']: return
+	# 		try:
+	# 			values = {}
+	# 			tmdb = self.list[i].get('tmdb', '')
+	# 			movie_meta = self.get_movie_meta(tmdb)
+	# 			values.update(movie_meta)
+	# 			imdb = values['imdb']
+	# 			if self.enable_fanarttv:
+	# 				extended_art = fanarttv_cache.get(FanartTv().get_movie_art, 336, imdb, tmdb)
+	# 				if extended_art: values.update(extended_art)
+	# 			values = dict((k,v) for k, v in iter(values.items()) if v is not None and v != '') # remove empty keys so .update() doesn't over-write good meta with empty values.
+	# 			self.list[i].update(values)
+	# 			meta = {'imdb': imdb, 'tmdb': tmdb, 'tvdb': '', 'lang': self.lang, 'user': self.user, 'item': values}
+	# 			self.meta.append(meta)
+	# 		except:
+	# 			from resources.lib.modules import log_utils
+	# 			log_utils.error()
+
+	# 	self.list = metacache.fetch(self.list, self.lang, self.user)
+	# 	threads = []
+	# 	append = threads.append
+	# 	for i in range(0, len(self.list)):
+	# 		append(Thread(target=items_list, args=(i,)))
+	# 	[i.start() for i in threads]
+	# 	[i.join() for i in threads]
+	# 	if self.meta:
+	# 		self.meta = [i for i in self.meta if i.get('tmdb')]
+	# 		metacache.insert(self.meta)
+	# 	sorted_list = []
+	# 	self.list = [i for i in self.list if i.get('tmdb')]
+	# 	for i in sortList:
+	# 		sorted_list += [item for item in self.list if item['tmdb'] == i] # resort to match TMDb list because threading will lose order.
+	# 	return sorted_list
+
+#new refactored function to replace the above and use a threadpool.
+
 	def tmdb_list(self, url):
 		try:
 			result = cache.get(self.get_request, self.tmdblist_hours, url % self.API_key)
-			if result is None: return
-			if '404:NOT FOUND' in result: return result
-			if 'person' in url:
-				items = result['cast']
-			else:
-				items = result['results']
-		except: return
-		self.list = [] ; sortList = []
+			if result is None:
+				return
+			if '404:NOT FOUND' in result:
+				return result
+			items = result['cast'] if 'person' in url else result['results']
+		except:
+			return
+
+		self.list = []
+		sortList = []
+
 		try:
 			page = int(result['page'])
 			total = int(result['total_pages'])
-			if page >= total: raise Exception()
-			if 'page=' not in url: raise Exception()
-			next = '%s&page=%s' % (url.split('&page=', 1)[0], page+1)
-		except: next = ''
+			if page >= total or 'page=' not in url:
+				next_url = ''
+			else:
+				next_url = '%s&page=%s' % (url.split('&page=', 1)[0], page + 1)
+		except:
+			next_url = ''
+
+		# Populate the initial list
 		for item in items:
 			try:
-				values = {}
-				values['next'] = next 
-				values['tmdb'] = str(item.get('id', '')) if item.get('id') else ''
+				values = {
+					'next': next_url,
+					'tmdb': str(item.get('id', '')) if item.get('id') else '',
+					'imdb': '',
+					'tvdb': '',
+					'metacache': False,
+				}
 				sortList.append(values['tmdb'])
-				values['imdb'] = ''
-				values['tvdb'] = ''
-				values['metacache'] = False
+
 				if 'recommendations' in url or 'similar' in url:
-					if int(item.get('vote_count')) < 50:
-						continue
-					else:
+					if int(item.get('vote_count', 0)) >= 50:
 						self.list.append(values)
 				else:
 					self.list.append(values)
@@ -179,103 +262,226 @@ class Movies(TMDb):
 				from resources.lib.modules import log_utils
 				log_utils.error()
 
-		def items_list(i):
-			if self.list[i]['metacache']: return
+		# Helper function for thread execution
+		def process_item(index):
+			if self.list[index]['metacache']:
+				return
 			try:
 				values = {}
-				tmdb = self.list[i].get('tmdb', '')
+				tmdb = self.list[index].get('tmdb', '')
 				movie_meta = self.get_movie_meta(tmdb)
 				values.update(movie_meta)
 				imdb = values['imdb']
+
 				if self.enable_fanarttv:
 					extended_art = fanarttv_cache.get(FanartTv().get_movie_art, 336, imdb, tmdb)
-					if extended_art: values.update(extended_art)
-				values = dict((k,v) for k, v in iter(values.items()) if v is not None and v != '') # remove empty keys so .update() doesn't over-write good meta with empty values.
-				self.list[i].update(values)
-				meta = {'imdb': imdb, 'tmdb': tmdb, 'tvdb': '', 'lang': self.lang, 'user': self.user, 'item': values}
+					if extended_art:
+						values.update(extended_art)
+
+				# Remove empty keys
+				values = {k: v for k, v in values.items() if v}
+				self.list[index].update(values)
+
+				meta = {
+					'imdb': imdb,
+					'tmdb': tmdb,
+					'tvdb': '',
+					'lang': self.lang,
+					'user': self.user,
+					'item': values,
+				}
 				self.meta.append(meta)
 			except:
 				from resources.lib.modules import log_utils
 				log_utils.error()
 
+		# Fetch metadata using a ThreadPoolExecutor
 		self.list = metacache.fetch(self.list, self.lang, self.user)
-		threads = []
-		append = threads.append
-		for i in range(0, len(self.list)):
-			append(Thread(target=items_list, args=(i,)))
-		[i.start() for i in threads]
-		[i.join() for i in threads]
+
+		with ThreadPoolExecutor(max_workers=10) as executor:  # Adjust max_workers as needed
+			futures = [executor.submit(process_item, i) for i in range(len(self.list))]
+			for future in as_completed(futures):
+				try:
+					future.result()  # Ensure exceptions are handled
+				except Exception as e:
+					from resources.lib.modules import log_utils
+					log_utils.error(f"Error processing item: {str(e)}")
+
+		# Insert metadata into cache
 		if self.meta:
 			self.meta = [i for i in self.meta if i.get('tmdb')]
 			metacache.insert(self.meta)
+
+		# Sort the final list to match TMDB order
 		sorted_list = []
 		self.list = [i for i in self.list if i.get('tmdb')]
-		for i in sortList:
-			sorted_list += [item for item in self.list if item['tmdb'] == i] # resort to match TMDb list because threading will lose order.
+		for tmdb_id in sortList:
+			sorted_list.extend(item for item in self.list if item['tmdb'] == tmdb_id)
+
 		return sorted_list
+
+	# def tmdb_collections_list(self, url):
+	# 	try:
+	# 		result = cache.get(self.get_request, self.tmdbcollection_hours, url)
+	# 		if result is None: return
+	# 		if '404:NOT FOUND' in result: return result
+	# 		if '/collection/' in url: items = result['parts']
+	# 		elif '/3/' in url: items = result['items']
+	# 		else: items = result['results']
+	# 	except: return
+	# 	self.list = []
+	# 	try:
+	# 		page = int(result['page'])
+	# 		total = int(result['total_pages'])
+	# 		if page >= total: raise Exception()
+	# 		if 'page=' not in url: raise Exception()
+	# 		next = '%s&page=%s' % (url.split('&page=', 1)[0], page+1)
+	# 	except: next = ''
+	# 	for item in items:
+	# 		try:
+	# 			values = {}
+	# 			values['next'] = next 
+	# 			media_type = item.get('media_type')
+	# 			if media_type == 'tv': continue
+	# 			values['tmdb'] = str(item.get('id', '')) if item.get('id') else ''
+	# 			values['imdb'] = ''
+	# 			values['tvdb'] = ''
+	# 			values['metacache'] = False 
+	# 			self.list.append(values)
+	# 		except:
+	# 			from resources.lib.modules import log_utils
+	# 			log_utils.error()
+
+	# 	def items_list(i):
+	# 		if self.list[i]['metacache']: return
+	# 		try:
+	# 			values = {}
+	# 			tmdb = self.list[i].get('tmdb', '')
+	# 			movie_meta = self.get_movie_meta(tmdb)
+	# 			values.update(movie_meta)
+	# 			imdb = values['imdb']
+	# 			if self.enable_fanarttv:
+	# 				extended_art = fanarttv_cache.get(FanartTv().get_movie_art, 336, imdb, tmdb)
+	# 				if extended_art: values.update(extended_art)
+	# 			values = dict((k,v) for k, v in iter(values.items()) if v is not None and v != '') # remove empty keys so .update() doesn't over-write good meta with empty values.
+	# 			self.list[i].update(values)
+	# 			meta = {'imdb': imdb, 'tmdb': tmdb, 'tvdb': '', 'lang': self.lang, 'user': self.user, 'item': values}
+	# 			self.meta.append(meta)
+	# 		except:
+	# 			from resources.lib.modules import log_utils
+	# 			log_utils.error()
+
+	# 	self.list = metacache.fetch(self.list, self.lang, self.user)
+	# 	threads = []
+	# 	append = threads.append
+	# 	for i in range(0, len(self.list)):
+	# 		append(Thread(target=items_list, args=(i,)))
+	# 	[i.start() for i in threads]
+	# 	[i.join() for i in threads]
+	# 	if self.meta:
+	# 		self.meta = [i for i in self.meta if i.get('tmdb')]
+	# 		metacache.insert(self.meta)
+	# 	self.list = [i for i in self.list if i.get('tmdb')]
+	# 	return self.list
 
 	def tmdb_collections_list(self, url):
 		try:
 			result = cache.get(self.get_request, self.tmdbcollection_hours, url)
-			if result is None: return
-			if '404:NOT FOUND' in result: return result
-			if '/collection/' in url: items = result['parts']
-			elif '/3/' in url: items = result['items']
-			else: items = result['results']
-		except: return
+			if result is None or '404:NOT FOUND' in result:
+				return
+
+			if '/collection/' in url:
+				items = result['parts']
+			elif '/3/' in url:
+				items = result['items']
+			else:
+				items = result['results']
+		except:
+			return
+
 		self.list = []
+
+		# Handle pagination
 		try:
-			page = int(result['page'])
-			total = int(result['total_pages'])
-			if page >= total: raise Exception()
-			if 'page=' not in url: raise Exception()
-			next = '%s&page=%s' % (url.split('&page=', 1)[0], page+1)
-		except: next = ''
+			page = int(result.get('page', 1))
+			total = int(result.get('total_pages', 1))
+			next_url = (
+				'%s&page=%s' % (url.split('&page=', 1)[0], page + 1)
+				if page < total and 'page=' in url
+				else ''
+			)
+		except:
+			next_url = ''
+
+		# Populate the initial list
 		for item in items:
 			try:
-				values = {}
-				values['next'] = next 
 				media_type = item.get('media_type')
-				if media_type == 'tv': continue
-				values['tmdb'] = str(item.get('id', '')) if item.get('id') else ''
-				values['imdb'] = ''
-				values['tvdb'] = ''
-				values['metacache'] = False 
+				if media_type == 'tv':
+					continue
+				values = {
+					'next': next_url,
+					'tmdb': str(item.get('id', '')) if item.get('id') else '',
+					'imdb': '',
+					'tvdb': '',
+					'metacache': False,
+				}
 				self.list.append(values)
 			except:
 				from resources.lib.modules import log_utils
 				log_utils.error()
 
-		def items_list(i):
-			if self.list[i]['metacache']: return
+		# Function to process metadata for an item
+		def process_item(index):
+			if self.list[index]['metacache']:
+				return
 			try:
-				values = {}
-				tmdb = self.list[i].get('tmdb', '')
+				tmdb = self.list[index].get('tmdb', '')
 				movie_meta = self.get_movie_meta(tmdb)
-				values.update(movie_meta)
-				imdb = values['imdb']
+				values = movie_meta.copy()
+				imdb = values.get('imdb', '')
+
 				if self.enable_fanarttv:
 					extended_art = fanarttv_cache.get(FanartTv().get_movie_art, 336, imdb, tmdb)
-					if extended_art: values.update(extended_art)
-				values = dict((k,v) for k, v in iter(values.items()) if v is not None and v != '') # remove empty keys so .update() doesn't over-write good meta with empty values.
-				self.list[i].update(values)
-				meta = {'imdb': imdb, 'tmdb': tmdb, 'tvdb': '', 'lang': self.lang, 'user': self.user, 'item': values}
+					if extended_art:
+						values.update(extended_art)
+
+				# Remove empty keys
+				values = {k: v for k, v in values.items() if v}
+				self.list[index].update(values)
+
+				meta = {
+					'imdb': imdb,
+					'tmdb': tmdb,
+					'tvdb': '',
+					'lang': self.lang,
+					'user': self.user,
+					'item': values,
+				}
 				self.meta.append(meta)
 			except:
 				from resources.lib.modules import log_utils
 				log_utils.error()
 
 		self.list = metacache.fetch(self.list, self.lang, self.user)
-		threads = []
-		append = threads.append
-		for i in range(0, len(self.list)):
-			append(Thread(target=items_list, args=(i,)))
-		[i.start() for i in threads]
-		[i.join() for i in threads]
+
+		with ThreadPoolExecutor(max_workers=10) as executor:  # Adjust max_workers if needed
+			futures = [executor.submit(process_item, i) for i in range(len(self.list))]
+			for future in as_completed(futures):
+				try:
+					future.result()  # Handle exceptions if they occur
+				except Exception as e:
+					from resources.lib.modules import log_utils
+					log_utils.error(f"Error processing item: {str(e)}")
+
+		# Insert metadata into cache
 		if self.meta:
-			self.meta = [i for i in self.meta if i.get('tmdb')]
+			self.meta = [item for item in self.meta if item.get('tmdb')]
 			metacache.insert(self.meta)
-		self.list = [i for i in self.list if i.get('tmdb')]
+
+		# Filter out items without a TMDb ID
+		self.list = [item for item in self.list if item.get('tmdb')]
+
 		return self.list
 
 	def tmdb_collections_search(self, url):
@@ -531,46 +737,56 @@ class TVshows(TMDb):
 		self.tmdblist_hours = int(getSetting('cache.tmdblist'))
 
 	def tmdb_list(self, url):
-		if not url: return
+		if not url:
+			return
+
 		try:
 			if '%27' in url:
 				part1 = url.split('%s')[0]
 				part2 = self.API_key
 				part3 = url.split('%s')[1]
-				newurl = str(part1) + str(part2) + str(part3)
+				newurl = f"{part1}{part2}{part3}"
 			else:
 				newurl = url % self.API_key
 
 			result = cache.get(self.get_request, self.tmdblist_hours, newurl)
-			if result is None: return
-			if '404:NOT FOUND' in result: return result
-			if 'person' in url:
-				items = result['cast']
-			else:
-				items = result['results']
-		except: return
-		self.list = [] ; sortList = []
+			if result is None:
+				return
+			if '404:NOT FOUND' in result:
+				return result
+
+			items = result['cast'] if 'person' in url else result['results']
+		except:
+			return
+
+		self.list = []
+		sortList = []
+
 		try:
 			page = int(result['page'])
 			total = int(result['total_pages'])
-			if page >= total: raise Exception()
-			if 'page=' not in url: raise Exception()
-			next = '%s&page=%s' % (url.split('&page=', 1)[0], page+1)
-		except: next = ''
+			if page >= total or 'page=' not in url:
+				raise Exception()
+			next_page = f"{url.split('&page=', 1)[0]}&page={page + 1}"
+		except:
+			next_page = ''
+
 		for item in items:
 			try:
-				values = {}
-				values['next'] = next 
-				values['tmdb'] = str(item.get('id')) if item.get('id', '') else ''
+				values = {
+					'next': next_page,
+					'tmdb': str(item.get('id')) if item.get('id', '') else '',
+					'metacache': False
+				}
 				sortList.append(values['tmdb'])
-				values['metacache'] = False 
 				self.list.append(values)
 			except:
 				from resources.lib.modules import log_utils
 				log_utils.error()
 
-		def items_list(i):
-			if self.list[i]['metacache']: return
+		def process_item(i):
+			if self.list[i]['metacache']:
+				return
 			try:
 				values = {}
 				tmdb = self.list[i].get('tmdb', '')
@@ -578,95 +794,201 @@ class TVshows(TMDb):
 				values.update(showSeasons_meta)
 				imdb = values['imdb']
 				tvdb = values['tvdb']
+
 				if self.enable_fanarttv:
 					extended_art = fanarttv_cache.get(FanartTv().get_tvshow_art, 336, tvdb)
-					if extended_art: values.update(extended_art)
-				values = dict((k,v) for k, v in iter(values.items()) if v is not None and v != '') # remove empty keys so .update() doesn't over-write good meta with empty values.
+					if extended_art:
+						values.update(extended_art)
+
+				# Remove empty keys to avoid overwriting good meta
+				values = {k: v for k, v in values.items() if v is not None and v != ''}
 				self.list[i].update(values)
-				meta = {'imdb': imdb, 'tmdb': tmdb, 'tvdb': tvdb, 'lang': self.lang, 'user': self.user, 'item': values}
+
+				meta = {
+					'imdb': imdb,
+					'tmdb': tmdb,
+					'tvdb': tvdb,
+					'lang': self.lang,
+					'user': self.user,
+					'item': values
+				}
 				self.meta.append(meta)
 			except:
 				from resources.lib.modules import log_utils
 				log_utils.error()
 
+		# Fetch meta cache
 		self.list = metacache.fetch(self.list, self.lang, self.user)
-		threads = []
-		append = threads.append
-		for i in range(0, len(self.list)):
-			append(Thread(target=items_list, args=(i,)))
-		[i.start() for i in threads]
-		[i.join() for i in threads]
+
+		# Use ThreadPoolExecutor for processing items
+		with ThreadPoolExecutor(max_workers=10) as executor:
+			executor.map(process_item, range(len(self.list)))
+
 		if self.meta:
 			self.meta = [i for i in self.meta if i.get('tmdb')]
 			metacache.insert(self.meta)
-		sorted_list = []
+
+		# Filter and sort the list
 		self.list = [i for i in self.list if i.get('tmdb')]
-		for i in sortList:
-			sorted_list += [item for item in self.list if str(item['tmdb']) == str(i)]
+		sorted_list = [item for tmdb_id in sortList for item in self.list if str(item['tmdb']) == str(tmdb_id)]
+
 		return sorted_list
 
+	# def tmdb_collections_list(self, url):
+	# 	if not url: return
+	# 	try:
+	# 		result = self.get_request(url)
+	# 		if result is None: return
+	# 		if '404:NOT FOUND' in result: return result
+	# 		if '/collection/' in url: items = result['parts']
+	# 		elif '/3/' in url: items = result['items']
+	# 		else: items = result['results']
+	# 	except: return
+	# 	self.list = []
+	# 	try:
+	# 		page = int(result['page'])
+	# 		total = int(result['total_pages'])
+	# 		if page >= total: raise Exception()
+	# 		if 'page=' not in url: raise Exception()
+	# 		next = '%s&page=%s' % (url.split('&page=', 1)[0], page+1)
+	# 	except: next = ''
+	# 	for item in items:
+	# 		try:
+	# 			values = {}
+	# 			values['next'] = next 
+	# 			media_type = item.get('media_type', '')
+	# 			if media_type == 'movie': continue
+	# 			values['tmdb'] = str(item.get('id', '')) if item.get('id') else ''
+	# 			values['metacache'] = False 
+	# 			self.list.append(values)
+	# 		except:
+	# 			from resources.lib.modules import log_utils
+	# 			log_utils.error()
+
+	# 	def items_list(i):
+	# 		if self.list[i]['metacache']: return
+	# 		try:
+	# 			values = {}
+	# 			tmdb = self.list[i].get('tmdb', '')
+	# 			showSeasons_meta = cache.get(self.get_showSeasons_meta, 96, tmdb)
+	# 			values.update(showSeasons_meta)
+	# 			imdb = values['imdb']
+	# 			tvdb = values['tvdb']
+	# 			if self.enable_fanarttv:
+	# 				extended_art = fanarttv_cache.get(FanartTv().get_tvshow_art, 336, tvdb)
+	# 				if extended_art: values.update(extended_art)
+	# 			values = dict((k,v) for k, v in iter(values.items()) if v is not None and v != '') # remove empty keys so .update() doesn't over-write good meta with empty values.
+	# 			self.list[i].update(values)
+	# 			meta = {'imdb': imdb, 'tmdb': tmdb, 'tvdb': tvdb, 'lang': self.lang, 'user': self.user, 'item': values}
+	# 			self.meta.append(meta)
+	# 		except:
+	# 			from resources.lib.modules import log_utils
+	# 			log_utils.error()
+
+	# 	self.list = metacache.fetch(self.list, self.lang, self.user)
+	# 	threads = []
+	# 	append = threads.append
+	# 	for i in range(0, len(self.list)):
+	# 		append(Thread(target=items_list, args=(i,)))
+	# 	[i.start() for i in threads]
+	# 	[i.join() for i in threads]
+	# 	if self.meta:
+	# 		self.meta = [i for i in self.meta if i.get('tmdb')]
+	# 		metacache.insert(self.meta)
+	# 	self.list = [i for i in self.list if i.get('tmdb')]
+	# 	return self.list
+
 	def tmdb_collections_list(self, url):
-		if not url: return
+		if not url:
+			return
+
 		try:
 			result = self.get_request(url)
-			if result is None: return
-			if '404:NOT FOUND' in result: return result
-			if '/collection/' in url: items = result['parts']
-			elif '/3/' in url: items = result['items']
-			else: items = result['results']
-		except: return
+			if result is None:
+				return
+			if '404:NOT FOUND' in result:
+				return result
+			items = (
+				result['parts'] if '/collection/' in url else
+				result['items'] if '/3/' in url else
+				result['results']
+			)
+		except:
+			return
+
 		self.list = []
+
 		try:
 			page = int(result['page'])
 			total = int(result['total_pages'])
-			if page >= total: raise Exception()
-			if 'page=' not in url: raise Exception()
-			next = '%s&page=%s' % (url.split('&page=', 1)[0], page+1)
-		except: next = ''
+			if page >= total or 'page=' not in url:
+				raise Exception()
+			next_page = f"{url.split('&page=', 1)[0]}&page={page + 1}"
+		except:
+			next_page = ''
+
 		for item in items:
 			try:
-				values = {}
-				values['next'] = next 
+				values = {
+					'next': next_page,
+					'tmdb': str(item.get('id', '')) if item.get('id') else '',
+					'metacache': False
+				}
 				media_type = item.get('media_type', '')
-				if media_type == 'movie': continue
-				values['tmdb'] = str(item.get('id', '')) if item.get('id') else ''
-				values['metacache'] = False 
+				if media_type == 'movie':
+					continue
 				self.list.append(values)
 			except:
 				from resources.lib.modules import log_utils
 				log_utils.error()
 
-		def items_list(i):
-			if self.list[i]['metacache']: return
+		def process_item(i):
+			if self.list[i]['metacache']:
+				return
 			try:
 				values = {}
 				tmdb = self.list[i].get('tmdb', '')
 				showSeasons_meta = cache.get(self.get_showSeasons_meta, 96, tmdb)
 				values.update(showSeasons_meta)
-				imdb = values['imdb']
-				tvdb = values['tvdb']
+				imdb = values.get('imdb', '')
+				tvdb = values.get('tvdb', '')
+
 				if self.enable_fanarttv:
 					extended_art = fanarttv_cache.get(FanartTv().get_tvshow_art, 336, tvdb)
-					if extended_art: values.update(extended_art)
-				values = dict((k,v) for k, v in iter(values.items()) if v is not None and v != '') # remove empty keys so .update() doesn't over-write good meta with empty values.
+					if extended_art:
+						values.update(extended_art)
+
+				# Remove empty keys to avoid overwriting good meta
+				values = {k: v for k, v in values.items() if v is not None and v != ''}
 				self.list[i].update(values)
-				meta = {'imdb': imdb, 'tmdb': tmdb, 'tvdb': tvdb, 'lang': self.lang, 'user': self.user, 'item': values}
+
+				meta = {
+					'imdb': imdb,
+					'tmdb': tmdb,
+					'tvdb': tvdb,
+					'lang': self.lang,
+					'user': self.user,
+					'item': values
+				}
 				self.meta.append(meta)
 			except:
 				from resources.lib.modules import log_utils
 				log_utils.error()
 
+		# Fetch meta cache
 		self.list = metacache.fetch(self.list, self.lang, self.user)
-		threads = []
-		append = threads.append
-		for i in range(0, len(self.list)):
-			append(Thread(target=items_list, args=(i,)))
-		[i.start() for i in threads]
-		[i.join() for i in threads]
+
+		# Use ThreadPoolExecutor for parallel processing
+		with ThreadPoolExecutor(max_workers=10) as executor:
+			executor.map(process_item, range(len(self.list)))
+
 		if self.meta:
 			self.meta = [i for i in self.meta if i.get('tmdb')]
 			metacache.insert(self.meta)
+
+		# Filter the list to include only valid TMDb items
 		self.list = [i for i in self.list if i.get('tmdb')]
+
 		return self.list
 
 	def get_show_request(self, tmdb):
