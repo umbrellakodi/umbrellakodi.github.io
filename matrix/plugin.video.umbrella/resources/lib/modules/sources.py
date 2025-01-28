@@ -650,267 +650,24 @@ class Sources:
 		except Exception as e:
 			log_utils.error(f"Error in getSources_silent: {e}")
 
-	# def getSources_dialog(self, title, year, imdb, tvdb, season, episode, tvshowtitle, premiered, timeout=90):
-	# 	try:
-	# 		content = 'movie' if tvshowtitle is None else 'episode'
-	# 		if self.filterless_scrape: homeWindow.setProperty('fs_filterless_search', 'true')
-	# 		if self.custom_query == 'true':
-	# 			try:
-	# 				custom_title = control.dialog.input('[COLOR %s][B]%s[/B][/COLOR]' % (self.highlight_color, getLS(32038)), defaultt=tvshowtitle if tvshowtitle else title)
-	# 				if content == 'movie':
-	# 					if custom_title: title = custom_title ; self.meta.update({'title': title})
-	# 					custom_year = control.dialog.input('[COLOR %s]%s (%s)[/COLOR]' % (self.highlight_color, getLS(32457), getLS(32488)), type=control.numeric_input, defaultt=str(year))
-	# 					if custom_year: year = str(custom_year) ; self.meta.update({'year': year})
-	# 				else:
-	# 					if custom_title: tvshowtitle = custom_title ; self.meta.update({'tvshowtitle': tvshowtitle})
-	# 					custom_season = control.dialog.input('[COLOR %s]%s (%s)[/COLOR]' % (self.highlight_color, getLS(32055), getLS(32488)), type=control.numeric_input, defaultt=str(season))
-	# 					if custom_season: season = str(custom_season) ; self.meta.update({'season': season})
-	# 					custom_episode = control.dialog.input('[COLOR %s]%s (%s)[/COLOR]' % (self.highlight_color, getLS(32325), getLS(32488)), type=control.numeric_input, defaultt=str(episode))
-	# 					if custom_episode: episode = str(custom_episode) ; self.meta.update({'episode': episode})
-	# 				p_label = '[COLOR %s]%s (%s)[/COLOR]' % (self.highlight_color, title, year) if tvshowtitle is None else '[COLOR %s]%s (S%02dE%02d)[/COLOR]' % (self.highlight_color, tvshowtitle, int(season), int(episode))
-	# 				homeWindow.clearProperty(self.labelProperty)
-	# 				homeWindow.setProperty(self.labelProperty, p_label)
-	# 				homeWindow.clearProperty(self.metaProperty)
-	# 				homeWindow.setProperty(self.metaProperty, jsdumps(self.meta))
-	# 				homeWindow.clearProperty(self.seasonProperty)
-	# 				homeWindow.setProperty(self.seasonProperty, season)
-	# 				homeWindow.clearProperty(self.episodeProperty)
-	# 				homeWindow.setProperty(self.episodeProperty, episode)
-	# 				homeWindow.clearProperty(self.titleProperty)
-	# 				homeWindow.setProperty(self.titleProperty, title)
-	# 				log_utils.log('Custom query scrape ran using: %s' % p_label, level=log_utils.LOGDEBUG)
-	# 			except: log_utils.error()
-	# 		#progressDialog = control.progressDialog if getSetting('progress.dialog') == '0' else control.progressDialogBG
-	# 		header = homeWindow.getProperty(self.labelProperty) + ': Scraping...'
-	# 		try:
-	# 			if getSetting('progress.dialog') == '0':
-	# 				if getSetting('dialogs.useumbrelladialog') == 'true':
-	# 					progressDialog = control.getProgressWindow(header, icon='')
-	# 					debrid_message = '[COLOR %s][B]Please wait...[CR]Checking Providers[/B][/COLOR]' % self.highlight_color
-	# 				else:
-	# 					progressDialog = control.progressDialog
-	# 					progressDialog.create(header,'')
-	# 					debrid_message = '[COLOR %s][B]Please wait...[CR]Checking Providers[/B][/COLOR]' % self.highlight_color
-	# 			elif getSetting('progress.dialog') in ('2', '3','4'):
-	# 				try: meta = self.meta
-	# 				except: meta = {'title': title, 'year': year, 'imdb': imdb, 'tvdb': tvdb, 'season': season, 'episode': episode, 'tvshowtitle': tvshowtitle}
-	# 				progressDialog = self.getWindowProgress(title, meta)
-	# 				Thread(target=self.window_monitor, args=(progressDialog,)).start()
-	# 				debrid_message = '[COLOR %s][B]Please wait...[CR]Checking Providers[/B][/COLOR]' % self.highlight_color
-	# 			else: raise Exception()
-	# 		except:
-	# 			homeWindow.clearProperty('umbrella.window_keep_alive')
-	# 			progressDialog = control.progressDialogBG
-	# 			progressDialog.create(header, '')
-	# 			debrid_message = '[COLOR %s][B]Please wait...  Checking Providers[/B][/COLOR]' % self.highlight_color
-	# 		self.prepareSources()
-	# 		sourceDict = self.sourceDict
-	# 		progressDialog.update(0, getLS(32600)) # preparing sources
-	# 		if content == 'movie': sourceDict = [(i[0], i[1]) for i in sourceDict if i[1].hasMovies]
-	# 		else: sourceDict = [(i[0], i[1]) for i in sourceDict if i[1].hasEpisodes]
-	# 		if getSetting('cf.disable') == 'true': sourceDict = [(i[0], i[1]) for i in sourceDict if not any(x in i[0] for x in self.sourcecfDict)]
-	# 		if getSetting('scrapers.prioritize') == 'true': 
-	# 			sourceDict = [(i[0], i[1], i[1].priority) for i in sourceDict]
-	# 			sourceDict = sorted(sourceDict, key=lambda i: i[2]) # sorted by scraper priority
-	# 		try: aliases = self.meta.get('aliases', [])
-	# 		except: aliases = []
-	# 		threads = [] ; threads_append = threads.append
-
-	# 		if content == 'movie':
-	# 			trakt_aliases = self.getAliasTitles(imdb, content) # cached for 7 days in trakt module called
-	# 			try: aliases.extend([i for i in trakt_aliases if not i in aliases]) # combine TMDb and Trakt aliases
-	# 			except: pass
-	# 			data = {'title': title, 'aliases': aliases, 'year': year, 'imdb': imdb}
-	# 			if self.debrid_service: data.update({'debrid_service': self.debrid_service, 'debrid_token': self.debrid_token})
-	# 			for i in sourceDict: threads_append(Thread(target=self.getMovieSource, args=(imdb, data, i[0], i[1]), name=i[0].upper()))
-	# 		else:
-	# 			scraperDict = [(i[0], i[1], '') for i in sourceDict] if ((not self.dev_mode) or (not self.dev_disable_single)) else []
-	# 			if self.season_isAiring == 'false':
-	# 				if (not self.dev_mode) or (not self.dev_disable_season_packs): scraperDict.extend([(i[0], i[1], 'season') for i in sourceDict if i[1].pack_capable])
-	# 				if (not self.dev_mode) or (not self.dev_disable_show_packs): scraperDict.extend([(i[0], i[1], 'show') for i in sourceDict if i[1].pack_capable])
-	# 			trakt_aliases = self.getAliasTitles(imdb, content) # cached for 7 days in trakt module called
-	# 			try: aliases.extend([i for i in trakt_aliases if not i in aliases]) # combine TMDb and Trakt aliases
-	# 			except: pass
-	# 			try: country_codes = self.meta.get('country_codes', [])
-	# 			except: country_codes = []
-	# 			for i in country_codes:
-	# 				if i in ('CA', 'US', 'UK', 'GB'):
-	# 					if i == 'GB': i = 'UK'
-	# 					alias = {'title': tvshowtitle + ' ' + i, 'country': i.lower()}
-	# 					if not alias in aliases: aliases.append(alias)
-	# 			aliases = aliases_check(tvshowtitle, aliases)
-	# 			data = {'title': title, 'year': year, 'imdb': imdb, 'tvdb': tvdb, 'season': season, 'episode': episode, 'tvshowtitle': tvshowtitle, 'aliases': aliases, 'premiered': premiered}
-	# 			if self.debrid_service: data.update({'debrid_service': self.debrid_service, 'debrid_token': self.debrid_token})
-	# 			for i in scraperDict:
-	# 				name, pack = i[0].upper(), i[2]
-	# 				if pack == 'season': name = '%s (season pack)' % name
-	# 				elif pack == 'show': name = '%s (show pack)' % name
-	# 				threads_append(Thread(target=self.getEpisodeSource, args=(imdb, season, episode, data, i[0], i[1], pack), name=name))
-	# 		[i.start() for i in threads]
-	# 		sdc = getSetting('sources.highlight.color')
-	# 		string1 = getLS(32404) % (self.highlight_color, sdc, '%s') # msgid "[COLOR %s]Time elapsed:[/COLOR]  [COLOR %s]%s seconds[/COLOR]"
-	# 		string3 = getLS(32406) % (self.highlight_color, sdc, '%s') # msgid "[COLOR %s]Remaining providers:[/COLOR] [COLOR %s]%s[/COLOR]"
-	# 		string4 = getLS(32407) % (self.highlight_color, sdc, '%s') # msgid "[COLOR %s]Unfiltered Total: [/COLOR]  [COLOR %s]%s[/COLOR]"
-	# 		#string1f = getLS(32404) % (sdc, sdc, '%s') # msgid "[COLOR %s]Time elapsed:[/COLOR]  [COLOR %s]%s seconds[/COLOR]"
-	# 		#string3f = getLS(32406) % (sdc, sdc, '%s') # msgid "[COLOR %s]Remaining providers:[/COLOR] [COLOR %s]%s[/COLOR]"
-	# 		#string4f = getLS(32407) % (sdc, sdc, '%s') # msgid "[COLOR %s]Unfiltered Total: [/COLOR]  [COLOR %s]%s[/COLOR]"
-
-
-	# 		try: timeout = int(getSetting('scrapers.timeout'))
-	# 		except: pass
-	# 		if self.all_providers == 'true': timeout = 90
-	# 		start_time = time()
-	# 		end_time = start_time + timeout
-	# 		quality = getSetting('hosts.quality') or '0'
-	# 		line1 = line2 = line3 = ""
-	# 		terminate_onCloud = getSetting('terminate.onCloud.sources') == 'true'
-	# 		pre_emp_movie = getSetting('preemptive.termination.movie') == 'true'
-	# 		pre_emp_limit_movie = int(getSetting('preemptive.limit.movie'))
-	# 		pre_emp_res_movie = getSetting('preemptive.res.movie') or '0'
-	# 		pre_emp_tv = getSetting('preemptive.termination.tv') == 'true'
-	# 		pre_emp_limit_tv = int(getSetting('preemptive.limit.tv'))
-	# 		pre_emp_res_tv = getSetting('preemptive.res.tv') or '0'
-	# 		#new settings for tv and movie isolated.
-	# 		source_4k = source_1080 = source_720 = source_sd = total = 0
-	# 		total_format = '[COLOR %s][B]%s[/B][/COLOR]'
-	# 		total_format2 = '[B]%s[/B]'
-	# 		pdiag_format = '[COLOR %s]4K:[/COLOR]  %s  |  [COLOR %s]1080p:[/COLOR]  %s  |  [COLOR %s]720p:[/COLOR]  %s  |  [COLOR %s]SD:[/COLOR]  %s' % (
-	# 			self.highlight_color, '%s', self.highlight_color, '%s', self.highlight_color, '%s', self.highlight_color, '%s')
-	# 		#pdiagfull_format = '[COLOR %s]4K:[/COLOR]  %s  |  [COLOR %s]1080p:[/COLOR]  %s  |  [COLOR %s]720p:[/COLOR]  %s  |  [COLOR %s]SD:[/COLOR]  %s' % (
-	# 		#	sdc, '%s', sdc, '%s', sdc, '%s', sdc, '%s')
-	# 		control.hide()
-	# 	except:
-	# 		log_utils.error()
-	# 		try: progressDialog.close()
-	# 		except: pass
-	# 		del progressDialog
-	# 		return
-
-	# 	while True:
-	# 		try:
-	# 			if control.monitor.abortRequested(): return sysexit()
-	# 			try:
-	# 				if progressDialog.iscanceled(): 
-	# 					break
-	# 			except: pass
-
-	# 			if terminate_onCloud:
-	# 				if len([e for e in self.scraper_sources if e['source'] == 'cloud']) > 0: break
-	# 			if content == 'movie':
-	# 				if pre_emp_movie:
-	# 					if pre_emp_res_movie == '0' and source_4k >= pre_emp_limit_movie: break
-	# 					elif pre_emp_res_movie == '1' and source_1080 >= pre_emp_limit_movie: break
-	# 					elif pre_emp_res_movie == '2' and source_720 >= pre_emp_limit_movie: break
-	# 					elif pre_emp_res_movie == '3' and source_sd >= pre_emp_limit_movie: break
-	# 			else:
-	# 				if pre_emp_tv:
-	# 					if pre_emp_res_tv == '0' and source_4k >= pre_emp_limit_tv: break
-	# 					elif pre_emp_res_tv == '1' and source_1080 >= pre_emp_limit_tv: break
-	# 					elif pre_emp_res_tv == '2' and source_720 >= pre_emp_limit_tv: break
-	# 					elif pre_emp_res_tv == '3' and source_sd >= pre_emp_limit_tv: break
-	# 			if quality == '0':
-	# 				source_4k = len([e for e in self.scraper_sources if e['quality'] == '4K'])
-	# 				source_1080 = len([e for e in self.scraper_sources if e['quality'] == '1080p'])
-	# 				source_720 = len([e for e in self.scraper_sources if e['quality'] == '720p'])
-	# 				source_sd = len([e for e in self.scraper_sources if e['quality'] in ('SD', 'SCR', 'CAM')])
-	# 			elif quality == '1':
-	# 				source_1080 = len([e for e in self.scraper_sources if e['quality'] == '1080p'])
-	# 				source_720 = len([e for e in self.scraper_sources if e['quality'] == '720p'])
-	# 				source_sd = len([e for e in self.scraper_sources if e['quality'] in ('SD', 'SCR', 'CAM')])
-	# 			elif quality == '2':
-	# 				source_720 = len([e for e in self.scraper_sources if e['quality'] == '720p'])
-	# 				source_sd = len([e for e in self.scraper_sources if e['quality'] in ('SD', 'SCR', 'CAM')])
-	# 			else:
-	# 				source_sd = len([e for e in self.scraper_sources if e['quality'] in ('SD', 'SCR', 'CAM')])
-	# 			total = source_4k + source_1080 + source_720 + source_sd
-
-	# 			source_4k_label = total_format2 % (source_4k) if source_4k == 0 else total_format % (sdc, source_4k)
-	# 			source_1080_label = total_format2 % (source_1080) if source_1080 == 0 else total_format % (sdc, source_1080)
-	# 			source_720_label = total_format2 % (source_720) if source_720 == 0 else total_format % (sdc, source_720)
-	# 			source_sd_label = total_format2 % (source_sd) if source_sd == 0 else total_format % (sdc, source_sd)
-	# 			source_total_label = total_format2 % (total) if total == 0 else total_format % (sdc, total)
-	# 			try:
-	# 				info = [x.getName() for x in threads if x.is_alive() is True]
-	# 				line1 = pdiag_format % (source_4k_label, source_1080_label, source_720_label, source_sd_label)
-	# 				#line2 = string4 % source_total_label + '     ' + string1 % round(time() - start_time, 1)
-	# 				line2 = string1 % round(time() - start_time, 1)
-	# 				if len(info) > 6: line3 = string3 % str(len(info))
-	# 				elif len(info) > 0: line3 = string3 % (', '.join(info))
-	# 				else: break
-	# 				current_time = time()
-	# 				current_progress = current_time - start_time
-	# 				#percent = int((current_progress / float(timeout)) * 100)
-	# 				percent = int((len(sourceDict) - len(info)) * 100 / len(sourceDict))
-	# 				if progressDialog != control.progressDialog and progressDialog != control.progressDialogBG:
-	# 					progressDialog.update(max(1, percent), line1 + '[CR]' + line2 + '[CR]' + line3)
-	# 				elif progressDialog != control.progressDialogBG: progressDialog.update(max(1, percent), line1 + '[CR]' + line2 + '[CR]' + line3)
-	# 				else: progressDialog.update(max(1, percent), line1 + '  ' + string3 % str(len(info)))
-	# 				if end_time < current_time: break
-	# 			except:
-	# 				log_utils.error()
-	# 				break
-	# 			control.sleep(25)
-	# 		except: log_utils.error()
-	# 	progressDialog.update(100, debrid_message)
-	# 	del threads[:] # Make sure any remaining providers are stopped, only deletes threads not started yet.
-	# 	self.sources.extend(self.scraper_sources)
-	# 	self.tvshowtitle = tvshowtitle
-	# 	self.year = year
-	# 	homeWindow.clearProperty('fs_filterless_search')
-	# 	if len(self.sources) > 0: self.sourcesFilter()
-	# 	if homeWindow.getProperty('umbrella.window_keep_alive') != 'true':
-	# 		try: progressDialog.close()
-	# 		except: pass
-	# 		del progressDialog
-	# 	return self.sources
 	def getSources_dialog(self, title, year, imdb, tvdb, season, episode, tvshowtitle, premiered, timeout=90):
 		try:
 			content = 'movie' if tvshowtitle is None else 'episode'
-			if self.filterless_scrape:
-				homeWindow.setProperty('fs_filterless_search', 'true')
-
+			if self.filterless_scrape: homeWindow.setProperty('fs_filterless_search', 'true')
 			if self.custom_query == 'true':
 				try:
-					custom_title = control.dialog.input(
-						'[COLOR %s][B]%s[/B][/COLOR]' % (self.highlight_color, getLS(32038)),
-						defaultt=tvshowtitle if tvshowtitle else title
-					)
+					custom_title = control.dialog.input('[COLOR %s][B]%s[/B][/COLOR]' % (self.highlight_color, getLS(32038)), defaultt=tvshowtitle if tvshowtitle else title)
 					if content == 'movie':
-						if custom_title:
-							title = custom_title
-							self.meta.update({'title': title})
-						custom_year = control.dialog.input(
-							'[COLOR %s]%s (%s)[/COLOR]' % (self.highlight_color, getLS(32457), getLS(32488)),
-							type=control.numeric_input,
-							defaultt=str(year)
-						)
-						if custom_year:
-							year = str(custom_year)
-							self.meta.update({'year': year})
+						if custom_title: title = custom_title ; self.meta.update({'title': title})
+						custom_year = control.dialog.input('[COLOR %s]%s (%s)[/COLOR]' % (self.highlight_color, getLS(32457), getLS(32488)), type=control.numeric_input, defaultt=str(year))
+						if custom_year: year = str(custom_year) ; self.meta.update({'year': year})
 					else:
-						if custom_title:
-							tvshowtitle = custom_title
-							self.meta.update({'tvshowtitle': tvshowtitle})
-						custom_season = control.dialog.input(
-							'[COLOR %s]%s (%s)[/COLOR]' % (self.highlight_color, getLS(32055), getLS(32488)),
-							type=control.numeric_input,
-							defaultt=str(season)
-						)
-						if custom_season:
-							season = str(custom_season)
-							self.meta.update({'season': season})
-						custom_episode = control.dialog.input(
-							'[COLOR %s]%s (%s)[/COLOR]' % (self.highlight_color, getLS(32325), getLS(32488)),
-							type=control.numeric_input,
-							defaultt=str(episode)
-						)
-						if custom_episode:
-							episode = str(custom_episode)
-							self.meta.update({'episode': episode})
-
-					# Update window properties
-					p_label = '[COLOR %s]%s (%s)[/COLOR]' % (self.highlight_color, title, year) if tvshowtitle is None else \
-							'[COLOR %s]%s (S%02dE%02d)[/COLOR]' % (self.highlight_color, tvshowtitle, int(season), int(episode))
+						if custom_title: tvshowtitle = custom_title ; self.meta.update({'tvshowtitle': tvshowtitle})
+						custom_season = control.dialog.input('[COLOR %s]%s (%s)[/COLOR]' % (self.highlight_color, getLS(32055), getLS(32488)), type=control.numeric_input, defaultt=str(season))
+						if custom_season: season = str(custom_season) ; self.meta.update({'season': season})
+						custom_episode = control.dialog.input('[COLOR %s]%s (%s)[/COLOR]' % (self.highlight_color, getLS(32325), getLS(32488)), type=control.numeric_input, defaultt=str(episode))
+						if custom_episode: episode = str(custom_episode) ; self.meta.update({'episode': episode})
+					p_label = '[COLOR %s]%s (%s)[/COLOR]' % (self.highlight_color, title, year) if tvshowtitle is None else '[COLOR %s]%s (S%02dE%02d)[/COLOR]' % (self.highlight_color, tvshowtitle, int(season), int(episode))
 					homeWindow.clearProperty(self.labelProperty)
 					homeWindow.setProperty(self.labelProperty, p_label)
 					homeWindow.clearProperty(self.metaProperty)
@@ -922,71 +679,190 @@ class Sources:
 					homeWindow.clearProperty(self.titleProperty)
 					homeWindow.setProperty(self.titleProperty, title)
 					log_utils.log('Custom query scrape ran using: %s' % p_label, level=log_utils.LOGDEBUG)
-				except Exception:
-					log_utils.error()
-
-			# Progress dialog setup
+				except: log_utils.error()
+			#progressDialog = control.progressDialog if getSetting('progress.dialog') == '0' else control.progressDialogBG
 			header = homeWindow.getProperty(self.labelProperty) + ': Scraping...'
-			progressDialog = control.progressDialogBG
-			progressDialog.create(header, 'Scraping providers...')
-
-			# Prepare sources
+			try:
+				if getSetting('progress.dialog') == '0':
+					if getSetting('dialogs.useumbrelladialog') == 'true':
+						progressDialog = control.getProgressWindow(header, icon='')
+						debrid_message = '[COLOR %s][B]Please wait...[CR]Checking Providers[/B][/COLOR]' % self.highlight_color
+					else:
+						progressDialog = control.progressDialog
+						progressDialog.create(header,'')
+						debrid_message = '[COLOR %s][B]Please wait...[CR]Checking Providers[/B][/COLOR]' % self.highlight_color
+				elif getSetting('progress.dialog') in ('2', '3','4'):
+					try: meta = self.meta
+					except: meta = {'title': title, 'year': year, 'imdb': imdb, 'tvdb': tvdb, 'season': season, 'episode': episode, 'tvshowtitle': tvshowtitle}
+					progressDialog = self.getWindowProgress(title, meta)
+					Thread(target=self.window_monitor, args=(progressDialog,)).start()
+					debrid_message = '[COLOR %s][B]Please wait...[CR]Checking Providers[/B][/COLOR]' % self.highlight_color
+				else: raise Exception()
+			except:
+				homeWindow.clearProperty('umbrella.window_keep_alive')
+				progressDialog = control.progressDialogBG
+				progressDialog.create(header, '')
+				debrid_message = '[COLOR %s][B]Please wait...  Checking Providers[/B][/COLOR]' % self.highlight_color
 			self.prepareSources()
 			sourceDict = self.sourceDict
+			progressDialog.update(0, getLS(32600)) # preparing sources
+			if content == 'movie': sourceDict = [(i[0], i[1]) for i in sourceDict if i[1].hasMovies]
+			else: sourceDict = [(i[0], i[1]) for i in sourceDict if i[1].hasEpisodes]
+			if getSetting('cf.disable') == 'true': sourceDict = [(i[0], i[1]) for i in sourceDict if not any(x in i[0] for x in self.sourcecfDict)]
+			if getSetting('scrapers.prioritize') == 'true': 
+				sourceDict = [(i[0], i[1], i[1].priority) for i in sourceDict]
+				sourceDict = sorted(sourceDict, key=lambda i: i[2]) # sorted by scraper priority
+			try: aliases = self.meta.get('aliases', [])
+			except: aliases = []
+			threads = [] ; threads_append = threads.append
+
 			if content == 'movie':
-				sourceDict = [(i[0], i[1]) for i in sourceDict if i[1].hasMovies]
+				trakt_aliases = self.getAliasTitles(imdb, content) # cached for 7 days in trakt module called
+				try: aliases.extend([i for i in trakt_aliases if not i in aliases]) # combine TMDb and Trakt aliases
+				except: pass
+				data = {'title': title, 'aliases': aliases, 'year': year, 'imdb': imdb}
+				if self.debrid_service: data.update({'debrid_service': self.debrid_service, 'debrid_token': self.debrid_token})
+				for i in sourceDict: threads_append(Thread(target=self.getMovieSource, args=(imdb, data, i[0], i[1]), name=i[0].upper()))
 			else:
-				sourceDict = [(i[0], i[1]) for i in sourceDict if i[1].hasEpisodes]
+				scraperDict = [(i[0], i[1], '') for i in sourceDict] if ((not self.dev_mode) or (not self.dev_disable_single)) else []
+				if self.season_isAiring == 'false':
+					if (not self.dev_mode) or (not self.dev_disable_season_packs): scraperDict.extend([(i[0], i[1], 'season') for i in sourceDict if i[1].pack_capable])
+					if (not self.dev_mode) or (not self.dev_disable_show_packs): scraperDict.extend([(i[0], i[1], 'show') for i in sourceDict if i[1].pack_capable])
+				trakt_aliases = self.getAliasTitles(imdb, content) # cached for 7 days in trakt module called
+				try: aliases.extend([i for i in trakt_aliases if not i in aliases]) # combine TMDb and Trakt aliases
+				except: pass
+				try: country_codes = self.meta.get('country_codes', [])
+				except: country_codes = []
+				for i in country_codes:
+					if i in ('CA', 'US', 'UK', 'GB'):
+						if i == 'GB': i = 'UK'
+						alias = {'title': tvshowtitle + ' ' + i, 'country': i.lower()}
+						if not alias in aliases: aliases.append(alias)
+				aliases = aliases_check(tvshowtitle, aliases)
+				data = {'title': title, 'year': year, 'imdb': imdb, 'tvdb': tvdb, 'season': season, 'episode': episode, 'tvshowtitle': tvshowtitle, 'aliases': aliases, 'premiered': premiered}
+				if self.debrid_service: data.update({'debrid_service': self.debrid_service, 'debrid_token': self.debrid_token})
+				for i in scraperDict:
+					name, pack = i[0].upper(), i[2]
+					if pack == 'season': name = '%s (season pack)' % name
+					elif pack == 'show': name = '%s (show pack)' % name
+					threads_append(Thread(target=self.getEpisodeSource, args=(imdb, season, episode, data, i[0], i[1], pack), name=name))
+			[i.start() for i in threads]
+			sdc = getSetting('sources.highlight.color')
+			string1 = getLS(32404) % (self.highlight_color, sdc, '%s') # msgid "[COLOR %s]Time elapsed:[/COLOR]  [COLOR %s]%s seconds[/COLOR]"
+			string3 = getLS(32406) % (self.highlight_color, sdc, '%s') # msgid "[COLOR %s]Remaining providers:[/COLOR] [COLOR %s]%s[/COLOR]"
+			string4 = getLS(32407) % (self.highlight_color, sdc, '%s') # msgid "[COLOR %s]Unfiltered Total: [/COLOR]  [COLOR %s]%s[/COLOR]"
+			#string1f = getLS(32404) % (sdc, sdc, '%s') # msgid "[COLOR %s]Time elapsed:[/COLOR]  [COLOR %s]%s seconds[/COLOR]"
+			#string3f = getLS(32406) % (sdc, sdc, '%s') # msgid "[COLOR %s]Remaining providers:[/COLOR] [COLOR %s]%s[/COLOR]"
+			#string4f = getLS(32407) % (sdc, sdc, '%s') # msgid "[COLOR %s]Unfiltered Total: [/COLOR]  [COLOR %s]%s[/COLOR]"
 
-			if getSetting('cf.disable') == 'true':
-				sourceDict = [(i[0], i[1]) for i in sourceDict if not any(x in i[0] for x in self.sourcecfDict)]
 
-			start_time = time.time()
-			with ThreadPoolExecutor(max_workers=10) as executor:
-				futures = []
-				if content == 'movie':
-					trakt_aliases = self.getAliasTitles(imdb, content)
-					try:
-						aliases = self.meta.get('aliases', [])
-						aliases.extend([i for i in trakt_aliases if i not in aliases])
-					except Exception:
-						aliases = []
-					data = {'title': title, 'aliases': aliases, 'year': year, 'imdb': imdb}
-					if self.debrid_service:
-						data.update({'debrid_service': self.debrid_service, 'debrid_token': self.debrid_token})
-					for name, scraper in sourceDict:
-						futures.append(executor.submit(self.getMovieSource, imdb, data, name, scraper))
-				else:
-					trakt_aliases = self.getAliasTitles(imdb, content)
-					try:
-						aliases = self.meta.get('aliases', [])
-						aliases.extend([i for i in trakt_aliases if i not in aliases])
-					except Exception:
-						aliases = []
-					data = {
-						'title': title, 'year': year, 'imdb': imdb, 'tvdb': tvdb,
-						'season': season, 'episode': episode, 'tvshowtitle': tvshowtitle, 'aliases': aliases, 'premiered': premiered
-					}
-					if self.debrid_service:
-						data.update({'debrid_service': self.debrid_service, 'debrid_token': self.debrid_token})
-					for name, scraper in sourceDict:
-						futures.append(executor.submit(self.getEpisodeSource, imdb, season, episode, data, name, scraper))
-
-				for future in as_completed(futures):
-					try:
-						future.result()
-					except Exception as e:
-						log_utils.error(str(e))
-
-			elapsed_time = time.time() - start_time
-			log_utils.log('Scraping completed in %s seconds' % elapsed_time, level=log_utils.LOGINFO)
-			progressDialog.close()
-			return self.sources
-		except Exception as e:
-			log_utils.error(str(e))
-			if progressDialog:
-				progressDialog.close()
+			try: timeout = int(getSetting('scrapers.timeout'))
+			except: pass
+			if self.all_providers == 'true': timeout = 90
+			start_time = time()
+			end_time = start_time + timeout
+			quality = getSetting('hosts.quality') or '0'
+			line1 = line2 = line3 = ""
+			terminate_onCloud = getSetting('terminate.onCloud.sources') == 'true'
+			pre_emp_movie = getSetting('preemptive.termination.movie') == 'true'
+			pre_emp_limit_movie = int(getSetting('preemptive.limit.movie'))
+			pre_emp_res_movie = getSetting('preemptive.res.movie') or '0'
+			pre_emp_tv = getSetting('preemptive.termination.tv') == 'true'
+			pre_emp_limit_tv = int(getSetting('preemptive.limit.tv'))
+			pre_emp_res_tv = getSetting('preemptive.res.tv') or '0'
+			#new settings for tv and movie isolated.
+			source_4k = source_1080 = source_720 = source_sd = total = 0
+			total_format = '[COLOR %s][B]%s[/B][/COLOR]'
+			total_format2 = '[B]%s[/B]'
+			pdiag_format = '[COLOR %s]4K:[/COLOR]  %s  |  [COLOR %s]1080p:[/COLOR]  %s  |  [COLOR %s]720p:[/COLOR]  %s  |  [COLOR %s]SD:[/COLOR]  %s' % (
+				self.highlight_color, '%s', self.highlight_color, '%s', self.highlight_color, '%s', self.highlight_color, '%s')
+			#pdiagfull_format = '[COLOR %s]4K:[/COLOR]  %s  |  [COLOR %s]1080p:[/COLOR]  %s  |  [COLOR %s]720p:[/COLOR]  %s  |  [COLOR %s]SD:[/COLOR]  %s' % (
+			#	sdc, '%s', sdc, '%s', sdc, '%s', sdc, '%s')
+			control.hide()
+		except:
+			log_utils.error()
+			try: progressDialog.close()
+			except: pass
+			del progressDialog
 			return
+
+		while True:
+			try:
+				if control.monitor.abortRequested(): return sysexit()
+				try:
+					if progressDialog.iscanceled(): 
+						break
+				except: pass
+
+				if terminate_onCloud:
+					if len([e for e in self.scraper_sources if e['source'] == 'cloud']) > 0: break
+				if content == 'movie':
+					if pre_emp_movie:
+						if pre_emp_res_movie == '0' and source_4k >= pre_emp_limit_movie: break
+						elif pre_emp_res_movie == '1' and source_1080 >= pre_emp_limit_movie: break
+						elif pre_emp_res_movie == '2' and source_720 >= pre_emp_limit_movie: break
+						elif pre_emp_res_movie == '3' and source_sd >= pre_emp_limit_movie: break
+				else:
+					if pre_emp_tv:
+						if pre_emp_res_tv == '0' and source_4k >= pre_emp_limit_tv: break
+						elif pre_emp_res_tv == '1' and source_1080 >= pre_emp_limit_tv: break
+						elif pre_emp_res_tv == '2' and source_720 >= pre_emp_limit_tv: break
+						elif pre_emp_res_tv == '3' and source_sd >= pre_emp_limit_tv: break
+				if quality == '0':
+					source_4k = len([e for e in self.scraper_sources if e['quality'] == '4K'])
+					source_1080 = len([e for e in self.scraper_sources if e['quality'] == '1080p'])
+					source_720 = len([e for e in self.scraper_sources if e['quality'] == '720p'])
+					source_sd = len([e for e in self.scraper_sources if e['quality'] in ('SD', 'SCR', 'CAM')])
+				elif quality == '1':
+					source_1080 = len([e for e in self.scraper_sources if e['quality'] == '1080p'])
+					source_720 = len([e for e in self.scraper_sources if e['quality'] == '720p'])
+					source_sd = len([e for e in self.scraper_sources if e['quality'] in ('SD', 'SCR', 'CAM')])
+				elif quality == '2':
+					source_720 = len([e for e in self.scraper_sources if e['quality'] == '720p'])
+					source_sd = len([e for e in self.scraper_sources if e['quality'] in ('SD', 'SCR', 'CAM')])
+				else:
+					source_sd = len([e for e in self.scraper_sources if e['quality'] in ('SD', 'SCR', 'CAM')])
+				total = source_4k + source_1080 + source_720 + source_sd
+
+				source_4k_label = total_format2 % (source_4k) if source_4k == 0 else total_format % (sdc, source_4k)
+				source_1080_label = total_format2 % (source_1080) if source_1080 == 0 else total_format % (sdc, source_1080)
+				source_720_label = total_format2 % (source_720) if source_720 == 0 else total_format % (sdc, source_720)
+				source_sd_label = total_format2 % (source_sd) if source_sd == 0 else total_format % (sdc, source_sd)
+				source_total_label = total_format2 % (total) if total == 0 else total_format % (sdc, total)
+				try:
+					info = [x.getName() for x in threads if x.is_alive() is True]
+					line1 = pdiag_format % (source_4k_label, source_1080_label, source_720_label, source_sd_label)
+					#line2 = string4 % source_total_label + '     ' + string1 % round(time() - start_time, 1)
+					line2 = string1 % round(time() - start_time, 1)
+					if len(info) > 6: line3 = string3 % str(len(info))
+					elif len(info) > 0: line3 = string3 % (', '.join(info))
+					else: break
+					current_time = time()
+					current_progress = current_time - start_time
+					#percent = int((current_progress / float(timeout)) * 100)
+					percent = int((len(sourceDict) - len(info)) * 100 / len(sourceDict))
+					if progressDialog != control.progressDialog and progressDialog != control.progressDialogBG:
+						progressDialog.update(max(1, percent), line1 + '[CR]' + line2 + '[CR]' + line3)
+					elif progressDialog != control.progressDialogBG: progressDialog.update(max(1, percent), line1 + '[CR]' + line2 + '[CR]' + line3)
+					else: progressDialog.update(max(1, percent), line1 + '  ' + string3 % str(len(info)))
+					if end_time < current_time: break
+				except:
+					log_utils.error()
+					break
+				control.sleep(25)
+			except: log_utils.error()
+		progressDialog.update(100, debrid_message)
+		del threads[:] # Make sure any remaining providers are stopped, only deletes threads not started yet.
+		self.sources.extend(self.scraper_sources)
+		self.tvshowtitle = tvshowtitle
+		self.year = year
+		homeWindow.clearProperty('fs_filterless_search')
+		if len(self.sources) > 0: self.sourcesFilter()
+		if homeWindow.getProperty('umbrella.window_keep_alive') != 'true':
+			try: progressDialog.close()
+			except: pass
+			del progressDialog
+		return self.sources
 
 	def preResolve(self, next_sources, next_meta):
 		try:
@@ -1162,393 +1038,252 @@ class Sources:
 					return self.scraper_sources.extend(sources)
 			except: log_utils.error()
 
-	# def sourcesFilter(self):
-	# 	if not self.isPrescrape: control.busy()
-	# 	if getSetting('remove.duplicates') == 'true': self.sources = self.filter_dupes()
-	# 	if self.mediatype == 'movie':
-	# 		if getSetting('source.filtermbysize') == '1':
-	# 			try:
-	# 				movie_minSize, movie_maxSize = float(getSetting('source.min.moviesize')), float(getSetting('source.max.moviesize'))
-	# 				self.sources = [i for i in self.sources if (i.get('size', 0) >= movie_minSize and i.get('size', 0) <= movie_maxSize)]
-	# 			except: log_utils.error()
-	# 		if getSetting('source.filtermbysize') == '2':
-	# 			try:
-	# 				duration = self.meta['duration'] or 5400
-	# 				max_size = (0.125 * (0.90 * float(getSetting('source.movie.linespeed', '20'))) * duration)/1000
-	# 				self.sources = [i for i in self.sources if (i.get('size', 0) <= max_size)]
-	# 			except: log_utils.error()
-	# 	else:
-	# 		self.sources = [i for i in self.sources if 'movie.collection' not in i.get('name_info', '')] # rare but a few retuned from "complete" show pack scrape returned as "movie.collection"
-	# 		if getSetting('source.checkReboots') == 'true':
-	# 			try:
-	# 				from resources.lib.modules.source_utils import tvshow_reboots
-	# 				reboots = tvshow_reboots()
-	# 				if self.tvshowtitle in reboots and reboots.get(self.tvshowtitle) == self.year:
-	# 					log_utils.log('tvshowtitle(%s) is a REBOOT, filtering for year match per enabled setting' % self.tvshowtitle, level= log_utils.LOGDEBUG)
-	# 					self.sources = [i for i in self.sources if self.year in i.get('name')]
-	# 			except: log_utils.error()
-	# 		if getSetting('source.filterebysize') == '1':
-	# 			try:
-	# 				episode_minSize, episode_maxSize = float(getSetting('source.min.epsize')), float(getSetting('source.max.epsize'))
-	# 				self.sources = [i for i in self.sources if (i.get('size', 0) >= episode_minSize and i.get('size', 0) <= episode_maxSize)]
-	# 			except: log_utils.error()
-	# 		if getSetting('source.filterebysize') == '2':
-	# 			try:
-	# 				duration = self.meta['duration'] or 2400
-	# 				max_size = (0.125 * (0.90 * float(getSetting('source.episode.linespeed', '20'))) * duration)/1000
-	# 				self.sources = [i for i in self.sources if (i.get('size', 0) <= max_size)]
-	# 			except: log_utils.error()
-	# 		try: self.sources = self.calc_pack_size()
-	# 		except: pass
-	# 	for i in self.sources:
-	# 		try:
-	# 			if 'name_info' in i: info_string = getFileType(name_info=i.get('name_info'))
-	# 			else: info_string = getFileType(url=i.get('url'))
-	# 			i.update({'info': (i.get('info') + ' /' + info_string).lstrip(' ').lstrip('/').rstrip('/')})
-	# 		except: log_utils.error()
-	# 	if getSetting('remove.hevc') == 'true':
-	# 		self.sources = [i for i in self.sources if 'HEVC' not in i.get('info', '')]
-	# 	if getSetting('remove.av1') == 'true':
-	# 		self.sources = [i for i in self.sources if ' AV1 ' not in i.get('info', '')]
-	# 	if getSetting('remove.atvp') == 'true':
-	# 		self.sources = [i for i in self.sources if ' APPLE-TV-PLUS ' not in i.get('info', '')]
-	# 	if getSetting('remove.avc') == 'true':
-	# 		self.sources = [i for i in self.sources if ' AVC ' not in i.get('info', '')]
-	# 	if getSetting('remove.divx') == 'true':
-	# 		self.sources = [i for i in self.sources if ' DIVX ' not in i.get('info', '')]
-	# 	if getSetting('remove.mp4') == 'true':
-	# 		self.sources = [i for i in self.sources if ' MP4 ' not in i.get('info', '')]
-	# 	if getSetting('remove.mpeg') == 'true':
-	# 		self.sources = [i for i in self.sources if ' MPEG ' not in i.get('info', '')]
-	# 	if getSetting('remove.wmv') == 'true':
-	# 		self.sources = [i for i in self.sources if ' WMV ' not in i.get('info', '')]
-	# 	if getSetting('remove.hdr') == 'true':
-	# 		self.sources = [i for i in self.sources if ' HDR ' not in i.get('info', '')] # needs space before and aft because of "HDRIP"
-	# 	if getSetting('remove.dolby.vision') == 'true':
-	# 		self.sources = [i for i in self.sources if ('DOLBY-VISION' not in i.get('info', '')) or ('DOLBY-VISION' in i.get('info', '') and ' HDR ' in i.get('info', ''))]
-	# 	if getSetting('remove.cam.sources') == 'true':
-	# 		self.sources = [i for i in self.sources if i['quality'] != 'CAM']
-	# 	if getSetting('remove.sd.sources') == 'true':
-	# 		if any(i for i in self.sources if any(value in i['quality'] for value in ('4K', '1080p', '720p'))): #only remove SD if better quality does exist
-	# 			self.sources = [i for i in self.sources if i['quality'] != 'SD']
-	# 	if getSetting('remove.3D.sources') == 'true':
-	# 		self.sources = [i for i in self.sources if '3D' not in i.get('info', '')]
-	# 	if getSetting('remove.audio.opus') == 'true':   #start of audio codec filters
-	# 		self.sources = [i for i in self.sources if ' OPUS ' not in i.get('info', '')]
-	# 	if getSetting('remove.audio.atmos') == 'true': 
-	# 		self.sources = [i for i in self.sources if ' ATMOS ' not in i.get('info', '')]
-	# 	if getSetting('remove.audio.dd') == 'true': 
-	# 		self.sources = [i for i in self.sources if ' DOLBYDIGITAL ' not in i.get('info', '')]
-	# 	if getSetting('remove.audio.ddplus') == 'true': 
-	# 		self.sources = [i for i in self.sources if ' DD+ ' not in i.get('info', '')]
-	# 	if getSetting('remove.audio.dts') == 'true': 
-	# 		self.sources = [i for i in self.sources if ' DTS ' not in i.get('info', '')]
-	# 	if getSetting('remove.audio.dtshd') == 'true': 
-	# 		self.sources = [i for i in self.sources if ' DTS-HD ' not in i.get('info', '')]
-	# 	if getSetting('remove.audio.dtshdma') == 'true': 
-	# 		self.sources = [i for i in self.sources if ' DTS-HD MA ' not in i.get('info', '')]
-	# 	if getSetting('remove.audio.dtsx') == 'true': 
-	# 		self.sources = [i for i in self.sources if ' DTS-X ' not in i.get('info', '')]
-	# 	if getSetting('remove.audio.ddtruehd') == 'true': 
-	# 		self.sources = [i for i in self.sources if ' DOLBY-TRUEHD ' not in i.get('info', '')]
-	# 	if getSetting('remove.audio.aac') == 'true': 
-	# 		self.sources = [i for i in self.sources if ' AAC ' not in i.get('info', '')]
-	# 	if getSetting('remove.audio.mp3') == 'true': 
-	# 		self.sources = [i for i in self.sources if ' MP3 ' not in i.get('info', '')]
-	# 	if getSetting('remove.channel.2ch') == 'true':  # start of audio channel filters
-	# 		self.sources = [i for i in self.sources if ' 2CH ' not in i.get('info', '')]
-	# 	if getSetting('remove.channel.6ch') == 'true':
-	# 		self.sources = [i for i in self.sources if ' 6CH ' not in i.get('info', '')]
-	# 	if getSetting('remove.channel.7ch') == 'true':
-	# 		self.sources = [i for i in self.sources if ' 7CH ' not in i.get('info', '')]
-	# 	if getSetting('remove.channel.8ch') == 'true':
-	# 		self.sources = [i for i in self.sources if ' 8CH ' not in i.get('info', '')]
-	# 	local = [i for i in self.sources if 'local' in i and i['local'] is True] # for library and videoscraper (skips cache check)
-	# 	self.sources = [i for i in self.sources if not i in local]
-	# 	direct = [i for i in self.sources if i['direct'] == True] # acct scrapers (skips cache check)
-	# 	directstart = [] # blank start for enabled only
-	# 	if getSetting('easynews.enable') == 'true':
-	# 		easynewsList = [i for i in direct if i['provider'] == 'easynews']
-	# 		directstart.extend(easynewsList)
-	# 	if getSetting('plexshare.enable') == 'true':
-	# 		plexList = [i for i in direct if i['provider'] == 'plexshare']
-	# 		directstart.extend(plexList)
-	# 	if getSetting('gdrive.enable') == 'true':
-	# 		gDriveList = [i for i in direct if i['provider'] == 'gdrive']
-	# 		directstart.extend(gDriveList)
-	# 	if getSetting('filepursuit.enable') == 'true':
-	# 		fPursuitList = [i for i in direct if i['provider'] == 'filepursuit']
-	# 		directstart.extend(fPursuitList)
-	# 	if getSetting('tb_cloud.enabled') == 'true':
-	# 		tbCloudList = [i for i in direct if i['provider'] == 'tb_cloud']
-	# 		directstart.extend(tbCloudList)
-	# 	if getSetting('oc_cloud.enabled') == 'true':
-	# 		ocCloudList = [i for i in direct if i['provider'] == 'oc_cloud']
-	# 		directstart.extend(ocCloudList)
-	# 	#direct = directstart
-	# 	self.sources = [i for i in self.sources if not i in directstart]
-	# 	from copy import deepcopy
-	# 	deepcopy_sources = deepcopy(self.sources)
-	# 	deepcopy_sources = [i for i in deepcopy_sources if 'magnet:' in i['url']]
-	# 	if deepcopy_sources: hashList = [i['hash'] for i in deepcopy_sources]
-	# 	threads = [] ; self.filter = []
-	# 	valid_hosters = set([i['source'] for i in self.sources if 'magnet:' not in i['url']])
-	# 	control.hide()
-
-	# 	def checkStatus(function, debrid_name, valid_hoster):
-	# 		try:
-	# 			cached = None
-	# 			if deepcopy_sources: cached = function(deepcopy_sources, hashList)
-	# 			if cached: self.filter += [dict(list(i.items()) + [('debrid', debrid_name)]) for i in cached] # this makes a new instance so no need for deepcopy beyond the one time done now
-	# 			if valid_hoster: self.filter += [dict(list(i.items()) + [('debrid', debrid_name)]) for i in self.sources if i['source'] in valid_hoster and 'magnet:' not in i['url']]
-	# 		except: log_utils.error()
-	# 	for d in self.debrid_resolvers:
-	# 		if d.name == 'Real-Debrid' and getSetting('realdebrid.enable') == 'true':
-	# 			try:
-	# 				valid_hoster = [i for i in valid_hosters if d.valid_url(i)]
-	# 				threads.append(Thread(target=checkStatus, args=(self.rd_cache_chk_list, d.name, valid_hoster)))
-	# 			except: log_utils.error()
-	# 		if d.name == 'Premiumize.me' and getSetting('premiumize.enable') == 'true':
-	# 			try:
-	# 				valid_hoster = [i for i in valid_hosters if d.valid_url(i)]
-	# 				threads.append(Thread(target=checkStatus, args=(self.pm_cache_chk_list, d.name, valid_hoster)))
-	# 			except: log_utils.error()
-	# 		if d.name == 'AllDebrid' and getSetting('alldebrid.enable') == 'true':
-	# 			try:
-	# 				valid_hoster = [i for i in valid_hosters if d.valid_url(i)]
-	# 				threads.append(Thread(target=checkStatus, args=(self.ad_cache_chk_list, d.name, valid_hoster)))
-	# 			except: log_utils.error()
-	# 		if d.name == 'Offcloud' and getSetting('offcloud.enable') == 'true':
-	# 			try:
-	# 				valid_hoster = []
-	# 				threads.append(Thread(target=checkStatus, args=(self.oc_cache_chk_list, d.name, valid_hoster)))
-	# 			except: log_utils.error()
-	# 		if d.name == 'EasyDebrid' and getSetting('easydebrid.enable') == 'true':
-	# 			try:
-	# 				valid_hoster = []
-	# 				threads.append(Thread(name=d.name.upper(), target=checkStatus, args=(self.ed_cache_chk_list, d.name, valid_hoster)))
-	# 			except: log_utils.error()
-	# 		if d.name == 'TorBox' and getSetting('torbox.enable') == 'true':
-	# 			try:
-	# 				valid_hoster = []
-	# 				threads.append(Thread(target=checkStatus, args=(self.tb_cache_chk_list, d.name, valid_hoster)))
-	# 			except: log_utils.error()
-	# 	if threads:
-	# 		[i.start() for i in threads]
-	# 		[i.join() for i in threads]
-	# 	#self.filter += direct # add direct links in to be considered in priority sorting
-	# 	self.filter += directstart
-	# 	try:
-	# 		if len(self.prem_providers) > 1: # resort for debrid/direct priorty, when more than 1 account, because of order cache check threads finish
-	# 			self.prem_providers.sort(key=lambda k: k[1])
-	# 			self.prem_providers = [i[0] for i in self.prem_providers]
-	# 			#log_utils.log('self.prem_providers sort order=%s' % self.prem_providers, level=log_utils.LOGDEBUG)
-	# 			self.filter.sort(key=lambda k: self.prem_providers.index(k['debrid'] if k.get('debrid', '') else k['provider']))
-	# 	except: log_utils.error()
-
-	# 	self.filter += local # library and video scraper sources
-	# 	self.sources = self.filter
-
-	# 	if getSetting('sources.group.sort') == '1':
-	# 		torr_filter = []
-	# 		torr_filter += [i for i in self.sources if 'torrent' in i['source']]  #torrents first
-	# 		if getSetting('sources.size.sort') == 'true': torr_filter.sort(key=lambda k: round(k.get('size', 0)), reverse=True)
-	# 		aact_filter = []
-	# 		aact_filter += [i for i in self.sources if i['direct'] == True]  #account scrapers and local/library next
-	# 		if getSetting('sources.size.sort') == 'true': aact_filter.sort(key=lambda k: round(k.get('size', 0)), reverse=True)
-	# 		prem_filter = []
-	# 		prem_filter += [i for i in self.sources if 'torrent' not in i['source'] and i['debridonly'] is True]  #prem.hosters last
-	# 		if getSetting('sources.size.sort') == 'true': prem_filter.sort(key=lambda k: round(k.get('size', 0)), reverse=True)
-	# 		self.sources = torr_filter
-	# 		self.sources += aact_filter
-	# 		self.sources += prem_filter
-	# 	elif getSetting('sources.size.sort') == 'true':
-	# 		reverse_sort = True if getSetting('sources.sizeSort.reverse') == 'false' else False
-	# 		self.sources.sort(key=lambda k: round(k.get('size', 0), 2), reverse=reverse_sort)
-
-	# 	if getSetting('source.prioritize.av1') == 'true': # filter to place AV1 sources first
-	# 		filter = []
-	# 		filter += [i for i in self.sources if 'AV1' in i.get('info', '')]
-	# 		filter += [i for i in self.sources if i not in filter]
-	# 		self.sources = filter
-
-	# 	if getSetting('source.prioritize.hevc') == 'true': # filter to place HEVC sources first
-	# 		filter = []
-	# 		filter += [i for i in self.sources if 'HEVC' in i.get('info', '')]
-	# 		filter += [i for i in self.sources if i not in filter]
-	# 		self.sources = filter
-
-	# 	if getSetting('source.prioritize.hdrdv') == 'true': # filter to place HDR and DOLBY-VISION sources first
-	# 		filter = []
-	# 		#will need a new setting for put dolby above hdr
-	# 		#filter += [i for i in self.sources if any(value in i.get('info', '') for value in (' HDR ', 'DOLBY-VISION'))]
-	# 		if getSetting('source.prioritize.dolbyvisionfirst')=='true':
-	# 			if not getSetting('remove.dolby.vision') == 'true':
-	# 				filter += [i for i in self.sources if 'DOLBY-VISION' in i.get('info', '')] #dolby first... going to need to check on hdr to make sure it is not added twice
-	# 			if not getSetting('remove.hdr') == 'true':
-	# 				filter += [i for i in self.sources if ' HDR ' in i.get('info', '') and i not in filter] #warning about the spaces above.
-	# 		else:
-	# 			filter += [i for i in self.sources if any(value in i.get('info', '') for value in (' HDR ', 'DOLBY-VISION'))]
-	# 		filter += [i for i in self.sources if i not in filter]
-	# 		self.sources = filter
-
-	# 	self.sources = self.sort_byQuality(source_list=self.sources)
-
-	# 	filter = [] # filter to place cloud files first
-	# 	filter += [i for i in self.sources if i['source'] == 'cloud']
-	# 	filter += [i for i in self.sources if i not in filter]
-	# 	self.sources = filter
-
-	# 	if getSetting('source.prioritize.direct') == 'true': # filter to place plex sources first
-	# 		filter = [] # filter to place cloud files first
-	# 		filter += [i for i in self.sources if i['source'] == 'direct']
-	# 		filter += [i for i in self.sources if i not in filter]
-	# 		self.sources = filter
-
-	# 	self.sources = self.sources[:4000]
-	# 	control.hide()
-	# 	return self.sources
-
 	def sourcesFilter(self):
-		if not self.isPrescrape:
-			control.busy()
-		
-		if getSetting('remove.duplicates') == 'true':
-			self.sources = self.filter_dupes()
-
+		if not self.isPrescrape: control.busy()
+		if getSetting('remove.duplicates') == 'true': self.sources = self.filter_dupes()
 		if self.mediatype == 'movie':
 			if getSetting('source.filtermbysize') == '1':
 				try:
 					movie_minSize, movie_maxSize = float(getSetting('source.min.moviesize')), float(getSetting('source.max.moviesize'))
 					self.sources = [i for i in self.sources if (i.get('size', 0) >= movie_minSize and i.get('size', 0) <= movie_maxSize)]
-				except:
-					log_utils.error()
+				except: log_utils.error()
 			if getSetting('source.filtermbysize') == '2':
 				try:
 					duration = self.meta['duration'] or 5400
-					max_size = (0.125 * (0.90 * float(getSetting('source.movie.linespeed', '20'))) * duration) / 1000
+					max_size = (0.125 * (0.90 * float(getSetting('source.movie.linespeed', '20'))) * duration)/1000
 					self.sources = [i for i in self.sources if (i.get('size', 0) <= max_size)]
-				except:
-					log_utils.error()
+				except: log_utils.error()
 		else:
-			self.sources = [i for i in self.sources if 'movie.collection' not in i.get('name_info', '')]
+			self.sources = [i for i in self.sources if 'movie.collection' not in i.get('name_info', '')] # rare but a few retuned from "complete" show pack scrape returned as "movie.collection"
 			if getSetting('source.checkReboots') == 'true':
 				try:
 					from resources.lib.modules.source_utils import tvshow_reboots
 					reboots = tvshow_reboots()
 					if self.tvshowtitle in reboots and reboots.get(self.tvshowtitle) == self.year:
-						log_utils.log(
-							f'tvshowtitle({self.tvshowtitle}) is a REBOOT, filtering for year match per enabled setting',
-							level=log_utils.LOGDEBUG
-						)
+						log_utils.log('tvshowtitle(%s) is a REBOOT, filtering for year match per enabled setting' % self.tvshowtitle, level= log_utils.LOGDEBUG)
 						self.sources = [i for i in self.sources if self.year in i.get('name')]
-				except:
-					log_utils.error()
+				except: log_utils.error()
 			if getSetting('source.filterebysize') == '1':
 				try:
 					episode_minSize, episode_maxSize = float(getSetting('source.min.epsize')), float(getSetting('source.max.epsize'))
 					self.sources = [i for i in self.sources if (i.get('size', 0) >= episode_minSize and i.get('size', 0) <= episode_maxSize)]
-				except:
-					log_utils.error()
+				except: log_utils.error()
 			if getSetting('source.filterebysize') == '2':
 				try:
 					duration = self.meta['duration'] or 2400
-					max_size = (0.125 * (0.90 * float(getSetting('source.episode.linespeed', '20'))) * duration) / 1000
+					max_size = (0.125 * (0.90 * float(getSetting('source.episode.linespeed', '20'))) * duration)/1000
 					self.sources = [i for i in self.sources if (i.get('size', 0) <= max_size)]
-				except:
-					log_utils.error()
-			try:
-				self.sources = self.calc_pack_size()
-			except:
-				pass
-
-		# File type filtering
+				except: log_utils.error()
+			try: self.sources = self.calc_pack_size()
+			except: pass
 		for i in self.sources:
 			try:
-				if 'name_info' in i:
-					info_string = getFileType(name_info=i.get('name_info'))
-				else:
-					info_string = getFileType(url=i.get('url'))
+				if 'name_info' in i: info_string = getFileType(name_info=i.get('name_info'))
+				else: info_string = getFileType(url=i.get('url'))
 				i.update({'info': (i.get('info') + ' /' + info_string).lstrip(' ').lstrip('/').rstrip('/')})
-			except:
-				log_utils.error()
-
-		# Additional filtering based on settings
-		filters = [
-			('remove.hevc', 'HEVC'),
-			('remove.av1', ' AV1 '),
-			('remove.atvp', ' APPLE-TV-PLUS '),
-			('remove.avc', ' AVC '),
-			('remove.divx', ' DIVX '),
-			('remove.mp4', ' MP4 '),
-			('remove.mpeg', ' MPEG '),
-			('remove.wmv', ' WMV '),
-			('remove.hdr', ' HDR '),
-			('remove.dolby.vision', 'DOLBY-VISION'),
-			('remove.cam.sources', 'CAM'),
-			('remove.sd.sources', 'SD'),
-			('remove.3D.sources', '3D'),
-			('remove.audio.opus', ' OPUS '),
-			('remove.audio.atmos', ' ATMOS '),
-			('remove.audio.dd', ' DOLBYDIGITAL '),
-			('remove.audio.ddplus', ' DD+ '),
-			('remove.audio.dts', ' DTS '),
-			('remove.audio.dtshd', ' DTS-HD '),
-			('remove.audio.dtshdma', ' DTS-HD MA '),
-			('remove.audio.dtsx', ' DTS-X '),
-			('remove.audio.ddtruehd', ' DOLBY-TRUEHD '),
-			('remove.audio.aac', ' AAC '),
-			('remove.audio.mp3', ' MP3 '),
-			('remove.channel.2ch', ' 2CH '),
-			('remove.channel.6ch', ' 6CH '),
-			('remove.channel.7ch', ' 7CH '),
-			('remove.channel.8ch', ' 8CH ')
-		]
-
-		for setting, keyword in filters:
-			if getSetting(setting) == 'true':
-				self.sources = [i for i in self.sources if keyword not in i.get('info', '')]
-
+			except: log_utils.error()
+		if getSetting('remove.hevc') == 'true':
+			self.sources = [i for i in self.sources if 'HEVC' not in i.get('info', '')]
+		if getSetting('remove.av1') == 'true':
+			self.sources = [i for i in self.sources if ' AV1 ' not in i.get('info', '')]
+		if getSetting('remove.atvp') == 'true':
+			self.sources = [i for i in self.sources if ' APPLE-TV-PLUS ' not in i.get('info', '')]
+		if getSetting('remove.avc') == 'true':
+			self.sources = [i for i in self.sources if ' AVC ' not in i.get('info', '')]
+		if getSetting('remove.divx') == 'true':
+			self.sources = [i for i in self.sources if ' DIVX ' not in i.get('info', '')]
+		if getSetting('remove.mp4') == 'true':
+			self.sources = [i for i in self.sources if ' MP4 ' not in i.get('info', '')]
+		if getSetting('remove.mpeg') == 'true':
+			self.sources = [i for i in self.sources if ' MPEG ' not in i.get('info', '')]
+		if getSetting('remove.wmv') == 'true':
+			self.sources = [i for i in self.sources if ' WMV ' not in i.get('info', '')]
+		if getSetting('remove.hdr') == 'true':
+			self.sources = [i for i in self.sources if ' HDR ' not in i.get('info', '')] # needs space before and aft because of "HDRIP"
+		if getSetting('remove.dolby.vision') == 'true':
+			self.sources = [i for i in self.sources if ('DOLBY-VISION' not in i.get('info', '')) or ('DOLBY-VISION' in i.get('info', '') and ' HDR ' in i.get('info', ''))]
+		if getSetting('remove.cam.sources') == 'true':
+			self.sources = [i for i in self.sources if i['quality'] != 'CAM']
+		if getSetting('remove.sd.sources') == 'true':
+			if any(i for i in self.sources if any(value in i['quality'] for value in ('4K', '1080p', '720p'))): #only remove SD if better quality does exist
+				self.sources = [i for i in self.sources if i['quality'] != 'SD']
+		if getSetting('remove.3D.sources') == 'true':
+			self.sources = [i for i in self.sources if '3D' not in i.get('info', '')]
+		if getSetting('remove.audio.opus') == 'true':   #start of audio codec filters
+			self.sources = [i for i in self.sources if ' OPUS ' not in i.get('info', '')]
+		if getSetting('remove.audio.atmos') == 'true': 
+			self.sources = [i for i in self.sources if ' ATMOS ' not in i.get('info', '')]
+		if getSetting('remove.audio.dd') == 'true': 
+			self.sources = [i for i in self.sources if ' DOLBYDIGITAL ' not in i.get('info', '')]
+		if getSetting('remove.audio.ddplus') == 'true': 
+			self.sources = [i for i in self.sources if ' DD+ ' not in i.get('info', '')]
+		if getSetting('remove.audio.dts') == 'true': 
+			self.sources = [i for i in self.sources if ' DTS ' not in i.get('info', '')]
+		if getSetting('remove.audio.dtshd') == 'true': 
+			self.sources = [i for i in self.sources if ' DTS-HD ' not in i.get('info', '')]
+		if getSetting('remove.audio.dtshdma') == 'true': 
+			self.sources = [i for i in self.sources if ' DTS-HD MA ' not in i.get('info', '')]
+		if getSetting('remove.audio.dtsx') == 'true': 
+			self.sources = [i for i in self.sources if ' DTS-X ' not in i.get('info', '')]
+		if getSetting('remove.audio.ddtruehd') == 'true': 
+			self.sources = [i for i in self.sources if ' DOLBY-TRUEHD ' not in i.get('info', '')]
+		if getSetting('remove.audio.aac') == 'true': 
+			self.sources = [i for i in self.sources if ' AAC ' not in i.get('info', '')]
+		if getSetting('remove.audio.mp3') == 'true': 
+			self.sources = [i for i in self.sources if ' MP3 ' not in i.get('info', '')]
+		if getSetting('remove.channel.2ch') == 'true':  # start of audio channel filters
+			self.sources = [i for i in self.sources if ' 2CH ' not in i.get('info', '')]
+		if getSetting('remove.channel.6ch') == 'true':
+			self.sources = [i for i in self.sources if ' 6CH ' not in i.get('info', '')]
+		if getSetting('remove.channel.7ch') == 'true':
+			self.sources = [i for i in self.sources if ' 7CH ' not in i.get('info', '')]
+		if getSetting('remove.channel.8ch') == 'true':
+			self.sources = [i for i in self.sources if ' 8CH ' not in i.get('info', '')]
+		local = [i for i in self.sources if 'local' in i and i['local'] is True] # for library and videoscraper (skips cache check)
+		self.sources = [i for i in self.sources if not i in local]
+		direct = [i for i in self.sources if i['direct'] == True] # acct scrapers (skips cache check)
+		directstart = [] # blank start for enabled only
+		if getSetting('easynews.enable') == 'true':
+			easynewsList = [i for i in direct if i['provider'] == 'easynews']
+			directstart.extend(easynewsList)
+		if getSetting('plexshare.enable') == 'true':
+			plexList = [i for i in direct if i['provider'] == 'plexshare']
+			directstart.extend(plexList)
+		if getSetting('gdrive.enable') == 'true':
+			gDriveList = [i for i in direct if i['provider'] == 'gdrive']
+			directstart.extend(gDriveList)
+		if getSetting('filepursuit.enable') == 'true':
+			fPursuitList = [i for i in direct if i['provider'] == 'filepursuit']
+			directstart.extend(fPursuitList)
+		if getSetting('tb_cloud.enabled') == 'true':
+			tbCloudList = [i for i in direct if i['provider'] == 'tb_cloud']
+			directstart.extend(tbCloudList)
+		if getSetting('oc_cloud.enabled') == 'true':
+			ocCloudList = [i for i in direct if i['provider'] == 'oc_cloud']
+			directstart.extend(ocCloudList)
+		#direct = directstart
+		self.sources = [i for i in self.sources if not i in directstart]
 		from copy import deepcopy
-
-		deepcopy_sources = deepcopy([i for i in self.sources if 'magnet:' in i['url']])
-		hashList = [i['hash'] for i in deepcopy_sources] if deepcopy_sources else []
+		deepcopy_sources = deepcopy(self.sources)
+		deepcopy_sources = [i for i in deepcopy_sources if 'magnet:' in i['url']]
+		if deepcopy_sources: hashList = [i['hash'] for i in deepcopy_sources]
+		threads = [] ; self.filter = []
 		valid_hosters = set([i['source'] for i in self.sources if 'magnet:' not in i['url']])
 		control.hide()
 
 		def checkStatus(function, debrid_name, valid_hoster):
 			try:
 				cached = None
-				if deepcopy_sources:
-					cached = function(deepcopy_sources, hashList)
-				if cached:
-					self.filter += [dict(list(i.items()) + [('debrid', debrid_name)]) for i in cached]
-				if valid_hoster:
-					self.filter += [dict(list(i.items()) + [('debrid', debrid_name)]) for i in self.sources if i['source'] in valid_hoster and 'magnet:' not in i['url']]
-			except:
-				log_utils.error()
+				if deepcopy_sources: cached = function(deepcopy_sources, hashList)
+				if cached: self.filter += [dict(list(i.items()) + [('debrid', debrid_name)]) for i in cached] # this makes a new instance so no need for deepcopy beyond the one time done now
+				if valid_hoster: self.filter += [dict(list(i.items()) + [('debrid', debrid_name)]) for i in self.sources if i['source'] in valid_hoster and 'magnet:' not in i['url']]
+			except: log_utils.error()
+		for d in self.debrid_resolvers:
+			if d.name == 'Real-Debrid' and getSetting('realdebrid.enable') == 'true':
+				try:
+					valid_hoster = [i for i in valid_hosters if d.valid_url(i)]
+					threads.append(Thread(target=checkStatus, args=(self.rd_cache_chk_list, d.name, valid_hoster)))
+				except: log_utils.error()
+			if d.name == 'Premiumize.me' and getSetting('premiumize.enable') == 'true':
+				try:
+					valid_hoster = [i for i in valid_hosters if d.valid_url(i)]
+					threads.append(Thread(target=checkStatus, args=(self.pm_cache_chk_list, d.name, valid_hoster)))
+				except: log_utils.error()
+			if d.name == 'AllDebrid' and getSetting('alldebrid.enable') == 'true':
+				try:
+					valid_hoster = [i for i in valid_hosters if d.valid_url(i)]
+					threads.append(Thread(target=checkStatus, args=(self.ad_cache_chk_list, d.name, valid_hoster)))
+				except: log_utils.error()
+			if d.name == 'Offcloud' and getSetting('offcloud.enable') == 'true':
+				try:
+					valid_hoster = []
+					threads.append(Thread(target=checkStatus, args=(self.oc_cache_chk_list, d.name, valid_hoster)))
+				except: log_utils.error()
+			if d.name == 'EasyDebrid' and getSetting('easydebrid.enable') == 'true':
+				try:
+					valid_hoster = []
+					threads.append(Thread(name=d.name.upper(), target=checkStatus, args=(self.ed_cache_chk_list, d.name, valid_hoster)))
+				except: log_utils.error()
+			if d.name == 'TorBox' and getSetting('torbox.enable') == 'true':
+				try:
+					valid_hoster = []
+					threads.append(Thread(target=checkStatus, args=(self.tb_cache_chk_list, d.name, valid_hoster)))
+				except: log_utils.error()
+		if threads:
+			[i.start() for i in threads]
+			[i.join() for i in threads]
+		#self.filter += direct # add direct links in to be considered in priority sorting
+		self.filter += directstart
+		try:
+			if len(self.prem_providers) > 1: # resort for debrid/direct priorty, when more than 1 account, because of order cache check threads finish
+				self.prem_providers.sort(key=lambda k: k[1])
+				self.prem_providers = [i[0] for i in self.prem_providers]
+				#log_utils.log('self.prem_providers sort order=%s' % self.prem_providers, level=log_utils.LOGDEBUG)
+				self.filter.sort(key=lambda k: self.prem_providers.index(k['debrid'] if k.get('debrid', '') else k['provider']))
+		except: log_utils.error()
 
-		with ThreadPoolExecutor() as executor:
-			for d in self.debrid_resolvers:
-				if d.name == 'Real-Debrid' and getSetting('realdebrid.enable') == 'true':
-					valid_hoster = [i for i in valid_hosters if d.valid_url(i)]
-					executor.submit(checkStatus, self.rd_cache_chk_list, d.name, valid_hoster)
-				if d.name == 'Premiumize.me' and getSetting('premiumize.enable') == 'true':
-					valid_hoster = [i for i in valid_hosters if d.valid_url(i)]
-					executor.submit(checkStatus, self.pm_cache_chk_list, d.name, valid_hoster)
-				if d.name == 'AllDebrid' and getSetting('alldebrid.enable') == 'true':
-					valid_hoster = [i for i in valid_hosters if d.valid_url(i)]
-					executor.submit(checkStatus, self.ad_cache_chk_list, d.name, valid_hoster)
-				if d.name == 'Offcloud' and getSetting('offcloud.enable') == 'true':
-					executor.submit(checkStatus, self.oc_cache_chk_list, d.name, [])
-				if d.name == 'EasyDebrid' and getSetting('easydebrid.enable') == 'true':
-					executor.submit(checkStatus, self.ed_cache_chk_list, d.name, [])
-				if d.name == 'TorBox' and getSetting('torbox.enable') == 'true':
-					executor.submit(checkStatus, self.tb_cache_chk_list, d.name, [])
-
-		self.filter += [i for i in self.sources if i['direct']]
+		self.filter += local # library and video scraper sources
 		self.sources = self.filter
 
+		if getSetting('sources.group.sort') == '1':
+			torr_filter = []
+			torr_filter += [i for i in self.sources if 'torrent' in i['source']]  #torrents first
+			if getSetting('sources.size.sort') == 'true': torr_filter.sort(key=lambda k: round(k.get('size', 0)), reverse=True)
+			aact_filter = []
+			aact_filter += [i for i in self.sources if i['direct'] == True]  #account scrapers and local/library next
+			if getSetting('sources.size.sort') == 'true': aact_filter.sort(key=lambda k: round(k.get('size', 0)), reverse=True)
+			prem_filter = []
+			prem_filter += [i for i in self.sources if 'torrent' not in i['source'] and i['debridonly'] is True]  #prem.hosters last
+			if getSetting('sources.size.sort') == 'true': prem_filter.sort(key=lambda k: round(k.get('size', 0)), reverse=True)
+			self.sources = torr_filter
+			self.sources += aact_filter
+			self.sources += prem_filter
+		elif getSetting('sources.size.sort') == 'true':
+			reverse_sort = True if getSetting('sources.sizeSort.reverse') == 'false' else False
+			self.sources.sort(key=lambda k: round(k.get('size', 0), 2), reverse=reverse_sort)
+
+		if getSetting('source.prioritize.av1') == 'true': # filter to place AV1 sources first
+			filter = []
+			filter += [i for i in self.sources if 'AV1' in i.get('info', '')]
+			filter += [i for i in self.sources if i not in filter]
+			self.sources = filter
+
+		if getSetting('source.prioritize.hevc') == 'true': # filter to place HEVC sources first
+			filter = []
+			filter += [i for i in self.sources if 'HEVC' in i.get('info', '')]
+			filter += [i for i in self.sources if i not in filter]
+			self.sources = filter
+
+		if getSetting('source.prioritize.hdrdv') == 'true': # filter to place HDR and DOLBY-VISION sources first
+			filter = []
+			#will need a new setting for put dolby above hdr
+			#filter += [i for i in self.sources if any(value in i.get('info', '') for value in (' HDR ', 'DOLBY-VISION'))]
+			if getSetting('source.prioritize.dolbyvisionfirst')=='true':
+				if not getSetting('remove.dolby.vision') == 'true':
+					filter += [i for i in self.sources if 'DOLBY-VISION' in i.get('info', '')] #dolby first... going to need to check on hdr to make sure it is not added twice
+				if not getSetting('remove.hdr') == 'true':
+					filter += [i for i in self.sources if ' HDR ' in i.get('info', '') and i not in filter] #warning about the spaces above.
+			else:
+				filter += [i for i in self.sources if any(value in i.get('info', '') for value in (' HDR ', 'DOLBY-VISION'))]
+			filter += [i for i in self.sources if i not in filter]
+			self.sources = filter
+
+		self.sources = self.sort_byQuality(source_list=self.sources)
+
+		filter = [] # filter to place cloud files first
+		filter += [i for i in self.sources if i['source'] == 'cloud']
+		filter += [i for i in self.sources if i not in filter]
+		self.sources = filter
+
+		if getSetting('source.prioritize.direct') == 'true': # filter to place plex sources first
+			filter = [] # filter to place cloud files first
+			filter += [i for i in self.sources if i['source'] == 'direct']
+			filter += [i for i in self.sources if i not in filter]
+			self.sources = filter
+
+		self.sources = self.sources[:4000]
+		control.hide()
+		return self.sources
 
 	def filter_dupes(self):
 		filter = []
