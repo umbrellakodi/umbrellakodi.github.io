@@ -1,5 +1,6 @@
-[B]Update - v6.7.372 - Jan 27th, 2025[/B]
+[B]Update - v6.7.373 - Jan 28th, 2025[/B]
 --[Change] Major refactor of code to use ThreadPools.
+--[Change] Optimized code for similar from library function.
 
 [B]Update - v6.7.36 - Jan 23rd, 2025[/B]
 --[Fix] Increased number of results available from real-debrid for cloud scraping.
