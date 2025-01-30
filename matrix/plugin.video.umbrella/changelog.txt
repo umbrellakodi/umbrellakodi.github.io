@@ -1,4 +1,5 @@
 [B]Update - v6.7.378 - Jan 30th, 2025[/B]
+--[Threading] Changes made on episode function to use threadpool.
 --[Fix] Changes to using ThreadPool.
 --[Change] Modifed similar from library for speed.
 --[Fix] Reverted threadpool changes to episode.py due to issues with episode progress list.

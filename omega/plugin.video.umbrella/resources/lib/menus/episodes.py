@@ -19,6 +19,7 @@ from resources.lib.modules import trakt
 from resources.lib.modules import views
 from resources.lib.modules.playcount import getTVShowIndicators, getEpisodeOverlay, getShowCount, getSeasonIndicators
 from resources.lib.modules.player import Bookmarks
+from concurrent.futures import ThreadPoolExecutor, as_completed
 
 getLS = control.lang
 getSetting = control.setting
@@ -75,23 +76,33 @@ class Episodes:
 		try:
 			if season is None and episode is None: # for "flatten" setting
 				all_episodes = []
-				threads = []
-				append = threads.append
-				if not isinstance(meta, dict): showSeasons = jsloads(meta)
-				else: showSeasons = meta
+				if not isinstance(meta, dict):
+					showSeasons = jsloads(meta)
+				else:
+					showSeasons = meta
+
 				try:
-					for i in showSeasons['seasons']:
-						if not self.showspecials and i['season_number'] == 0: continue
-						append(Thread(target=get_episodes, args=(tvshowtitle, imdb, tmdb, tvdb, meta, i['season_number'])))
-					[i.start() for i in threads]
-					[i.join() for i in threads]
-					if getSetting('flatten.desc') == 'true':
-						self.list = sorted(all_episodes, key=lambda k: (k['season'], k['episode']), reverse=True)
-					else:
-						self.list = sorted(all_episodes, key=lambda k: (k['season'], k['episode']), reverse=False)
-				except: 
+					with ThreadPoolExecutor(max_workers=10) as executor:  # Adjust max_workers as needed
+						futures = [
+							executor.submit(get_episodes, tvshowtitle, imdb, tmdb, tvdb, meta, season['season_number'])
+							for season in showSeasons['seasons']
+							if self.showspecials or season['season_number'] != 0
+						]
+						# Collect results
+						for future in as_completed(futures):
+							try:
+								result = future.result()
+								if result:
+									all_episodes.extend(result)  # Ensure results are collected properly
+							except Exception as e:
+								from resources.lib.modules import log_utils
+								log_utils.error(f"Error processing season: {e}")
+					# Sort episodes based on setting
+					reverse_sort = getSetting('flatten.desc') == 'true'
+					self.list = sorted(all_episodes, key=lambda k: (k['season'], k['episode']), reverse=reverse_sort)
+				except Exception as e:
 					from resources.lib.modules import log_utils
-					log_utils.error()
+					log_utils.error(f"Error processing episodes: {e}")
 			elif season and episode: # for "trakt progress-non direct progress scrape" setting
 				self.list = cache.get(self.tmdb_list, 168, tvshowtitle, imdb, tmdb, tvdb, meta, season)
 				if not self.list: pass
@@ -102,22 +113,34 @@ class Episodes:
 				self.list = [y for x, y in enumerate(self.list) if x >= num]
 				if self.trakt_progressFlatten:
 					all_episodes = []
-					threads = []
-					append = threads.append
-					if not isinstance(meta, dict): showSeasons = jsloads(meta)
-					else: showSeasons = meta
+
+					if not isinstance(meta, dict):
+						showSeasons = jsloads(meta)
+					else:
+						showSeasons = meta
+
 					try:
-						for i in showSeasons['seasons']:
-							if i['season_number'] <= int(season): continue
-							append(Thread(target=get_episodes, args=(tvshowtitle, imdb, tmdb, tvdb, meta, i['season_number'])))
-						if threads:
-							[i.start() for i in threads]
-							[i.join() for i in threads]
-							self.list += all_episodes
-						self.list = sorted(self.list, key=lambda k: (k['season'], k['episode']), reverse=False)
-					except: 
+						with ThreadPoolExecutor(max_workers=10) as executor:  # Adjust max_workers as needed
+							futures = [
+								executor.submit(get_episodes, tvshowtitle, imdb, tmdb, tvdb, meta, s['season_number'])
+								for s in showSeasons['seasons']
+								if s['season_number'] > int(season)  # Filter out unwanted seasons
+							]
+
+							for future in as_completed(futures):
+								try:
+									result = future.result()
+									if result:
+										all_episodes.extend(result)  # Ensure results are collected properly
+								except Exception as e:
+									from resources.lib.modules import log_utils
+									log_utils.error(f"Error processing season: {e}")
+
+						self.list += all_episodes
+						self.list = sorted(self.list, key=lambda k: (k['season'], k['episode']))
+					except Exception as e:
 						from resources.lib.modules import log_utils
-						log_utils.error()
+						log_utils.error(f"Error processing episodes: {e}")
 			else: # normal full episode list
 				self.list = cache.get(self.tmdb_list, 168, tvshowtitle, imdb, tmdb, tvdb, meta, season)
 				if not self.list: pass
