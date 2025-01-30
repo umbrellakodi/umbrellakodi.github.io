@@ -7,7 +7,6 @@ from datetime import datetime, timedelta
 from json import dumps as jsdumps, loads as jsloads
 import re
 from threading import Thread
-from concurrent.futures import ThreadPoolExecutor, as_completed
 from urllib.parse import quote_plus, urlencode, parse_qsl, urlparse, urlsplit
 from resources.lib.database import cache, fanarttv_cache, traktsync
 from resources.lib.indexers.tmdb import TVshows as tmdb_indexer
@@ -64,150 +63,76 @@ class Episodes:
 		self.useFullContext = getSetting('enable.umbrellawidgetcontext') == 'true'
 		self.useContainerTitles = getSetting('enable.containerTitles') == 'true'
 
-	# def get(self, tvshowtitle, year, imdb, tmdb, tvdb, meta, season=None, episode=None, create_directory=True):
-	# 	self.list = []
-	# 	def get_episodes(tvshowtitle, imdb, tmdb, tvdb, meta, season):
-	# 		episodes = cache.get(self.tmdb_list, 168, tvshowtitle, imdb, tmdb, tvdb, meta, season)
-	# 		if not episodes: pass
-	# 		elif episodes[0]['season_isAiring'] == 'true':
-	# 			if int(re.sub(r'[^0-9]', '', str(episodes[0]['next_episode_to_air']['air_date']))) <= int(re.sub(r'[^0-9]', '', str(self.today_date))):
-	# 				episodes = cache.get(self.tmdb_list, 3, tvshowtitle, imdb, tmdb, tvdb, meta, season)
-	# 		all_episodes.extend(episodes)
-	# 	try:
-	# 		if season is None and episode is None: # for "flatten" setting
-	# 			all_episodes = []
-	# 			threads = []
-	# 			append = threads.append
-	# 			if not isinstance(meta, dict): showSeasons = jsloads(meta)
-	# 			else: showSeasons = meta
-	# 			try:
-	# 				for i in showSeasons['seasons']:
-	# 					if not self.showspecials and i['season_number'] == 0: continue
-	# 					append(Thread(target=get_episodes, args=(tvshowtitle, imdb, tmdb, tvdb, meta, i['season_number'])))
-	# 				[i.start() for i in threads]
-	# 				[i.join() for i in threads]
-	# 				if getSetting('flatten.desc') == 'true':
-	# 					self.list = sorted(all_episodes, key=lambda k: (k['season'], k['episode']), reverse=True)
-	# 				else:
-	# 					self.list = sorted(all_episodes, key=lambda k: (k['season'], k['episode']), reverse=False)
-	# 			except: 
-	# 				from resources.lib.modules import log_utils
-	# 				log_utils.error()
-	# 		elif season and episode: # for "trakt progress-non direct progress scrape" setting
-	# 			self.list = cache.get(self.tmdb_list, 168, tvshowtitle, imdb, tmdb, tvdb, meta, season)
-	# 			if not self.list: pass
-	# 			elif self.list[0]['season_isAiring'] == 'true':
-	# 				if int(re.sub(r'[^0-9]', '', str(self.list[0]['next_episode_to_air']['air_date']))) <= int(re.sub(r'[^0-9]', '', str(self.today_date))):
-	# 					self.list = cache.get(self.tmdb_list, 3, tvshowtitle, imdb, tmdb, tvdb, meta, season)
-	# 			num = [x for x, y in enumerate(self.list) if y['season'] == int(season) and y['episode'] == int(episode)][-1]
-	# 			self.list = [y for x, y in enumerate(self.list) if x >= num]
-	# 			if self.trakt_progressFlatten:
-	# 				all_episodes = []
-	# 				threads = []
-	# 				append = threads.append
-	# 				if not isinstance(meta, dict): showSeasons = jsloads(meta)
-	# 				else: showSeasons = meta
-	# 				try:
-	# 					for i in showSeasons['seasons']:
-	# 						if i['season_number'] <= int(season): continue
-	# 						append(Thread(target=get_episodes, args=(tvshowtitle, imdb, tmdb, tvdb, meta, i['season_number'])))
-	# 					if threads:
-	# 						[i.start() for i in threads]
-	# 						[i.join() for i in threads]
-	# 						self.list += all_episodes
-	# 					self.list = sorted(self.list, key=lambda k: (k['season'], k['episode']), reverse=False)
-	# 				except: 
-	# 					from resources.lib.modules import log_utils
-	# 					log_utils.error()
-	# 		else: # normal full episode list
-	# 			self.list = cache.get(self.tmdb_list, 168, tvshowtitle, imdb, tmdb, tvdb, meta, season)
-	# 			if not self.list: pass
-	# 			elif self.list[0]['season_isAiring'] == 'true':
-	# 				if int(re.sub(r'[^0-9]', '', str(self.list[0]['next_episode_to_air']['air_date']))) <= int(re.sub(r'[^0-9]', '', str(self.today_date))):
-	# 					self.list = cache.get(self.tmdb_list, 3, tvshowtitle, imdb, tmdb, tvdb, meta, season)
-	# 		if self.list is None: self.list = []
-	# 		if create_directory: self.episodeDirectory(self.list)
-	# 		return self.list
-	# 	except:
-	# 		from resources.lib.modules import log_utils
-	# 		log_utils.error()
-	# 		if not self.list:
-	# 			control.hide()
-	# 			if self.notifications: control.notification(title=32326, message=33049)
-
 	def get(self, tvshowtitle, year, imdb, tmdb, tvdb, meta, season=None, episode=None, create_directory=True):
 		self.list = []
-
 		def get_episodes(tvshowtitle, imdb, tmdb, tvdb, meta, season):
 			episodes = cache.get(self.tmdb_list, 168, tvshowtitle, imdb, tmdb, tvdb, meta, season)
-			if episodes and episodes[0]['season_isAiring'] == 'true':
+			if not episodes: pass
+			elif episodes[0]['season_isAiring'] == 'true':
 				if int(re.sub(r'[^0-9]', '', str(episodes[0]['next_episode_to_air']['air_date']))) <= int(re.sub(r'[^0-9]', '', str(self.today_date))):
 					episodes = cache.get(self.tmdb_list, 3, tvshowtitle, imdb, tmdb, tvdb, meta, season)
-			all_episodes.extend(episodes or [])
-
+			all_episodes.extend(episodes)
 		try:
-			if season is None and episode is None:  # For "flatten" setting
+			if season is None and episode is None: # for "flatten" setting
 				all_episodes = []
-				if not isinstance(meta, dict):
-					showSeasons = jsloads(meta)
-				else:
-					showSeasons = meta
-
-				with ThreadPoolExecutor() as executor:
-					futures = [
-						executor.submit(get_episodes, tvshowtitle, imdb, tmdb, tvdb, meta, season_info['season_number'])
-						for season_info in showSeasons['seasons']
-						if self.showspecials or season_info['season_number'] != 0
-					]
-					for future in futures:
-						future.result()
-
-				flatten_desc = getSetting('flatten.desc') == 'true'
-				self.list = sorted(all_episodes, key=lambda k: (k['season'], k['episode']), reverse=flatten_desc)
-
-			elif season and episode:  # For "trakt progress-non direct progress scrape" setting
+				threads = []
+				append = threads.append
+				if not isinstance(meta, dict): showSeasons = jsloads(meta)
+				else: showSeasons = meta
+				try:
+					for i in showSeasons['seasons']:
+						if not self.showspecials and i['season_number'] == 0: continue
+						append(Thread(target=get_episodes, args=(tvshowtitle, imdb, tmdb, tvdb, meta, i['season_number'])))
+					[i.start() for i in threads]
+					[i.join() for i in threads]
+					if getSetting('flatten.desc') == 'true':
+						self.list = sorted(all_episodes, key=lambda k: (k['season'], k['episode']), reverse=True)
+					else:
+						self.list = sorted(all_episodes, key=lambda k: (k['season'], k['episode']), reverse=False)
+				except: 
+					from resources.lib.modules import log_utils
+					log_utils.error()
+			elif season and episode: # for "trakt progress-non direct progress scrape" setting
 				self.list = cache.get(self.tmdb_list, 168, tvshowtitle, imdb, tmdb, tvdb, meta, season)
-				if self.list and self.list[0]['season_isAiring'] == 'true':
+				if not self.list: pass
+				elif self.list[0]['season_isAiring'] == 'true':
 					if int(re.sub(r'[^0-9]', '', str(self.list[0]['next_episode_to_air']['air_date']))) <= int(re.sub(r'[^0-9]', '', str(self.today_date))):
 						self.list = cache.get(self.tmdb_list, 3, tvshowtitle, imdb, tmdb, tvdb, meta, season)
-
+				num = [x for x, y in enumerate(self.list) if y['season'] == int(season) and y['episode'] == int(episode)][-1]
+				self.list = [y for x, y in enumerate(self.list) if x >= num]
 				if self.trakt_progressFlatten:
 					all_episodes = []
-					if not isinstance(meta, dict):
-						showSeasons = jsloads(meta)
-					else:
-						showSeasons = meta
-
-					with ThreadPoolExecutor() as executor:
-						futures = [
-							executor.submit(get_episodes, tvshowtitle, imdb, tmdb, tvdb, meta, season_info['season_number'])
-							for season_info in showSeasons['seasons']
-							if season_info['season_number'] > int(season)
-						]
-						for future in futures:
-							future.result()
-
-					self.list += all_episodes
-					self.list = sorted(self.list, key=lambda k: (k['season'], k['episode']), reverse=False)
-
-			else:  # Normal full episode list
+					threads = []
+					append = threads.append
+					if not isinstance(meta, dict): showSeasons = jsloads(meta)
+					else: showSeasons = meta
+					try:
+						for i in showSeasons['seasons']:
+							if i['season_number'] <= int(season): continue
+							append(Thread(target=get_episodes, args=(tvshowtitle, imdb, tmdb, tvdb, meta, i['season_number'])))
+						if threads:
+							[i.start() for i in threads]
+							[i.join() for i in threads]
+							self.list += all_episodes
+						self.list = sorted(self.list, key=lambda k: (k['season'], k['episode']), reverse=False)
+					except: 
+						from resources.lib.modules import log_utils
+						log_utils.error()
+			else: # normal full episode list
 				self.list = cache.get(self.tmdb_list, 168, tvshowtitle, imdb, tmdb, tvdb, meta, season)
-				if self.list and self.list[0]['season_isAiring'] == 'true':
+				if not self.list: pass
+				elif self.list[0]['season_isAiring'] == 'true':
 					if int(re.sub(r'[^0-9]', '', str(self.list[0]['next_episode_to_air']['air_date']))) <= int(re.sub(r'[^0-9]', '', str(self.today_date))):
 						self.list = cache.get(self.tmdb_list, 3, tvshowtitle, imdb, tmdb, tvdb, meta, season)
-
-			if not self.list:
-				self.list = []
-			if create_directory:
-				self.episodeDirectory(self.list)
+			if self.list is None: self.list = []
+			if create_directory: self.episodeDirectory(self.list)
 			return self.list
-		except Exception as e:
+		except:
 			from resources.lib.modules import log_utils
 			log_utils.error()
 			if not self.list:
 				control.hide()
-				if self.notifications:
-					control.notification(title=32326, message=33049)
+				if self.notifications: control.notification(title=32326, message=33049)
 
 	def unfinished(self, url, create_directory=True, folderName=''):
 		self.list = []
@@ -609,7 +534,6 @@ class Episodes:
 		[i.join() for i in threads]
 		return self.list
 
-
 	def trakt_list(self, url, user, folderName):
 		itemlist = []
 		try:
@@ -691,224 +615,93 @@ class Episodes:
 				log_utils.error()
 		return itemlist
 
-	# def trakt_episodes_list(self, url, user, lang, items=None, direct=True):
-	# 	self.list = []
-	# 	folderName=''
-	# 	if not items: items = self.trakt_list(url, user, folderName)
-	# 	def items_list(i):
-	# 		values = i
-	# 		tmdb, tvdb = i['tmdb'], i['tvdb']
-	# 		try:
-	# 			itemyear = tmdb_indexer().get_showSeasons_meta(tmdb)
-	# 			seasonEpisodes = cache.get(tmdb_indexer().get_seasonEpisodes_meta, 96, tmdb, i['season'])
-	# 			if not seasonEpisodes: return
-	# 			try: episode_meta = [x for x in seasonEpisodes.get('episodes') if x.get('episode') == i['episode']][0] # to pull just the episode meta we need
-	# 			except: return
-	# 			if 'premiered' in values and values.get('premiered'):
-	# 				episode_meta.pop('premiered') # prefer Trakt premiered because TMDb is fucked for some shows like Family Law off by months
-	# 				seasonEpisodes.pop('premiered') # this is series premiered so pop
-	# 			values.update(seasonEpisodes)
-	# 			values.update(episode_meta)
-	# 			values['year'] = itemyear.get('year')
-	# 			duration = values['duration']
-	# 			if duration:
-	# 				values.update({'duration': int(duration)*60})
-	# 			for k in ('episodes',): values.pop(k, None) # pop() keys from seasonEpisodes that are not needed anymore
-	# 			try: # used for fanart fetch since not available in seasonEpisodes request
-	# 				art = cache.get(tmdb_indexer().get_art, 96, tmdb)
-	# 				values.update(art)
-	# 			except: pass
-	# 			if self.enable_fanarttv:
-	# 				extended_art = fanarttv_cache.get(FanartTv().get_tvshow_art, 336, tvdb)
-	# 				if extended_art: values.update(extended_art)
-	# 			values['extended'] = True # used to bypass calling "super_info()", super_info() no longer used as of 4-12-21 so this could be removed.
-	# 			if not direct: values['action'] = 'episodes'
-	# 			self.list.append(values)
-	# 		except:
-	# 			from resources.lib.modules import log_utils
-	# 			log_utils.error()
-	# 	threads = []
-	# 	append = threads.append
-	# 	for i in items:
-	# 		append(Thread(target=items_list, args=(i,)))
-	# 	[i.start() for i in threads]
-	# 	[i.join() for i in threads]
-	# 	return self.list
-
 	def trakt_episodes_list(self, url, user, lang, items=None, direct=True):
 		self.list = []
-		folderName = ''
-		if not items:
-			items = self.trakt_list(url, user, folderName)
-
-		def process_item(i):
+		folderName=''
+		if not items: items = self.trakt_list(url, user, folderName)
+		def items_list(i):
+			values = i
+			tmdb, tvdb = i['tmdb'], i['tvdb']
 			try:
-				values = i
-				tmdb, tvdb = i['tmdb'], i['tvdb']
-
 				itemyear = tmdb_indexer().get_showSeasons_meta(tmdb)
 				seasonEpisodes = cache.get(tmdb_indexer().get_seasonEpisodes_meta, 96, tmdb, i['season'])
-				if not seasonEpisodes:
-					return
-
-				try:
-					episode_meta = next(x for x in seasonEpisodes.get('episodes', []) if x.get('episode') == i['episode'])
-				except StopIteration:
-					return
-
-				# Prefer Trakt's premiered date over TMDb's
+				if not seasonEpisodes: return
+				try: episode_meta = [x for x in seasonEpisodes.get('episodes') if x.get('episode') == i['episode']][0] # to pull just the episode meta we need
+				except: return
 				if 'premiered' in values and values.get('premiered'):
-					episode_meta.pop('premiered', None)
-					seasonEpisodes.pop('premiered', None)
-
+					episode_meta.pop('premiered') # prefer Trakt premiered because TMDb is fucked for some shows like Family Law off by months
+					seasonEpisodes.pop('premiered') # this is series premiered so pop
 				values.update(seasonEpisodes)
 				values.update(episode_meta)
-				values['year'] = itemyear.get('year', '')
-
-				# Convert duration to seconds
-				duration = values.get('duration')
+				values['year'] = itemyear.get('year')
+				duration = values['duration']
 				if duration:
-					values['duration'] = int(duration) * 60
-
-				values.pop('episodes', None)
-
-				# Fetch additional artwork
-				try:
+					values.update({'duration': int(duration)*60})
+				for k in ('episodes',): values.pop(k, None) # pop() keys from seasonEpisodes that are not needed anymore
+				try: # used for fanart fetch since not available in seasonEpisodes request
 					art = cache.get(tmdb_indexer().get_art, 96, tmdb)
 					values.update(art)
-				except:
-					pass
-
-				# Include fanart if enabled
+				except: pass
 				if self.enable_fanarttv:
 					extended_art = fanarttv_cache.get(FanartTv().get_tvshow_art, 336, tvdb)
-					if extended_art:
-						values.update(extended_art)
-
-				# Set additional flags
-				values['extended'] = True
-				if not direct:
-					values['action'] = 'episodes'
-
+					if extended_art: values.update(extended_art)
+				values['extended'] = True # used to bypass calling "super_info()", super_info() no longer used as of 4-12-21 so this could be removed.
+				if not direct: values['action'] = 'episodes'
 				self.list.append(values)
 			except:
 				from resources.lib.modules import log_utils
 				log_utils.error()
-
-		# Use ThreadPoolExecutor for concurrent processing
-		with ThreadPoolExecutor() as executor:
-			futures = [executor.submit(process_item, i) for i in items]
-			for future in as_completed(futures):
-				pass
-
+		threads = []
+		append = threads.append
+		for i in items:
+			append(Thread(target=items_list, args=(i,)))
+		[i.start() for i in threads]
+		[i.join() for i in threads]
 		return self.list
-
-	# def getFavoriteEpisodes(self, create_directory=True, folderName=''):
-	# 	self.list = []
-	# 	from resources.lib.modules import favourites
-	# 	items = favourites.getFavourites(content='episode')
-	# 	def items_list(i):
-	# 		values = i[3]
-	# 		tmdb, tvdb = i[3].get('tmdb'), i[3].get('tvdb')
-	# 		try:
-	# 			itemyear = tmdb_indexer().get_showSeasons_meta(tmdb)
-	# 			seasonEpisodes = cache.get(tmdb_indexer().get_seasonEpisodes_meta, 96, tmdb, i[3].get('season'))
-	# 			if not seasonEpisodes: return
-	# 			try: episode_meta = [x for x in seasonEpisodes.get('episodes') if int(x.get('episode')) == int(i[3].get('episode'))][0] # to pull just the episode meta we need
-	# 			except: return
-	# 			if 'premiered' in values and values.get('premiered'):
-	# 				episode_meta.pop('premiered') # prefer Trakt premiered because TMDb is fucked for some shows like Family Law off by months
-	# 				seasonEpisodes.pop('premiered') # this is series premiered so pop
-	# 			values.update(seasonEpisodes)
-	# 			values.update(episode_meta)
-	# 			values['year'] = itemyear.get('year')
-	# 			duration = values['duration']
-	# 			if duration:
-	# 				values.update({'duration': int(duration)*60})
-	# 			for k in ('episodes',): values.pop(k, None) # pop() keys from seasonEpisodes that are not needed anymore
-	# 			try: # used for fanart fetch since not available in seasonEpisodes request
-	# 				art = cache.get(tmdb_indexer().get_art, 96, tmdb)
-	# 				values.update(art)
-	# 			except: pass
-	# 			if self.enable_fanarttv:
-	# 				extended_art = fanarttv_cache.get(FanartTv().get_tvshow_art, 336, tvdb)
-	# 				if extended_art: values.update(extended_art)
-	# 			values['extended'] = True # used to bypass calling "super_info()", super_info() no longer used as of 4-12-21 so this could be removed.
-	# 			self.list.append(values)
-	# 		except:
-	# 			from resources.lib.modules import log_utils
-	# 			log_utils.error()
-	# 	threads = []
-	# 	append = threads.append
-	# 	for i in items:
-	# 		append(Thread(target=items_list, args=(i,)))
-	# 	[i.start() for i in threads]
-	# 	[i.join() for i in threads]
-	# 	if self.list is None: self.list = []
-	# 	if create_directory: self.episodeDirectory(self.list, folderName=folderName)
-	# 	return self.list
 
 	def getFavoriteEpisodes(self, create_directory=True, folderName=''):
 		self.list = []
 		from resources.lib.modules import favourites
 		items = favourites.getFavourites(content='episode')
-
-		def process_item(i):
+		def items_list(i):
+			values = i[3]
+			tmdb, tvdb = i[3].get('tmdb'), i[3].get('tvdb')
 			try:
-				values = i[3]
-				tmdb, tvdb = values.get('tmdb'), values.get('tvdb')
-
 				itemyear = tmdb_indexer().get_showSeasons_meta(tmdb)
-				seasonEpisodes = cache.get(tmdb_indexer().get_seasonEpisodes_meta, 96, tmdb, values.get('season'))
-				if not seasonEpisodes:
-					return
-
-				try:
-					episode_meta = next(x for x in seasonEpisodes.get('episodes', []) if int(x.get('episode')) == int(values.get('episode')))
-				except StopIteration:
-					return
-
-				# Prefer Trakt's premiered date over TMDb's
+				seasonEpisodes = cache.get(tmdb_indexer().get_seasonEpisodes_meta, 96, tmdb, i[3].get('season'))
+				if not seasonEpisodes: return
+				try: episode_meta = [x for x in seasonEpisodes.get('episodes') if int(x.get('episode')) == int(i[3].get('episode'))][0] # to pull just the episode meta we need
+				except: return
 				if 'premiered' in values and values.get('premiered'):
-					episode_meta.pop('premiered', None)
-					seasonEpisodes.pop('premiered', None)
-
+					episode_meta.pop('premiered') # prefer Trakt premiered because TMDb is fucked for some shows like Family Law off by months
+					seasonEpisodes.pop('premiered') # this is series premiered so pop
 				values.update(seasonEpisodes)
 				values.update(episode_meta)
-				values['year'] = itemyear.get('year', '')
-
-				# Convert duration to seconds
-				duration = values.get('duration')
+				values['year'] = itemyear.get('year')
+				duration = values['duration']
 				if duration:
-					values['duration'] = int(duration) * 60
-				values.pop('episodes', None)
-
-				# Fetch additional artwork
-				try:
+					values.update({'duration': int(duration)*60})
+				for k in ('episodes',): values.pop(k, None) # pop() keys from seasonEpisodes that are not needed anymore
+				try: # used for fanart fetch since not available in seasonEpisodes request
 					art = cache.get(tmdb_indexer().get_art, 96, tmdb)
 					values.update(art)
-				except:
-					pass
-
-				# Include fanart if enabled
+				except: pass
 				if self.enable_fanarttv:
 					extended_art = fanarttv_cache.get(FanartTv().get_tvshow_art, 336, tvdb)
-					if extended_art:
-						values.update(extended_art)
-				values['extended'] = True
+					if extended_art: values.update(extended_art)
+				values['extended'] = True # used to bypass calling "super_info()", super_info() no longer used as of 4-12-21 so this could be removed.
 				self.list.append(values)
 			except:
 				from resources.lib.modules import log_utils
 				log_utils.error()
-		with ThreadPoolExecutor() as executor:
-			futures = [executor.submit(process_item, i) for i in items]
-			for future in as_completed(futures):
-				pass
-		if self.list is None:
-			self.list = []
-		if create_directory:
-			self.episodeDirectory(self.list, folderName=folderName)
-
+		threads = []
+		append = threads.append
+		for i in items:
+			append(Thread(target=items_list, args=(i,)))
+		[i.start() for i in threads]
+		[i.join() for i in threads]
+		if self.list is None: self.list = []
+		if create_directory: self.episodeDirectory(self.list, folderName=folderName)
 		return self.list
 
 	def tvmaze_list(self, url, limit):

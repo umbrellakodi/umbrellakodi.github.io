@@ -164,6 +164,8 @@ class Movies:
 		self.simkltrendingtoday_link = 'https://api.simkl.com/movies/trending/today?client_id=%s&extended=tmdb' % '%s'
 		self.simkltrendingweek_link = 'https://api.simkl.com/movies/trending/week?client_id=%s&extended=tmdb' % '%s'
 		self.simkltrendingmonth_link = 'https://api.simkl.com/movies/trending/month?client_id=%s&extended=tmdb'% '%s'
+		self.simklplantowatch_link = 'https://api.simkl.com/sync/all-items/movies/plantowatch?'
+		self.simklcompleted_link = 'https://api.simkl.com/sync/all-items/movies/completed?'
 		self.imdblist_hours = int(getSetting('cache.imdblist'))
 		self.trakt_hours = int(getSetting('cache.traktother'))
 		self.traktpopular_hours = int(getSetting('cache.traktpopular'))
@@ -200,7 +202,10 @@ class Movies:
 			elif u in self.search_tmdb_link and url != 'tmdbrecentday' and url != 'tmdbrecentweek' and url != 'favourites_movies':
 				return self.getTMDb(url, folderName=folderName)
 			elif u in self.simkltrendingweek_link or u in self.simkltrendingmonth_link or u in self.simkltrendingtoday_link:
-				return self.getSimkl(url, folderName=folderName)
+				if '/movies/completed' in url: return self.getSimklCompleted(url, folderName=folderName)
+				if '/movies/plantowatch' in url: return self.getSimklPlantowatch(url, folderName=folderName)
+				else:
+					return self.getSimkl(url, folderName=folderName)
 			elif u in self.trakt_link and '/users/' in url:
 				try:
 					isTraktHistory = (url.split('&page=')[0] in self.trakthistory_link)
@@ -541,6 +546,53 @@ class Movies:
 			except: pass
 			if u in self.simkltrendingweek_link or u in self.simkltrendingmonth_link or u in self.simkltrendingtoday_link:
 				self.list = cache.get(simkl().simkl_list, self.simkl_hours, url)
+			if self.list is None: self.list = []
+			next = ''
+			for i in range(len(self.list)): self.list[i]['next'] = next
+			self.worker()
+			if create_directory: self.movieDirectory(self.list, folderName=folderName)
+			return self.list
+		except:
+			from resources.lib.modules import log_utils
+			log_utils.error()
+			if not self.list:
+				control.hide()
+				is_widget = 'plugin' not in control.infoLabel('Container.PluginName')
+				if self.notifications and is_widget != True: control.notification(title=32001, message=33049)
+
+	def getSimklCompleted(self, url, create_directory=True, folderName=''):
+		
+		self.list = []
+		try:
+			try: url = getattr(self, url + '_link')
+			except: pass
+			try: u = urlparse(url).netloc.lower()
+			except: pass
+			if u in self.simklcompleted_link:
+				self.list = cache.get(simkl().simklCompleted, self.simkl_hours, url)
+			if self.list is None: self.list = []
+			next = ''
+			for i in range(len(self.list)): self.list[i]['next'] = next
+			self.worker()
+			if create_directory: self.movieDirectory(self.list, folderName=folderName)
+			return self.list
+		except:
+			from resources.lib.modules import log_utils
+			log_utils.error()
+			if not self.list:
+				control.hide()
+				is_widget = 'plugin' not in control.infoLabel('Container.PluginName')
+				if self.notifications and is_widget != True: control.notification(title=32001, message=33049)
+
+	def getSimklPlantowatch(self, url, create_directory=True, folderName=''):
+		self.list = []
+		try:
+			try: url = getattr(self, url + '_link')
+			except: pass
+			try: u = urlparse(url).netloc.lower()
+			except: pass
+			if u in self.simklplantowatch_link:
+				self.list = cache.get(simkl().simklPlantowatch, self.simkl_hours, url)
 			if self.list is None: self.list = []
 			next = ''
 			for i in range(len(self.list)): self.list[i]['next'] = next

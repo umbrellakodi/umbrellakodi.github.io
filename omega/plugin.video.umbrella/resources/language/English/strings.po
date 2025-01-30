@@ -5130,3 +5130,19 @@ msgstr ""
 msgctxt "#40546"
 msgid "[B]Delete all cloud files from TorBox?[/B]"
 msgstr ""
+
+msgctxt "#40547"
+msgid "Completed"
+msgstr ""
+
+msgctxt "#40548"
+msgid "Completed (SimKl)"
+msgstr ""
+
+msgctxt "#40549"
+msgid "Plan to Watch"
+msgstr ""
+
+msgctxt "#40550"
+msgid "Plan to Watch (SimKl)"
+msgstr ""

@@ -120,9 +120,11 @@ class SIMKL:
 
 	def get_request(self, url):
 		try:
-			try: response = session.get(url, timeout=20)
+			headers['Authorization'] = 'Bearer %s' % getSetting('simkltoken')
+			headers['simkl-api-key'] = simklclientid
+			try: response = session.get(url, headers=headers, timeout=20)
 			except requests.exceptions.SSLError:
-				response = session.get(url, verify=False)
+				response = session.get(url, headers=headers, verify=False)
 		except requests.exceptions.ConnectionError:
 			control.notification(message=40349)
 			log_utils.error()
@@ -191,6 +193,55 @@ class SIMKL:
 			except:
 				log_utils.error()
 		return self.list
+
+	def simklCompleted(self, url):
+		if not url: return
+		try:
+			#result = cache.get(self.get_request, 96, url % self.API_key)
+			result = self.get_request(url)
+			if result is None: return
+			items = result['movies']
+		except: return
+		self.list = [] ; sortList = []
+		next = ''
+		for item in items:
+			try:
+				values = {}
+				values['next'] = next 
+				values['tmdb'] = str(item['movie'].get('ids').get('tmdb')) if item['movie'].get('ids').get('tmdb') else ''
+				sortList.append(values['tmdb'])
+				values['imdb'] = item['movie'].get('ids').get('imdb')
+				values['tvdb'] = item['movie'].get('ids').get('tvdb')
+				values['metacache'] = False 
+				self.list.append(values)
+			except:
+				log_utils.error()
+		return self.list
+
+	def simklPlantowatch(self, url):
+		if not url: return
+		try:
+			#result = cache.get(self.get_request, 96, url % self.API_key)
+			result = self.get_request(url)
+			if result is None: return
+			items = result['movies']
+		except: return
+		self.list = [] ; sortList = []
+		next = ''
+		for item in items:
+			try:
+				values = {}
+				values['next'] = next 
+				values['tmdb'] = str(item['movie'].get('ids').get('tmdb')) if item['movie'].get('ids').get('tmdb') else ''
+				sortList.append(values['tmdb'])
+				values['imdb'] = item['movie'].get('ids').get('imdb')
+				values['tvdb'] = item['movie'].get('ids').get('tvdb')
+				values['metacache'] = False 
+				self.list.append(values)
+			except:
+				log_utils.error()
+		return self.list
+
 
 	def watch(content_type, name, imdb=None, tvdb=None, season=None, episode=None, refresh=True):
 		control.busy()
@@ -425,3 +476,7 @@ def cachesyncSeasons(imdb, tvdb, simkl=None, timeout=0):
 def syncSeasons(imdb, tvdb, simkl=None): # season indicators and counts for watched shows ex. [['1', '2', '3'], {1: {'total': 8, 'watched': 8, 'unwatched': 0}, 2: {'total': 10, 'watched': 10, 'unwatched': 0}}]
 	pass # code needs to be written for this.
 	return None
+
+# Watching - In Progress
+# Completed - History
+# Plan to Watch - watchlist
