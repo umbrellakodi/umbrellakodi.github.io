@@ -80,7 +80,6 @@ class Episodes:
 					showSeasons = jsloads(meta)
 				else:
 					showSeasons = meta
-
 				try:
 					with ThreadPoolExecutor(max_workers=10) as executor:  # Adjust max_workers as needed
 						futures = [
@@ -88,7 +87,6 @@ class Episodes:
 							for season in showSeasons['seasons']
 							if self.showspecials or season['season_number'] != 0
 						]
-						# Collect results
 						for future in as_completed(futures):
 							try:
 								result = future.result()
