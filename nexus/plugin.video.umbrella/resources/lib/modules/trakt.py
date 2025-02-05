@@ -148,6 +148,11 @@ def traktAuth(fromSettings=0):
 			control.notification(message=40107, icon=trakt_icon)
 			if fromSettings == 1:
 				control.openSettings('8.0', 'plugin.video.umbrella')
+			if not control.yesnoDialog('Do you want to set Trakt as your service for your watched and unwatched indicators?','','','Indicators', 'No', 'Yes'): return True
+			control.homeWindow.setProperty('umbrella.updateSettings', 'false')
+			control.setSetting('indicators.alt', '1')
+			control.homeWindow.setProperty('umbrella.updateSettings', 'true')
+			control.setSetting('indicators', 'Trakt')
 			return True
 		if fromSettings == 1:
 				control.openSettings('8.0', 'plugin.video.umbrella')
@@ -177,6 +182,9 @@ def traktRevoke(fromSettings=0):
 			cleared = traktsync.delete_tables(clr_traktSync)
 			if cleared:
 				log_utils.log('Trakt tables cleared after revoke.', level=log_utils.LOGINFO)
+			if getSetting('indicators.alt') == '1':
+				control.setSetting('indicators.alt', '0')
+				control.setSetting('indicators', 'Local')
 			if fromSettings == 1:
 				control.openSettings('8.0', 'plugin.video.umbrella')
 				control.dialog.ok(control.lang(32315), control.lang(40109))

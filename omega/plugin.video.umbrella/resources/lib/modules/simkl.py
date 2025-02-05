@@ -102,6 +102,11 @@ class SIMKL:
 			if fromSettings == 1:
 				control.openSettings('9.0', 'plugin.video.umbrella')
 				control.notification(message="Simkl Authorized", icon=simkl_icon)
+				if not control.yesnoDialog('Do you want to set Trakt as your service for your watched and unwatched indicators?','','','Indicators', 'No', 'Yes'): return True, None
+				control.homeWindow.setProperty('umbrella.updateSettings', 'false')
+				control.setSetting('indicators.alt', '2')
+				control.homeWindow.setProperty('umbrella.updateSettings', 'true')
+				control.setSetting('indicators', 'Simkl')
 			return True, None
 		except:
 			log_utils.error('Simkl Authorization Failed : ')
@@ -119,6 +124,9 @@ class SIMKL:
 			if fromSettings == 1:
 				control.openSettings('9.0', 'plugin.video.umbrella')
 			control.dialog.ok(getLS(40342), getLS(32320))
+			if getSetting('indicators.alt') == '2':
+				control.setSetting('indicators.alt', '0')
+				control.setSetting('indicators', 'Local')
 
 		except: log_utils.error()
 
@@ -760,25 +768,25 @@ def sync_watch_list(activities=None, forced=False):
 		link = '/sync/all-items/%s/plantowatch'
 		if forced:
 			items = get_request(link % 'movies')
-			items = items['movies']
-			simklsync.insert_watch_list(items, 'movies_watchlist')
+			items = items.get('movies', None)
+			if items: simklsync.insert_watch_list(items, 'movies_watchlist')
 			items = get_request(link % 'shows')
-			items = items['shows']
-			simklsync.insert_watch_list(items, 'shows_watchlist')
+			items = items.get('shows', None)
+			if items: simklsync.insert_watch_list(items, 'shows_watchlist')
 		else:
 			db_last_watchList = simklsync.last_sync('last_watchlisted_at')
 			watchListActivity = getWatchListedActivity(activities)
 			if (watchListActivity - db_last_watchList >= 60) or watchListActivity == 0: # do not sync unless 1 min difference or more
-				log_utils.log('Simkl Plan to Watch (watchlist) Sync Update...(local db latest "watchlist_at" = %s, simkl api latest "watchlisted_at" = %s)' % \
+				log_utils.log('Simkl (watchlist) Sync Update...(local db latest "watchlist_at" = %s, simkl api latest "watchlisted_at" = %s)' % \
 									(str(db_last_watchList), str(watchListActivity)), __name__, log_utils.LOGINFO)
 				clr_simklsync = {'bookmarks': False, 'movies_watchlist': True, 'shows_watchlist': True, 'watched': False, 'movies_history': False, 'shows_history': False}
 				simklsync.delete_tables(clr_simklsync)
 				items = get_request(link % 'movies')
-				items = items['movies']
-				simklsync.insert_watch_list(items, 'movies_watchlist')
+				items = items.get('movies',None)
+				if items: simklsync.insert_watch_list(items, 'movies_watchlist')
 				items = get_request(link % 'shows')
-				items = items['shows']
-				simklsync.insert_watch_list(items, 'shows_watchlist')
+				items = items.get('shows', None)
+				if items: simklsync.insert_watch_list(items, 'shows_watchlist')
 	except: log_utils.error()
 
 def sync_history(activities=None, forced=False):
@@ -786,11 +794,11 @@ def sync_history(activities=None, forced=False):
 		link = '/sync/all-items/%s/completed'
 		if forced:
 			items = get_request(link % 'movies')
-			items = items['movies']
-			simklsync.insert_history_list(items, 'movies_history')
+			items = items.get('movies', None)
+			if items: simklsync.insert_history_list(items, 'movies_history')
 			items = get_request(link % 'shows')
-			items = items['shows']
-			simklsync.insert_history_list(items, 'shows_history')
+			items = items.get('shows', None)
+			if items: simklsync.insert_history_list(items, 'shows_history')
 		else:
 			db_last_historyList = simklsync.last_sync('last_history_at')
 			historyListActivity = getHistoryListedActivity(activities)
@@ -800,11 +808,11 @@ def sync_history(activities=None, forced=False):
 				clr_simklsync = {'bookmarks': False, 'movies_watchlist': False, 'shows_watchlist': False, 'watched': False, 'movies_history': True, 'shows_history': True}
 				simklsync.delete_tables(clr_simklsync)
 				items = get_request(link % 'movies')
-				items = items['movies']
-				simklsync.insert_history_list(items, 'movies_history')
+				items = items.get('movies', None)
+				if items: simklsync.insert_history_list(items, 'movies_history')
 				items = get_request(link % 'shows')
-				items = items['shows']
-				simklsync.insert_history_list(items, 'shows_history')
+				items = items.get('shows')
+				if items:  simklsync.insert_history_list(items, 'shows_history')
 	except: log_utils.error()
 
 
