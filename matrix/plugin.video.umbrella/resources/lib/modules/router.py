@@ -162,6 +162,9 @@ def router(argv2):
 	elif action == 'traktAccountInfo':
 		from resources.lib.modules import trakt as Trakt
 		Trakt.getTraktAccountInfo()
+	elif action == 'simklAccountInfo':
+		from resources.lib.modules import simkl
+		simkl.SIMKL().get_account_info()
 	elif action == 'movies_PublicLists':
 		from resources.lib.menus import movies
 		movies.Movies().getTraktPublicLists(url, folderName=folderName)
@@ -357,6 +360,9 @@ def router(argv2):
 	elif action == 'shows_watched':
 		from resources.lib.menus import tvshows
 		tvshows.TVshows().tvshow_watched(url, folderName=folderName)
+	elif action == 'simkl_shows_progress':
+		from resources.lib.menus import tvshows
+		tvshows.TVshows().simkl_progress(url, folderName=folderName)
 
 	####################################################
 	#---Plex
@@ -432,6 +438,9 @@ def router(argv2):
 	elif action == 'episodes_traktUnfinishedManager':
 		from resources.lib.menus import episodes
 		episodes.Episodes().unfinishedManager()
+	elif action == 'simkl_calendar':
+		from resources.lib.menus import episodes
+		episodes.Episodes().simkl_calendar(url, folderName=folderName)
 
 	####################################################
 	#---Premium Services
@@ -843,6 +852,9 @@ def router(argv2):
 		elif action == 'tools_traktToolsNavigator':
 			from resources.lib.menus import navigator
 			navigator.Navigator().traktTools(folderName=folderName)
+		elif action == 'tools_simklToolsNavigator':
+			from resources.lib.menus import navigator
+			navigator.Navigator().simklTools(folderName=folderName)
 		elif action == 'tools_searchNavigator':
 			from resources.lib.menus import navigator
 			navigator.Navigator().search(folderName=folderName)
@@ -886,6 +898,9 @@ def router(argv2):
 		elif action == 'tools_forceTraktSync':
 			from resources.lib.modules import trakt
 			trakt.force_traktSync()
+		elif action == 'tools_forceSimklSync':
+			from resources.lib.modules import simkl
+			simkl.force_simklSync()
 		elif action == 'tools_clearLogFile':
 			from resources.lib.modules import log_utils
 			cleared = log_utils.clear_logFile()

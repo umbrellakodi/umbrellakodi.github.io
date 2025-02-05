@@ -229,9 +229,15 @@ class VersionIsUpdateCheck:
 					clr_traktSync = {'bookmarks': False, 'hiddenProgress': False, 'liked_lists': False, 'movies_collection': False, 'movies_watchlist': False, 'popular_lists': False,
 											'public_lists': False, 'shows_collection': False, 'shows_watchlist': False, 'trending_lists': False, 'user_lists': False, 'watched': False}
 					cleared = traktsync.delete_tables(clr_traktSync)
+					from resources.lib.database import simklsync
+					clr_simklsync = {'bookmarks': True, 'movies_watchlist': True, 'shows_watchlist': True, 'watched': True}
+					cleared2 = simklsync.delete_tables(clr_simklsync)
 					if cleared:
 						control.notification(message='Forced traktsync clear for version update complete.')
 						control.log('[ plugin.video.umbrella ]  Forced traktsync clear for version update complete.', LOGINFO)
+					if cleared2:
+						control.notification(message='Forced simklsync clear for version update complete.')
+						control.log('[ plugin.video.umbrella ]  Forced simklsync clear for version update complete.', LOGINFO)
 					if clr_fanarttv:
 						from resources.lib.database import fanarttv_cache
 						cleared = fanarttv_cache.cache_clear()
@@ -263,12 +269,14 @@ class LibraryService:
 		from resources.lib.modules import library
 		library.lib_tools().service() # method contains control.monitor().waitForAbort() while loop every 6hrs
 
-class SyncTraktService:
+class SyncServices:
 	def run(self):
-		service_syncInterval = control.setting('trakt.service.syncInterval') or '15'
-		control.log('[ plugin.video.umbrella ]  Trakt Sync Service Starting (sync check every %s minutes)...' % service_syncInterval, LOGINFO)
-		from resources.lib.modules import trakt
-		trakt.trakt_service_sync() # method contains "control.monitor().waitForAbort()" while loop every "service_syncInterval" minutes
+		service_syncInterval = control.setting('background.service.syncInterval') or '15'
+		control.log('[ plugin.video.umbrella ]  Account Sync Service Starting (sync check every %s minutes)...' % service_syncInterval, LOGINFO)
+		#from resources.lib.modules import trakt
+		#trakt.trakt_service_sync() # method contains "control.monitor().waitForAbort()" while loop every "service_syncInterval" minutes
+		from resources.lib.modules import tools
+		tools.services_syncs()
 
 try:
 	testUmbrella = False
@@ -395,8 +403,8 @@ def main():
 		VersionIsUpdateCheck().run()
 		checkAutoStart().run()
 
-		syncTraktService = Thread(target=SyncTraktService().run) # run service in case user auth's trakt later, sync will loop and do nothing without valid auth'd account
-		syncTraktService.start()
+		syncServices = Thread(target=SyncServices().run) # run service in case user auth's trakt later, sync will loop and do nothing without valid auth'd account
+		syncServices.start()
 
 		# if getTraktCredentialsInfo():
 		# 	if control.setting('autoTraktOnStart') == 'true':
@@ -412,8 +420,8 @@ def main():
 	SettingsMonitor().waitForAbort()
 	# start monitoring settings changes events
 	control.log('[ plugin.video.umbrella ]  Settings Monitor Service Stopping...', LOGINFO)
-	del syncTraktService # prob does not kill a running thread
-	control.log('[ plugin.video.umbrella ]  Trakt Sync Service Stopping...', LOGINFO)
+	del syncServices # prob does not kill a running thread
+	control.log('[ plugin.video.umbrella ]  Account Sync Service Stopping...', LOGINFO)
 	if libraryService:
 		del libraryService # prob does not kill a running thread
 		control.log('[ plugin.video.umbrella ]  Library Update Service Stopping...', LOGINFO)

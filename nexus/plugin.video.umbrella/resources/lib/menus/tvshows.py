@@ -10,9 +10,8 @@ import re
 import xbmc
 from threading import Thread
 from urllib.parse import quote_plus, urlencode, parse_qsl, urlparse, urlsplit
-from resources.lib.database import cache, metacache, fanarttv_cache, traktsync
+from resources.lib.database import cache, metacache, fanarttv_cache, traktsync, simklsync
 from resources.lib.indexers.tmdb import TVshows as tmdb_indexer
-from resources.lib.modules.simkl import SIMKL as simkl
 from resources.lib.indexers.fanarttv import FanartTv
 from resources.lib.modules import cleangenre, log_utils
 from resources.lib.modules import client
@@ -21,7 +20,7 @@ from resources.lib.modules.playcount import getTVShowOverlay, getShowCount, getS
 from resources.lib.modules import trakt
 from resources.lib.modules import views
 from resources.lib.modules import mdblist
-from resources.lib.modules import tools
+from resources.lib.modules import simkl
 
 getLS = control.lang
 getSetting = control.setting
@@ -84,6 +83,7 @@ class TVshows:
 		self.traktlists_link = 'https://api.trakt.tv/users/me/lists'
 		self.traktlikedlists_link = 'https://api.trakt.tv/users/likes/lists?limit=1000000' # used by library import only
 		self.traktwatchlist_link = 'https://api.trakt.tv/users/me/watchlist/shows?limit=%s&page=1' % self.page_limit # this is now a dummy link for pagination to work
+		self.simklwatchlist_link = 'https://api.simkl.com/watchlist/shows?limit=%s&page=1' % self.page_limit # this is now a dummy link for pagination to work
 		self.traktcollection_link = 'https://api.trakt.tv/users/me/collection/shows?limit=%s&page=1' % self.page_limit # this is now a dummy link for pagination to work
 		self.traktlist_link = 'https://api.trakt.tv/users/%s/lists/%s/items/shows?limit=%s&page=1' % ('%s', '%s', self.page_limit) # local pagination, limit and page used to advance, pulled from request
 		self.progress_link = 'https://api.trakt.tv/sync/watched/shows?extended=noseasons'
@@ -154,6 +154,7 @@ class TVshows:
 		self.showCounts = getSetting('tvshows.episodecount') == 'true'
 		self.useContainerTitles = getSetting('enable.containerTitles') == 'true'
 		self.is_widget = 'plugin' not in control.infoLabel('Container.PluginName')
+		self.simkl_link = 'https://api.simkl.com'
 
 	def get(self, url, idx=True, create_directory=True, folderName=''):
 		self.list = []
@@ -175,7 +176,8 @@ class TVshows:
 			elif u in self.search_tmdb_link and url != 'tmdbrecentday' and url != 'tmdbrecentweek' and url != 'favourites_tvshows':
 				return self.getTMDb(url, folderName=folderName)
 			elif u in (self.simkltrendingweek_link or u in self.simkltrendingmonth_link or u in self.simkltrendingtoday_link) and url != 'favourites_tvshows':
-				return self.getSimkl(url, folderName=folderName)
+				if 'watchlist' in url: return self.simklWatchlist(url, folderName=folderName)
+				else: return self.getSimkl(url, folderName=folderName)
 			if u in self.trakt_link and '/users/' in url:
 				try:
 					if '/users/me/' not in url: raise Exception()
@@ -191,11 +193,9 @@ class TVshows:
 				self.list = cache.get(self.trakt_list, 0, url, self.trakt_user, folderName)
 				if idx: self.worker()
 			elif u in self.trakt_link and 'trending' in url:
-				from resources.lib.modules import log_utils
 				self.list = cache.get(self.trakt_list, self.trakttrending_hours, url, self.trakt_user, folderName) #trakt trending
 				if idx: self.worker()
 			elif u in self.trakt_link:
-				from resources.lib.modules import log_utils
 				self.list = cache.get(self.trakt_list, self.trakt_hours, url, self.trakt_user, folderName) #trakt other
 				if idx: self.worker()
 			elif u in self.imdb_link and ('/user/' in url or '/list/' in url):
@@ -214,7 +214,6 @@ class TVshows:
 				if create_directory: self.tvshowDirectory(self.list, folderName=folderName)
 			return self.list
 		except:
-			from resources.lib.modules import log_utils
 			log_utils.error()
 			if not self.list:
 				control.hide()
@@ -227,7 +226,6 @@ class TVshows:
 			if create_directory: self.addDirectory(self.list, folderName=folderName)
 			return self.list
 		except:
-			from resources.lib.modules import log_utils
 			log_utils.error()
 	def getTMDb(self, url, create_directory=True, folderName=''):
 		self.list = []
@@ -244,7 +242,7 @@ class TVshows:
 			if create_directory: self.tvshowDirectory(self.list, folderName=folderName)
 			return self.list
 		except:
-			from resources.lib.modules import log_utils
+			
 			log_utils.error()
 			if not self.list:
 				control.hide()
@@ -258,7 +256,7 @@ class TVshows:
 			try: u = urlparse(url).netloc.lower()
 			except: pass
 			if u in self.simkltrendingweek_link or u in self.simkltrendingmonth_link or u in self.simkltrendingtoday_link:
-				self.list = cache.get(simkl().simkl_list, self.simkl_hours, url)
+				self.list = cache.get(simkl.simkl_list, self.simkl_hours, url)
 			if self.list is None: self.list = []
 			next = ''
 			for i in range(len(self.list)): self.list[i]['next'] = next
@@ -266,7 +264,7 @@ class TVshows:
 			if create_directory: self.tvshowDirectory(self.list, folderName=folderName)
 			return self.list
 		except:
-			from resources.lib.modules import log_utils
+			
 			log_utils.error()
 			if not self.list:
 				control.hide()
@@ -284,7 +282,7 @@ class TVshows:
 			if idx: self.tvshowDirectory(self.list, folderName=folderName)
 			return self.list
 		except:
-			from resources.lib.modules import log_utils
+			
 			log_utils.error()
 			if not self.list:
 				control.hide()
@@ -298,7 +296,7 @@ class TVshows:
 			if '/popular' in url:
 				self.list = cache.get(self.trakt_public_list, self.traktpopular_hours, url)
 			elif '/trending' in url:
-				from resources.lib.modules import log_utils
+				
 				log_utils.log('TraktPublicLists Hours Used: %s' % str(self.trakttrending_hours), log_utils.LOGDEBUG)
 				self.list = cache.get(self.trakt_public_list, self.trakttrending_hours, url)
 			else:
@@ -307,7 +305,7 @@ class TVshows:
 			if create_directory: self.addDirectory(self.list, folderName=folderName)
 			return self.list
 		except:
-			from resources.lib.modules import log_utils
+			
 			log_utils.error()
 	
 	def trakt_based_on_recent(self, create_directory=True, folderName=''):
@@ -332,7 +330,7 @@ class TVshows:
 			if create_directory: self.tvshowDirectory(self.list, folderName=folderName)
 			return self.list
 		except:
-			from resources.lib.modules import log_utils
+			
 			log_utils.error()
 			return
 
@@ -358,7 +356,7 @@ class TVshows:
 			if create_directory: self.tvshowDirectory(self.list, folderName=folderName)
 			return self.list
 		except:
-			from resources.lib.modules import log_utils
+			
 			log_utils.error()
 			return self.list
 
@@ -375,7 +373,7 @@ class TVshows:
 			if create_directory: self.tvshowDirectory(self.list, folderName=folderName)
 			return self.list
 		except:
-			from resources.lib.modules import log_utils
+			
 			log_utils.error()
 			return
 
@@ -392,7 +390,7 @@ class TVshows:
 			if create_directory: self.tvshowDirectory(self.list, folderName=folderName)
 			return self.list
 		except:
-			from resources.lib.modules import log_utils
+			
 			log_utils.error()
 			return
 
@@ -430,7 +428,7 @@ class TVshows:
 				success = trakt.hideItems(chosen_hide)
 				if success: control.notification(title='Trakt Hidden Progress Manager', message='Successfully Hid %s Item%s' % (len(chosen_hide), 's' if len(chosen_hide) >1 else ''))
 		except:
-			from resources.lib.modules import log_utils
+			
 			log_utils.error()
 			control.hide()
 
@@ -450,7 +448,7 @@ class TVshows:
 				# refresh = 'plugin.video.umbrella' in control.infoLabel('Container.PluginName')
 				trakt.removeCollectionItems('shows', selected_items)
 		except:
-			from resources.lib.modules import log_utils
+			
 			log_utils.error()
 			control.hide()
 
@@ -470,7 +468,7 @@ class TVshows:
 				# refresh = 'plugin.video.umbrella' in control.infoLabel('Container.PluginName')
 				trakt.removeWatchlistItems('shows', selected_items)
 		except:
-			from resources.lib.modules import log_utils
+			
 			log_utils.error()
 			control.hide()
 
@@ -504,7 +502,7 @@ class TVshows:
 					for i in range(len(self.list)):
 						if 'lastplayed' not in self.list[i]: 
 							self.list[i]['lastplayed'] = ''
-							from resources.lib.modules import log_utils
+							
 							log_utils.log('TVShow Last Played Blank Title: %' % self.list[i]['title'], 1)
 					#self.list = sorted(self.list, key=lambda k: k['lastplayed'], reverse=reverse)
 					if self.list:
@@ -512,7 +510,7 @@ class TVshows:
 			elif reverse:
 				self.list = list(reversed(self.list))
 		except:
-			from resources.lib.modules import log_utils
+			
 			log_utils.error()
 
 	def imdb_sort(self, type='shows'):
@@ -559,7 +557,7 @@ class TVshows:
 					navigator.Navigator().addDirectoryItem(term, 'tvSearchterm&name=%s' % term, 'search.png', 'DefaultAddonsSearch.png', isSearch=True, table='tvshow')
 					lst += [(term)]
 		except:
-			from resources.lib.modules import log_utils
+			
 			log_utils.error()
 		finally:
 			dbcur.close() ; dbcon.close()
@@ -578,7 +576,7 @@ class TVshows:
 			dbcur.execute('''INSERT INTO tvshow VALUES (?,?)''', (None, q))
 			dbcur.connection.commit()
 		except:
-			from resources.lib.modules import log_utils
+			
 			log_utils.error()
 		finally:
 			dbcur.close() ; dbcon.close()
@@ -801,7 +799,7 @@ class TVshows:
 			from resources.lib.modules import library
 			library.libtvshows().range(link, list_name)
 		except:
-			from resources.lib.modules import log_utils
+			
 			log_utils.error()
 
 	def userlists(self, create_directory=False, folderName=''):
@@ -853,6 +851,7 @@ class TVshows:
 		return self.list
 
 	def traktCollection(self, url, create_directory=True, folderName=''):
+		log_utils.log('traktCollection url: %s' % url, 1)
 		self.list = []
 		try:
 			try:
@@ -876,6 +875,7 @@ class TVshows:
 				q = (urlencode(q)).replace('%2C', ',')
 				next = url.replace('?' + urlparse(url).query, '') + '?' + q
 				next = next + '&folderName=%s' % quote_plus(folderName)
+				log_utils.log('traktCollection next url: %s' % next, 1)
 			except: next = ''
 			for i in range(len(self.list)): self.list[i]['next'] = next
 			self.worker()
@@ -883,10 +883,11 @@ class TVshows:
 			if create_directory: self.tvshowDirectory(self.list, folderName=folderName)
 			return self.list
 		except:
-			from resources.lib.modules import log_utils
+			
 			log_utils.error()
 
 	def traktWatchlist(self, url, create_directory=True, folderName=''):
+		log_utils.log('traktWatchlist url: %s' % url, 1)
 		self.list = []
 		try:
 			try:
@@ -910,6 +911,7 @@ class TVshows:
 				q = (urlencode(q)).replace('%2C', ',')
 				next = url.replace('?' + urlparse(url).query, '') + '?' + q
 				next = next + '&folderName=%s' % quote_plus(folderName)
+				log_utils.log('traktWatchlist next url: %s' % next, 1)
 			except: next = ''
 			for i in range(len(self.list)): self.list[i]['next'] = next
 			self.worker()
@@ -917,7 +919,43 @@ class TVshows:
 			if create_directory: self.tvshowDirectory(self.list, folderName=folderName)
 			return self.list
 		except:
-			from resources.lib.modules import log_utils
+			
+			log_utils.error()
+
+	def simklWatchlist(self, url, create_directory=True, folderName=''):
+		log_utils.log('simklwatchlist url: %s' % url, 1)
+		self.list = []
+		try:
+			try:
+				q = dict(parse_qsl(urlsplit(url).query))
+				index = int(q['page']) - 1
+			except:
+				q = dict(parse_qsl(urlsplit(url).query))
+			self.list = simklsync.fetch_watch_list('shows_watchlist')
+			useNext = True
+			if create_directory:
+				self.sort(type='shows.watchlist') # sort before local pagination
+				if getSetting('trakt.paginate.lists') == 'true' and self.list:
+					if len(self.list) == int(self.page_limit):
+						useNext = False
+					paginated_ids = [self.list[x:x + int(self.page_limit)] for x in range(0, len(self.list), int(self.page_limit))]
+					self.list = paginated_ids[index]
+			try:
+				if useNext == False: raise Exception()
+				if int(q['limit']) != len(self.list): raise Exception()
+				q.update({'page': str(int(q['page']) + 1)})
+				q = (urlencode(q)).replace('%2C', ',')
+				next = url.replace('?' + urlparse(url).query, '') + '?' + q
+				next = next + '&folderName=%s' % quote_plus(folderName)
+				log_utils.log('simklWatchlist next url: %s' % next, 1)
+			except: next = ''
+			for i in range(len(self.list)): self.list[i]['next'] = next
+			self.worker()
+			if self.list is None: self.list = []
+			if create_directory: self.tvshowDirectory(self.list, folderName=folderName)
+			return self.list
+		except:
+			
 			log_utils.error()
 
 	def traktLlikedlists(self, create_directory=True, folderName=''):
@@ -942,7 +980,7 @@ class TVshows:
 					label = '%s' % (list_name)
 				self.list.append({'name': label, 'list_type': 'traktPulicList', 'url': list_url, 'list_owner': list_owner, 'list_owner_slug': list_owner_slug, 'list_name': list_name, 'list_id': list_id, 'context': list_url, 'next': next, 'list_count': list_count, 'image': 'trakt.png', 'icon': 'DefaultVideoPlaylists.png', 'action': listAction})
 			except:
-				from resources.lib.modules import log_utils
+				
 				log_utils.error()
 		self.list = sorted(self.list, key=lambda k: re.sub(r'(^the |^a |^an )', '', k['name'].lower()))
 		if create_directory: self.addDirectory(self.list, queue=True, folderName=folderName)
@@ -983,7 +1021,7 @@ class TVshows:
 				values['mediatype'] = 'tvshows'
 				self.list.append(values)
 			except:
-				from resources.lib.modules import log_utils
+				
 				log_utils.error()
 		return self.list
 
@@ -1003,7 +1041,7 @@ class TVshows:
 							values['tmdb'] = item[1].get('tmdb','')
 							self.list.append(values)
 						except:
-							from resources.lib.modules import log_utils
+							
 							log_utils.error()
 				next = ''
 				for i in range(len(self.list)): self.list[i]['next'] = next
@@ -1013,7 +1051,7 @@ class TVshows:
 					if create_directory: self.tvshowDirectory(self.list, folderName=folderName)
 				return self.list
 			except:
-				from resources.lib.modules import log_utils
+				
 				log_utils.error()
 				return []
 
@@ -1059,7 +1097,7 @@ class TVshows:
 						except: values['lastplayed'] = ''
 					self.list.append(values)
 				except:
-					from resources.lib.modules import log_utils
+					
 					log_utils.error()
 			return self.list
 		self.list = cache.get(userList_totalItems, self.traktuserlist_hours, url.split('limit')[0] + 'extended=full')
@@ -1110,7 +1148,7 @@ class TVshows:
 					label = '%s' % (list_name)
 				self.list.append({'name': label, 'url': list_url, 'list_owner': list_owner, 'list_owner_slug': list_owner_slug, 'list_name': list_name, 'list_id': list_id, 'context': list_url, 'next': next, 'list_count': list_count, 'image': 'trakt.png', 'icon': 'DefaultVideoPlaylists.png', 'action': listAction})
 			except:
-				from resources.lib.modules import log_utils
+				
 				log_utils.error()
 		self.list = sorted(self.list, key=lambda k: re.sub(r'(^the |^a |^an )', '', k['name'].lower()))
 		return self.list
@@ -1119,7 +1157,7 @@ class TVshows:
 		try:
 			items = trakt.getTrakt(url).json()
 		except:
-			from resources.lib.modules import log_utils
+			
 			log_utils.error()
 		try:
 			q = dict(parse_qsl(urlsplit(url).query))
@@ -1154,7 +1192,7 @@ class TVshows:
 					label = '%s' % (list_name)
 				self.list.append({'name': label, 'list_type': 'traktPulicList', 'url': list_url, 'list_owner': list_owner, 'list_name': list_name, 'list_id': list_id, 'context': list_url, 'next': next, 'image': 'trakt.png', 'icon': 'trakt.png', 'action': 'tvshows&folderName=%s' % quote_plus(list_name)})
 			except:
-				from resources.lib.modules import log_utils
+				
 				log_utils.error()
 		return self.list
 	def mbd_top_lists(self):
@@ -1163,7 +1201,7 @@ class TVshows:
 			items = mdblist.getMDBTopList(self, listType)
 			next = ''
 		except:
-			from resources.lib.modules import log_utils
+			
 			log_utils.error()
 		for item in items:
 			try:
@@ -1175,7 +1213,7 @@ class TVshows:
 				label = '%s - %s shows' % (list_name, list_count)
 				self.list.append({'name': label, 'url': list_url, 'list_owner': list_owner, 'list_name': list_name, 'list_id': list_id, 'context': list_url, 'next': next, 'image': 'mdblist.png', 'icon': 'mdblist.png', 'action': 'tvshows&folderName=%s' % quote_plus(list_name)})
 			except:
-				from resources.lib.modules import log_utils
+				
 				log_utils.error()
 		return self.list
 	def mdb_list_items(self, url, create_directory=True, folderName=''):
@@ -1198,7 +1236,7 @@ class TVshows:
 					values['rank'] = item.get('rank')
 					self.list.append(values)
 				except:
-					from resources.lib.modules import log_utils
+					
 					log_utils.error()
 			return self.list
 		self.list = userList_totalItems(url)
@@ -1235,7 +1273,7 @@ class TVshows:
 			return self.addDirectory(self.list, folderName=folderName)
 
 		except:
-			from resources.lib.modules import log_utils
+			
 			log_utils.error()
 	def mbd_user_lists(self):
 		try:
@@ -1243,7 +1281,7 @@ class TVshows:
 			items = mdblist.getMDBUserList(self, listType)
 			next = ''
 		except:
-			from resources.lib.modules import log_utils
+			
 			log_utils.error()
 		for item in items:
 			try:
@@ -1256,7 +1294,7 @@ class TVshows:
 				folderN = quote_plus(list_name)
 				self.list.append({'name': label, 'url': list_url, 'list_owner': list_owner, 'list_name': list_name, 'list_id': list_id, 'context': list_url, 'next': next, 'image': 'mdblist.png', 'icon': 'mdblist.png','folderName': folderN, 'action': 'tvshows'})
 			except:
-				from resources.lib.modules import log_utils
+				
 				log_utils.error()
 		return self.list
 
@@ -1276,7 +1314,7 @@ class TVshows:
 			items += client.parseDOM(result, 'div', attrs = {'class': 'list_item.+?'})
 			items += client.parseDOM(result, 'li', attrs = {'class': 'ipc-metadata-list-summary-item'})
 		except:
-			from resources.lib.modules import log_utils
+			
 			log_utils.error()
 			return
 		try:
@@ -1330,7 +1368,7 @@ class TVshows:
 						except: votes = ''
 				list.append({'title': title, 'tvshowtitle': title, 'originaltitle': title, 'year': year, 'imdb': imdb, 'tmdb': '', 'tvdb': '', 'rating': rating, 'votes': votes, 'next': next})
 			except:
-				from resources.lib.modules import log_utils
+				
 				log_utils.error()
 		return list
 
@@ -1348,7 +1386,7 @@ class TVshows:
 				result = result.replace('\n', ' ')
 				items = client.parseDOM(result, 'div', attrs = {'class': 'ipc-metadata-list-summary-item__tc'})
 			except:
-				from resources.lib.modules import log_utils
+				
 				log_utils.error()
 				return
 			next= ''
@@ -1366,7 +1404,7 @@ class TVshows:
 					rating = votes = ''
 					list.append({'title': title, 'tvshowtitle': title, 'originaltitle': title, 'year': year, 'imdb': imdb, 'tmdb': '', 'tvdb': '', 'rating': rating, 'votes': votes, 'next': next})
 				except:
-					from resources.lib.modules import log_utils
+					
 					log_utils.error()
 			return list
 
@@ -1389,7 +1427,7 @@ class TVshows:
 				image = client.replaceHTMLCodes(image)
 				list.append({'name': name, 'url': url, 'image': image})
 			except:
-				from resources.lib.modules import log_utils
+				
 				log_utils.error()
 		return list
 
@@ -1400,7 +1438,7 @@ class TVshows:
 			#items = client.parseDOM(result, 'li', attrs={'class': 'ipl-zebra-list__item user-list'})
 			items = client.parseDOM(result, 'li', attrs={'class': 'ipc-metadata-list-summary-item'})
 		except:
-			from resources.lib.modules import log_utils
+			
 			log_utils.error()
 		for item in items:
 			try:
@@ -1413,7 +1451,7 @@ class TVshows:
 				url = client.replaceHTMLCodes(url)
 				list.append({'name': name, 'url': url, 'context': url, 'image': 'imdb.png', 'icon': 'DefaultVideoPlaylists.png', 'action': 'tvshows&folderName=%s' % quote_plus(name)})
 			except:
-				from resources.lib.modules import log_utils
+				
 				log_utils.error()
 		list = sorted(list, key=lambda k: re.sub(r'(^the |^a |^an )', '', k['name'].lower()))
 		return list
@@ -1428,7 +1466,7 @@ class TVshows:
 			self.tvshowDirectory(self.list, next=hasNext, isProgress=True, folderName=folderName)
 			return self.list
 		except:
-			from resources.lib.modules import log_utils
+			
 			log_utils.error()
 			if not self.list:
 				control.hide()
@@ -1454,12 +1492,80 @@ class TVshows:
 				sorted_list.extend([i for i in self.list if i not in top_items])
 				self.list = sorted_list
 			except:
-				from resources.lib.modules import log_utils
+				
 				log_utils.error()
 			#if create_directory: self.tvshowDirectory(self.list)
 		except:
-			from resources.lib.modules import log_utils
+			
 			log_utils.error()
+		return self.list
+
+	def simkl_progress(self, url, folderName=''):
+		self.list = []
+		try:
+			cache.get(self.simkl_tvshow_progress, 0, folderName)
+			self.sort(type='progress')
+			if self.list is None: self.list = []
+			hasNext = False
+			self.tvshowDirectory(self.list, next=hasNext, isProgress=True, folderName=folderName)
+			return self.list
+		except:
+			
+			log_utils.error()
+			if not self.list:
+				control.hide()
+				if self.notifications and self.is_widget != True: control.notification(title=32326, message=33049)
+    
+	def simkl_tvshow_progress(self, create_directory=True, folderName=''):
+		self.list = []
+		try:
+			url = 'https://api.simkl.com/sync/all-items/shows/watching'
+			self.list = self.simkl_list(url, folderName)
+			next = ''
+			for i in range(len(self.list)): self.list[i]['next'] = next
+			self.worker()
+			if self.list is None: self.list = []
+			#if create_directory: self.tvshowDirectory(self.list)
+		except:
+			
+			log_utils.error()
+		return self.list
+
+	def simkl_list(self, url, folderName):
+		self.list = []
+		if ',return' in url: url = url.split(',return')[0]
+		items = simkl.getSimklAsJson(url)
+		if not items: return
+		try:
+			q = dict(parse_qsl(urlsplit(url).query))
+			if int(q['limit']) != len(items): raise Exception()
+			q.update({'page': str(int(q['page']) + 1)})
+			q = (urlencode(q)).replace('%2C', ',')
+			next = url.replace('?' + urlparse(url).query, '') + '?' + q
+			next = next + '&folderName=%s' % quote_plus(folderName)
+		except: next = ''
+		for item in items: # rating and votes via TMDb, or I must use `extended=full and it slows down
+			try:
+				values = {}
+				values['next'] = next 
+				values['progress'] = ''
+				lastplayed = item.get('last_watched_at', '')
+				lastplayedFixed = datetime.strptime(lastplayed, "%Y-%m-%dT%H:%M:%SZ").strftime("%Y-%m-%dT%H:%M:%S.000Z")
+				try: values['lastplayed'] = lastplayedFixed
+				except: values['lastplayed'] = ''
+				show = item.get('show') or item
+				values['title'] = show.get('title')
+				values['tvshowtitle'] = values['title']
+				values['year'] = str(show.get('year')) if show.get('year') else ''
+				ids = show.get('ids', {})
+				values['imdb'] = str(ids.get('imdb', '')) if ids.get('imdb') else ''
+				values['tmdb'] = str(ids.get('tmdb', '')) if ids.get('tmdb') else ''
+				values['tvdb'] = str(ids.get('tvdb', '')) if ids.get('tvdb') else ''
+				values['mediatype'] = 'tvshows'
+				self.list.append(values)
+			except:
+				
+				log_utils.error()
 		return self.list
 
 	def tvshow_watched(self, url, folderName=''):
@@ -1472,7 +1578,7 @@ class TVshows:
 			self.tvshowDirectory(self.list, next=hasNext, isProgress=False, isWatched=True, folderName=folderName)
 			return self.list
 		except:
-			from resources.lib.modules import log_utils
+			
 			log_utils.error()
 			if not self.list:
 				control.hide()
@@ -1488,7 +1594,7 @@ class TVshows:
 			self.worker()
 			if self.list is None: self.list = []
 		except:
-			from resources.lib.modules import log_utils
+			
 			log_utils.error()
 		return self.list
 
@@ -1509,14 +1615,14 @@ class TVshows:
 			if self.meta: metacache.insert(self.meta)
 			self.list = [i for i in self.list if i.get('tmdb')] # to rid missing tmdb_id's because season list can not load without
 		except:
-			from resources.lib.modules import log_utils
+			
 			log_utils.error()
 
 	def super_info(self, i):
 		try:
 			if self.list[i]['metacache']: return
 			imdb, tmdb, tvdb = self.list[i].get('imdb', ''), self.list[i].get('tmdb', ''), self.list[i].get('tvdb', '')
-			#from resources.lib.modules import log_utils
+			#
 			#log_utils.log('TV Show Super Function: ids={imdb: %s, tmdb: %s, tvdb: %s} ' % (self.list[i].get('imdb', ''), self.list[i].get('tmdb', ''), self.list[i].get('tvdb', '')), __name__, log_utils.LOGDEBUG) # newlognov
 #### -- Missing id's lookup -- ####
 			trakt_ids = None
@@ -1543,7 +1649,7 @@ class TVshows:
 #################################
 			if not tmdb:
 				if getSetting('debug.level') != '1': return
-				from resources.lib.modules import log_utils
+				
 				#return log_utils.log('tvshowtitle: (%s) missing tmdb_id: ids={imdb: %s, tmdb: %s, tvdb: %s}' % (self.list[i]['title'], imdb, tmdb, tvdb), __name__, log_utils.LOGDEBUG) # log TMDb shows that they do not have
 				return None
 			showSeasons = tmdb_indexer().get_showSeasons_meta(tmdb)
@@ -1567,7 +1673,7 @@ class TVshows:
 							values['title'] = trans_item.get('title')
 						if trans_item.get('overview'): values['plot'] =trans_item.get('overview')
 				except:
-					from resources.lib.modules import log_utils
+					
 					log_utils.error()
 			if self.enable_fanarttv:
 				extended_art = fanarttv_cache.get(FanartTv().get_tvshow_art, 336, tvdb)
@@ -1579,7 +1685,7 @@ class TVshows:
 			meta = {'imdb': imdb, 'tmdb': tmdb, 'tvdb': tvdb, 'lang': self.lang, 'user': self.user, 'item': values}
 			self.meta.append(meta)
 		except:
-			from resources.lib.modules import log_utils
+			
 			log_utils.error()
 
 	def tvshowDirectory(self, items, next=True, isProgress=False, isWatched=False, folderName='Umbrella'):
@@ -1601,6 +1707,7 @@ class TVshows:
 		addonPoster, addonFanart, addonBanner = control.addonPoster(), control.addonFanart(), control.addonBanner()
 		flatten = int(getSetting('flatten.tvshows'))
 		if trakt.getTraktIndicatorsInfo(): watchedMenu, unwatchedMenu = getLS(32068), getLS(32069)
+		elif simkl.getSimKLIndicatorsInfo(): watchedMenu, unwatchedMenu = getLS(40554), getLS(40555)
 		else: watchedMenu, unwatchedMenu = getLS(32066), getLS(32067)
 		traktManagerMenu, queueMenu = getLS(32070), getLS(32065)
 		showPlaylistMenu, clearPlaylistMenu = getLS(35517), getLS(35516)
@@ -1631,6 +1738,7 @@ class TVshows:
 							if self.showunaired: label = '[COLOR %s]%s [I][Coming Soon][/I][/COLOR]' % (self.unairedcolor, label)
 							else: continue
 					except: pass
+				
 				try: indicators = getSeasonIndicators(imdb, tvdb)
 				except: indicators = None
 				meta = dict((k, v) for k, v in iter(i.items()) if v is not None and v != '')
@@ -1768,7 +1876,7 @@ class TVshows:
 					item.addContextMenuItems(cm)
 				control.addItem(handle=syshandle, url=url, listitem=item, isFolder=True)
 			except:
-				from resources.lib.modules import log_utils
+				
 				log_utils.error()
 		if next:
 			try:
@@ -1782,7 +1890,7 @@ class TVshows:
 				nextColor = '[COLOR %s]' % getSetting('highlight.color')
 				nextMenu = nextColor + nextMenu + page + '[/COLOR]'
 				u = urlparse(url).netloc.lower()
-				if u in self.imdb_link or u in self.trakt_link:
+				if u in self.imdb_link or u in self.trakt_link or u in self.simkl_link:
 					url = '%s?action=tvshowPage&url=%s&folderName=%s' % (sysaddon, quote_plus(url), quote_plus(folderName))
 				elif u in self.tmdb_link:
 					url = '%s?action=tmdbTvshowPage&url=%s&folderName=%s' % (sysaddon, quote_plus(url), quote_plus(folderName))
@@ -1796,7 +1904,7 @@ class TVshows:
 				item.setProperty ('SpecialSort', 'bottom')
 				control.addItem(handle=syshandle, url=url, listitem=item, isFolder=True)
 			except:
-				from resources.lib.modules import log_utils
+				
 				log_utils.error()
 		control.content(syshandle, 'tvshows')
 		control.directory(syshandle, cacheToDisc=False) # disable cacheToDisc so unwatched counts loads fresh data counts if changes made
@@ -1861,7 +1969,7 @@ class TVshows:
 					item.addContextMenuItems(cm)
 				control.addItem(handle=syshandle, url=url, listitem=item, isFolder=True)
 			except:
-				from resources.lib.modules import log_utils
+				
 				log_utils.error()
 		try:
 			if not items: raise Exception()
@@ -1879,7 +1987,7 @@ class TVshows:
 			item.setProperty ('SpecialSort', 'bottom')
 			control.addItem(handle=syshandle, url=url, listitem=item, isFolder=True)
 		except:
-			from resources.lib.modules import log_utils
+			
 			log_utils.error()
 
 		skin = control.skin

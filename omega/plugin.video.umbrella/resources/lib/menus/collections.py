@@ -16,7 +16,7 @@ from resources.lib.modules import cleangenre
 from resources.lib.modules import client
 from resources.lib.modules import control
 from resources.lib.modules.playcount import getMovieIndicators, getMovieOverlay
-from resources.lib.modules import trakt
+from resources.lib.modules import trakt, simkl
 from resources.lib.modules import views
 
 getLS = control.lang
@@ -645,6 +645,8 @@ class Collections:
 		if play_mode == '1': playbackMenu = getLS(32063)
 		else: playbackMenu = getLS(32064)
 		if trakt.getTraktIndicatorsInfo(): watchedMenu, unwatchedMenu = getLS(32068), getLS(32069)
+		elif simkl.getSimKLIndicatorsInfo():
+			watchedMenu, unwatchedMenu = getLS(40554), getLS(40555)
 		else: watchedMenu, unwatchedMenu = getLS(32066), getLS(32067)
 		playlistManagerMenu, queueMenu = getLS(35522), getLS(32065)
 		traktManagerMenu, addToLibrary = getLS(32070), getLS(32551)

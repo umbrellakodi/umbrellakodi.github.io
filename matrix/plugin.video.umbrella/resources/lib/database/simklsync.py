@@ -131,256 +131,6 @@ def delete_bookmark(items):
 	finally:
 		dbcur.close() ; dbcon.close()
 
-def fetch_liked_list(simkl_id, ret_all=False):
-	liked_list = ''
-	try:
-		dbcon = get_connection()
-		dbcur = get_connection_cursor(dbcon)
-		ck_table = dbcur.execute('''SELECT * FROM sqlite_master WHERE type='table' AND name='liked_lists';''').fetchone()
-		if not ck_table:
-			dbcur.execute('''CREATE TABLE IF NOT EXISTS liked_lists (list_owner TEXT, list_owner_slug TEXT, list_name TEXT, simkl_id TEXT, content_type TEXT, item_count INTEGER, likes INTEGER, UNIQUE(simkl_id));''')
-			dbcur.connection.commit()
-			return liked_list
-		if ret_all:
-			try:
-				match = dbcur.execute('''SELECT * FROM liked_lists WHERE NOT simkl_id=""''').fetchall()
-				liked_list = [{'list_owner': i[0], 'list_owner_slug': i[1], 'list_name': i[2], 'simkl_id': i[3], 'content_type': i[4], 'item_count': i[5], 'likes': i[6]} for i in match]
-			except: pass
-		else:
-			try:
-				match = dbcur.execute('''SELECT * FROM liked_lists WHERE simkl_id=?;''', (simkl_id,)).fetchone()
-				liked_list = match[3]
-			except: pass
-	except:
-		from resources.lib.modules import log_utils
-		log_utils.error()
-	finally:
-		dbcur.close() ; dbcon.close()
-	return liked_list
-
-def insert_liked_lists(items, new_sync=True):
-	try:
-		dbcon = get_connection()
-		dbcur = get_connection_cursor(dbcon)
-		dbcur.execute('''CREATE TABLE IF NOT EXISTS liked_lists (list_owner TEXT, list_owner_slug TEXT, list_name TEXT, simkl_id TEXT, content_type TEXT, item_count INTEGER, likes INTEGER, UNIQUE(simkl_id));''')
-		dbcur.execute('''CREATE TABLE IF NOT EXISTS service (setting TEXT, value TEXT, UNIQUE(setting));''')
-		if new_sync:
-			dbcur.execute('''DELETE FROM liked_lists''')
-			dbcur.connection.commit() # added this for what looks like a 19 bug not found in 18, normal commit is at end
-			dbcur.execute('''VACUUM''')
-		for item in items:
-			try:
-				list_item = item.get('list', {})
-				list_owner = list_item.get('user', {}).get('username', '')
-				list_owner_slug = list_item.get('user', {}).get('ids', {}).get('slug', '')
-
-				list_name = list_item.get('name', '')
-				simkl_id = list_item.get('ids', {}).get('simkl', '')
-				content_type = list_item.get('content_type', '')
-				item_count = list_item.get('item_count', '')
-				likes = list_item.get('likes', '')
-				dbcur.execute('''INSERT OR REPLACE INTO liked_lists Values (?, ?, ?, ?, ?, ?, ?)''', (list_owner, list_owner_slug, list_name, simkl_id, content_type, item_count, likes))
-			except:
-				from resources.lib.modules import log_utils
-				log_utils.error()
-		timestamp = datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%S.000Z")
-		dbcur.execute('''INSERT OR REPLACE INTO service Values (?, ?)''', ('last_liked_at', timestamp))
-		dbcur.connection.commit()
-	except:
-		from resources.lib.modules import log_utils
-		log_utils.error()
-	finally:
-		dbcur.close() ; dbcon.close()
-
-def delete_liked_list(simkl_id):
-	try:
-		dbcon = get_connection()
-		dbcur = get_connection_cursor(dbcon)
-		ck_table = dbcur.execute('''SELECT * FROM sqlite_master WHERE type='table' AND name='liked_lists';''').fetchone()
-		if not ck_table:
-			dbcur.execute('''CREATE TABLE IF NOT EXISTS liked_lists (list_owner TEXT, list_owner_slug TEXT, list_name TEXT, simkl_id TEXT, item_count INTEGER, likes INTEGER, UNIQUE(simkl_id));''')
-			dbcur.execute('''CREATE TABLE IF NOT EXISTS service (setting TEXT, value TEXT, UNIQUE(setting));''')
-			dbcur.connection.commit()
-			return
-		dbcur.execute('''DELETE FROM liked_lists WHERE simkl_id=?;''', (simkl_id,))
-		timestamp = datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%S.000Z")
-		dbcur.execute('''INSERT OR REPLACE INTO service Values (?, ?)''', ('last_liked_at', timestamp))
-		dbcur.connection.commit()
-	except:
-		from resources.lib.modules import log_utils
-		log_utils.error()
-	finally:
-		dbcur.close() ; dbcon.close()
-
-def fetch_hidden_progress():
-	list = ''
-	try:
-		dbcon = get_connection()
-		dbcur = get_connection_cursor(dbcon)
-		ck_table = dbcur.execute('''SELECT * FROM sqlite_master WHERE type='table' AND name='hiddenProgress';''').fetchone()
-		if not ck_table:
-			dbcur.execute('''CREATE TABLE IF NOT EXISTS hiddenProgress (title TEXT, year TEXT, imdb TEXT, tmdb TEXT, tvdb TEXT, simkl TEXT, hidden_at TEXT, UNIQUE(imdb, tmdb, tvdb, simkl));''')
-			dbcur.connection.commit()
-			return list
-		try:
-			match = dbcur.execute('''SELECT * FROM hiddenProgress WHERE NOT title=""''').fetchall()
-			list = [{'title': i[0], 'year': i[1], 'imdb': i[2], 'tmdb': i[3], 'tvdb': i[4], 'simkl': i[5], 'added': i[6]} for i in match]
-		except: pass
-	except:
-		from resources.lib.modules import log_utils
-		log_utils.error()
-	finally:
-		dbcur.close() ; dbcon.close()
-	return list
-
-def insert_hidden_progress(items, new_sync=True):
-	try:
-		dbcon = get_connection()
-		dbcur = get_connection_cursor(dbcon)
-		dbcur.execute('''CREATE TABLE IF NOT EXISTS hiddenProgress (title TEXT, year TEXT, imdb TEXT, tmdb TEXT, tvdb TEXT, simkl TEXT, hidden_at TEXT, UNIQUE(imdb, tmdb, tvdb, simkl));''')
-		dbcur.execute('''CREATE TABLE IF NOT EXISTS service (setting TEXT, value TEXT, UNIQUE(setting));''')
-		if new_sync:
-			dbcur.execute('''DELETE FROM hiddenProgress''')
-			dbcur.connection.commit() # added this for what looks like a 19 bug not found in 18, normal commit is at end
-			dbcur.execute('''VACUUM''')
-		for i in items:
-			try:
-				item = i.get('show')
-				title = item.get('title')
-				year = item.get('year', '') or ''
-				ids = item.get('ids')
-				imdb = ids.get('imdb', '')
-				tmdb = ids.get('tmdb', '')
-				tvdb = ids.get('tvdb', '')
-				simkl = ids.get('simkl', '')
-				hidden_at = i.get('hidden_at', '')
-				dbcur.execute('''INSERT OR REPLACE INTO hiddenProgress Values (?, ?, ?, ?, ?, ?, ?)''', (title, year, imdb, tmdb, tvdb, simkl, hidden_at))
-			except:
-				from resources.lib.modules import log_utils
-				log_utils.error()
-		timestamp = datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%S.000Z")
-		dbcur.execute('''INSERT OR REPLACE INTO service Values (?, ?)''', ('last_hiddenProgress_at', timestamp))
-		dbcur.connection.commit()
-	except:
-		from resources.lib.modules import log_utils
-		log_utils.error()
-	finally:
-		dbcur.close() ; dbcon.close()
-
-def delete_hidden_progress(items):
-	try:
-		dbcon = get_connection()
-		dbcur = get_connection_cursor(dbcon)
-		ck_table = dbcur.execute('''SELECT * FROM sqlite_master WHERE type='table' AND name='hiddenProgress';''').fetchone()
-		if not ck_table:
-			dbcur.execute('''CREATE TABLE IF NOT EXISTS hiddenProgress (title TEXT, year TEXT, imdb TEXT, tmdb TEXT, tvdb TEXT, simkl TEXT, hidden_at TEXT, UNIQUE(imdb, tmdb, tvdb, simkl));''')
-			dbcur.execute('''CREATE TABLE IF NOT EXISTS service (setting TEXT, value TEXT, UNIQUE(setting));''')
-			dbcur.connection.commit()
-			return
-		for item in items: # item is tvdb_id in list
-			try:
-				dbcur.execute('''DELETE FROM hiddenProgress WHERE tvdb=?;''', (item,))
-			except:
-				from resources.lib.modules import log_utils
-				log_utils.error()
-		timestamp = datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%S.000Z")
-		dbcur.execute('''INSERT OR REPLACE INTO service Values (?, ?)''', ('last_hiddenProgress_at', timestamp))
-		dbcur.connection.commit()
-	except:
-		from resources.lib.modules import log_utils
-		log_utils.error()
-	finally:
-		dbcur.close() ; dbcon.close()
-
-def fetch_collection(table):
-	list = ''
-	try:
-		dbcon = get_connection()
-		dbcur = get_connection_cursor(dbcon)
-		ck_table = dbcur.execute('''SELECT * FROM sqlite_master WHERE type='table' AND name=?;''', (table,)).fetchone()
-		if not ck_table:
-			dbcur.execute('''CREATE TABLE IF NOT EXISTS %s (title TEXT, year TEXT, premiered TEXT, imdb TEXT, tmdb TEXT, tvdb TEXT, simkl TEXT, rating FLOAT, votes INTEGER, collected_at TEXT, UNIQUE(imdb, tmdb, tvdb, simkl));''' % table)
-			dbcur.connection.commit()
-			return list
-		try:
-			match = dbcur.execute('''SELECT * FROM %s WHERE NOT title=""''' % table).fetchall()
-			list = [{'title': i[0], 'year': i[1], 'premiered': i[2], 'imdb': i[3], 'tmdb': i[4], 'tvdb': i[5], 'simkl': i[6], 'rating': i[7], 'votes': i[8], 'added': i[9]} for i in match]
-		except: pass
-	except:
-		from resources.lib.modules import log_utils
-		log_utils.error()
-	finally:
-		dbcur.close() ; dbcon.close()
-	return list
-
-def insert_collection(items, table, new_sync=True):
-	try:
-		dbcon = get_connection()
-		dbcur = get_connection_cursor(dbcon)
-		dbcur.execute('''CREATE TABLE IF NOT EXISTS %s (title TEXT, year TEXT, premiered TEXT, imdb TEXT, tmdb TEXT, tvdb TEXT, simkl TEXT, rating FLOAT, votes INTEGER, collected_at TEXT, UNIQUE(imdb, tmdb, tvdb, simkl));''' % table)
-		dbcur.execute('''CREATE TABLE IF NOT EXISTS service (setting TEXT, value TEXT, UNIQUE(setting));''')
-		if new_sync:
-			dbcur.execute('''DELETE FROM %s''' % table)
-			dbcur.connection.commit() # added this for what looks like a 19 bug not found in 18, normal commit is at end
-			dbcur.execute('''VACUUM''')
-		for i in items:
-			try:
-				if 'show' in i:
-					item = i.get('show')
-					try: premiered = item.get('first_aired', '').split('T')[0]
-					except: premiered = ''
-					collected_at = i.get('last_collected_at', '')
-				else:
-					item = i.get('movie')
-					premiered = item.get('released', '') or ''
-					collected_at = i.get('collected_at', '')
-				title = item.get('title')
-				year = item.get('year', '') or ''
-				ids = item.get('ids')
-				imdb = ids.get('imdb', '')
-				tmdb = ids.get('tmdb', '')
-				tvdb = ids.get('tvdb', '')
-				simkl = ids.get('simkl', '')
-				rating = item.get('rating', '')
-				votes = item.get('votes', '')
-				dbcur.execute('''INSERT OR REPLACE INTO %s Values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''' % table, (title, year, premiered, imdb, tmdb, tvdb, simkl, rating, votes, collected_at))
-			except:
-				from resources.lib.modules import log_utils
-				log_utils.error()
-		timestamp = datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%S.000Z")
-		dbcur.execute('''INSERT OR REPLACE INTO service Values (?, ?)''', ('last_collected_at', timestamp))
-		dbcur.connection.commit()
-	except:
-		from resources.lib.modules import log_utils
-		log_utils.error()
-	finally:
-		dbcur.close() ; dbcon.close()
-
-def delete_collection_items(items, table, col_name='simkl'):
-	try:
-		dbcon = get_connection()
-		dbcur = get_connection_cursor(dbcon)
-		ck_table = dbcur.execute('''SELECT * FROM sqlite_master WHERE type='table' AND name=?;''', (table,)).fetchone()
-		if not ck_table:
-			dbcur.execute('''CREATE TABLE IF NOT EXISTS %s (title TEXT, year TEXT, premiered TEXT, imdb TEXT, tmdb TEXT, tvdb TEXT, simkl TEXT, rating FLOAT, votes INTEGER, collected_at TEXT, UNIQUE(imdb, tmdb, tvdb, simkl));''' % table)
-			dbcur.execute('''CREATE TABLE IF NOT EXISTS service (setting TEXT, value TEXT, UNIQUE(setting));''')
-			dbcur.connection.commit()
-			return
-		for item in items:
-			try:
-				dbcur.execute('''DELETE FROM %s WHERE %s=?;''' % (table, col_name), (item,))
-			except:
-				from resources.lib.modules import log_utils
-				log_utils.error()
-		timestamp = datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%S.000Z")
-		dbcur.execute('''INSERT OR REPLACE INTO service Values (?, ?)''', ('last_collected_at', timestamp))
-		dbcur.connection.commit()
-	except:
-		from resources.lib.modules import log_utils
-		log_utils.error()
-	finally:
-		dbcur.close() ; dbcon.close()
-
 def fetch_watch_list(table):
 	list = ''
 	try:
@@ -420,7 +170,7 @@ def insert_watch_list(items, table, new_sync=True):
 					except: premiered = ''
 				else:
 					item = i.get('movie')
-					premiered = item.get('released', '') or ''
+					premiered = ''
 				title = item.get('title')
 				year = item.get('year', '') or ''
 				ids = item.get('ids')
@@ -430,7 +180,7 @@ def insert_watch_list(items, table, new_sync=True):
 				simkl = ids.get('simkl', '')
 				rating = item.get('rating', '')
 				votes = item.get('votes', '')
-				listed_at = i.get('listed_at', '')
+				listed_at = datetime.strptime(i.get('added_to_watchlist_at'), "%Y-%m-%dT%H:%M:%SZ").strftime("%Y-%m-%dT%H:%M:%S.000Z")
 				dbcur.execute('''INSERT OR REPLACE INTO %s Values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''' % table, (title, year, premiered, imdb, tmdb, tvdb, simkl, rating, votes, listed_at))
 			except:
 				from resources.lib.modules import log_utils
@@ -469,133 +219,6 @@ def delete_watchList_items(items, table, col_name='simkl'):
 	finally:
 		dbcur.close() ; dbcon.close()
 
-def fetch_user_lists(simkl_id, ret_all=False):
-	user_lists = ''
-	try:
-		dbcon = get_connection()
-		dbcur = get_connection_cursor(dbcon)
-		ck_table = dbcur.execute('''SELECT * FROM sqlite_master WHERE type='table' AND name='user_lists';''').fetchone()
-		if not ck_table:
-			dbcur.execute('''CREATE TABLE IF NOT EXISTS user_lists (list_owner TEXT, list_owner_slug TEXT, list_name TEXT, simkl_id TEXT, content_type TEXT, item_count INTEGER, likes INTEGER, UNIQUE(simkl_id));''')
-			dbcur.connection.commit()
-			return user_lists
-		if ret_all:
-			try:
-				match = dbcur.execute('''SELECT * FROM user_lists WHERE NOT simkl_id=""''').fetchall()
-				user_lists = [{'list_owner': i[0], 'list_owner_slug': i[1], 'list_name': i[2], 'simkl_id': i[3], 'content_type': i[4], 'item_count': i[5], 'likes': i[6]} for i in match]
-			except: pass
-		else:
-			try:
-				match = dbcur.execute('''SELECT * FROM user_lists WHERE simkl_id=?;''', (simkl_id,)).fetchone()
-				user_lists = match[3]
-			except: pass
-	except:
-		from resources.lib.modules import log_utils
-		log_utils.error()
-	finally:
-		dbcur.close() ; dbcon.close()
-	return user_lists
-
-def insert_user_lists(items, new_sync=True):
-	try:
-		dbcon = get_connection()
-		dbcur = get_connection_cursor(dbcon)
-		dbcur.execute('''CREATE TABLE IF NOT EXISTS user_lists (list_owner TEXT, list_owner_slug TEXT, list_name TEXT, simkl_id TEXT, content_type TEXT, item_count INTEGER, likes INTEGER, UNIQUE(simkl_id));''')
-		dbcur.execute('''CREATE TABLE IF NOT EXISTS service (setting TEXT, value TEXT, UNIQUE(setting));''')
-		if new_sync:
-			dbcur.execute('''DELETE FROM user_lists''')
-			dbcur.connection.commit() # added this for what looks like a 19 bug not found in 18, normal commit is at end
-			dbcur.execute('''VACUUM''')
-		for item in items:
-			try:
-				list_owner = item.get('user', {}).get('username', '')
-				list_owner_slug = item.get('user', {}).get('ids', {}).get('slug', '')
-				list_name = item.get('name', '')
-				simkl_id = item.get('ids', {}).get('simkl', '')
-				content_type = item.get('content_type', '')
-				item_count = item.get('item_count', '')
-				likes = item.get('likes', '')
-				dbcur.execute('''INSERT OR REPLACE INTO user_lists Values (?, ?, ?, ?, ?, ?, ?)''', (list_owner, list_owner_slug, list_name, simkl_id, content_type, item_count, likes))
-			except:
-				from resources.lib.modules import log_utils
-				log_utils.error()
-		timestamp = datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%S.000Z")
-		dbcur.execute('''INSERT OR REPLACE INTO service Values (?, ?)''', ('last_lists_updatedat', timestamp))
-		dbcur.connection.commit()
-	except:
-		from resources.lib.modules import log_utils
-		log_utils.error()
-	finally:
-		dbcur.close() ; dbcon.close()
-
-
-# def delete_user_list(simkl_id):
-# def fetch_user_list_items(simkl_id, ret_all=False):
-# def insert_user_list_items(items, new_sync=True):
-# def delete_user_list_items(simkl_id):
-
-
-def fetch_public_list(simkl_id, ret_all=False):
-	public_list = ''
-	try:
-		dbcon = get_connection()
-		dbcur = get_connection_cursor(dbcon)
-		ck_table = dbcur.execute('''SELECT * FROM sqlite_master WHERE type='table' AND name='public_lists';''').fetchone()
-		if not ck_table:
-			dbcur.execute('''CREATE TABLE IF NOT EXISTS public_lists (list_owner TEXT, list_owner_slug TEXT, list_name TEXT, simkl_id TEXT, content_type TEXT, item_count INTEGER, likes INTEGER, updated_at TEXT, UNIQUE(simkl_id));''')
-			dbcur.connection.commit()
-			return public_list
-		if ret_all:
-			try:
-				match = dbcur.execute('''SELECT * FROM public_lists WHERE NOT simkl_id=""''').fetchall()
-				public_list = [{'list_owner': i[0], 'list_owner_slug': i[1], 'list_name': i[2], 'simkl_id': i[3], 'content_type': i[4], 'item_count': i[5], 'likes': i[6], 'updated_at': i[7]} for i in match]
-			except: pass
-		else:
-			try:
-				match = dbcur.execute('''SELECT * FROM public_lists WHERE simkl_id=?;''', (simkl_id,)).fetchone()
-				public_list = {'list_owner': match[0], 'list_owner_slug': match[1], 'list_name': match[2], 'simkl_id': match[3], 'content_type': match[4], 'item_count': match[5], 'likes': match[6], 'updated_at': match[7]}
-			except: pass
-	except:
-		from resources.lib.modules import log_utils
-		log_utils.error()
-	finally:
-		dbcur.close() ; dbcon.close()
-	return public_list
-
-def insert_public_lists(items, service_type='last_popularlist_at', new_sync=True):
-	try:
-		dbcon = get_connection()
-		dbcur = get_connection_cursor(dbcon)
-		dbcur.execute('''CREATE TABLE IF NOT EXISTS public_lists (list_owner TEXT, list_owner_slug TEXT, list_name TEXT, simkl_id TEXT, content_type TEXT, item_count INTEGER, likes INTEGER, updated_at TEXT, UNIQUE(simkl_id));''')
-		dbcur.execute('''CREATE TABLE IF NOT EXISTS service (setting TEXT, value TEXT, UNIQUE(setting));''')
-		if new_sync:
-			dbcur.execute('''DELETE FROM public_lists''')
-			dbcur.connection.commit() # added this for what looks like a 19 bug not found in 18, normal commit is at end
-			dbcur.execute('''VACUUM''')
-		for item in items:
-			try:
-				list_item = item.get('list', {})
-				list_owner = list_item.get('user', {}).get('username', '')
-				list_owner_slug = list_item.get('user', {}).get('ids', {}).get('slug', '')
-				list_name = list_item.get('name', '')
-				simkl_id = list_item.get('ids', {}).get('simkl', '')
-				content_type = list_item.get('content_type', '')
-				item_count = list_item.get('item_count', '')
-				likes = list_item.get('likes', '')
-				updated_at = list_item.get('updated_at', '')
-				dbcur.execute('''INSERT OR REPLACE INTO public_lists Values (?, ?, ?, ?, ?, ?, ?, ?)''', (list_owner, list_owner_slug, list_name, simkl_id, content_type, item_count, likes, updated_at))
-			except:
-				from resources.lib.modules import log_utils
-				log_utils.error()
-		timestamp = datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%S.000Z")
-		dbcur.execute('''INSERT OR REPLACE INTO service Values (?, ?)''', (service_type, timestamp))
-		dbcur.connection.commit()
-	except:
-		from resources.lib.modules import log_utils
-		log_utils.error()
-	finally:
-		dbcur.close() ; dbcon.close()
-
 def last_sync(type):
 	last_sync_at = 0
 	try:
@@ -622,16 +245,9 @@ def delete_tables(tables):
 		dbcur = get_connection_cursor(dbcon)
 		service_dict = {
 			'bookmarks': 'last_paused_at',
-			'hiddenProgress': 'last_hiddenProgress_at',
-			'liked_lists': 'last_liked_at',
-			'movies_collection': 'last_collected_at',
 			'movies_watchlist': 'last_watchlisted_at',
-			'popular_lists': 'last_popularlist_at',
-			'public_lists': 'last_popularlist_at',
 			'shows_collection': 'last_collected_at',
 			'shows_watchlist': 'last_watchlisted_at',
-			'trending_lists': 'last_trendinglist_at',
-			'user_lists': 'last_lists_updatedat',
 			'watched': 'last_syncSeasons_at'}
 		for table,v in iter(tables.items()):
 			if v is True:
@@ -670,12 +286,13 @@ def _dict_factory(cursor, row):
 
 
 ########  Here down for reading and writting watched indicators and counts  ############
-def get(function, duration, *args, simkl=None):
+def get(function, duration, *args, simkl_id=None, data=None):
 	"""
 	:param function: Function to be executed
 	:param duration: Duration of validity of cache in hours
 	:param args: Optional arguments for the provided function
 	:named var: Optional, used by simkl module and is not counted in md5 hash
+	:named var data: needs to be ignored for cache
 	"""
 	try:
 		key = _hash_function(function, args)
@@ -684,7 +301,7 @@ def get(function, duration, *args, simkl=None):
 			try: result = literal_eval(cache_result['value'])
 			except: result = None
 			if _is_cache_valid(cache_result['date'], duration): return result
-		if simkl: fresh_result = repr(function(*args, simkl=simkl)) # may need a try-except block for server timeouts
+		if simkl_id: fresh_result = repr(function(*args, simkl_id=simkl_id)) # may need a try-except block for server timeouts
 		else: fresh_result = repr(function(*args))
 
 		if cache_result and (result and len(result) == 1) and fresh_result == '[]': # fix for syncSeason mark unwatched season when it's the last item remaining
@@ -792,11 +409,10 @@ def _get_function_name(function_instance):
 def _generate_md5(*args):
 	try:
 		md5_hash = md5()
+		if len(args[0][0]) > 2: args = ((args[0][0][:2],),) #change made to make sure the hash matches when only two arguments are passed on getCache
 		try: [md5_hash.update(str(arg)) for arg in args]
 		except: [md5_hash.update(str(arg).encode('utf-8')) for arg in args]
 		hash = str(md5_hash.hexdigest())
-		# from resources.lib.modules import log_utils
-		# log_utils.log('args=%s: hash=%s' % (args, hash), __name__)
 		return hash
 	except:
 		from resources.lib.modules import log_utils

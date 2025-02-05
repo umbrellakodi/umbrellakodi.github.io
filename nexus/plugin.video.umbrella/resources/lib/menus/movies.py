@@ -15,7 +15,7 @@ from urllib.parse import quote_plus, urlencode, parse_qsl, urlparse, urlsplit
 from resources.lib.database import cache, metacache, fanarttv_cache, traktsync
 from resources.lib.indexers.tmdb import Movies as tmdb_indexer
 from resources.lib.indexers.fanarttv import FanartTv
-from resources.lib.modules.simkl import SIMKL as simkl
+from resources.lib.modules import simkl
 from resources.lib.modules import cleangenre
 from resources.lib.modules import client
 from resources.lib.modules import control
@@ -545,7 +545,7 @@ class Movies:
 			try: u = urlparse(url).netloc.lower()
 			except: pass
 			if u in self.simkltrendingweek_link or u in self.simkltrendingmonth_link or u in self.simkltrendingtoday_link:
-				self.list = cache.get(simkl().simkl_list, self.simkl_hours, url)
+				self.list = cache.get(simkl.simkl_list, self.simkl_hours, url)
 			if self.list is None: self.list = []
 			next = ''
 			for i in range(len(self.list)): self.list[i]['next'] = next
@@ -569,7 +569,7 @@ class Movies:
 			try: u = urlparse(url).netloc.lower()
 			except: pass
 			if u in self.simklcompleted_link:
-				self.list = cache.get(simkl().simklCompleted, self.simkl_hours, url)
+				self.list = cache.get(simkl.simklCompleted, self.simkl_hours, url)
 			if self.list is None: self.list = []
 			next = ''
 			for i in range(len(self.list)): self.list[i]['next'] = next
@@ -592,7 +592,7 @@ class Movies:
 			try: u = urlparse(url).netloc.lower()
 			except: pass
 			if u in self.simklplantowatch_link:
-				self.list = cache.get(simkl().simklPlantowatch, self.simkl_hours, url)
+				self.list = cache.get(simkl.simklPlantowatch, self.simkl_hours, url)
 			if self.list is None: self.list = []
 			next = ''
 			for i in range(len(self.list)): self.list[i]['next'] = next
@@ -2223,6 +2223,7 @@ class Movies:
 		if play_mode == '1': playbackMenu = getLS(32063)
 		else: playbackMenu = getLS(32064)
 		if trakt.getTraktIndicatorsInfo(): watchedMenu, unwatchedMenu = getLS(32068), getLS(32069)
+		elif simkl.getSimKLIndicatorsInfo(): watchedMenu, unwatchedMenu = getLS(40554), getLS(40555)
 		else: watchedMenu, unwatchedMenu = getLS(32066), getLS(32067)
 		playlistManagerMenu, queueMenu, trailerMenu = getLS(35522), getLS(32065), getLS(40431)
 		traktManagerMenu, addToLibrary, addToFavourites, removeFromFavourites = getLS(32070), getLS(32551), getLS(40463), getLS(40468)

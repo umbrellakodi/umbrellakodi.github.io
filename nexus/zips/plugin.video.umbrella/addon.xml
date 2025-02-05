@@ -1,4 +1,4 @@
-<addon id="plugin.video.umbrella" name="Umbrella" provider-name="Umbrella" version="6.7.379">
+<addon id="plugin.video.umbrella" name="Umbrella" provider-name="Umbrella" version="6.7.380">
 	<requires>
 		<import addon="xbmc.python" version="3.0.0"/>
 		<import addon="script.module.requests"/>
@@ -179,11 +179,21 @@
 			<screenshot>resources/screenshots/screenshot003.jpg</screenshot>
 		</assets>
 		<news>
-[B]Update - v6.7.379 - Jan 30th, 2025[/B]
---[Threading] Changes made on episode function to use threadpool.
+[B]Update - v6.7.380 - Feb 4th, 2025[/B]
+--[Change] Moved trakt sync interval setting to new setting in General settings. It is now Background Services Sync Interval.
+--[Change] Added Simkl as option for indicators. Make a selection for local, trakt or simkl.
+--[Change] Added watched/ unwatched from Simkl.
+--[Change] Added TV Shows watchlist from Simkl.
+--[Change] Added Movies completed from Simkl to My Movies section.
+--[Change] Added Movies Plan to Watch from Simkl to My Movies section. Will be updated in next version to be Movies Watchlist and use cache.
+--[Change] Added Progress Episode from Simkl to My TV Shows section.
+--[Change] Added Progress Shows from Simkl to My TV Shows section.
+--[Change] Added Watchlist from Simkl to My TV Shows section.
 --[Fix] Changes to using ThreadPool.
---[Change] Modifed similar from library for speed.
---[Fix] Reverted threadpool changes to episode.py due to issues with episode progress list.
+--[Change] Modifed similar from library function for speed.
+--[Change] Removed function to cache list of movies in library.
+--[Change] Added Settings Simkl to Tools menu.
+--[Change] Added Simkl Management Tools to Tools menu.
 		</news>
 	</extension>
 

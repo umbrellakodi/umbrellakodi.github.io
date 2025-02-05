@@ -5146,3 +5146,39 @@ msgstr ""
 msgctxt "#40550"
 msgid "Plan to Watch (SimKl)"
 msgstr ""
+
+msgctxt "#40551"
+msgid "[B]Simkl Management Tools[/B]"
+msgstr ""
+
+msgctxt "#40552"
+msgid "Simkl Management Tools"
+msgstr ""
+
+msgctxt "#40553"
+msgid "[COLOR %s][B]Force Simkl Sync to local database[/B][/COLOR]"
+msgstr ""
+
+msgctxt "#40554"
+msgid "Watched in Simkl"
+msgstr ""
+
+msgctxt "#40555"
+msgid "Unwatched in Simkl"
+msgstr ""
+
+msgctxt "#40556"
+msgid "Background Services Sync Interval"
+msgstr ""
+
+msgctxt "#40557"
+msgid "Simkl Progress Show unaired episodes"
+msgstr ""
+
+msgctxt "#40558"
+msgid "Simkl Upcoming Progress prepend date"
+msgstr ""
+
+msgctxt "#40559"
+msgid "[B]SETTINGS[/B] : Simkl"
+msgstr ""

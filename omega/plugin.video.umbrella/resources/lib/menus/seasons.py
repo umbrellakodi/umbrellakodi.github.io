@@ -13,7 +13,7 @@ from resources.lib.indexers.fanarttv import FanartTv
 from resources.lib.modules import cleangenre
 from resources.lib.modules import control
 from resources.lib.modules.playcount import getSeasonIndicators, getSeasonOverlay, getSeasonCount
-from resources.lib.modules import trakt
+from resources.lib.modules import trakt, simkl
 from resources.lib.modules import views
 
 getLS = control.lang
@@ -143,6 +143,8 @@ class Seasons:
 		addonPoster, addonFanart, addonBanner = control.addonPoster(), control.addonFanart(), control.addonBanner()
 		if trakt.getTraktIndicatorsInfo():
 			watchedMenu, unwatchedMenu = getLS(32068), getLS(32069)
+		elif simkl.getSimKLIndicatorsInfo():
+			watchedMenu, unwatchedMenu = getLS(40554), getLS(40555)
 		else:
 			watchedMenu, unwatchedMenu = getLS(32066), getLS(32067)
 		traktManagerMenu, queueMenu = getLS(32070), getLS(32065)

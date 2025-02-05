@@ -27,7 +27,7 @@ retries = Retry(total=4, backoff_factor=0.3, status_forcelist=[429, 500, 502, 50
 session.mount('https://api.trakt.tv', HTTPAdapter(max_retries=retries, pool_maxsize=100))
 highlight_color = getSetting('highlight.color')
 server_notification = getSetting('trakt.server.notifications') == 'true'
-service_syncInterval = int(getSetting('trakt.service.syncInterval')) if getSetting('trakt.service.syncInterval') else 15
+service_syncInterval = int(getSetting('background.service.syncInterval')) if getSetting('background.service.syncInterval') else 15
 trakt_icon = control.joinPath(control.artPath(), 'trakt.png')
 trakt_qr = control.joinPath(control.artPath(), 'traktqr.png')
 

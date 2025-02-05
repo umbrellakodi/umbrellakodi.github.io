@@ -96,6 +96,7 @@
 						<options>
 							<option label="32314">0</option>
 							<option label="32315">1</option>
+							<option label="40342">2</option>
 						</options>
 					</constraints>
 					<dependencies>
@@ -119,6 +120,17 @@
 						</dependency>
 					</dependencies>
 					<control type="spinner" format="string"/>
+				</setting>
+				<setting id="background.service.syncInterval" type="integer" label="40556" help="">
+					<level>0</level>
+					<default>15</default>
+					<constraints>
+						<minimum>5</minimum>
+						<maximum>60</maximum>
+					</constraints>
+					<control type="slider" format="integer">
+						<popup>false</popup>
+					</control>
 				</setting>
 				<setting id="highlight.color.display" type="string" label="40039" help="">
 					<level>0</level>
@@ -3286,7 +3298,7 @@
 						<heading/>
 					</control>
 				</setting>
-				<setting id="trakt.service.syncInterval" type="integer" label="40232" help="">
+				<!-- <setting id="trakt.service.syncInterval" type="integer" label="40232" help="">
 					<level>0</level>
 					<default>15</default>
 					<constraints>
@@ -3301,7 +3313,7 @@
 					<control type="slider" format="integer">
 						<popup>false</popup>
 					</control>
-				</setting>
+				</setting> -->
 				<setting id="trakt.server.notifications" type="boolean" label="33051" help="">
 					<level>0</level>
 					<default>true</default>
@@ -3572,21 +3584,6 @@
 						<close>true</close>
 					</control>
 				</setting>
-				<setting id="revokeSIMKLbutton" type="action" label="40110" help="">
-					<level>0</level>
-					<data>RunPlugin(plugin://plugin.video.umbrella/?action=simkl_Revoke)</data>
-					<constraints>
-						<allowempty>true</allowempty>
-					</constraints>
-					<dependencies>
-						<dependency type="visible">
-							<condition operator="!is" setting="simkltoken"/>
-						</dependency>
-					</dependencies>
-					<control type="button" format="action">
-						<close>true</close>
-					</control>
-				</setting>
 				<setting id="simkltoken" type="string" label="40345" help="">
 					<level>0</level>
 					<default/>
@@ -3601,6 +3598,19 @@
 					<control type="edit" format="string">
 						<heading>40345</heading>
 					</control>
+				</setting>
+				<setting id="showSimKLAccountInfo" type="action" label="32153" help="">
+					<level>0</level>
+					<data>RunPlugin(plugin://plugin.video.umbrella/?action=simklAccountInfo)</data>
+					<constraints>
+						<allowempty>true</allowempty>
+					</constraints>
+					<dependencies>
+						<dependency type="visible">
+							<condition operator="!is" setting="simkltoken"/>
+						</dependency>
+					</dependencies>
+					<control type="button" format="action"/>
 				</setting>
 				<setting id="simklusername" type="string" label="40006" help="">
 					<level>0</level>
@@ -3619,6 +3629,90 @@
 					</dependencies>
 					<control type="edit" format="string">
 						<heading>40006</heading>
+					</control>
+				</setting>
+				<setting id="simkl.directProgress.scrape" type="boolean" label="35492" help="">
+					<level>0</level>
+					<default>false</default>
+					<dependencies>
+						<dependency type="visible">
+							<condition operator="!is" setting="simkltoken"/>
+						</dependency>
+					</dependencies>
+					<control type="toggle"/>
+				</setting>
+				<setting id="showHelpdirectProcess" type="action" label="32137" help="">
+					<level>0</level>
+					<data>RunPlugin(plugin://plugin.video.umbrella/?action=tools_ShowHelp&amp;name=directProgress)</data>
+					<constraints>
+						<allowempty>true</allowempty>
+					</constraints>
+					<dependencies>
+						<dependency type="visible">
+							<condition operator="!is" setting="simkltoken"/>
+						</dependency>
+					</dependencies>
+					<control type="button" format="action"/>
+				</setting>
+				<setting id="simkl.progressFlatten" type="boolean" label="32017" help="">
+					<level>0</level>
+					<default>true</default>
+					<dependencies>
+						<dependency type="enable">
+							<condition operator="!is" setting="simkltoken"/>
+						</dependency>
+						<dependency type="visible">
+							<condition operator="!is" setting="simkltoken"/>
+						</dependency>
+					</dependencies>
+					<control type="toggle"/>
+				</setting>
+				<setting id="simkl.progress.showunaired" type="boolean" label="40557" help="">
+					<level>0</level>
+					<default>false</default>
+					<dependencies>
+						<dependency type="visible">
+							<condition operator="!is" setting="simkltoken"/>
+						</dependency>
+					</dependencies>
+					<control type="toggle"/>
+				</setting>
+				<setting id="simkl.UpcomingProgress.prependDate" type="boolean" label="40558" help="">
+					<level>0</level>
+					<default>true</default>
+					<dependencies>
+						<dependency type="visible">
+							<condition operator="!is" setting="simkltoken"/>
+						</dependency>
+					</dependencies>
+					<control type="toggle"/>
+				</setting>
+				<setting id="showHelpupcomingProgressPrependDate" type="action" label="32137" help="">
+					<level>0</level>
+					<data>RunPlugin(plugin://plugin.video.umbrella/?action=tools_ShowHelp&amp;name=UpcomingProgressPrependDate)</data>
+					<constraints>
+						<allowempty>true</allowempty>
+					</constraints>
+					<dependencies>
+						<dependency type="visible">
+							<condition operator="!is" setting="simkltoken"/>
+						</dependency>
+					</dependencies>
+					<control type="button" format="action"/>
+				</setting>
+				<setting id="revokeSIMKLbutton" type="action" label="40110" help="">
+					<level>0</level>
+					<data>RunPlugin(plugin://plugin.video.umbrella/?action=simkl_Revoke)</data>
+					<constraints>
+						<allowempty>true</allowempty>
+					</constraints>
+					<dependencies>
+						<dependency type="visible">
+							<condition operator="!is" setting="simkltoken"/>
+						</dependency>
+					</dependencies>
+					<control type="button" format="action">
+						<close>true</close>
 					</control>
 				</setting>
 			</group>

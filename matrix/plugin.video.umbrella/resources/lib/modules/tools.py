@@ -9,7 +9,8 @@ import _strptime # import _strptime to workaround python 2 bug with threads
 from resources.lib.modules import cleandate
 from resources.lib.externals import pytz
 from resources.lib.modules import control
-from resources.lib.modules.control import lang as getLS
+from resources.lib.modules.control import lang as getLS, setting as getSetting
+import json
 
 ZoneUtc = 'utc'
 ZoneLocal = 'local'
@@ -17,6 +18,7 @@ FormatDateTime = '%Y-%m-%d %H:%M:%S'
 FormatDate = '%Y-%m-%d'
 FormatTime = '%H:%M:%S'
 FormatTimeShort = '%H:%M'
+service_syncInterval = int(getSetting('background.service.syncInterval')) if getSetting('background.service.syncInterval') else 15
 
 # def datetime_from_string(self, string, format=FormatDateTime):
 	# try:
@@ -164,3 +166,45 @@ def resetCustomBG():
 	except:
 		from resources.lib.modules import log_utils
 		log_utils.error()
+
+def services_syncs():
+	from resources.lib.modules import trakt
+	from resources.lib.modules import simkl
+	while not control.monitor.abortRequested():
+		control.sleep(5000) # wait 5sec in case of device wake from sleep
+		try:
+			internets = control.condVisibility('System.InternetState') #added for some systems have removed Internet State apparently.
+			if internets == False:
+				internets = control.condVisibility('System.HasNetwork')
+		except:
+			internets = None
+			from resources.lib.modules import log_utils
+			log_utils.error()
+		if internets and trakt.getTraktCredentialsInfo(): # run service in case user auth's trakt later
+			from resources.lib.modules import log_utils
+			log_utils.log('Trakt Sync Service is running.', 1)
+			activities = trakt.getTraktAsJson('/sync/last_activities', silent=True)
+			if getSetting('bookmarks') == 'true' and getSetting('resume.source') == '1':
+				trakt.sync_playbackProgress(activities)
+			trakt.sync_watchedProgress(activities)
+			if getSetting('indicators.alt') == '1':
+				trakt.sync_watched(activities) # writes to traktsync.db as of 1-19-2022
+			trakt.sync_user_lists(activities)
+			trakt.sync_liked_lists(activities)
+			trakt.sync_hidden_progress(activities)
+			trakt.sync_collection(activities)
+			trakt.sync_watch_list(activities)
+			trakt.sync_popular_lists()
+			trakt.sync_trending_lists()
+		if internets and simkl.getSimKLCredentialsInfo():
+			activities = simkl.get_request('/sync/activities')
+			activities = json.dumps(activities)
+			from resources.lib.modules import log_utils
+			log_utils.log('SimKl Sync Service is running.', 1)
+			#if getSetting('bookmarks') == 'true' and getSetting('resume.source') == '2': simkl does not have playback progress currently
+			#	simkl.sync_playbackProgress(activities)
+			simkl.sync_watchedProgress(activities)
+			if getSetting('indicators.alt') == '2':
+				simkl.sync_watched(activities) #
+			simkl.sync_watch_list(activities)
+		if control.monitor.waitForAbort(60*service_syncInterval): break
