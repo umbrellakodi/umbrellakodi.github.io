@@ -217,6 +217,7 @@ class VersionIsUpdateCheck:
 			from resources.lib.database import cache
 			isUpdate = False
 			oldVersion, isUpdate = cache.update_cache_version()
+
 			if isUpdate:
 				window.setProperty('umbrella.updated', 'true')
 				curVersion = control.getUmbrellaVersion()
@@ -280,6 +281,8 @@ class SyncServices:
 
 try:
 	testUmbrella = False
+	if control.setting('indicators') == '0':
+		control.setSetting('indicators', 'Local') #fix for making this setting a string.
 	kodiVersion = control.getKodiVersion(full=True)
 	addonVersion = control.addon('plugin.video.umbrella').getAddonInfo('version')
 	if len(str(control.getUmbrellaVersion())) > 6:

@@ -347,7 +347,6 @@ def post_request(url, data=None):
 	headers['Authorization'] = 'Bearer %s' % getSetting('simkltoken')
 	headers['simkl-api-key'] = simklclientid
 	headers['User-Agent'] = 'Umbrella/%s' % control.addon('plugin.video.umbrella').getAddonInfo('version')
-	log_utils.log('SIMKL post_request() URL: %s' % url, __name__, log_utils.LOGDEBUG)
 	try:
 		response = session.post(url, data=data, headers=headers, timeout=20)
 	except requests.exceptions.ConnectionError:
@@ -603,7 +602,6 @@ def syncSeasons(imdb, tvdb, simkl_id=None, data=None): # season indicators and c
 		if all(not value for value in (imdb, tvdb, simkl_id)): return
 		from resources.lib.modules import simkl
 		if not getSimKLCredentialsInfo() : return
-		log_utils.log('Trying Sync Seasons: imdb=%s, tvdb=%s, simkl=%s' % (imdb, tvdb, simkl_id), level=log_utils.LOGDEBUG)
 		id = imdb or simkl_id
 		if not id and tvdb:
 			log_utils.log('syncSeasons missing imdb_id, pulling simkl id from watched shows database', level=log_utils.LOGDEBUG)
