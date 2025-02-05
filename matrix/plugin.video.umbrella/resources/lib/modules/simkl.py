@@ -663,7 +663,8 @@ def getProgressActivity(activities=None):
 		i = json.loads(i)
 		activity = []
 		activity.append(i['tv_shows']['watching'])
-		activity = [datetime.strptime(dt, "%Y-%m-%dT%H:%M:%SZ").strftime("%Y-%m-%dT%H:%M:%S.000Z") for dt in activity]
+		if len(activity) == 0: return 0
+		activity = [datetime.strptime(dt, "%Y-%m-%dT%H:%M:%SZ").strftime("%Y-%m-%dT%H:%M:%S.000Z") for dt in activity] if activity else []
 		activity = [int(cleandate.iso_2_utc(i)) for i in activity]
 		activity = sorted(activity, key=int)[-1]
 		return activity
@@ -680,6 +681,7 @@ def getWatchListedActivity(activities=None):
 		activity = []
 		activity.append(i['movies']['plantowatch'])
 		activity.append(i['tv_shows']['plantowatch'])
+		if len(activity) == 0: return 0
 		activity = [datetime.strptime(dt, "%Y-%m-%dT%H:%M:%SZ").strftime("%Y-%m-%dT%H:%M:%S.000Z") for dt in activity]
 		activity = [int(cleandate.iso_2_utc(i)) for i in activity]
 		activity = sorted(activity, key=int)[-1]
@@ -696,6 +698,7 @@ def getHistoryListedActivity(activities=None):
 		activity = []
 		activity.append(i['movies']['completed'])
 		activity.append(i['tv_shows']['completed'])
+		if len(activity) == 0: return 0
 		activity = [datetime.strptime(dt, "%Y-%m-%dT%H:%M:%SZ").strftime("%Y-%m-%dT%H:%M:%S.000Z") for dt in activity]
 		activity = [int(cleandate.iso_2_utc(i)) for i in activity]
 		activity = sorted(activity, key=int)[-1]
@@ -711,6 +714,7 @@ def getEpisodesWatchedActivity(activities=None):
 		i = json.loads(i)
 		activity = []
 		activity.append(i['tv_shows']['all'])
+		if len(activity) == 0: return 0
 		activity = [datetime.strptime(dt, "%Y-%m-%dT%H:%M:%SZ").strftime("%Y-%m-%dT%H:%M:%S.000Z") for dt in activity]
 		activity = [int(cleandate.iso_2_utc(i)) for i in activity]
 		activity = sorted(activity, key=int)[-1]
@@ -727,6 +731,7 @@ def getMoviesWatchedActivity(activities=None):
 		i = json.loads(i)
 		activity = []
 		activity.append(i['movies']['completed'])
+		if len(activity) == 0: return 0
 		activity = [datetime.strptime(dt, "%Y-%m-%dT%H:%M:%SZ").strftime("%Y-%m-%dT%H:%M:%S.000Z") for dt in activity]
 		activity = [int(cleandate.iso_2_utc(i)) for i in activity]
 		activity = sorted(activity, key=int)[-1]

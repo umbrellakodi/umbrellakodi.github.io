@@ -1,4 +1,4 @@
-[B]Update - v6.7.381 - Feb 5th, 2025[/B]
+[B]Update - v6.7.382 - Feb 5th, 2025[/B]
 --[Change] Moved Trakt sync interval setting to new setting in General settings. It is now Background Services Sync Interval.
 --[Change] Added Simkl as option for indicators. Make a selection for local, trakt or simkl.
 --[Change] Added watched/ unwatched from Simkl.

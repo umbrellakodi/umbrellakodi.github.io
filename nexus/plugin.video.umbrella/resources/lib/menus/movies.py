@@ -2183,7 +2183,7 @@ class Movies:
 		if next:
 			try:
 				if not items: raise Exception()
-				url = items[0]['next']
+				url = items[0].get('next', None)
 				if not url: raise Exception()
 				url_params = dict(parse_qsl(urlsplit(url).query))
 				if 'imdb.com' in url and 'start' in url_params: page = '  [I](%s)[/I]' % str(int(((int(url_params.get('start')) - 1) / int(self.page_limit)) + 1))
