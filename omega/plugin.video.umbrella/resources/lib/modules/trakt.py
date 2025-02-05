@@ -136,7 +136,6 @@ def traktAuth(fromSettings=0):
 			control.setSetting('trakt.scrobble', 'true')
 			control.setSetting('resume.source', '1')
 			control.setSetting('trakt.isauthed', 'true')
-			control.setSetting('trakt.indicators.alt', '1')
 			control.homeWindow.setProperty('umbrella.updateSettings', 'true')
 			control.setSetting('trakt.refreshtoken', deviceCode["refresh_token"])
 			control.sleep(1000)
@@ -298,7 +297,7 @@ def getTraktCredentialsInfo():
 	return True
 
 def getTraktIndicatorsInfo():
-	indicators = getSetting('indicators') if not getTraktCredentialsInfo() else getSetting('indicators.alt')
+	indicators = getSetting('indicators.alt')
 	indicators = True if indicators == '1' else False
 	return indicators
 

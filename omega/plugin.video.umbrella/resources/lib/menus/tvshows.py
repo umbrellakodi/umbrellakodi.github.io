@@ -935,7 +935,7 @@ class TVshows:
 			useNext = True
 			if create_directory:
 				self.sort(type='shows.watchlist') # sort before local pagination
-				if getSetting('trakt.paginate.lists') == 'true' and self.list:
+				if getSetting('simkl.paginate.lists') == 'true' and self.list:
 					if len(self.list) == int(self.page_limit):
 						useNext = False
 					paginated_ids = [self.list[x:x + int(self.page_limit)] for x in range(0, len(self.list), int(self.page_limit))]

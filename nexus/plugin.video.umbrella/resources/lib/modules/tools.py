@@ -11,6 +11,8 @@ from resources.lib.externals import pytz
 from resources.lib.modules import control
 from resources.lib.modules.control import lang as getLS, setting as getSetting
 import json
+from resources.lib.modules import trakt
+from resources.lib.modules import simkl
 
 ZoneUtc = 'utc'
 ZoneLocal = 'local'
@@ -167,9 +169,33 @@ def resetCustomBG():
 		from resources.lib.modules import log_utils
 		log_utils.error()
 
+def setIndicatorService():
+	try:
+		options = ['Local']
+		if simkl.getSimKLCredentialsInfo():
+			options += ['Simkl']
+		if trakt.getTraktCredentialsInfo():
+			options += ['Trakt']
+		select = control.selectDialog(options, 'Please select service to use for indicators:')
+		if select == -1: return
+		selection = options[select]
+		if selection == 'Local':
+			optionVal = '0'
+		if selection == 'Trakt':
+			optionVal = '1'
+		if selection == 'Simkl':
+			optionVal = '2'
+		
+		control.homeWindow.setProperty('umbrella.updateSettings', 'false')
+		control.setSetting('indicators.alt', optionVal)
+		control.homeWindow.setProperty('umbrella.updateSettings', 'true')
+		control.setSetting('indicators', str(selection))
+		control.openSettings('0.0', 'plugin.video.umbrella')
+	except:
+		from resources.lib.modules import log_utils
+		log_utils.error()
+
 def services_syncs():
-	from resources.lib.modules import trakt
-	from resources.lib.modules import simkl
 	while not control.monitor.abortRequested():
 		control.sleep(5000) # wait 5sec in case of device wake from sleep
 		try:
@@ -207,4 +233,5 @@ def services_syncs():
 			if getSetting('indicators.alt') == '2':
 				simkl.sync_watched(activities) #
 			simkl.sync_watch_list(activities)
+			simkl.sync_history(activities)
 		if control.monitor.waitForAbort(60*service_syncInterval): break

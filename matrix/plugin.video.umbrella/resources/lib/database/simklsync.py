@@ -219,6 +219,95 @@ def delete_watchList_items(items, table, col_name='simkl'):
 	finally:
 		dbcur.close() ; dbcon.close()
 
+def fetch_history_list(table):
+	list = ''
+	try:
+		dbcon = get_connection()
+		dbcur = get_connection_cursor(dbcon)
+		ck_table = dbcur.execute('''SELECT * FROM sqlite_master WHERE type='table' AND name=?;''', (table,)).fetchone()
+		if not ck_table:
+			dbcur.execute('''CREATE TABLE IF NOT EXISTS %s (title TEXT, year TEXT, premiered TEXT, imdb TEXT, tmdb TEXT, tvdb TEXT, simkl TEXT, rating FLOAT, votes INTEGER, listed_at TEXT, last_watched_at TEXT, UNIQUE(imdb, tmdb, tvdb, simkl));''' % table)
+			dbcur.connection.commit()
+			return list
+		try:
+			match = dbcur.execute('''SELECT * FROM %s WHERE NOT title=""''' % table).fetchall()
+			list = [{'title': i[0], 'year': i[1], 'premiered': i[2], 'imdb': i[3], 'tmdb': i[4], 'tvdb': i[5], 'simkl': i[6], 'rating': i[7], 'votes': i[8], 'added': i[9], 'lastplayed': i[10]} for i in match]
+		except: pass
+	except:
+		from resources.lib.modules import log_utils
+		log_utils.error()
+	finally:
+		dbcur.close() ; dbcon.close()
+	return list
+
+def insert_history_list(items, table, new_sync=True):
+	try:
+		dbcon = get_connection()
+		dbcur = get_connection_cursor(dbcon)
+		dbcur.execute('''CREATE TABLE IF NOT EXISTS %s (title TEXT, year TEXT, premiered TEXT, imdb TEXT, tmdb TEXT, tvdb TEXT, simkl TEXT, rating FLOAT, votes INTEGER, listed_at TEXT, last_watched_at TEXT, UNIQUE(imdb, tmdb, tvdb, simkl));''' % table)
+		dbcur.execute('''CREATE TABLE IF NOT EXISTS service (setting TEXT, value TEXT, UNIQUE(setting));''')
+		if new_sync:
+			dbcur.execute('''DELETE FROM %s''' % table)
+			dbcur.connection.commit() # added this for what looks like a 19 bug not found in 18, normal commit is at end
+			dbcur.execute('''VACUUM''')
+		for i in items:
+			try:
+				if 'show' in i:
+					item = i.get('show')
+					try: premiered = item.get('first_aired', '').split('T')[0]
+					except: premiered = ''
+				else:
+					item = i.get('movie')
+					premiered = ''
+				title = item.get('title')
+				year = item.get('year', '') or ''
+				ids = item.get('ids')
+				imdb = ids.get('imdb', '')
+				tmdb = ids.get('tmdb', '')
+				tvdb = ids.get('tvdb', '')
+				simkl = ids.get('simkl', '')
+				rating = item.get('rating', '')
+				votes = item.get('votes', '')
+				listed_at = datetime.strptime(i.get('added_to_watchlist_at'), "%Y-%m-%dT%H:%M:%SZ").strftime("%Y-%m-%dT%H:%M:%S.000Z")
+				last_watched_at = i.get('last_watched_at','')
+				dbcur.execute('''INSERT OR REPLACE INTO %s Values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''' % table, (title, year, premiered, imdb, tmdb, tvdb, simkl, rating, votes, listed_at, last_watched_at))
+			except:
+				from resources.lib.modules import log_utils
+				log_utils.error()
+		timestamp = datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%S.000Z")
+		dbcur.execute('''INSERT OR REPLACE INTO service Values (?, ?)''', ('last_history_at', timestamp))
+		dbcur.connection.commit()
+	except:
+		from resources.lib.modules import log_utils
+		log_utils.error()
+	finally:
+		dbcur.close() ; dbcon.close()
+
+def delete_history_items(items, table, col_name='simkl'):
+	try:
+		dbcon = get_connection()
+		dbcur = get_connection_cursor(dbcon)
+		ck_table = dbcur.execute('''SELECT * FROM sqlite_master WHERE type='table' AND name=?;''', (table,)).fetchone()
+		if not ck_table:
+			dbcur.execute('''CREATE TABLE IF NOT EXISTS %s (title TEXT, year TEXT, premiered TEXT, imdb TEXT, tmdb TEXT, tvdb TEXT, simkl TEXT, rating FLOAT, votes INTEGER, listed_at TEXT, last_watched_at TEXT, UNIQUE(imdb, tmdb, tvdb, simkl));''' % table)
+			dbcur.execute('''CREATE TABLE IF NOT EXISTS service (setting TEXT, value TEXT, UNIQUE(setting));''')
+			dbcur.connection.commit()
+			return
+		for item in items:
+			try:
+				dbcur.execute('''DELETE FROM %s WHERE %s=?;''' % (table, col_name), (item,))
+			except:
+				from resources.lib.modules import log_utils
+				log_utils.error()
+		timestamp = datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%S.000Z")
+		dbcur.execute('''INSERT OR REPLACE INTO service Values (?, ?)''', ('last_history_at', timestamp))
+		dbcur.connection.commit()
+	except:
+		from resources.lib.modules import log_utils
+		log_utils.error()
+	finally:
+		dbcur.close() ; dbcon.close()
+
 def last_sync(type):
 	last_sync_at = 0
 	try:
@@ -248,7 +337,9 @@ def delete_tables(tables):
 			'movies_watchlist': 'last_watchlisted_at',
 			'shows_collection': 'last_collected_at',
 			'shows_watchlist': 'last_watchlisted_at',
-			'watched': 'last_syncSeasons_at'}
+			'watched': 'last_syncSeasons_at',
+			'movies_history': 'last_history_at',
+			'shows_history': 'last_history_at'}
 		for table,v in iter(tables.items()):
 			if v is True:
 				dbcur.execute('''DROP TABLE IF EXISTS {}'''.format(table))

@@ -846,6 +846,9 @@ def router(argv2):
 		elif action == 'tools_iconPack':
 			from resources.lib.modules import skin_packs
 			skin_packs.iconPackHandler().show_skin_packs()
+		elif action == 'tools_indicators':
+			from resources.lib.modules import tools
+			tools.setIndicatorService()
 		elif action == 'tools_toolNavigator':
 			from resources.lib.menus import navigator
 			navigator.Navigator().tools(folderName=folderName)
