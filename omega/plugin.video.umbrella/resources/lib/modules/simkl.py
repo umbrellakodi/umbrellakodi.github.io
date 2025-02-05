@@ -99,14 +99,14 @@ class SIMKL:
 			self.token = self.secret
 			control.sleep(500)
 			control.setSetting('simkltoken', self.token)
+			control.notification(message="Simkl Authorized", icon=simkl_icon)
+			if not control.yesnoDialog('Do you want to set Simkl as your service for your watched and unwatched indicators?','','','Indicators', 'No', 'Yes'): return True, None
+			control.homeWindow.setProperty('umbrella.updateSettings', 'false')
+			control.setSetting('indicators.alt', '2')
+			control.homeWindow.setProperty('umbrella.updateSettings', 'true')
+			control.setSetting('indicators', 'Simkl')
 			if fromSettings == 1:
 				control.openSettings('9.0', 'plugin.video.umbrella')
-				control.notification(message="Simkl Authorized", icon=simkl_icon)
-				if not control.yesnoDialog('Do you want to set Trakt as your service for your watched and unwatched indicators?','','','Indicators', 'No', 'Yes'): return True, None
-				control.homeWindow.setProperty('umbrella.updateSettings', 'false')
-				control.setSetting('indicators.alt', '2')
-				control.homeWindow.setProperty('umbrella.updateSettings', 'true')
-				control.setSetting('indicators', 'Simkl')
 			return True, None
 		except:
 			log_utils.error('Simkl Authorization Failed : ')
@@ -121,13 +121,12 @@ class SIMKL:
 			from resources.lib.database import simklsync
 			clr_simklsync = {'bookmarks': True, 'movies_watchlist': True, 'shows_watchlist': True, 'watched': True, 'movies_history': True, 'shows_history': True}
 			simklsync.delete_tables(clr_simklsync)
-			if fromSettings == 1:
-				control.openSettings('9.0', 'plugin.video.umbrella')
-			control.dialog.ok(getLS(40342), getLS(32320))
 			if getSetting('indicators.alt') == '2':
 				control.setSetting('indicators.alt', '0')
 				control.setSetting('indicators', 'Local')
-
+			if fromSettings == 1:
+				control.openSettings('9.0', 'plugin.video.umbrella')
+			control.dialog.ok(getLS(40342), getLS(32320))
 		except: log_utils.error()
 
 	def get_account_info(self):

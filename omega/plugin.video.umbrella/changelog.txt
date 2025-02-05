@@ -1,4 +1,6 @@
-[B]Update - v6.7.384 - Feb 5th, 2025[/B]
+[B]Update - v6.7.385 - Feb 5th, 2025[/B]
+--[Change] Added confirmation windows when authorizing services to use for indicators if available.
+--[Change] Made change for if service is revoked the indicators revert back to local.
 --[Change] Moved Trakt sync interval setting to new setting in General settings. It is now Background Services Sync Interval.
 --[Change] Added Simkl as option for indicators. Make a selection for local, trakt or simkl.
 --[Change] Added watched/ unwatched from Simkl.
