@@ -747,7 +747,7 @@ def sync_watchedProgress(activities=None, forced=False):
 		url = '/sync/all-items/shows/watching?extended=full'
 		progressActivity = getProgressActivity(activities)
 		local_listCache = cache.timeout(episodes.Episodes().simkl_progress_list, url, direct)
-		if forced or (progressActivity > local_listCache):
+		if forced or (progressActivity > local_listCache) or progressActivity == 0:
 			cache.get(episodes.Episodes().simkl_progress_list, 0, url, direct)
 			if forced: log_utils.log('Forced - SimKl Progress List Sync Complete', __name__, log_utils.LOGDEBUG)
 			else:
@@ -768,7 +768,7 @@ def sync_watch_list(activities=None, forced=False):
 		else:
 			db_last_watchList = simklsync.last_sync('last_watchlisted_at')
 			watchListActivity = getWatchListedActivity(activities)
-			if watchListActivity - db_last_watchList >= 60: # do not sync unless 1 min difference or more
+			if (watchListActivity - db_last_watchList >= 60) or watchListActivity == 0: # do not sync unless 1 min difference or more
 				log_utils.log('Simkl Plan to Watch (watchlist) Sync Update...(local db latest "watchlist_at" = %s, simkl api latest "watchlisted_at" = %s)' % \
 									(str(db_last_watchList), str(watchListActivity)), __name__, log_utils.LOGINFO)
 				clr_simklsync = {'bookmarks': False, 'movies_watchlist': True, 'shows_watchlist': True, 'watched': False, 'movies_history': False, 'shows_history': False}
@@ -794,7 +794,7 @@ def sync_history(activities=None, forced=False):
 		else:
 			db_last_historyList = simklsync.last_sync('last_history_at')
 			historyListActivity = getHistoryListedActivity(activities)
-			if historyListActivity - db_last_historyList >= 60: # do not sync unless 1 min difference or more
+			if (historyListActivity - db_last_historyList >= 60) or historyListActivity == 0: # do not sync unless 1 min difference or more
 				log_utils.log('Simkl Watched History (watchlist) Sync Update...(local db latest "watchlist_at" = %s, simkl api latest "watchlisted_at" = %s)' % \
 									(str(db_last_historyList), str(historyListActivity)), __name__, log_utils.LOGINFO)
 				clr_simklsync = {'bookmarks': False, 'movies_watchlist': False, 'shows_watchlist': False, 'watched': False, 'movies_history': True, 'shows_history': True}
@@ -837,11 +837,13 @@ def sync_watched(activities=None, forced=False): # writes to simkl.db as of 1-19
 		else:
 			moviesWatchedActivity = getMoviesWatchedActivity(activities)
 			db_movies_last_watched = timeoutsyncMovies()
-			if moviesWatchedActivity - db_movies_last_watched >= 30: # do not sync unless 30secs more to allow for variation between simkl post and local db update.
+			if (moviesWatchedActivity - db_movies_last_watched >= 30) or moviesWatchedActivity == 0: # do not sync unless 30secs more to allow for variation between simkl post and local db update.
 				log_utils.log('Simkl Watched Movie Sync Update...(local db latest "watched_at" = %s, simkl api latest "watched_at" = %s)' % \
 								(str(db_movies_last_watched), str(moviesWatchedActivity)), __name__, log_utils.LOGDEBUG)
 				cachesyncMovies()
 			episodesWatchedActivity = getEpisodesWatchedActivity(activities)
+			if episodesWatchedActivity == 0:
+				episodesWatchedActivity = 10000000
 			db_last_syncTVShows = timeoutsyncTVShows()
 			db_last_syncSeasons = simklsync.last_sync('last_syncSeasons_at')
 			if any(episodesWatchedActivity > value for value in (db_last_syncTVShows, db_last_syncSeasons)):
