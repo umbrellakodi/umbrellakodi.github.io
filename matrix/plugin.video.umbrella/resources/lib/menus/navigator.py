@@ -599,7 +599,7 @@ class Navigator:
 			return
 
 	def accountCheck(self):
-		if not self.traktCredentials and not self.imdbCredentials:
+		if not self.traktCredentials and not self.imdbCredentials and not self.simklCredentials:
 			control.hide()
 			control.notification(message=32042, icon='WARNING')
 			sysexit()

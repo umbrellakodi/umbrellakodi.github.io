@@ -340,6 +340,7 @@ def delete_tables(tables):
 			'watched': 'last_syncSeasons_at',
 			'movies_history': 'last_history_at',
 			'shows_history': 'last_history_at'}
+		dbcur.execute('''CREATE TABLE IF NOT EXISTS service (setting TEXT, value TEXT, UNIQUE(setting));''')
 		for table,v in iter(tables.items()):
 			if v is True:
 				dbcur.execute('''DROP TABLE IF EXISTS {}'''.format(table))

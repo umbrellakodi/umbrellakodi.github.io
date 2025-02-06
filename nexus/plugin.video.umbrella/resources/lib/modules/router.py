@@ -164,7 +164,7 @@ def router(argv2):
 		Trakt.getTraktAccountInfo()
 	elif action == 'simklAccountInfo':
 		from resources.lib.modules import simkl
-		simkl.SIMKL().get_account_info()
+		simkl.SIMKL().acount_info_dialog()
 	elif action == 'movies_PublicLists':
 		from resources.lib.menus import movies
 		movies.Movies().getTraktPublicLists(url, folderName=folderName)
