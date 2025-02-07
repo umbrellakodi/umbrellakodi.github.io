@@ -101,7 +101,12 @@ class SIMKL:
 			control.setSetting('simkltoken', self.token)
 			username, joindate = self.get_account_info(self.token)
 			control.notification(message="Simkl Authorized", icon=simkl_icon)
-			if not control.yesnoDialog('Do you want to set Simkl as your service for your watched and unwatched indicators?','','','Indicators', 'No', 'Yes'): return True, None
+			if not control.yesnoDialog('Do you want to set Simkl as your service for your watched and unwatched indicators?','','','Indicators', 'No', 'Yes'):
+				if fromSettings == 1:
+					control.openSettings('9.0', 'plugin.video.umbrella')
+				force_simklSync(silent=True)
+				return True, None
+			force_simklSync(silent=True)
 			control.homeWindow.setProperty('umbrella.updateSettings', 'false')
 			control.setSetting('indicators.alt', '2')
 			control.homeWindow.setProperty('umbrella.updateSettings', 'true')
@@ -144,7 +149,8 @@ class SIMKL:
 			if response.status_code == 200:
 				response = response.json()
 				account_info = response.get('user')
-				joined = datetime.strptime(account_info['joined_at'], '%Y-%m-%dT%H:%M:%SZ').strftime('%m-%d-%Y %I:%M %p')
+				joined = account_info.get('joined_at')
+				if joined: joined = datetime.strptime(joined, '%Y-%m-%dT%H:%M:%SZ').strftime('%m-%d-%Y %I:%M %p')
 				user = account_info.get('name','')
 				control.setSetting('simklusername', account_info.get('name',''))
 				control.setSetting('simkljoindate', joined)
@@ -407,7 +413,7 @@ def markTVShowAsWatched(imdb, tvdb):
 		from resources.lib.modules import simkl
 		#result = simkl.post_request('/sync/history', {"shows": [{"ids": {"imdb": imdb, "tvdb": tvdb}}]})
 		result = simkl.post_request('/sync/add-to-list', {"shows": [{"to": "completed", "ids": {"imdb": imdb, "tvdb": tvdb}}]})
-		if result['added']['shows'] == 0 and tvdb: # fail, trying again with tvdb as fallback
+		if result['not_found']['shows'] == 0 and tvdb: # fail, trying again with tvdb as fallback
 			control.sleep(1000) # POST 1 call per sec rate-limit
 			result = simkl.post_request('/sync/history', {"shows": [{"ids": {"tvdb": tvdb}}]})
 			if not result: return False
@@ -419,7 +425,7 @@ def markTVShowAsNotWatched(imdb, tvdb):
 		from resources.lib.modules import simkl
 		result = simkl.post_request('/sync/history/remove', {"shows": [{"ids": {"imdb": imdb, "tvdb": tvdb}}]})
 		if not result: return False
-		if result['deleted']['shows'] == 0 and tvdb: # fail, trying again with tvdb as fallback
+		if result['not_found']['shows'] == 0 and tvdb: # fail, trying again with tvdb as fallback
 			control.sleep(1000) # POST 1 call per sec rate-limit
 			result = simkl.post_request('/sync/history/remove', {"shows": [{"ids": {"tvdb": tvdb}}]})
 			if not result: return False
@@ -432,7 +438,7 @@ def markSeasonAsWatched(imdb, tvdb, season):
 		season = int('%01d' % int(season))
 		result = simkl.post_request('/sync/history', {"shows": [{"seasons": [{"number": season}], "ids": {"imdb": imdb, "tvdb": tvdb}}]})
 		if not result: return False
-		if result['added']['episodes'] == 0 and tvdb: # # fail, trying again with tvdb as fallback
+		if  result['not_found']['shows'] == 0 and tvdb: # # fail, trying again with tvdb as fallback
 			control.sleep(1000) # POST 1 call per sec rate-limit
 			result = simkl.post_request('/sync/history', {"shows": [{"seasons": [{"number": season}], "ids": {"tvdb": tvdb}}]})
 			if not result: return False
@@ -458,13 +464,13 @@ def markEpisodeAsWatched(imdb, tvdb, season, episode):
 		from resources.lib.modules import simkl
 		result = simkl.post_request('/sync/history', {"shows": [{"seasons": [{"episodes": [{"number": episode}], "number": season}], "ids": {"imdb": imdb, "tvdb": tvdb}}]})
 		if not result: result = False
-		if result['added']['episodes'] == 0 and tvdb:
+		if (result['not_found']['episodes'] == 0 or result['not_found']['shows'] == 0) and tvdb:
 			control.sleep(1000)
 			result = simkl.post_request('/sync/history', {"shows": [{"seasons": [{"episodes": [{"number": episode}], "number": season}], "ids": {"imdb": tvdb}}]})
 			if not result: result = False
-			result = result['added']['shows'] !=0
+			result = result['added']['episodes'] !=0
 		else:
-			result = result['added']['shows'] !=0
+			result = result['added']['episodes'] !=0
 		if getSetting('debug.level') == '1':
 			log_utils.log('SimKL markEpisodeAsWatched IMDB: %s TVDB: %s Season: %s Episode: %s Result: %s' % (imdb, tvdb, season, episode, result), level=log_utils.LOGDEBUG)
 		return result
@@ -476,7 +482,7 @@ def markEpisodeAsNotWatched(imdb, tvdb, season, episode):
 		from resources.lib.modules import simkl
 		result = simkl.post_request('/sync/history/remove', {"shows": [{"seasons": [{"episodes": [{"number": episode}], "number": season}], "ids": {"imdb": imdb, "tvdb": tvdb}}]})
 		if not result: return False
-		if result['deleted']['episodes'] == 0 and tvdb:
+		if (result['not_found']['episodes'] == 0 or result['not_found']['shows'] == 0) and tvdb:
 			control.sleep(1000)
 			result = simkl.post_request('/sync/history/remove', {"shows": [{"seasons": [{"episodes": [{"number": episode}], "number": season}], "ids": {"imdb": tvdb}}]})
 			if not result: return False
@@ -683,7 +689,7 @@ def getProgressActivity(activities=None):
 		i = json.loads(i)
 		activity = []
 		activity.append(i['tv_shows']['watching'])
-		if len(activity) == 0: return 0
+		if not activity: return 0
 		activity = [datetime.strptime(dt, "%Y-%m-%dT%H:%M:%SZ").strftime("%Y-%m-%dT%H:%M:%S.000Z") for dt in activity] if activity else []
 		activity = [int(cleandate.iso_2_utc(i)) for i in activity]
 		activity = sorted(activity, key=int)[-1]
@@ -701,7 +707,7 @@ def getWatchListedActivity(activities=None):
 		activity = []
 		activity.append(i['movies']['plantowatch'])
 		activity.append(i['tv_shows']['plantowatch'])
-		if len(activity) == 0: return 0
+		if not activity: return 0
 		activity = [datetime.strptime(dt, "%Y-%m-%dT%H:%M:%SZ").strftime("%Y-%m-%dT%H:%M:%S.000Z") for dt in activity] if activity else []
 		activity = [int(cleandate.iso_2_utc(i)) for i in activity]
 		activity = sorted(activity, key=int)[-1]
@@ -718,7 +724,7 @@ def getHistoryListedActivity(activities=None):
 		activity = []
 		activity.append(i['movies']['completed'])
 		activity.append(i['tv_shows']['completed'])
-		if len(activity) == 0: return 0
+		if not activity: return 0
 		activity = [datetime.strptime(dt, "%Y-%m-%dT%H:%M:%SZ").strftime("%Y-%m-%dT%H:%M:%S.000Z") for dt in activity] if activity else []
 		activity = [int(cleandate.iso_2_utc(i)) for i in activity]
 		activity = sorted(activity, key=int)[-1]
@@ -734,7 +740,7 @@ def getEpisodesWatchedActivity(activities=None):
 		i = json.loads(i)
 		activity = []
 		activity.append(i['tv_shows']['all'])
-		if len(activity) == 0: return 0
+		if not activity: return 0
 		activity = [datetime.strptime(dt, "%Y-%m-%dT%H:%M:%SZ").strftime("%Y-%m-%dT%H:%M:%S.000Z") for dt in activity] if activity else []
 		activity = [int(cleandate.iso_2_utc(i)) for i in activity]
 		activity = sorted(activity, key=int)[-1]
@@ -751,7 +757,7 @@ def getMoviesWatchedActivity(activities=None):
 		i = json.loads(i)
 		activity = []
 		activity.append(i['movies']['completed'])
-		if len(activity) == 0: return 0
+		if not activity: return 0
 		activity = [datetime.strptime(dt, "%Y-%m-%dT%H:%M:%SZ").strftime("%Y-%m-%dT%H:%M:%S.000Z") for dt in activity] if activity else []
 		activity = [int(cleandate.iso_2_utc(i)) for i in activity]
 		activity = sorted(activity, key=int)[-1]
@@ -910,9 +916,10 @@ def timeoutsyncMovies():
 # Completed - History
 # Plan to Watch - watchlist
 
-def force_simklSync():
-	if not control.yesnoDialog(getLS(32056), '', ''): return
-	control.busy()
+def force_simklSync(silent=False):
+	if not silent:
+		if not control.yesnoDialog(getLS(32056), '', ''): return
+		control.busy()
 
 	# wipe all tables and start fresh
 	clr_simkl = {'movies_watchlist': True, 'shows_watchlist': True, 'watched': True, 'movies_history': True, 'shows_history': True}
@@ -922,5 +929,6 @@ def force_simklSync():
 	sync_history(forced=True) #history can be a large table better to cache
 	sync_watched(forced=True) 
 	sync_watchedProgress(forced=True) # simkl progress sync
-	control.hide()
-	control.notification(message='Forced Simkl Sync Complete')
+	if not silent: 
+		control.hide()
+		control.notification(message='Forced Simkl Sync Complete')

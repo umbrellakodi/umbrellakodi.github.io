@@ -903,7 +903,7 @@ def router(argv2):
 			trakt.force_traktSync()
 		elif action == 'tools_forceSimklSync':
 			from resources.lib.modules import simkl
-			simkl.force_simklSync()
+			simkl.force_simklSync(silent=False)
 		elif action == 'tools_clearLogFile':
 			from resources.lib.modules import log_utils
 			cleared = log_utils.clear_logFile()

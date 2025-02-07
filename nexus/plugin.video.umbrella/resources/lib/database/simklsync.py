@@ -12,6 +12,7 @@ from datetime import datetime
 from sqlite3 import dbapi2 as db
 from resources.lib.modules import cleandate
 from resources.lib.modules.control import existsPath, dataPath, makeFile, simKLSyncFile, setting as getSetting
+from resources.lib.modules import log_utils
 
 
 def fetch_bookmarks(imdb, tmdb='', tvdb='', season=None, episode=None, ret_all=None, ret_type='movies'):
@@ -61,7 +62,7 @@ def fetch_bookmarks(imdb, tmdb='', tvdb='', season=None, episode=None, ret_all=N
 						else: progress = match[12]
 					except: pass
 	except:
-		from resources.lib.modules import log_utils
+		
 		log_utils.error()
 	finally:
 		dbcur.close() ; dbcon.close()
@@ -96,7 +97,7 @@ def insert_bookmarks(items, new_scrobble=False):
 		dbcur.execute('''INSERT OR REPLACE INTO service Values (?, ?)''', ('last_paused_at', timestamp))
 		dbcur.connection.commit()
 	except:
-		from resources.lib.modules import log_utils
+		
 		log_utils.error()
 	finally:
 		dbcur.close() ; dbcon.close()
@@ -126,7 +127,7 @@ def delete_bookmark(items):
 				dbcur.connection.commit()
 			except: pass
 	except:
-		from resources.lib.modules import log_utils
+		
 		log_utils.error()
 	finally:
 		dbcur.close() ; dbcon.close()
@@ -146,7 +147,7 @@ def fetch_watch_list(table):
 			list = [{'title': i[0], 'year': i[1], 'premiered': i[2], 'imdb': i[3], 'tmdb': i[4], 'tvdb': i[5], 'simkl': i[6], 'rating': i[7], 'votes': i[8], 'added': i[9]} for i in match]
 		except: pass
 	except:
-		from resources.lib.modules import log_utils
+		
 		log_utils.error()
 	finally:
 		dbcur.close() ; dbcon.close()
@@ -162,6 +163,11 @@ def insert_watch_list(items, table, new_sync=True):
 			dbcur.execute('''DELETE FROM %s''' % table)
 			dbcur.connection.commit() # added this for what looks like a 19 bug not found in 18, normal commit is at end
 			dbcur.execute('''VACUUM''')
+		type = items[0].get('show')
+		if type: type = 'Show'
+		else: type = 'Movie'
+		
+		log_utils.log('Simkl inserting watchlist items. Number of items: %s Item Type: %s' % (len(items), type),1)
 		for i in items:
 			try:
 				if 'show' in i:
@@ -180,19 +186,18 @@ def insert_watch_list(items, table, new_sync=True):
 				simkl = ids.get('simkl', '')
 				rating = item.get('rating', '')
 				votes = item.get('votes', '')
-				date_str = i.get('added_to_watchlist_at')
-				if not date_str:  # Check if it's missing or blank
-					date_str = datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ")
-				listed_at = datetime.strptime(date_str, "%Y-%m-%dT%H:%M:%SZ").strftime("%Y-%m-%dT%H:%M:%S.000Z")
+				dstr = i.get('added_to_watchlist_at')
+				if not dstr:  # Check if it's missing or blank
+					dstr = datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%S.000Z")
+				listed_at = dstr
 				dbcur.execute('''INSERT OR REPLACE INTO %s Values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''' % table, (title, year, premiered, imdb, tmdb, tvdb, simkl, rating, votes, listed_at))
-			except:
-				from resources.lib.modules import log_utils
-				log_utils.error()
+			except Exception as e:
+				log_utils.log("Error inserting item: %s. Exception: %s" % (str(i), str(e)), 1)  # Log the problematic item
 		timestamp = datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%S.000Z")
 		dbcur.execute('''INSERT OR REPLACE INTO service Values (?, ?)''', ('last_watchlisted_at', timestamp))
 		dbcur.connection.commit()
 	except:
-		from resources.lib.modules import log_utils
+		
 		log_utils.error()
 	finally:
 		dbcur.close() ; dbcon.close()
@@ -211,13 +216,13 @@ def delete_watchList_items(items, table, col_name='simkl'):
 			try:
 				dbcur.execute('''DELETE FROM %s WHERE %s=?;''' % (table, col_name), (item,))
 			except:
-				from resources.lib.modules import log_utils
+				
 				log_utils.error()
 		timestamp = datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%S.000Z")
 		dbcur.execute('''INSERT OR REPLACE INTO service Values (?, ?)''', ('last_watchlisted_at', timestamp))
 		dbcur.connection.commit()
 	except:
-		from resources.lib.modules import log_utils
+		
 		log_utils.error()
 	finally:
 		dbcur.close() ; dbcon.close()
@@ -237,7 +242,7 @@ def fetch_history_list(table):
 			list = [{'title': i[0], 'year': i[1], 'premiered': i[2], 'imdb': i[3], 'tmdb': i[4], 'tvdb': i[5], 'simkl': i[6], 'rating': i[7], 'votes': i[8], 'added': i[9], 'lastplayed': i[10]} for i in match]
 		except: pass
 	except:
-		from resources.lib.modules import log_utils
+		
 		log_utils.error()
 	finally:
 		dbcur.close() ; dbcon.close()
@@ -253,6 +258,11 @@ def insert_history_list(items, table, new_sync=True):
 			dbcur.execute('''DELETE FROM %s''' % table)
 			dbcur.connection.commit() # added this for what looks like a 19 bug not found in 18, normal commit is at end
 			dbcur.execute('''VACUUM''')
+		type = items[0].get('show')
+		if type: type = 'Show'
+		else: type = 'Movie'
+		
+		log_utils.log('Simkl inserting history items. Number of items: %s Item Type: %s' % (len(items), type),1)
 		for i in items:
 			try:
 				if 'show' in i:
@@ -274,21 +284,19 @@ def insert_history_list(items, table, new_sync=True):
 				added_to_watchlist_at = i.get('added_to_watchlist_at')
 				last_watched_at = i.get('last_watched_at','')
 				if added_to_watchlist_at:
-					date_str = added_to_watchlist_at
+					dstr = added_to_watchlist_at
 				elif last_watched_at:
-					date_str = last_watched_at
+					dstr = last_watched_at
 				else:
-					date_str = datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ")
-				listed_at = datetime.strptime(date_str, "%Y-%m-%dT%H:%M:%SZ").strftime("%Y-%m-%dT%H:%M:%S.000Z")
+					dstr = datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%S.000Z")
+				listed_at = dstr
 				dbcur.execute('''INSERT OR REPLACE INTO %s Values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''' % table, (title, year, premiered, imdb, tmdb, tvdb, simkl, rating, votes, listed_at, last_watched_at))
-			except:
-				from resources.lib.modules import log_utils
-				log_utils.error()
+			except Exception as e:
+				log_utils.log("Error inserting item: %s. Exception: %s" % (str(i), str(e)), 1)  # Log the problematic item
 		timestamp = datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%S.000Z")
 		dbcur.execute('''INSERT OR REPLACE INTO service Values (?, ?)''', ('last_history_at', timestamp))
 		dbcur.connection.commit()
 	except:
-		from resources.lib.modules import log_utils
 		log_utils.error()
 	finally:
 		dbcur.close() ; dbcon.close()
@@ -307,13 +315,13 @@ def delete_history_items(items, table, col_name='simkl'):
 			try:
 				dbcur.execute('''DELETE FROM %s WHERE %s=?;''' % (table, col_name), (item,))
 			except:
-				from resources.lib.modules import log_utils
+				
 				log_utils.error()
 		timestamp = datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%S.000Z")
 		dbcur.execute('''INSERT OR REPLACE INTO service Values (?, ?)''', ('last_history_at', timestamp))
 		dbcur.connection.commit()
 	except:
-		from resources.lib.modules import log_utils
+		
 		log_utils.error()
 	finally:
 		dbcur.close() ; dbcon.close()
@@ -331,7 +339,7 @@ def last_sync(type):
 		else: dbcur.execute('''CREATE TABLE IF NOT EXISTS service (setting TEXT, value TEXT, UNIQUE(setting));''')
 		dbcur.connection.commit()
 	except:
-		from resources.lib.modules import log_utils
+		
 		log_utils.error()
 	finally:
 		dbcur.close() ; dbcon.close()
@@ -359,7 +367,7 @@ def delete_tables(tables):
 				dbcur.connection.commit()
 				cleared = True
 	except:
-		from resources.lib.modules import log_utils
+		
 		log_utils.error()
 		cleared = False
 	finally:
@@ -428,7 +436,7 @@ def get(function, duration, *args, simkl_id=None, data=None):
 			else: cache_insert(key, fresh_result)
 			return literal_eval(fresh_result)
 	except:
-		from resources.lib.modules import log_utils
+		
 		log_utils.error()
 		return None
 
@@ -444,7 +452,7 @@ def timeout(function, *args, returnNone=False):
 		if not result and returnNone: return None
 		else: return int(result['date']) if result else 0
 	except:
-		from resources.lib.modules import log_utils
+		
 		log_utils.error()
 		return None if returnNone else 0
 
@@ -454,7 +462,7 @@ def cache_existing(function, *args):
 		if cache_result: return literal_eval(cache_result['value'])
 		else: return None
 	except:
-		from resources.lib.modules import log_utils
+		
 		log_utils.error()
 		return None
 
@@ -467,7 +475,7 @@ def cache_get(key):
 		results = dbcur.execute('''SELECT * FROM watched WHERE key=?''', (key,)).fetchone()
 		return results
 	except:
-		from resources.lib.modules import log_utils
+		
 		log_utils.error()
 		return None
 	finally:
@@ -482,7 +490,7 @@ def cache_insert(key, value):
 		dbcur.execute('''INSERT OR REPLACE INTO watched Values (?, ?, ?)''', (key, value, now))
 		dbcur.connection.commit()
 	except:
-		from resources.lib.modules import log_utils
+		
 		log_utils.error()
 	finally:
 		dbcur.close() ; dbcon.close()
@@ -497,7 +505,7 @@ def remove(function, *args):
 			dbcur.execute('''DELETE FROM watched WHERE key=?''', (key,))
 			dbcur.connection.commit()
 	except:
-		from resources.lib.modules import log_utils
+		
 		log_utils.error()
 	try: dbcur.close() ; dbcon.close()
 	except: pass
@@ -517,7 +525,7 @@ def _generate_md5(*args):
 		hash = str(md5_hash.hexdigest())
 		return hash
 	except:
-		from resources.lib.modules import log_utils
+		
 		log_utils.error()
 
 def insert_syncSeasons_at():
@@ -529,7 +537,7 @@ def insert_syncSeasons_at():
 		dbcur.execute('''INSERT OR REPLACE INTO service Values (?, ?)''', ('last_syncSeasons_at', timestamp))
 		dbcur.connection.commit()
 	except:
-		from resources.lib.modules import log_utils
+		
 		log_utils.error()
 	finally:
 		dbcur.close() ; dbcon.close()
@@ -544,7 +552,7 @@ def insert_nextEpisode(imdb, tvdb, tmdb, simkl, next_episode):
 		dbcur.execute('''INSERT OR REPLACE INTO next_episodes Values (?, ?, ?, ?, ?, ?)''', (imdb, tvdb, tmdb, simkl, repr(next_episode), now))
 		dbcur.connection.commit()
 	except:
-		from resources.lib.modules import log_utils
+		
 		log_utils.error()
 	finally:
 		dbcur.close() ; dbcon.close()

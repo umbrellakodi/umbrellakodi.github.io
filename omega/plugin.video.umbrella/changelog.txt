@@ -1,4 +1,6 @@
-[B]Update - v6.7.388 - Feb 6th, 2025[/B]
+[B]Update - v6.7.389 - Feb 7th, 2025[/B]
+--[Change] Adjusted marking episodes as watched to simkl api bug fix.
+--[Change] Made simkl force a sync immediately on authorization.
 --[Change] Made change to background sync to include all status available from simkl instead of watching only.
 --[Change] Made change to account info in Simkl so information is cached.
 --[Change] Added confirmation windows when authorizing services to use for indicators if available.
