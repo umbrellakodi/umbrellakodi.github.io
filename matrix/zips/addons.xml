@@ -1,5 +1,5 @@
 <?xml version='1.0' encoding='utf-8'?>
-<addons><addon id="plugin.video.umbrella" name="Umbrella" provider-name="Umbrella" version="6.7.387">
+<addons><addon id="plugin.video.umbrella" name="Umbrella" provider-name="Umbrella" version="6.7.388">
 	<requires>
 		<import addon="xbmc.python" version="3.0.0" />
 		<import addon="script.module.requests" />
@@ -180,7 +180,7 @@
 			<screenshot>resources/screenshots/screenshot003.jpg</screenshot>
 		</assets>
 		<news>
-[B]Update - v6.7.387 - Feb 6th, 2025[/B]
+[B]Update - v6.7.388 - Feb 6th, 2025[/B]
 --[Change] Made change to background sync to include all status available from simkl instead of watching only.
 --[Change] Made change to account info in Simkl so information is cached.
 --[Change] Added confirmation windows when authorizing services to use for indicators if available.
@@ -204,7 +204,7 @@
 		</news>
 	</extension>
 
-</addon><addon id="plugin.video.youtube" name="YouTube" version="7.2.0+beta.4.unofficial.1" provider-name="anxdpanic, bromix, MoojMidge">
+</addon><addon id="plugin.video.youtube" name="YouTube" version="7.2.0+beta.5" provider-name="anxdpanic, bromix, MoojMidge">
     <requires>
         <import addon="xbmc.python" version="3.0.0" />
         <import addon="script.module.requests" version="2.27.1" />
@@ -317,22 +317,7 @@
         <disclaimer lang="vi_VN">Plugin này không được xác nhận bởi Google</disclaimer>
         <disclaimer lang="zh_CN">此插件未被谷歌认可</disclaimer>
         <disclaimer lang="zh_TW">此附加元件未由Google支持</disclaimer>
-    <news>## v7.2.0+beta.4
-### Fixed
-- Fix repeated subtitle queries/prompts
-- Fix always using video playlist even for audio items
-- Improve error handling and http server shutdown/restart
-
-### Changed
-- Disable http server idle shutdown on Linux systems
-- Fetch last updated subscription feeds first and fetch playlists feeds in My Subscriptions
-- Hide empty/unavailable standard playlists in channels
-- Store date added to playlist for playlist items
-- Add indication to Next page item if listing has been filtered
-
-### New
-- Add "Play recently added" context menu item to playlists
-  - Will play all videos added to the playlist in the last day</news></extension>
+    </extension>
 </addon><addon id="repository.umbrellakodi" name="Umbrella Kodi Repository" version="1.1" provider-name="Umbrella">
     <extension point="xbmc.addon.repository" name="Umbrella Kodi Repository">
         <dir minversion="19.0.0" maxversion="19.5.0">

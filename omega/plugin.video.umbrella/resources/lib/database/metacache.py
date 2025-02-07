@@ -59,7 +59,7 @@ def fetch(items, lang='en', user=''):
 								if trakt.getTraktIndicatorsInfo():
 									from resources.lib.database.traktsync import cache_existing
 									from resources.lib.modules.trakt import syncTVShows
-								elif simkl.getSimklIndicatorsInfo():
+								elif simkl.getSimKLIndicatorsInfo():
 									from resources.lib.database.simklsync import cache_existing
 									from resources.lib.modules.simkl import syncTVShows
 								imdb = item.get('imdb', '')
@@ -68,7 +68,7 @@ def fetch(items, lang='en', user=''):
 								if watching:
 									if trakt.getTraktIndicatorsInfo():
 										from resources.lib.modules.trakt import cachesyncSeasons
-									elif simkl.getSimklIndicatorsInfo():
+									elif simkl.getSimKLIndicatorsInfo():
 										from resources.lib.modules.simkl import cachesyncSeasons
 
 									cachesyncSeasons(imdb) # refreshes only shows you are "watching"

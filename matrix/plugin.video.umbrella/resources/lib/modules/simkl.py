@@ -312,9 +312,9 @@ def watch(content_type, name, imdb=None, tvdb=None, season=None, episode=None, r
 	if season and not episode: name = '%s-Season%s...' % (name, season)
 	if season and episode: name = '%s-S%sxE%02d...' % (name, season, int(episode))
 	if getSetting('simkl.general.notifications') == 'true':
-		if success is True: control.notification(title=32315, message=getLS(35502) % ('[COLOR %s]%s[/COLOR]' % (highlightColor, name)))
-		else: control.notification(title=32315, message=getLS(35504) % ('[COLOR %s]%s[/COLOR]' % (highlightColor, name)))
-	if not success: log_utils.log(getLS(35504) % name + ' : ids={imdb: %s, tvdb: %s}' % (imdb, tvdb), __name__, level=log_utils.LOGDEBUG)
+		if success is True: control.notification(title=40342, message=getLS(40561) % ('[COLOR %s]%s[/COLOR]' % (highlightColor, name)))
+		else: control.notification(title=40342, message=getLS(40560) % ('[COLOR %s]%s[/COLOR]' % (highlightColor, name)))
+	if not success: log_utils.log(getLS(40560) % name + ' : ids={imdb: %s, tvdb: %s}' % (imdb, tvdb), __name__, level=log_utils.LOGDEBUG)
 
 def unwatch(content_type, name, imdb=None, tvdb=None, season=None, episode=None, refresh=True):
 	control.busy()
@@ -338,9 +338,9 @@ def unwatch(content_type, name, imdb=None, tvdb=None, season=None, episode=None,
 	if season and not episode: name = '%s-Season%s...' % (name, season)
 	if season and episode: name = '%s-S%sxE%02d...' % (name, season, int(episode))
 	if getSetting('simkl.general.notifications') == 'true':
-		if success is True: control.notification(title=32315, message=getLS(35503) % ('[COLOR %s]%s[/COLOR]' % (highlightColor, name)))
-		else: control.notification(title=32315, message=getLS(35505) % ('[COLOR %s]%s[/COLOR]' % (highlightColor, name)))
-	if not success: log_utils.log(getLS(35505) % name + ' : ids={imdb: %s, tvdb: %s}' % (imdb, tvdb), __name__, level=log_utils.LOGDEBUG)
+		if success is True: control.notification(title=40342, message=getLS(40563) % ('[COLOR %s]%s[/COLOR]' % (highlightColor, name)))
+		else: control.notification(title=40342, message=getLS(40562) % ('[COLOR %s]%s[/COLOR]' % (highlightColor, name)))
+	if not success: log_utils.log(getLS(40562) % name + ' : ids={imdb: %s, tvdb: %s}' % (imdb, tvdb), __name__, level=log_utils.LOGDEBUG)
 
 def getSimKLCredentialsInfo():
 	token = getSetting('simkltoken')
@@ -462,16 +462,15 @@ def markEpisodeAsWatched(imdb, tvdb, season, episode):
 			control.sleep(1000)
 			result = simkl.post_request('/sync/history', {"shows": [{"seasons": [{"episodes": [{"number": episode}], "number": season}], "ids": {"imdb": tvdb}}]})
 			if not result: result = False
-			result = result['added']['episodes'] !=0
+			result = result['added']['shows'] !=0
 		else:
-			result = result['added']['episodes'] !=0
+			result = result['added']['shows'] !=0
 		if getSetting('debug.level') == '1':
 			log_utils.log('SimKL markEpisodeAsWatched IMDB: %s TVDB: %s Season: %s Episode: %s Result: %s' % (imdb, tvdb, season, episode, result), level=log_utils.LOGDEBUG)
 		return result
 	except: log_utils.error()
 
 def markEpisodeAsNotWatched(imdb, tvdb, season, episode):
-
 	try:
 		season, episode = int('%01d' % int(season)), int('%01d' % int(episode))
 		from resources.lib.modules import simkl
@@ -703,7 +702,7 @@ def getWatchListedActivity(activities=None):
 		activity.append(i['movies']['plantowatch'])
 		activity.append(i['tv_shows']['plantowatch'])
 		if len(activity) == 0: return 0
-		activity = [datetime.strptime(dt, "%Y-%m-%dT%H:%M:%SZ").strftime("%Y-%m-%dT%H:%M:%S.000Z") for dt in activity]
+		activity = [datetime.strptime(dt, "%Y-%m-%dT%H:%M:%SZ").strftime("%Y-%m-%dT%H:%M:%S.000Z") for dt in activity] if activity else []
 		activity = [int(cleandate.iso_2_utc(i)) for i in activity]
 		activity = sorted(activity, key=int)[-1]
 		return activity
@@ -720,7 +719,7 @@ def getHistoryListedActivity(activities=None):
 		activity.append(i['movies']['completed'])
 		activity.append(i['tv_shows']['completed'])
 		if len(activity) == 0: return 0
-		activity = [datetime.strptime(dt, "%Y-%m-%dT%H:%M:%SZ").strftime("%Y-%m-%dT%H:%M:%S.000Z") for dt in activity]
+		activity = [datetime.strptime(dt, "%Y-%m-%dT%H:%M:%SZ").strftime("%Y-%m-%dT%H:%M:%S.000Z") for dt in activity] if activity else []
 		activity = [int(cleandate.iso_2_utc(i)) for i in activity]
 		activity = sorted(activity, key=int)[-1]
 		return activity
@@ -736,7 +735,7 @@ def getEpisodesWatchedActivity(activities=None):
 		activity = []
 		activity.append(i['tv_shows']['all'])
 		if len(activity) == 0: return 0
-		activity = [datetime.strptime(dt, "%Y-%m-%dT%H:%M:%SZ").strftime("%Y-%m-%dT%H:%M:%S.000Z") for dt in activity]
+		activity = [datetime.strptime(dt, "%Y-%m-%dT%H:%M:%SZ").strftime("%Y-%m-%dT%H:%M:%S.000Z") for dt in activity] if activity else []
 		activity = [int(cleandate.iso_2_utc(i)) for i in activity]
 		activity = sorted(activity, key=int)[-1]
 		return activity
@@ -753,7 +752,7 @@ def getMoviesWatchedActivity(activities=None):
 		activity = []
 		activity.append(i['movies']['completed'])
 		if len(activity) == 0: return 0
-		activity = [datetime.strptime(dt, "%Y-%m-%dT%H:%M:%SZ").strftime("%Y-%m-%dT%H:%M:%S.000Z") for dt in activity]
+		activity = [datetime.strptime(dt, "%Y-%m-%dT%H:%M:%SZ").strftime("%Y-%m-%dT%H:%M:%S.000Z") for dt in activity] if activity else []
 		activity = [int(cleandate.iso_2_utc(i)) for i in activity]
 		activity = sorted(activity, key=int)[-1]
 		return activity

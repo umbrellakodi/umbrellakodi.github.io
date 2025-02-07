@@ -180,7 +180,10 @@ def insert_watch_list(items, table, new_sync=True):
 				simkl = ids.get('simkl', '')
 				rating = item.get('rating', '')
 				votes = item.get('votes', '')
-				listed_at = datetime.strptime(i.get('added_to_watchlist_at'), "%Y-%m-%dT%H:%M:%SZ").strftime("%Y-%m-%dT%H:%M:%S.000Z")
+				date_str = i.get('added_to_watchlist_at')
+				if not date_str:  # Check if it's missing or blank
+					date_str = datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ")
+				listed_at = datetime.strptime(date_str, "%Y-%m-%dT%H:%M:%SZ").strftime("%Y-%m-%dT%H:%M:%S.000Z")
 				dbcur.execute('''INSERT OR REPLACE INTO %s Values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''' % table, (title, year, premiered, imdb, tmdb, tvdb, simkl, rating, votes, listed_at))
 			except:
 				from resources.lib.modules import log_utils
@@ -268,8 +271,15 @@ def insert_history_list(items, table, new_sync=True):
 				simkl = ids.get('simkl', '')
 				rating = item.get('rating', '')
 				votes = item.get('votes', '')
-				listed_at = datetime.strptime(i.get('added_to_watchlist_at'), "%Y-%m-%dT%H:%M:%SZ").strftime("%Y-%m-%dT%H:%M:%S.000Z")
+				added_to_watchlist_at = i.get('added_to_watchlist_at')
 				last_watched_at = i.get('last_watched_at','')
+				if added_to_watchlist_at:
+					date_str = added_to_watchlist_at
+				elif last_watched_at:
+					date_str = last_watched_at
+				else:
+					date_str = datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ")
+				listed_at = datetime.strptime(date_str, "%Y-%m-%dT%H:%M:%SZ").strftime("%Y-%m-%dT%H:%M:%S.000Z")
 				dbcur.execute('''INSERT OR REPLACE INTO %s Values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''' % table, (title, year, premiered, imdb, tmdb, tvdb, simkl, rating, votes, listed_at, last_watched_at))
 			except:
 				from resources.lib.modules import log_utils

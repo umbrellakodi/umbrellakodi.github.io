@@ -5182,3 +5182,19 @@ msgstr ""
 msgctxt "#40559"
 msgid "[B]SETTINGS[/B] : Simkl"
 msgstr ""
+
+msgctxt "#40560"
+msgid "%s Failed to Mark As Watched On Simkl"
+msgstr ""
+
+msgctxt "#40561"
+msgid "%s Marked As Watched On Simkl"
+msgstr ""
+
+msgctxt "#40562"
+msgid "%s Failed to Mark As Unwatched On Simkl"
+msgstr ""
+
+msgctxt "#40563"
+msgid "%s Marked As Unwatched On Simkl"
+msgstr ""
