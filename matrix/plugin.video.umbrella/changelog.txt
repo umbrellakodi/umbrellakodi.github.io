@@ -1,4 +1,5 @@
 [B]Update - v6.7.389 - Feb 7th, 2025[/B]
+--[Fix] Fixed errors in code causing activity checks to return 0 or null.
 --[Change] Adjusted marking episodes as watched to simkl api bug fix.
 --[Change] Made simkl force a sync immediately on authorization.
 --[Change] Made change to background sync to include all status available from simkl instead of watching only.

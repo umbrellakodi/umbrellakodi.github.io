@@ -1,4 +1,4 @@
-<addon id="plugin.video.umbrella" name="Umbrella" provider-name="Umbrella" version="6.7.389">
+<addon id="plugin.video.umbrella" name="Umbrella" provider-name="Umbrella" version="6.7.390">
 	<requires>
 		<import addon="xbmc.python" version="3.0.0"/>
 		<import addon="script.module.requests"/>
@@ -179,7 +179,8 @@
 			<screenshot>resources/screenshots/screenshot003.jpg</screenshot>
 		</assets>
 		<news>
-[B]Update - v6.7.389 - Feb 7th, 2025[/B]
+[B]Update - v6.7.390 - Feb 7th, 2025[/B]
+--[Fix] Fixed errors in code causing activity checks to return 0 or null.
 --[Change] Adjusted marking episodes as watched to simkl api bug fix.
 --[Change] Made simkl force a sync immediately on authorization.
 --[Change] Made change to background sync to include all status available from simkl instead of watching only.

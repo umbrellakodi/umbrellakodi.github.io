@@ -16,7 +16,7 @@ from urllib.parse import urljoin
 from resources.lib.modules import cleandate
 import json
 from itertools import islice
-
+import time
 
 getLS = control.lang
 getSetting = control.setting
@@ -686,14 +686,18 @@ def getProgressActivity(activities=None):
 		if activities: i = activities
 		else: i = getSimklAsJson('/sync/last_activities')
 		if not i: return 0
-		i = json.loads(i)
-		activity = []
-		activity.append(i['tv_shows']['watching'])
-		if not activity: return 0
-		activity = [datetime.strptime(dt, "%Y-%m-%dT%H:%M:%SZ").strftime("%Y-%m-%dT%H:%M:%S.000Z") for dt in activity] if activity else []
-		activity = [int(cleandate.iso_2_utc(i)) for i in activity]
-		activity = sorted(activity, key=int)[-1]
-		return activity
+		activities_dict = json.loads(i)
+		tv_shows_watching = activities_dict["tv_shows"].get("watching")
+		if not tv_shows_watching:
+			return 0
+		try:
+			# First attempt using datetime.strptime
+			#watching_timestamp = int(datetime.strptime(tv_shows_watching[:-1], "%Y-%m-%dT%H:%M:%S").timestamp())
+			refdatim = datetime.fromtimestamp(time.mktime(time.strptime(tv_shows_watching[:-1], "%Y-%m-%dT%H:%M:%S")))
+			watching_timestamp = int(refdatim.timestamp())
+		except Exception as e:
+			log_utils.error('Exception in getProgressActivity: %s' % str(e), log_utils.LOGINFO)
+		return watching_timestamp
 	except: 
 		log_utils.error() 
 		return 0
@@ -703,15 +707,22 @@ def getWatchListedActivity(activities=None):
 		if activities: i = activities
 		else: i = getSimklAsJson('/sync/last_activities')
 		if not i: return 0
-		i = json.loads(i)
-		activity = []
-		activity.append(i['movies']['plantowatch'])
-		activity.append(i['tv_shows']['plantowatch'])
-		if not activity: return 0
-		activity = [datetime.strptime(dt, "%Y-%m-%dT%H:%M:%SZ").strftime("%Y-%m-%dT%H:%M:%S.000Z") for dt in activity] if activity else []
-		activity = [int(cleandate.iso_2_utc(i)) for i in activity]
-		activity = sorted(activity, key=int)[-1]
-		return activity
+		activities_dict = json.loads(i)
+		movies_plantowatch = activities_dict["movies"].get("plantowatch")
+		tv_shows_plantowatch = activities_dict["tv_shows"].get("plantowatch")
+		timestamps = []
+		for dt in [movies_plantowatch, tv_shows_plantowatch]:
+			if dt:
+				try:
+					#timestamps.append(datetime.strptime(dt[:-1], "%Y-%m-%dT%H:%M:%S"))
+					timestamps.append(datetime.fromtimestamp(time.mktime(time.strptime(dt[:-1], "%Y-%m-%dT%H:%M:%S"))))
+				except Exception as e:
+					log_utils.error('Exception in getWatchListedActivity: %s' % str(e), log_utils.LOGINFO)
+					
+		newest_timestamp = int(max(timestamps).timestamp()) if timestamps else None
+		if not newest_timestamp:
+			return 0
+		return newest_timestamp
 	except: 
 		return 0
 
@@ -720,15 +731,21 @@ def getHistoryListedActivity(activities=None):
 		if activities: i = activities
 		else: i = getSimklAsJson('/sync/last_activities')
 		if not i: return 0
-		i = json.loads(i)
-		activity = []
-		activity.append(i['movies']['completed'])
-		activity.append(i['tv_shows']['completed'])
-		if not activity: return 0
-		activity = [datetime.strptime(dt, "%Y-%m-%dT%H:%M:%SZ").strftime("%Y-%m-%dT%H:%M:%S.000Z") for dt in activity] if activity else []
-		activity = [int(cleandate.iso_2_utc(i)) for i in activity]
-		activity = sorted(activity, key=int)[-1]
-		return activity
+		activities_dict = json.loads(i)
+		movies_completed = activities_dict["movies"].get("completed")
+		tv_shows_completed = activities_dict["tv_shows"].get("completed")
+		timestamps = []
+		for dt in [movies_completed, tv_shows_completed]:
+			if dt:
+				try:
+					#timestamps.append(datetime.strptime(dt[:-1], "%Y-%m-%dT%H:%M:%S"))
+					timestamps.append(datetime.fromtimestamp(time.mktime(time.strptime(dt[:-1], "%Y-%m-%dT%H:%M:%S"))))
+				except Exception as e:
+					log_utils.error('Exception in getHistoryListedActivity: %s' % str(e), log_utils.LOGINFO)
+		newest_timestamp = int(max(timestamps).timestamp()) if timestamps else None
+		if not newest_timestamp:
+			return 0
+		return newest_timestamp
 	except: 
 		return 0
 
@@ -737,14 +754,17 @@ def getEpisodesWatchedActivity(activities=None):
 		if activities: i = activities
 		else: i = getSimklAsJson('/sync/last_activities')
 		if not i: return 0
-		i = json.loads(i)
-		activity = []
-		activity.append(i['tv_shows']['all'])
-		if not activity: return 0
-		activity = [datetime.strptime(dt, "%Y-%m-%dT%H:%M:%SZ").strftime("%Y-%m-%dT%H:%M:%S.000Z") for dt in activity] if activity else []
-		activity = [int(cleandate.iso_2_utc(i)) for i in activity]
-		activity = sorted(activity, key=int)[-1]
-		return activity
+		activities_dict = json.loads(i)
+		tv_shows_watching = activities_dict["tv_shows"].get("all")
+		try:
+			# First attempt using datetime.strptime
+			refdatim = datetime.fromtimestamp(time.mktime(time.strptime(tv_shows_watching[:-1], "%Y-%m-%dT%H:%M:%S")))
+			watching_timestamp = int(refdatim.timestamp())
+		except Exception as e:
+			log_utils.error('Exception in getEpisodesWatchedActivity: %s' % str(e), log_utils.LOGINFO)
+		if not watching_timestamp:
+			return 0
+		return watching_timestamp
 	except: 
 		log_utils.error() 
 		return 0
@@ -754,14 +774,18 @@ def getMoviesWatchedActivity(activities=None):
 		if activities: i = activities
 		else: i = getSimklAsJson('/sync/last_activities')
 		if not i: return 0
-		i = json.loads(i)
-		activity = []
-		activity.append(i['movies']['completed'])
-		if not activity: return 0
-		activity = [datetime.strptime(dt, "%Y-%m-%dT%H:%M:%SZ").strftime("%Y-%m-%dT%H:%M:%S.000Z") for dt in activity] if activity else []
-		activity = [int(cleandate.iso_2_utc(i)) for i in activity]
-		activity = sorted(activity, key=int)[-1]
-		return activity
+		activities_dict = json.loads(i)
+		movies_watching = activities_dict["movies"].get("completed")
+		try:
+			refdatim = datetime.fromtimestamp(time.mktime(time.strptime(movies_watching[:-1], "%Y-%m-%dT%H:%M:%S")))
+			watching_timestamp = int(refdatim.timestamp())
+			#watching_timestamp = int(datetime.strptime(movies_watching[:-1], "%Y-%m-%dT%H:%M:%S").timestamp())
+		except Exception as e:
+			log_utils.error('Exception in getMoviesWatchedActivity: %s' % str(e), log_utils.LOGINFO)
+
+		if not watching_timestamp:
+			return 0
+		return watching_timestamp
 	except: 
 		log_utils.error() 
 		return 0
