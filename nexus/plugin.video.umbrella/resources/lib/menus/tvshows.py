@@ -88,6 +88,7 @@ class TVshows:
 		self.simklhistory_link = 'https://api.simkl.com/history/shows?limit=%s&page=1' % self.page_limit
 		self.simklonhold_link = 'https://api.simkl.com/onhold/shows?limit=%s&page=1' % self.page_limit
 		self.simklwatching_link = 'https://api.simkl.com/watching/shows?limit=%s&page=1' % self.page_limit
+		self.simklprogress_link = 'https://api.simkl.com/progress/shows?limit=%s&page=1' % self.page_limit
 		self.traktcollection_link = 'https://api.trakt.tv/users/me/collection/shows?limit=%s&page=1' % self.page_limit # this is now a dummy link for pagination to work
 		self.traktlist_link = 'https://api.trakt.tv/users/%s/lists/%s/items/shows?limit=%s&page=1' % ('%s', '%s', self.page_limit) # local pagination, limit and page used to advance, pulled from request
 		self.progress_link = 'https://api.trakt.tv/sync/watched/shows?extended=noseasons'
@@ -159,6 +160,7 @@ class TVshows:
 		self.useContainerTitles = getSetting('enable.containerTitles') == 'true'
 		self.is_widget = 'plugin' not in control.infoLabel('Container.PluginName')
 		self.simkl_link = 'https://api.simkl.com'
+		self.prefer_fanArt = getSetting('prefer.fanarttv') == 'true'
 
 	def get(self, url, idx=True, create_directory=True, folderName=''):
 		self.list = []
@@ -1948,7 +1950,13 @@ class TVshows:
 				if settingFanart:
 					if self.prefer_tmdbArt: fanart = meta.get('fanart3') or meta.get('fanart') or meta.get('fanart2') or addonFanart
 					else: fanart = meta.get('fanart2') or meta.get('fanart3') or meta.get('fanart') or addonFanart
-				thumb = meta.get('thumb') or poster or landscape
+				#thumb = meta.get('thumb') or poster or landscape
+				if self.prefer_fanArt:
+					if fanart: thumb = fanart or meta.get('thumb') or poster or landscape
+					else:
+						thumb = meta.get('fanart') or meta.get('thumb') or poster or landscape
+				else:
+					thumb = meta.get('thumb') or poster or landscape
 				icon = meta.get('icon') or poster
 				banner = meta.get('banner3') or meta.get('banner2') or meta.get('banner') or None #changed due to some skins using banner.
 				art = {}

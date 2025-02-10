@@ -5206,3 +5206,7 @@ msgstr ""
 msgctxt "#40565"
 msgid "Unwatched in Online Services"
 msgstr ""
+
+msgctxt "#40566"
+msgid "Use Fanart for Thumbs"
+msgstr ""

@@ -69,6 +69,7 @@ class Episodes:
 		self.useFullContext = getSetting('enable.umbrellawidgetcontext') == 'true'
 		self.useContainerTitles = getSetting('enable.containerTitles') == 'true'
 		self.simkl_link = 'https://api.simkl.com'
+		self.prefer_fanArt = getSetting('prefer.fanarttv') == 'true'
 
 	def get(self, tvshowtitle, year, imdb, tmdb, tvdb, meta, season=None, episode=None, create_directory=True):
 		self.list = []
@@ -845,9 +846,9 @@ class Episodes:
 		return items
 
 	def simkl_progress_list(self, url, direct=False, upcoming=False):
-		#https://api.simkl.com/sync/watched?extended=full
+		#https://api.simkl.com/sync/all-items/shows/watching?extended=full
 		try:
-			#url += '/sync/watched?extended=full'
+			url = '/sync/all-items/shows/watching?extended=full'
 			result = simkl.getSimklAsJson(url)
 		except: return
 		items = []
@@ -855,7 +856,8 @@ class Episodes:
 		for item in result:
 			try:
 				values = {} ; num_1 = 0
-				season_sort = sorted(item['seasons'][:], key=lambda k: k['number'], reverse=False) # simkl sometimes places season0 at end and episodes out of order. So we sort it to be sure.
+				#season_sort = sorted(item['seasons'][:], key=lambda k: k['number'], reverse=False) # simkl sometimes places season0 at end and episodes out of order. So we sort it to be sure.
+				season_sort = sorted(item.get('seasons', []), key=lambda k: k.get('number', 0), reverse=False)
 				values['snum'] = season_sort[-1]['number']
 				episode = [x for x in season_sort[-1]['episodes'] if 'number' in x]
 				episode = sorted(episode, key=lambda x: x['number'])
@@ -1148,14 +1150,21 @@ class Episodes:
 				landscape = meta.get('landscape')
 				fanart = ''
 				if settingFanart:
-					if self.prefer_tmdbArt: fanart = meta.get('fanart3') or meta.get('fanart') or meta.get('fanart2') or addonFanart
-					else: fanart = meta.get('fanart2') or meta.get('fanart3') or meta.get('fanart') or addonFanart
+					fanart = (
+						meta.get("fanart3") or meta.get("fanart") or meta.get("fanart2") or addonFanart
+						if self.prefer_tmdbArt
+						else meta.get("fanart2") or meta.get("fanart3") or meta.get("fanart") or addonFanart
+					)
+				if self.prefer_fanArt:
+					thumb = fanart or meta.get("thumb") or landscape or season_poster
+				else:
+					thumb = meta.get("thumb") or landscape or fanart or season_poster
 				if isUnaired:
-					thumb = landscape or fanart or season_poster
+					thumb = (fanart if self.prefer_fanArt else landscape) or season_poster
 					icon = season_poster or poster
 				else:
-					thumb = meta.get('thumb') or landscape or fanart or season_poster
-					icon = meta.get('icon') or season_poster or poster
+					thumb = meta.get("thumb") or landscape or fanart or season_poster
+					icon = meta.get("icon") or season_poster or poster
 				banner = meta.get('banner') or addonBanner
 				art = {}
 				art.update({'poster': season_poster, 'tvshow.poster': poster, 'season.poster': season_poster, 'fanart': fanart, 'icon': icon, 'thumb': thumb, 'banner': banner,

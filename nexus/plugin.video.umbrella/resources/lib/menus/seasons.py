@@ -38,6 +38,7 @@ class Seasons:
 		self.hide_watched_in_widget = getSetting('enable.umbrellahidewatched') == 'true'
 		self.useFullContext = getSetting('enable.umbrellawidgetcontext') == 'true'
 		self.highlight_color = getSetting('highlight.color')
+		self.prefer_fanArt = getSetting('prefer.fanarttv') == 'true'
 
 	def get(self, tvshowtitle, year, imdb, tmdb, tvdb, art, idx=True, create_directory=True): # may need to add a cache duration over-ride param to pass
 		self.list = []
@@ -183,6 +184,12 @@ class Seasons:
 				if settingFanart: fanart = meta.get('fanart') or addonFanart
 				if settingFanart: landscape = meta.get('landscape2')
 				else: landscape = meta.get('landscape')
+				if self.prefer_fanArt:
+					if fanart: thumb = fanart or season_poster
+					else:
+						thumb = meta.get('fanart') or season_poster
+				else:
+					thumb = season_poster
 				thumb = season_poster
 				icon = meta.get('icon') or poster
 				banner = meta.get('banner') or addonBanner
