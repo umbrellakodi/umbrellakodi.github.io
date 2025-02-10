@@ -1021,9 +1021,11 @@ class Episodes:
 			airLabel = getLS(35032)
 		if play_mode == '1' or enable_playnext: playbackMenu = getLS(32063)
 		else: playbackMenu = getLS(32064)
-		if trakt.getTraktIndicatorsInfo():
+		if trakt.getTraktCredentialsInfo() and simkl.getSimKLCredentialsInfo():
+			watchedMenu, unwatchedMenu = getLS(40564), getLS(40565)
+		elif trakt.getTraktCredentialsInfo():
 			watchedMenu, unwatchedMenu = getLS(32068), getLS(32069)
-		elif simkl.getSimKLIndicatorsInfo():
+		elif simkl.getSimKLCredentialsInfo():
 			watchedMenu, unwatchedMenu = getLS(40554), getLS(40555)
 		else:
 			watchedMenu, unwatchedMenu = getLS(32066), getLS(32067)

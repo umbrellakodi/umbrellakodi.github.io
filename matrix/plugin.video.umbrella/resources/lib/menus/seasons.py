@@ -141,9 +141,11 @@ class Seasons:
 		is_widget = 'plugin' not in control.infoLabel('Container.PluginName')
 		settingFanart = getSetting('fanart') == 'true'
 		addonPoster, addonFanart, addonBanner = control.addonPoster(), control.addonFanart(), control.addonBanner()
-		if trakt.getTraktIndicatorsInfo():
+		if trakt.getTraktCredentialsInfo() and simkl.getSimKLCredentialsInfo():
+			watchedMenu, unwatchedMenu = getLS(40564), getLS(40565)
+		elif trakt.getTraktCredentialsInfo():
 			watchedMenu, unwatchedMenu = getLS(32068), getLS(32069)
-		elif simkl.getSimKLIndicatorsInfo():
+		elif simkl.getSimKLCredentialsInfo():
 			watchedMenu, unwatchedMenu = getLS(40554), getLS(40555)
 		else:
 			watchedMenu, unwatchedMenu = getLS(32066), getLS(32067)

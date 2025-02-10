@@ -1,5 +1,5 @@
 <?xml version='1.0' encoding='utf-8'?>
-<addons><addon id="plugin.video.umbrella" name="Umbrella" provider-name="Umbrella" version="6.7.390">
+<addons><addon id="plugin.video.umbrella" name="Umbrella" provider-name="Umbrella" version="6.7.391">
 	<requires>
 		<import addon="xbmc.python" version="3.0.0" />
 		<import addon="script.module.requests" />
@@ -180,7 +180,11 @@
 			<screenshot>resources/screenshots/screenshot003.jpg</screenshot>
 		</assets>
 		<news>
-[B]Update - v6.7.390 - Feb 7th, 2025[/B]
+[B]Update - v6.7.391 - Feb 9th, 2025[/B]
+--[Change] Trakt and Simkl can now be used simultaneously. You will need to select 1 of the 2 services for indicators, but both will mark watched or unwatched when authenticated.
+--[Change] Marking a movie or show watched now removes it from the plan to watch or hold list on Simkl.
+--[Change] TV Shows Simkl added Watching, Completed, Plan to Watch, Dropped, and Hold.
+--[Change] Movies Simkl added Completed, Plan to Watch, Dropped
 --[Fix] Fixed errors in code causing activity checks to return 0 or null.
 --[Change] Adjusted marking episodes as watched to simkl api bug fix.
 --[Change] Made simkl force a sync immediately on authorization.

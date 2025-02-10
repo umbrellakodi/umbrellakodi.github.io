@@ -5198,3 +5198,11 @@ msgstr ""
 msgctxt "#40563"
 msgid "%s Marked As Unwatched On Simkl"
 msgstr ""
+
+msgctxt "#40564"
+msgid "Watched in Online Services"
+msgstr ""
+
+msgctxt "#40565"
+msgid "Unwatched in Online Services"
+msgstr ""

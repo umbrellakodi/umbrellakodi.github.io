@@ -231,7 +231,7 @@ class VersionIsUpdateCheck:
 											'public_lists': False, 'shows_collection': False, 'shows_watchlist': False, 'trending_lists': False, 'user_lists': False, 'watched': False}
 					cleared = traktsync.delete_tables(clr_traktSync)
 					from resources.lib.database import simklsync
-					clr_simklsync = {'bookmarks': True, 'movies_watchlist': True, 'shows_watchlist': True, 'watched': True, 'movies_history': True, 'shows_history': True}
+					clr_simklsync = {'movies_plantowatch': True, 'shows_plantowatch': True, 'shows_watching': True, 'shows_hold': True, 'movies_dropped': True, 'shows_dropped': True, 'watched': True, 'movies_completed': True, 'shows_completed': True}
 					cleared2 = simklsync.delete_tables(clr_simklsync)
 					if cleared:
 						control.notification(message='Forced traktsync clear for version update complete.')

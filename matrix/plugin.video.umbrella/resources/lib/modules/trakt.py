@@ -105,7 +105,8 @@ def re_auth(headers):
 				control.notification(title=32315, message=33677)
 				return False
 			token, refresh = response['access_token'], response['refresh_token']
-			expires = str(time() + 7776000)
+			#expires = str(time() + 7776000)
+			expires = str(time() + 86400) #new 24 hour token
 			control.homeWindow.setProperty('umbrella.updateSettings', 'false')
 			setSetting('trakt.isauthed', 'true')
 			setSetting('trakt.user.token', token)
@@ -129,7 +130,8 @@ def traktAuth(fromSettings=0):
 		deviceCode = getTraktDeviceToken(traktDeviceCode)
 		if deviceCode:
 			deviceCode = deviceCode.json()
-			expires_at = time.time() + 7776000
+			#expires_at = time.time() + 7776000
+			expires_at = time.time() + 86400 #new value for 24 hours.
 			control.homeWindow.setProperty('umbrella.updateSettings', 'false')
 			control.setSetting('trakt.token.expires', str(expires_at))
 			control.setSetting('trakt.user.token', deviceCode["access_token"])

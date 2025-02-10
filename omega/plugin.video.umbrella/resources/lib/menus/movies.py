@@ -131,6 +131,7 @@ class Movies:
 		self.traktlikedlists_link = 'https://api.trakt.tv/users/likes/lists?limit=1000000' # used by library import only
 		self.traktwatchlist_link = 'https://api.trakt.tv/users/me/watchlist/movies?limit=%s&page=1' % self.page_limit # this is now a dummy link for pagination to work
 		self.simklwatchlist_link = 'https://api.simkl.com/watchlist/movies?limit=%s&page=1' % self.page_limit # this is now a dummy link for pagination to work
+		self.simkldropped_link = 'https://api.simkl.com/dropped/movies?limit=%s&page=1' % self.page_limit # this is now a dummy link for pagination to work
 		self.simklhistory_link = 'https://api.simkl.com/history/movies?limit=%s&page=1' % self.page_limit # this is now a dummy link for pagination to work
 		self.traktcollection_link = 'https://api.trakt.tv/users/me/collection/movies?limit=%s&page=1' % self.page_limit # this is now a dummy link for pagination to work
 		self.trakthistory_link = 'https://api.trakt.tv/users/me/history/movies?limit=%s&page=1' % self.page_limit
@@ -204,8 +205,9 @@ class Movies:
 			elif u in self.search_tmdb_link and url != 'tmdbrecentday' and url != 'tmdbrecentweek' and url != 'favourites_movies':
 				return self.getTMDb(url, folderName=folderName)
 			elif u in self.simkltrendingweek_link or u in self.simkltrendingmonth_link or u in self.simkltrendingtoday_link:
-				if 'history' in url: return self.simklHistory(url, folderName=folderName)
-				if 'watchlist' in url: return self.simklWatchlist(url, folderName=folderName)
+				if 'history' in url: return self.simklCompleted(url, folderName=folderName)
+				if 'watchlist' in url: return self.simklPlantowatch(url, folderName=folderName)
+				if 'dropped' in url: return self.simklDropped(url, folderName=folderName)
 				else:
 					return self.getSimkl(url, folderName=folderName)
 			elif u in self.trakt_link and '/users/' in url:
@@ -1153,7 +1155,7 @@ class Movies:
 			from resources.lib.modules import log_utils
 			log_utils.error()
 
-	def simklWatchlist(self, url, create_directory=True, folderName=''):
+	def simklPlantowatch(self, url, create_directory=True, folderName=''):
 		self.list = []
 		try:
 			try:
@@ -1161,7 +1163,7 @@ class Movies:
 				index = int(q['page']) - 1
 			except:
 				q = dict(parse_qsl(urlsplit(url).query))
-			self.list = simklsync.fetch_watch_list('movies_watchlist')
+			self.list = simklsync.fetch_plantowatch('movies_plantowatch')
 			useNext = True
 			if create_directory:
 				self.sort(type='movies.watchlist') # sort before local pagination
@@ -1187,7 +1189,7 @@ class Movies:
 			
 			log_utils.error()
 
-	def simklHistory(self, url, create_directory=True, folderName=''):
+	def simklCompleted(self, url, create_directory=True, folderName=''):
 		self.list = []
 		try:
 			try:
@@ -1195,10 +1197,44 @@ class Movies:
 				index = int(q['page']) - 1
 			except:
 				q = dict(parse_qsl(urlsplit(url).query))
-			self.list = simklsync.fetch_history_list('movies_history')
+			self.list = simklsync.fetch_completed('movies_completed')
 			useNext = True
 			if create_directory:
 				self.sort(type='movies.history') # sort before local pagination
+				if getSetting('simkl.paginate.lists') == 'true' and self.list:
+					if len(self.list) == int(self.page_limit):
+						useNext = False
+					paginated_ids = [self.list[x:x + int(self.page_limit)] for x in range(0, len(self.list), int(self.page_limit))]
+					self.list = paginated_ids[index]
+			try:
+				if useNext == False: raise Exception()
+				if int(q['limit']) != len(self.list): raise Exception()
+				q.update({'page': str(int(q['page']) + 1)})
+				q = (urlencode(q)).replace('%2C', ',')
+				next = url.replace('?' + urlparse(url).query, '') + '?' + q
+				next = next + '&folderName=%s' % quote_plus(folderName)
+			except: next = ''
+			for i in range(len(self.list)): self.list[i]['next'] = next
+			self.worker()
+			if self.list is None: self.list = []
+			if create_directory: self.movieDirectory(self.list, folderName=folderName)
+			return self.list
+		except:
+			
+			log_utils.error()
+
+	def simklDropped(self, url, create_directory=True, folderName=''):
+		self.list = []
+		try:
+			try:
+				q = dict(parse_qsl(urlsplit(url).query))
+				index = int(q['page']) - 1
+			except:
+				q = dict(parse_qsl(urlsplit(url).query))
+			self.list = simklsync.fetch_dropped('movies_dropped')
+			useNext = True
+			if create_directory:
+				self.sort() # sort before local pagination
 				if getSetting('simkl.paginate.lists') == 'true' and self.list:
 					if len(self.list) == int(self.page_limit):
 						useNext = False
@@ -2021,9 +2057,14 @@ class Movies:
 		indicators = getMovieIndicators() # refresh not needed now due to service sync
 		if play_mode == '1': playbackMenu = getLS(32063)
 		else: playbackMenu = getLS(32064)
-		if trakt.getTraktIndicatorsInfo(): watchedMenu, unwatchedMenu = getLS(32068), getLS(32069)
-		elif simkl.getSimKLIndicatorsInfo(): watchedMenu, unwatchedMenu = getLS(40554), getLS(40555)
-		else: watchedMenu, unwatchedMenu = getLS(32066), getLS(32067)
+		if trakt.getTraktCredentialsInfo() and simkl.getSimKLCredentialsInfo():
+			watchedMenu, unwatchedMenu = getLS(40564), getLS(40565)
+		elif trakt.getTraktCredentialsInfo():
+			watchedMenu, unwatchedMenu = getLS(32068), getLS(32069)
+		elif simkl.getSimKLCredentialsInfo():
+			watchedMenu, unwatchedMenu = getLS(40554), getLS(40555)
+		else:
+			watchedMenu, unwatchedMenu = getLS(32066), getLS(32067)
 		playlistManagerMenu, queueMenu, trailerMenu = getLS(35522), getLS(32065), getLS(40431)
 		traktManagerMenu, addToLibrary, addToFavourites, removeFromFavourites = getLS(32070), getLS(32551), getLS(40463), getLS(40468)
 		nextMenu, clearSourcesMenu = getLS(32053), getLS(32611)
@@ -2248,7 +2289,7 @@ class Movies:
 				try: url += '&folderName=%s' % quote_plus(name)
 				except: pass
 				cm = []
-				if (i.get('list_type', '') == 'traktPulicList') and self.traktCredentials:
+				if (i.get('list_type', '') == 'traktPublicList') and self.traktCredentials:
 					liked = traktsync.fetch_liked_list(i['list_id'])
 					if not liked:
 						cm.append((likeMenu, 'RunPlugin(%s?action=tools_likeList&list_owner=%s&list_name=%s&list_id=%s)' % (sysaddon, quote_plus(i['list_owner']), quote_plus(i['list_name']), i['list_id'])))

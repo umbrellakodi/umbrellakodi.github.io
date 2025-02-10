@@ -11,6 +11,8 @@ omdb_api_key = 'd4daa2b'
 tvdb_api_key = '06cff30690f9b9622957044f2159ffae'
 traktIndicators = trakt.getTraktIndicatorsInfo()
 simklIndicators = simkl.getSimKLIndicatorsInfo()
+traktCredentials = trakt.getTraktCredentialsInfo()
+simklCredentials = simkl.getSimKLCredentialsInfo()
 #if not traktIndicators:
 #	try:
 #		if not condVisibility('System.HasAddon(script.module.metahandler)'): execute('InstallAddon(script.module.metahandler)', wait=True)
@@ -219,14 +221,14 @@ def getSeasonCount(imdb, tvdb, season=None):
 
 def markMovieDuringPlayback(imdb, watched):
 	try:
-		if traktIndicators:
+		if traktCredentials:
 			if int(watched) == 5: trakt.markMovieAsWatched(imdb)
 			else: trakt.markMovieAsNotWatched(imdb)
-			trakt.cachesyncMovies()
-		elif simklIndicators:
+			if traktIndicators:trakt.cachesyncMovies()
+		if simklCredentials:
 			if int(watched) == 5: simkl.markMovieAsWatched(imdb)
 			else: simkl.markMovieAsNotWatched(imdb)
-			simkl.cachesyncMovies()
+			if simklIndicators: simkl.cachesyncMovies()
 		else:
 #			from metahandler import metahandlers
 #			metaget = metahandlers.MetaData(tmdb_api_key, omdb_api_key, tvdb_api_key)
@@ -240,14 +242,14 @@ def markMovieDuringPlayback(imdb, watched):
 
 def markEpisodeDuringPlayback(imdb, tvdb, season, episode, watched):
 	try:
-		if traktIndicators:
+		if traktCredentials:
 			if int(watched) == 5: trakt.markEpisodeAsWatched(imdb, tvdb, season, episode)
 			else: trakt.markEpisodeAsNotWatched(imdb, tvdb, season, episode)
-			trakt.cachesyncTV(imdb, tvdb) # updates all watched shows, as well as season indicators and counts for given ID of show
-		elif simklIndicators:
+			if traktIndicators: trakt.cachesyncTV(imdb, tvdb) # updates all watched shows, as well as season indicators and counts for given ID of show
+		if simklCredentials:
 			if int(watched) == 5: simkl.markEpisodeAsWatched(imdb, tvdb, season, episode)
 			else: simkl.markEpisodeAsNotWatched(imdb, tvdb, season, episode)
-			simkl.cachesyncTV(imdb, tvdb)
+			if simklIndicators: simkl.cachesyncTV(imdb, tvdb)
 		else:
 #			from metahandler import metahandlers
 #			metaget = metahandlers.MetaData(tmdb_api_key, omdb_api_key, tvdb_api_key)
@@ -262,10 +264,10 @@ def markEpisodeDuringPlayback(imdb, tvdb, season, episode, watched):
 
 def movies(name, imdb, watched):
 	try:
-		if traktIndicators:
+		if traktCredentials:
 			if int(watched) == 5: trakt.watch(content_type='movie', name=name, imdb=imdb, refresh=True)
 			else: trakt.unwatch(content_type='movie', name=name, imdb=imdb, refresh=True)
-		elif simklIndicators:
+		if simklCredentials:
 			if int(watched) == 5: simkl.watch(content_type='movie', name=name, imdb=imdb, refresh=True)
 			else: simkl.unwatch(content_type='movie', name=name, imdb=imdb, refresh=True)
 		else:
@@ -282,11 +284,11 @@ def movies(name, imdb, watched):
 
 def tvshows(tvshowtitle, imdb, tvdb, season, watched):
 	try:
-		if traktIndicators:
+		if traktCredentials:
 			content_type='season' if season else 'tvshow'
 			if int(watched) == 5: trakt.watch(content_type=content_type, name=tvshowtitle, imdb=imdb, tvdb=tvdb, season=season, refresh=True)
 			else: trakt.unwatch(content_type=content_type, name=tvshowtitle, imdb=imdb, tvdb=tvdb, season=season, refresh=True)
-		elif simklIndicators:
+		if simklCredentials:
 			content_type='season' if season else 'tvshow'
 			if int(watched) == 5: simkl.watch(content_type=content_type, name=tvshowtitle, imdb=imdb, tvdb=tvdb, season=season, refresh=True)
 			else: simkl.unwatch(content_type=content_type, name=tvshowtitle, imdb=imdb, tvdb=tvdb, season=season, refresh=True)
@@ -335,7 +337,7 @@ def episodes(name, imdb, tvdb, season, episode, watched):
 		if traktIndicators:
 			if int(watched) == 5: trakt.watch(content_type='episode', name=name, imdb=imdb, tvdb=tvdb, season=season, episode=episode, refresh=True)
 			else: trakt.unwatch(content_type='episode', name=name, imdb=imdb, tvdb=tvdb, season=season, episode=episode, refresh=True)
-		elif simklIndicators:
+		if simklIndicators:
 			if int(watched) == 5: simkl.watch(content_type='episode', name=name, imdb=imdb, tvdb=tvdb, season=season, episode=episode, refresh=True)
 			else: simkl.unwatch(content_type='episode', name=name, imdb=imdb, tvdb=tvdb, season=season, episode=episode, refresh=True)
 		else:

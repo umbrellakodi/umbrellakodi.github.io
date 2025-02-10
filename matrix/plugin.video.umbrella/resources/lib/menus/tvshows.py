@@ -84,6 +84,10 @@ class TVshows:
 		self.traktlikedlists_link = 'https://api.trakt.tv/users/likes/lists?limit=1000000' # used by library import only
 		self.traktwatchlist_link = 'https://api.trakt.tv/users/me/watchlist/shows?limit=%s&page=1' % self.page_limit # this is now a dummy link for pagination to work
 		self.simklwatchlist_link = 'https://api.simkl.com/watchlist/shows?limit=%s&page=1' % self.page_limit # this is now a dummy link for pagination to work
+		self.simkldropped_link = 'https://api.simkl.com/dropped/shows?limit=%s&page=1' % self.page_limit
+		self.simklhistory_link = 'https://api.simkl.com/history/shows?limit=%s&page=1' % self.page_limit
+		self.simklonhold_link = 'https://api.simkl.com/onhold/shows?limit=%s&page=1' % self.page_limit
+		self.simklwatching_link = 'https://api.simkl.com/watching/shows?limit=%s&page=1' % self.page_limit
 		self.traktcollection_link = 'https://api.trakt.tv/users/me/collection/shows?limit=%s&page=1' % self.page_limit # this is now a dummy link for pagination to work
 		self.traktlist_link = 'https://api.trakt.tv/users/%s/lists/%s/items/shows?limit=%s&page=1' % ('%s', '%s', self.page_limit) # local pagination, limit and page used to advance, pulled from request
 		self.progress_link = 'https://api.trakt.tv/sync/watched/shows?extended=noseasons'
@@ -176,7 +180,11 @@ class TVshows:
 			elif u in self.search_tmdb_link and url != 'tmdbrecentday' and url != 'tmdbrecentweek' and url != 'favourites_tvshows':
 				return self.getTMDb(url, folderName=folderName)
 			elif u in (self.simkltrendingweek_link or u in self.simkltrendingmonth_link or u in self.simkltrendingtoday_link) and url != 'favourites_tvshows':
-				if 'watchlist' in url: return self.simklWatchlist(url, folderName=folderName)
+				if 'watchlist' in url: return self.simklPlantowatch(url, folderName=folderName)
+				if 'history' in url: return self.simklCompleted(url, folderName=folderName)
+				if 'dropped' in url: return self.simklDropped(url, folderName=folderName)
+				if 'onhold' in url: return self.simklOnhold(url, folderName=folderName)
+				if 'watching' in url: return self.simklWatching(url, folderName=folderName)
 				else: return self.getSimkl(url, folderName=folderName)
 			if u in self.trakt_link and '/users/' in url:
 				try:
@@ -922,8 +930,7 @@ class TVshows:
 			
 			log_utils.error()
 
-	def simklWatchlist(self, url, create_directory=True, folderName=''):
-		log_utils.log('simklwatchlist url: %s' % url, 1)
+	def simklPlantowatch(self, url, create_directory=True, folderName=''):
 		self.list = []
 		try:
 			try:
@@ -931,7 +938,7 @@ class TVshows:
 				index = int(q['page']) - 1
 			except:
 				q = dict(parse_qsl(urlsplit(url).query))
-			self.list = simklsync.fetch_watch_list('shows_watchlist')
+			self.list = simklsync.fetch_plantowatch('shows_plantowatch')
 			useNext = True
 			if create_directory:
 				self.sort(type='shows.watchlist') # sort before local pagination
@@ -947,7 +954,176 @@ class TVshows:
 				q = (urlencode(q)).replace('%2C', ',')
 				next = url.replace('?' + urlparse(url).query, '') + '?' + q
 				next = next + '&folderName=%s' % quote_plus(folderName)
-				log_utils.log('simklWatchlist next url: %s' % next, 1)
+			except: next = ''
+			for i in range(len(self.list)): self.list[i]['next'] = next
+			self.worker()
+			if self.list is None: self.list = []
+			if create_directory: self.tvshowDirectory(self.list, folderName=folderName)
+			return self.list
+		except:
+			
+			log_utils.error()
+
+	def simklCompleted(self, url, create_directory=True, folderName=''):
+		self.list = []
+		try:
+			try:
+				q = dict(parse_qsl(urlsplit(url).query))
+				index = int(q['page']) - 1
+			except:
+				q = dict(parse_qsl(urlsplit(url).query))
+			self.list = simklsync.fetch_completed('shows_completed')
+			useNext = True
+			if create_directory:
+				self.sort() # sort before local pagination
+				if getSetting('simkl.paginate.lists') == 'true' and self.list:
+					if len(self.list) == int(self.page_limit):
+						useNext = False
+					paginated_ids = [self.list[x:x + int(self.page_limit)] for x in range(0, len(self.list), int(self.page_limit))]
+					self.list = paginated_ids[index]
+			try:
+				if useNext == False: raise Exception()
+				if int(q['limit']) != len(self.list): raise Exception()
+				q.update({'page': str(int(q['page']) + 1)})
+				q = (urlencode(q)).replace('%2C', ',')
+				next = url.replace('?' + urlparse(url).query, '') + '?' + q
+				next = next + '&folderName=%s' % quote_plus(folderName)
+			except: next = ''
+			for i in range(len(self.list)): self.list[i]['next'] = next
+			self.worker()
+			if self.list is None: self.list = []
+			if create_directory: self.tvshowDirectory(self.list, folderName=folderName)
+			return self.list
+		except:
+			
+			log_utils.error()
+
+	def simklDropped(self, url, create_directory=True, folderName=''):
+		self.list = []
+		try:
+			try:
+				q = dict(parse_qsl(urlsplit(url).query))
+				index = int(q['page']) - 1
+			except:
+				q = dict(parse_qsl(urlsplit(url).query))
+			self.list = simklsync.fetch_dropped('shows_dropped')
+			useNext = True
+			if create_directory:
+				self.sort() # sort before local pagination
+				if getSetting('simkl.paginate.lists') == 'true' and self.list:
+					if len(self.list) == int(self.page_limit):
+						useNext = False
+					paginated_ids = [self.list[x:x + int(self.page_limit)] for x in range(0, len(self.list), int(self.page_limit))]
+					self.list = paginated_ids[index]
+			try:
+				if useNext == False: raise Exception()
+				if int(q['limit']) != len(self.list): raise Exception()
+				q.update({'page': str(int(q['page']) + 1)})
+				q = (urlencode(q)).replace('%2C', ',')
+				next = url.replace('?' + urlparse(url).query, '') + '?' + q
+				next = next + '&folderName=%s' % quote_plus(folderName)
+			except: next = ''
+			for i in range(len(self.list)): self.list[i]['next'] = next
+			self.worker()
+			if self.list is None: self.list = []
+			if create_directory: self.tvshowDirectory(self.list, folderName=folderName)
+			return self.list
+		except:
+			
+			log_utils.error()
+
+	def simklOnhold(self, url, create_directory=True, folderName=''):
+		self.list = []
+		try:
+			try:
+				q = dict(parse_qsl(urlsplit(url).query))
+				index = int(q['page']) - 1
+			except:
+				q = dict(parse_qsl(urlsplit(url).query))
+			self.list = simklsync.fetch_hold('shows_hold')
+			useNext = True
+			if create_directory:
+				self.sort() # sort before local pagination
+				if getSetting('simkl.paginate.lists') == 'true' and self.list:
+					if len(self.list) == int(self.page_limit):
+						useNext = False
+					paginated_ids = [self.list[x:x + int(self.page_limit)] for x in range(0, len(self.list), int(self.page_limit))]
+					self.list = paginated_ids[index]
+			try:
+				if useNext == False: raise Exception()
+				if int(q['limit']) != len(self.list): raise Exception()
+				q.update({'page': str(int(q['page']) + 1)})
+				q = (urlencode(q)).replace('%2C', ',')
+				next = url.replace('?' + urlparse(url).query, '') + '?' + q
+				next = next + '&folderName=%s' % quote_plus(folderName)
+			except: next = ''
+			for i in range(len(self.list)): self.list[i]['next'] = next
+			self.worker()
+			if self.list is None: self.list = []
+			if create_directory: self.tvshowDirectory(self.list, folderName=folderName)
+			return self.list
+		except:
+			
+			log_utils.error()
+
+	def simklWatching(self, url, create_directory=True, folderName=''):
+		self.list = []
+		try:
+			try:
+				q = dict(parse_qsl(urlsplit(url).query))
+				index = int(q['page']) - 1
+			except:
+				q = dict(parse_qsl(urlsplit(url).query))
+			self.list = simklsync.fetch_watching('shows_watching')
+			useNext = True
+			if create_directory:
+				self.sort(type='progress')
+				if getSetting('simkl.paginate.lists') == 'true' and self.list:
+					if len(self.list) == int(self.page_limit):
+						useNext = False
+					paginated_ids = [self.list[x:x + int(self.page_limit)] for x in range(0, len(self.list), int(self.page_limit))]
+					self.list = paginated_ids[index]
+			try:
+				if useNext == False: raise Exception()
+				if int(q['limit']) != len(self.list): raise Exception()
+				q.update({'page': str(int(q['page']) + 1)})
+				q = (urlencode(q)).replace('%2C', ',')
+				next = url.replace('?' + urlparse(url).query, '') + '?' + q
+				next = next + '&folderName=%s' % quote_plus(folderName)
+			except: next = ''
+			for i in range(len(self.list)): self.list[i]['next'] = next
+			self.worker()
+			if self.list is None: self.list = []
+			if create_directory: self.tvshowDirectory(self.list, folderName=folderName)
+			return self.list
+		except:
+			
+			log_utils.error()
+
+	def simklDropped(self, url, create_directory=True, folderName=''):
+		self.list = []
+		try:
+			try:
+				q = dict(parse_qsl(urlsplit(url).query))
+				index = int(q['page']) - 1
+			except:
+				q = dict(parse_qsl(urlsplit(url).query))
+			self.list = simklsync.fetch_hold('shows_dropped')
+			useNext = True
+			if create_directory:
+				self.sort() # sort before local pagination
+				if getSetting('simkl.paginate.lists') == 'true' and self.list:
+					if len(self.list) == int(self.page_limit):
+						useNext = False
+					paginated_ids = [self.list[x:x + int(self.page_limit)] for x in range(0, len(self.list), int(self.page_limit))]
+					self.list = paginated_ids[index]
+			try:
+				if useNext == False: raise Exception()
+				if int(q['limit']) != len(self.list): raise Exception()
+				q.update({'page': str(int(q['page']) + 1)})
+				q = (urlencode(q)).replace('%2C', ',')
+				next = url.replace('?' + urlparse(url).query, '') + '?' + q
+				next = next + '&folderName=%s' % quote_plus(folderName)
 			except: next = ''
 			for i in range(len(self.list)): self.list[i]['next'] = next
 			self.worker()
@@ -1550,7 +1726,13 @@ class TVshows:
 				values['next'] = next 
 				values['progress'] = ''
 				lastplayed = item.get('last_watched_at', '')
-				lastplayedFixed = datetime.strptime(lastplayed, "%Y-%m-%dT%H:%M:%SZ").strftime("%Y-%m-%dT%H:%M:%S.000Z")
+				if lastplayed:
+					date_part, time_part = lastplayed.split("T")
+					time_part = time_part[:-1]  # Remove 'Z' at the end
+					lastplayedFixed = f"{date_part}T{time_part}.000Z"
+				else:
+					lastplayedFixed = ''
+				#lastplayedFixed = datetime.strptime(lastplayed, "%Y-%m-%dT%H:%M:%SZ").strftime("%Y-%m-%dT%H:%M:%S.000Z")
 				try: values['lastplayed'] = lastplayedFixed
 				except: values['lastplayed'] = ''
 				show = item.get('show') or item
@@ -1706,9 +1888,14 @@ class TVshows:
 		settingFanart = getSetting('fanart') == 'true'
 		addonPoster, addonFanart, addonBanner = control.addonPoster(), control.addonFanart(), control.addonBanner()
 		flatten = int(getSetting('flatten.tvshows'))
-		if trakt.getTraktIndicatorsInfo(): watchedMenu, unwatchedMenu = getLS(32068), getLS(32069)
-		elif simkl.getSimKLIndicatorsInfo(): watchedMenu, unwatchedMenu = getLS(40554), getLS(40555)
-		else: watchedMenu, unwatchedMenu = getLS(32066), getLS(32067)
+		if trakt.getTraktCredentialsInfo() and simkl.getSimKLCredentialsInfo():
+			watchedMenu, unwatchedMenu = getLS(40564), getLS(40565)
+		elif trakt.getTraktCredentialsInfo():
+			watchedMenu, unwatchedMenu = getLS(32068), getLS(32069)
+		elif simkl.getSimKLCredentialsInfo():
+			watchedMenu, unwatchedMenu = getLS(40554), getLS(40555)
+		else:
+			watchedMenu, unwatchedMenu = getLS(32066), getLS(32067)
 		traktManagerMenu, queueMenu = getLS(32070), getLS(32065)
 		showPlaylistMenu, clearPlaylistMenu = getLS(35517), getLS(35516)
 		playRandom, addToLibrary, addToFavourites, removeFromFavourites = getLS(32535), getLS(32551), getLS(40463), getLS(40468)

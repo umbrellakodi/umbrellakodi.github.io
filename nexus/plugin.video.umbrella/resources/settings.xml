@@ -3688,9 +3688,9 @@
 					</dependencies>
 					<control type="toggle"/>
 				</setting>
-				<setting id="showHelpdirectProcess" type="action" label="32137" help="">
+				<setting id="simkldirectprogress" type="action" label="32137" help="">
 					<level>0</level>
-					<data>RunPlugin(plugin://plugin.video.umbrella/?action=tools_ShowHelp&amp;name=directProgress)</data>
+					<data>RunPlugin(plugin://plugin.video.umbrella/?action=tools_ShowHelp&amp;name=directProgressSimkl)</data>
 					<constraints>
 						<allowempty>true</allowempty>
 					</constraints>
@@ -3734,7 +3734,7 @@
 					</dependencies>
 					<control type="toggle"/>
 				</setting>
-				<setting id="showHelpupcomingProgressPrependDate" type="action" label="32137" help="">
+				<setting id="showHelpupcomingProgressPrependDateSimkl" type="action" label="32137" help="">
 					<level>0</level>
 					<data>RunPlugin(plugin://plugin.video.umbrella/?action=tools_ShowHelp&amp;name=UpcomingProgressPrependDate)</data>
 					<constraints>

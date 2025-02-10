@@ -644,10 +644,14 @@ class Collections:
 		indicators = getMovieIndicators() # refresh not needed now due to service sync
 		if play_mode == '1': playbackMenu = getLS(32063)
 		else: playbackMenu = getLS(32064)
-		if trakt.getTraktIndicatorsInfo(): watchedMenu, unwatchedMenu = getLS(32068), getLS(32069)
-		elif simkl.getSimKLIndicatorsInfo():
+		if trakt.getTraktCredentialsInfo() and simkl.getSimKLCredentialsInfo():
+			watchedMenu, unwatchedMenu = getLS(40564), getLS(40565)
+		elif trakt.getTraktCredentialsInfo():
+			watchedMenu, unwatchedMenu = getLS(32068), getLS(32069)
+		elif simkl.getSimKLCredentialsInfo():
 			watchedMenu, unwatchedMenu = getLS(40554), getLS(40555)
-		else: watchedMenu, unwatchedMenu = getLS(32066), getLS(32067)
+		else:
+			watchedMenu, unwatchedMenu = getLS(32066), getLS(32067)
 		playlistManagerMenu, queueMenu = getLS(35522), getLS(32065)
 		traktManagerMenu, addToLibrary = getLS(32070), getLS(32551)
 		nextMenu, clearSourcesMenu = getLS(32053), getLS(32611)
