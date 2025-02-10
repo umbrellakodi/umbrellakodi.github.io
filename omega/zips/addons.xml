@@ -180,7 +180,8 @@
 			<screenshot>resources/screenshots/screenshot003.jpg</screenshot>
 		</assets>
 		<news>
-[B]Update - v6.7.391 - Feb 9th, 2025[/B]
+[B]Update - v6.7.392 - Feb 10th, 2025[/B]
+--[Fix] Fixed an error causing movies in any status from simkl to show as watched.
 --[Change] Trakt and Simkl can now be used simultaneously. You will need to select 1 of the 2 services for indicators, but both will mark watched or unwatched when authenticated.
 --[Change] Marking a movie or show watched now removes it from the plan to watch or hold list on Simkl.
 --[Change] TV Shows Simkl added Watching, Completed, Plan to Watch, Dropped, and Hold.

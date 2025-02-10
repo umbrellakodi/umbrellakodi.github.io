@@ -387,10 +387,6 @@ def post_request(url, data=None):
 	try:
 		if response.status_code in (200, 201): 
 			return response.json()
-		# elif response.status_code == 400:
-		# 	control.sleep(1000)
-		# 	from resources.lib.modules import simkl
-		# 	return simkl.post_request(url, data=data)
 		else:
 			if getSetting('debug.level') == '1':
 				log_utils.log('SIMKL post_request() failed: URL: %s\n                       msg : SIMKL Response: %s' % (url, response.text), __name__, log_utils.LOGDEBUG)
@@ -535,8 +531,6 @@ def update_syncMovies(imdb, remove_id=False):
 
 def cachesyncMovies(timeout=0):
 	indicators = simklsync.get(syncMovies, timeout)
-	#if getSetting('sync.watched.library') == 'true':
-		#syncMoviesLibrary(indicators)
 	return indicators
 
 def syncMovies():
@@ -544,7 +538,7 @@ def syncMovies():
 		from resources.lib.modules import simkl
 		if not getSimKLCredentialsInfo(): return
 		from resources.lib.modules import simkl
-		indicators = simkl.post_request('/sync/all-items/movies/') #indicators may be different with simkl
+		indicators = simkl.post_request('/sync/all-items/movies/completed') #only need completed status for movies
 		if not indicators: return None
 		indicators = indicators['movies']
 		indicators = [i['movie']['ids'] for i in indicators]
@@ -838,16 +832,19 @@ def getHoldActivity(activities=None):
 		if not i: return 0
 		activities_dict = json.loads(i)
 		shows_hold = activities_dict["tv_shows"].get("hold")
-		try:
-			refdatim = datetime.fromtimestamp(time.mktime(time.strptime(shows_hold[:-1], "%Y-%m-%dT%H:%M:%S")))
-			watching_timestamp = int(refdatim.timestamp())
-			#watching_timestamp = int(datetime.strptime(movies_watching[:-1], "%Y-%m-%dT%H:%M:%S").timestamp())
-		except Exception as e:
-			log_utils.error('Exception in getHoldActivity: %s' % str(e), log_utils.LOGINFO)
-
-		if not watching_timestamp:
+		shows_watching = activities_dict["tv_shows"].get("watching")
+		timestamps = []
+		for dt in [shows_hold, shows_watching]:
+			if dt:
+				try:
+					#timestamps.append(datetime.strptime(dt[:-1], "%Y-%m-%dT%H:%M:%S"))
+					timestamps.append(datetime.fromtimestamp(time.mktime(time.strptime(dt[:-1], "%Y-%m-%dT%H:%M:%S"))))
+				except Exception as e:
+					log_utils.error('Exception in getHoldActivity: %s' % str(e), log_utils.LOGINFO)
+		newest_timestamp = int(max(timestamps).timestamp()) if timestamps else None
+		if not newest_timestamp:
 			return 0
-		return watching_timestamp
+		return newest_timestamp
 	except: 
 		log_utils.error() 
 		return 0
@@ -860,6 +857,7 @@ def getDroppedActivity(activities=None):
 		activities_dict = json.loads(i)
 		movies_completed = activities_dict["movies"].get("dropped")
 		tv_shows_completed = activities_dict["tv_shows"].get("dropped")
+		tv_shows_watching = activities_dict["tv_shows"].get("watching")
 		timestamps = []
 		for dt in [movies_completed, tv_shows_completed]:
 			if dt:
