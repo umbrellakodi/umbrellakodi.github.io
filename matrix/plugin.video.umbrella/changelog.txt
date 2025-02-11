@@ -1,4 +1,4 @@
-[B]Update - v6.7.394 - Feb 10th, 2025[/B]
+[B]Update - v6.7.395 - Feb 11th, 2025[/B]
 --[Change] Added 0 count in for unwatched content. 
 --[Fix] Fixed incorrect address used for Progress Episodes on Simkl.
 --[Change] Added use Fanart for thumb.

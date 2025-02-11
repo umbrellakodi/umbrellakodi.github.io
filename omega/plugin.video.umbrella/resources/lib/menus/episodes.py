@@ -1162,7 +1162,7 @@ class Episodes:
 				if isUnaired:
 					if self.prefer_fanArt: thumb = fanart or landscape or season_poster
 					else: thumb = landscape or fanart or season_poster
-					icon = season_poster or poster
+				icon = season_poster or poster
 				banner = meta.get('banner') or addonBanner
 				art = {}
 				art.update({'poster': season_poster, 'tvshow.poster': poster, 'season.poster': season_poster, 'fanart': fanart, 'icon': icon, 'thumb': thumb, 'banner': banner,
