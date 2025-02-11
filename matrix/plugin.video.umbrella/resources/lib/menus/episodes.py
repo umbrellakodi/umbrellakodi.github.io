@@ -1150,21 +1150,19 @@ class Episodes:
 				landscape = meta.get('landscape')
 				fanart = ''
 				if settingFanart:
-					fanart = (
-						meta.get("fanart3") or meta.get("fanart") or meta.get("fanart2") or addonFanart
-						if self.prefer_tmdbArt
-						else meta.get("fanart2") or meta.get("fanart3") or meta.get("fanart") or addonFanart
-					)
+					if self.prefer_tmdbArt: fanart = meta.get('fanart3') or meta.get('fanart') or meta.get('fanart2') or addonFanart
+					else: fanart = meta.get('fanart2') or meta.get('fanart3') or meta.get('fanart') or addonFanart
+				#thumb = meta.get('thumb') or landscape or fanart or season_poster
 				if self.prefer_fanArt:
-					thumb = fanart or meta.get("thumb") or landscape or season_poster
+					if fanart: thumb = fanart or meta.get('thumb') or landscape or season_poster
+					else:
+						thumb = meta.get('thumb') or landscape or fanart or season_poster
 				else:
-					thumb = meta.get("thumb") or landscape or fanart or season_poster
+					thumb = meta.get('thumb') or landscape or fanart or season_poster
 				if isUnaired:
-					thumb = (fanart if self.prefer_fanArt else landscape) or season_poster
+					if self.prefer_fanArt: thumb = fanart or landscape or season_poster
+					else: thumb = landscape or fanart or season_poster
 					icon = season_poster or poster
-				else:
-					thumb = meta.get("thumb") or landscape or fanart or season_poster
-					icon = meta.get("icon") or season_poster or poster
 				banner = meta.get('banner') or addonBanner
 				art = {}
 				art.update({'poster': season_poster, 'tvshow.poster': poster, 'season.poster': season_poster, 'fanart': fanart, 'icon': icon, 'thumb': thumb, 'banner': banner,
@@ -1245,20 +1243,14 @@ class Episodes:
 							try: count = getShowCount(getSeasonIndicators(imdb, tvdb)[1], imdb, tvdb) # if indicators and no matching imdb_id in watched items then it returns None and we use TMDb meta to avoid Trakt request
 							except: count = None
 							if count:
-								if KODI_VERSION >= 20:
-									if int(count['watched']) > 0:
-										item.setProperties({'WatchedEpisodes': str(count['watched']), 'UnWatchedEpisodes': str(count['unwatched'])})
-									else:
-										item.setProperties({'UnWatchedEpisodes': str(count['unwatched'])})
-								else:
+								if int(count['watched']) > 0:
 									item.setProperties({'WatchedEpisodes': str(count['watched']), 'UnWatchedEpisodes': str(count['unwatched'])})
+								else:
+									item.setProperties({'WatchedEpisodes': '0', 'UnWatchedEpisodes': str(count['unwatched'])})
 								item.setProperties({'TotalSeasons': str(meta.get('total_seasons', '')), 'TotalEpisodes': str(count['total'])})
 								item.setProperty('WatchedProgress', str(int(float(count['watched']) / float(count['total']) * 100)))
 							else:
-								if KODI_VERSION >= 20:
-									item.setProperties({'UnWatchedEpisodes': str(meta.get('total_aired_episodes', ''))}) # for shows never watched
-								else:
-									item.setProperties({'WatchedEpisodes': '0', 'UnWatchedEpisodes': str(meta.get('total_aired_episodes', ''))}) # for shows never watched
+								item.setProperties({'WatchedEpisodes': '0', 'UnWatchedEpisodes': str(meta.get('total_aired_episodes', ''))}) # for shows never watched
 								item.setProperties({'TotalSeasons': str(meta.get('total_seasons', '')), 'TotalEpisodes': str(meta.get('total_aired_episodes', ''))})
 						except:
 							from resources.lib.modules import log_utils
