@@ -224,7 +224,7 @@ def get_request(url):
 def getSimklAsJson(url, post=None, silent=False):
 	try:
 		from resources.lib.modules import simkl
-		if post: r = simkl.post_request(url, data=post)
+		if post or 'sync/activities' in url: r = simkl.post_request(url, data=post)
 		else: r = get_request(url)
 		if not r: return
 		if '/sync/all-items/shows/watching' in url: return r['shows']
@@ -698,9 +698,10 @@ def timeoutsyncTVShows():
 def getProgressActivity(activities=None):
 	try:
 		if activities: i = activities
-		else: i = getSimklAsJson('/sync/last_activities')
+		else: i = post_request('/sync/activities')
 		if not i: return 0
-		activities_dict = json.loads(i)
+		if type(i) != dict: activities_dict = json.loads(i)
+		else: activities_dict = i
 		tv_shows_watching = activities_dict["tv_shows"].get("watching")
 		if not tv_shows_watching:
 			return 0
@@ -719,9 +720,10 @@ def getProgressActivity(activities=None):
 def getPlantowatchActivity(activities=None):
 	try:
 		if activities: i = activities
-		else: i = getSimklAsJson('/sync/last_activities')
+		else: i = getSimklAsJson('/sync/activities')
 		if not i: return 0
-		activities_dict = json.loads(i)
+		if type(i) != dict: activities_dict = json.loads(i)
+		else: activities_dict = i
 		movies_plantowatch = activities_dict["movies"].get("plantowatch")
 		tv_shows_plantowatch = activities_dict["tv_shows"].get("plantowatch")
 		timestamps = []
@@ -743,9 +745,10 @@ def getPlantowatchActivity(activities=None):
 def getHistoryListedActivity(activities=None):
 	try:
 		if activities: i = activities
-		else: i = getSimklAsJson('/sync/last_activities')
+		else: i = getSimklAsJson('/sync/activities')
 		if not i: return 0
-		activities_dict = json.loads(i)
+		if type(i) != dict: activities_dict = json.loads(i)
+		else: activities_dict = i
 		movies_completed = activities_dict["movies"].get("completed")
 		tv_shows_completed = activities_dict["tv_shows"].get("completed")
 		timestamps = []
@@ -766,9 +769,10 @@ def getHistoryListedActivity(activities=None):
 def getEpisodesWatchedActivity(activities=None):
 	try:
 		if activities: i = activities
-		else: i = getSimklAsJson('/sync/last_activities')
+		else: i = getSimklAsJson('/sync/activities')
 		if not i: return 0
-		activities_dict = json.loads(i)
+		if type(i) != dict: activities_dict = json.loads(i)
+		else: activities_dict = i
 		tv_shows_watching = activities_dict["tv_shows"].get("all")
 		try:
 			# First attempt using datetime.strptime
@@ -786,9 +790,10 @@ def getEpisodesWatchedActivity(activities=None):
 def getMoviesWatchedActivity(activities=None):
 	try:
 		if activities: i = activities
-		else: i = getSimklAsJson('/sync/last_activities')
+		else: i = getSimklAsJson('/sync/activities')
 		if not i: return 0
-		activities_dict = json.loads(i)
+		if type(i) != dict: activities_dict = json.loads(i)
+		else: activities_dict = i
 		movies_watching = activities_dict["movies"].get("completed")
 		try:
 			refdatim = datetime.fromtimestamp(time.mktime(time.strptime(movies_watching[:-1], "%Y-%m-%dT%H:%M:%S")))
@@ -807,9 +812,10 @@ def getMoviesWatchedActivity(activities=None):
 def getWatchingActivity(activities=None):
 	try:
 		if activities: i = activities
-		else: i = getSimklAsJson('/sync/last_activities')
+		else: i = getSimklAsJson('/sync/activities')
 		if not i: return 0
-		activities_dict = json.loads(i)
+		if type(i) != dict: activities_dict = json.loads(i)
+		else: activities_dict = i
 		movies_watching = activities_dict["tv_shows"].get("watching")
 		try:
 			refdatim = datetime.fromtimestamp(time.mktime(time.strptime(movies_watching[:-1], "%Y-%m-%dT%H:%M:%S")))
@@ -828,9 +834,10 @@ def getWatchingActivity(activities=None):
 def getHoldActivity(activities=None):
 	try:
 		if activities: i = activities
-		else: i = getSimklAsJson('/sync/last_activities')
+		else: i = getSimklAsJson('/sync/activities')
 		if not i: return 0
-		activities_dict = json.loads(i)
+		if type(i) != dict: activities_dict = json.loads(i)
+		else: activities_dict = i
 		shows_hold = activities_dict["tv_shows"].get("hold")
 		shows_watching = activities_dict["tv_shows"].get("watching")
 		timestamps = []
@@ -852,9 +859,10 @@ def getHoldActivity(activities=None):
 def getDroppedActivity(activities=None):
 	try:
 		if activities: i = activities
-		else: i = getSimklAsJson('/sync/last_activities')
+		else: i = getSimklAsJson('/sync/activities')
 		if not i: return 0
-		activities_dict = json.loads(i)
+		if type(i) != dict: activities_dict = json.loads(i)
+		else: activities_dict = i
 		movies_completed = activities_dict["movies"].get("dropped")
 		tv_shows_completed = activities_dict["tv_shows"].get("dropped")
 		tv_shows_watching = activities_dict["tv_shows"].get("watching")

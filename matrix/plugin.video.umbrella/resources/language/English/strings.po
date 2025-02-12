@@ -5210,3 +5210,7 @@ msgstr ""
 msgctxt "#40566"
 msgid "Use Fanart for Thumbs"
 msgstr ""
+
+msgctxt "#40567"
+msgid "[COLOR %s][B]Force Simkl Sync to local database[/B][/COLOR]"
+msgstr ""

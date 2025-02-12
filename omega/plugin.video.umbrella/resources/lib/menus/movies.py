@@ -24,6 +24,7 @@ from resources.lib.modules import tools, log_utils
 from resources.lib.modules import trakt
 from resources.lib.modules import views
 from resources.lib.modules import mdblist
+from resources.lib.database import artwork as customArtwork
 from sqlite3 import dbapi2 as database
 from json import loads as jsloads
 from operator import itemgetter
@@ -2132,8 +2133,29 @@ class Movies:
 				icon = meta.get('icon') or poster
 				banner = meta.get('banner3') or meta.get('banner2') or meta.get('banner') or addonBanner
 				art = {}
-				art.update({'icon': icon, 'thumb': thumb, 'banner': banner, 'poster': poster, 'fanart': fanart, 'landscape': landscape, 'clearlogo': meta.get('clearlogo', ''),
-								'clearart': meta.get('clearart', ''), 'discart': meta.get('discart', ''), 'keyart': meta.get('keyart', '')})
+				useCustomArtwork = customArtwork.fetch_movie(imdb) #new custom artwork database check
+				clearart = meta.get('clearart', '')
+				discart = meta.get('discart', '')
+				keyart = meta.get('keyart', '')
+				if useCustomArtwork:
+					from resources.lib.modules import log_utils
+					log_utils.log('Detected movie in database and will use custom values now.')
+					allowed_keys = {"poster", "fanart", "landscape", "banner", "clearart", "clearlogo", "discart", "keyart"}
+					for key in allowed_keys:
+						value = useCustomArtwork[0].get(key)
+						if value not in (None, "", " "):  # Ignore empty values. ugly but local() will not change values
+							if key == 'poster': poster = value
+							if key == 'fanart': fanart = value
+							if key == 'landscape': landscape = value
+							if key == 'banner': banner = value
+							if key == 'clearart': clearart = value
+							if key == 'clearlogo': clearlogo = value
+							if key == 'discart': discart = value
+							if key == 'keyart': keyart = value
+					if "poster" in useCustomArtwork[0] and useCustomArtwork[0].get("poster") not in (None, "", " "):
+						thumb = useCustomArtwork[0].get("poster")
+				art.update({'icon': icon, 'thumb': thumb, 'banner': banner, 'poster': poster, 'fanart': fanart, 'landscape': landscape, 'clearlogo': clearlogo,
+								'clearart': clearart, 'discart': discart, 'keyart': keyart})
 				for k in ('metacache', 'poster2', 'poster3', 'fanart2', 'fanart3', 'banner2', 'banner3', 'trailer'): meta.pop(k, None)
 				meta.update({'poster': poster, 'fanart': fanart, 'banner': banner})
 				sysmeta, sysart = quote_plus(jsdumps(meta)), quote_plus(jsdumps(art))

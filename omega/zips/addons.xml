@@ -1,5 +1,5 @@
 <?xml version='1.0' encoding='utf-8'?>
-<addons><addon id="plugin.video.umbrella" name="Umbrella" provider-name="Umbrella" version="6.7.395">
+<addons><addon id="plugin.video.umbrella" name="Umbrella" provider-name="Umbrella" version="6.7.396">
 	<requires>
 		<import addon="xbmc.python" version="3.0.0" />
 		<import addon="script.module.requests" />
@@ -180,7 +180,9 @@
 			<screenshot>resources/screenshots/screenshot003.jpg</screenshot>
 		</assets>
 		<news>
-[B]Update - v6.7.395 - Feb 11th, 2025[/B]
+[B]Update - v6.7.396 - Feb 11th, 2025[/B]
+--[Fix] Simkl Progress Activity now gives correct values to trigger a sync and refresh of list.
+--[Fix] Simkl and Trakt simultaneous mark of episode fixed.
 --[Change] Added 0 count in for unwatched content. 
 --[Fix] Fixed incorrect address used for Progress Episodes on Simkl.
 --[Change] Added use Fanart for thumb.

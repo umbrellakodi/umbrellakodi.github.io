@@ -334,10 +334,10 @@ def seasons(tvshowtitle, imdb, tvdb, season, watched):
 
 def episodes(name, imdb, tvdb, season, episode, watched):
 	try:
-		if traktIndicators:
+		if traktCredentials:
 			if int(watched) == 5: trakt.watch(content_type='episode', name=name, imdb=imdb, tvdb=tvdb, season=season, episode=episode, refresh=True)
 			else: trakt.unwatch(content_type='episode', name=name, imdb=imdb, tvdb=tvdb, season=season, episode=episode, refresh=True)
-		if simklIndicators:
+		if simklCredentials:
 			if int(watched) == 5: simkl.watch(content_type='episode', name=name, imdb=imdb, tvdb=tvdb, season=season, episode=episode, refresh=True)
 			else: simkl.unwatch(content_type='episode', name=name, imdb=imdb, tvdb=tvdb, season=season, episode=episode, refresh=True)
 		else:
@@ -359,7 +359,8 @@ def episodes(name, imdb, tvdb, season, episode, watched):
 
 def tvshowsUpdate(imdb, tvdb):
 	try:
-		if traktIndicators: return
+		if traktCredentials: return
+		if simklCredentials: return
 		from metahandler import metahandlers
 		from resources.lib.menus import seasons, episodes
 		from resources.lib.indexers import tmdb as tmdb_indexer

@@ -6453,6 +6453,14 @@
 					</constraints>
 					<control type="button" format="action"/>
 				</setting>
+				<setting id="forceSimklSyncButton" type="action" label="40567" help="">
+					<level>0</level>
+					<data>RunPlugin(plugin://plugin.video.umbrella/?action=tools_forceSimklSync)</data>
+					<constraints>
+						<allowempty>true</allowempty>
+					</constraints>
+					<control type="button" format="action"/>
+				</setting>
 				<setting id="cacheClearAllButton" type="action" label="32610" help="">
 					<level>0</level>
 					<data>RunPlugin(plugin://plugin.video.umbrella/?action=cache_clearAll)</data>
