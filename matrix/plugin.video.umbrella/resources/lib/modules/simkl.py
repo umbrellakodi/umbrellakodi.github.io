@@ -160,7 +160,6 @@ class SIMKL:
 				response = response.json()
 				account_info = response.get('user')
 				joined = account_info.get('joined_at')
-				if joined: joined = datetime.strptime(joined, '%Y-%m-%dT%H:%M:%SZ').strftime('%m-%d-%Y %I:%M %p')
 				user = account_info.get('name','')
 				control.setSetting('simklusername', account_info.get('name',''))
 				control.setSetting('simkljoindate', joined)

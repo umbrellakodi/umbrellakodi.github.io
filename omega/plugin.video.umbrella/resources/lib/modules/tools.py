@@ -171,6 +171,7 @@ def resetCustomBG():
 
 def setIndicatorService():
 	try:
+		currentSetting = control.setting('indicators.alt')
 		options = ['Local']
 		if simkl.getSimKLCredentialsInfo():
 			options += ['Simkl']
@@ -185,7 +186,12 @@ def setIndicatorService():
 			optionVal = '1'
 		if selection == 'Simkl':
 			optionVal = '2'
-		
+
+		if currentSetting != optionVal:
+			if optionVal == '1':
+				trakt.sync_watched(forced=True)
+			if optionVal == '2':
+				simkl.sync_watched(forced=True)
 		control.homeWindow.setProperty('umbrella.updateSettings', 'false')
 		control.setSetting('indicators.alt', optionVal)
 		control.homeWindow.setProperty('umbrella.updateSettings', 'true')

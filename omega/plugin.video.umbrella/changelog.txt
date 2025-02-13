@@ -1,4 +1,6 @@
-[B]Update - v6.7.396 - Feb 11th, 2025[/B]
+[B]Update - v6.7.397 - Feb 13th, 2025[/B]
+--[Fix] Fixed simkl authentication popup.
+--[Fix] Changed format of date stored for Simkl items to allow for sorting by date added.
 --[Fix] Simkl Progress Activity now gives correct values to trigger a sync and refresh of list.
 --[Fix] Simkl and Trakt simultaneous mark of episode fixed.
 --[Change] Added 0 count in for unwatched content. 

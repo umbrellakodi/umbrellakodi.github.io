@@ -514,6 +514,33 @@ class Movies(TMDb):
 			log_utils.error()
 		return self.list
 
+	def get_all_movie_art(self, **kwargs):
+		tmdb = kwargs.get('tmdb', '')
+		if not tmdb:
+			return None
+
+		url = self.art_link % tmdb
+		tmdbart = self.get_request(url)
+		if tmdbart is None:
+			return
+
+		artworkType = kwargs.get('artwork_type', '')
+		artworkList = []
+
+		if artworkType == 'poster':
+			tmdbart_items = tmdbart['posters']
+		elif artworkType == 'fanart':
+			tmdbart_items = tmdbart['backdrops']
+		else:
+			return artworkList
+
+		for index, item in enumerate(tmdbart_items, start=1):
+			filepath = item.get('file_path')
+			itemurl = '%s%s' % (self.poster_path, filepath) if filepath else ''
+			artworkList.append({'artworkType': artworkType, 'source': 'Tmdb %s' % index, 'url': itemurl})
+
+		return artworkList
+
 
 class TVshows(TMDb):
 	def __init__(self):

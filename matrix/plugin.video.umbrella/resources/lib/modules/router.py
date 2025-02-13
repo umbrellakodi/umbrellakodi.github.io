@@ -821,6 +821,9 @@ def router(argv2):
 	elif action == 'resetCustomBG':
 		from resources.lib.modules import tools
 		tools.resetCustomBG()
+	elif action == 'customizeArt':
+		from resources.lib.database import artwork
+		artwork.manager(type=type, imdb=imdb, tmdb=tmdb, tvdb=tvdb, season=season, episode=episode)
 	####################################################
 	#---Tools
 	####################################################

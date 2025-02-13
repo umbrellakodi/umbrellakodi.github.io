@@ -189,6 +189,9 @@ def insert_plantowatch(items, table, new_sync=True):
 				dstr = i.get('added_to_watchlist_at')
 				if not dstr:  # Check if it's missing or blank
 					dstr = datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%S.000Z")
+				else:
+					date_part, time_part = dstr.rstrip('Z').split('T')
+					dstr = f"{date_part}T{time_part}.000000Z"
 				listed_at = dstr
 				dbcur.execute('''INSERT OR REPLACE INTO %s Values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''' % table, (title, year, premiered, imdb, tmdb, tvdb, simkl, rating, votes, listed_at))
 			except Exception as e:
@@ -263,6 +266,9 @@ def insert_watching(items, table, new_sync=True):
 					last_watched_at = f"{date_part}T{time_part}.000000Z"
 				if not dstr:  # Check if it's missing or blank
 					dstr = datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%S.000Z")
+				else:
+					date_part, time_part = dstr.rstrip('Z').split('T')
+					dstr = f"{date_part}T{time_part}.000000Z"
 				listed_at = dstr
 				dbcur.execute('''INSERT OR REPLACE INTO %s Values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''' % table, (title, year, premiered, imdb, tmdb, tvdb, simkl, rating, votes, listed_at, last_watched_at))
 			except Exception as e:
@@ -333,6 +339,9 @@ def insert_hold(items, table, new_sync=True):
 				dstr = i.get('added_to_watchlist_at')
 				if not dstr:  # Check if it's missing or blank
 					dstr = datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%S.000Z")
+				else:
+					date_part, time_part = dstr.rstrip('Z').split('T')
+					dstr = f"{date_part}T{time_part}.000000Z"
 				listed_at = dstr
 				dbcur.execute('''INSERT OR REPLACE INTO %s Values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''' % table, (title, year, premiered, imdb, tmdb, tvdb, simkl, rating, votes, listed_at))
 			except Exception as e:

@@ -1,22 +1,23 @@
 #Added 2/11/25 by Umbrella_Dev for custom artwork
+from resources.lib.modules import control
 from resources.lib.modules.control import existsPath, dataPath, makeFile, artworkFile
 from resources.lib.modules import log_utils
 from sqlite3 import dbapi2 as db
+from json import loads as jsloads, dumps as jsdumps
 
-
-def fetch_movie(imdb):
+def fetch_movie(imdb, tmdb):
 	list = ''
 	try:
 		dbcon = get_connection()
 		dbcur = get_connection_cursor(dbcon)
 		ck_table = dbcur.execute('''SELECT * FROM sqlite_master WHERE type='table' AND name=?;''', ('movies',)).fetchone()
 		if not ck_table:
-			dbcur.execute('''CREATE TABLE IF NOT EXISTS %s (imdb TEXT, poster TEXT, fanart TEXT, landscape TEXT, banner TEXT, clearart TEXT, clearlogo TEXT, discart TEXT, keyart TEXT, UNIQUE(imdb));''' % 'movies')
+			dbcur.execute('''CREATE TABLE IF NOT EXISTS %s (imdb TEXT, tmdb TEXT, poster TEXT, fanart TEXT, landscape TEXT, banner TEXT, clearart TEXT, clearlogo TEXT, discart TEXT, keyart TEXT, UNIQUE(imdb));''' % 'movies')
 			dbcur.connection.commit()
 			return list
 		try:
 			match = dbcur.execute('''SELECT * FROM movies WHERE imdb=?''' , (imdb,)).fetchall()
-			list = [{'imdb': i[0], 'poster': i[1], 'fanart': i[2], 'landscape': i[3], 'banner': i[4], 'clearart': i[5], 'clearlogo': i[6], 'discart': i[7], 'keyart': i[8]} for i in match]
+			list = [{'imdb': i[0], 'tmdb': i[1], 'poster': i[2], 'fanart': i[3], 'landscape': i[4], 'banner': i[5], 'clearart': i[6], 'clearlogo': i[7], 'discart': i[8], 'keyart': i[9]} for i in match]
 		except: pass
 	except:
 		
@@ -24,6 +25,123 @@ def fetch_movie(imdb):
 	finally:
 		dbcur.close() ; dbcon.close()
 	return list
+
+def manager(type=None, imdb=None, tmdb=None, tvdb=None, season=None, episode=None):
+	lists = []
+	try:
+		if season: season = int(season)
+		if episode: episode = int(episode)
+		media_type = 'Show' if tvdb else 'Movie'
+		items = [('poster', 'poster')]
+		items += [('fanart', 'fanart')]
+		items += [('landscape', 'landscape')]
+		items += [('banner', 'banner')]
+		items += [('clearart', 'clearart')]
+		items += [('clearlogo', 'clearlogo')]
+		items += [('discart', 'discart')]
+		items += [('keyart', 'keyart')]
+
+		control.hide()
+		select = control.selectDialog([i[0] for i in items], heading=control.addonInfo('name') + ' - ' + 'Customize Artwork')
+		refresh = True
+		if select == -1: return
+		if select >= 0:
+			if items[select][1] == 'poster':
+				heading = str(items[select][1] ) + ' artwork for: %s' % control.infoLabel('Container.ListItem.Title')
+				log_utils.log('Umbrella Customize Art "%s" Selected. Current %s is: %s' % (items[select][1], items[select][1], control.infoLabel('Container.ListItem.Art(poster)')), 1)
+				show_artwork_window(imdb=imdb, tmdb=tmdb, media_type=media_type, heading=heading, artworktype=str(items[select][1] ))
+			if items[select][1] == 'fanart':
+				log_utils.log('Umbrella Customize Art "%s" Selected. Current %s is: %s' % (items[select][1], items[select][1], control.infoLabel('Container.ListItem.Art(fanart)')), 1)
+			if items[select][1] == 'landscape':
+				log_utils.log('Umbrella Customize Art "%s" Selected. Current %s is: %s' % (items[select][1], items[select][1], control.infoLabel('Container.ListItem.Art(landscape)')), 1)
+			if items[select][1] == 'banner':
+				log_utils.log('Umbrella Customize Art "%s" Selected. Current %s is: %s' % (items[select][1], items[select][1], control.infoLabel('Container.ListItem.Art(banner)')), 1)
+			if items[select][1] == 'clearart':
+				log_utils.log('Umbrella Customize Art "%s" Selected. Current %s is: %s' % (items[select][1], items[select][1], control.infoLabel('Container.ListItem.Art(clearart)')), 1)
+			if items[select][1] == 'clearlogo':
+				log_utils.log('Umbrella Customize Art "%s" Selected. Current %s is: %s' % (items[select][1], items[select][1], control.infoLabel('Container.ListItem.Art(clearlogo)')), 1)
+			if items[select][1] == 'discart':
+				log_utils.log('Umbrella Customize Art "%s" Selected. Current %s is: %s' % (items[select][1], items[select][1], control.infoLabel('Container.ListItem.Art(discart)')), 1)
+			if items[select][1] == 'keyart':
+				log_utils.log('Umbrella Customize Art "%s" Selected. Current %s is: %s' % (items[select][1], items[select][1], control.infoLabel('Container.ListItem.Art(keyart)')), 1)
+			if items[select][0].startswith('Add'): refresh = False
+			control.hide()
+			if refresh: control.refresh()
+			control.trigger_widget_refresh()
+	except:
+		log_utils.error()
+		control.hide()
+
+def show_artwork_window(**kwargs):
+	media_type = kwargs.get('media_type', '')
+	heading = kwargs.get('heading', 'Umbrella Art')
+	artworkType = kwargs.get('artworktype', '')
+	imdb = kwargs.get('imdb','')
+	tmdb = kwargs.get('tmdb', '')
+	tvdb = kwargs.get('tvdb','')
+	season = kwargs.get('season','')
+	episode = kwargs.get('episode','')
+	try:
+		control.busy()
+		items = get_artwork(imdb=imdb, tmdb=tmdb, tvdb=tvdb, season=season, episode=episode, media_type=media_type, artwork_type=artworkType)
+		control.hide()
+		itemsDumped = jsdumps(items)
+		from resources.lib.windows.artselection import ArtSelect
+		window = ArtSelect('artwork.xml', control.addonPath(control.addonId()), media_type=media_type, heading=heading, items=itemsDumped)
+		selected_items = window.run()
+		del window
+		if selected_items:
+			selectedUrl = items[selected_items].get('url')
+			if media_type == 'Movie':
+				add_movie_entry(artworkType=artworkType,media_type=media_type, imdb=imdb, tmdb=tmdb, tvdb=tvdb, season=season, episode=episode, url=selectedUrl)
+			if control.setting('debug.level') == '1':
+				from resources.lib.modules import log_utils
+				log_utils.log('selected item: %s' % str(items[selected_items]), 1)
+		control.hide()
+	except:
+		from resources.lib.modules import log_utils
+		log_utils.error()
+		control.hide()
+
+def get_artwork(**kwargs):
+	arttype = kwargs.get('media_type')
+	if arttype == 'Movie':
+		artworkList = []
+		from resources.lib.indexers import fanarttv
+		fanartList = fanarttv.FanartTv().get_all_movie_art(imdb=kwargs.get('imdb',''), tmdb=kwargs.get('tmdb',''), artwork_type=kwargs.get('artwork_type'))
+		if fanartList and fanartList != '404:NOT FOUND':
+			artworkList.extend(fanartList)
+		from resources.lib.indexers import tmdb
+		tmdbList = tmdb.Movies().get_all_movie_art(imdb=kwargs.get('imdb',''), tmdb=kwargs.get('tmdb',''), artwork_type=kwargs.get('artwork_type'))
+		if len(tmdbList) > 0:
+			artworkList.extend(tmdbList)
+		return artworkList
+
+	else:
+		pass
+	return type
+
+
+def add_movie_entry(**kwargs):
+	try:
+		dbcon = get_connection()
+		dbcur = get_connection_cursor(dbcon)
+		ck_table = dbcur.execute('''SELECT * FROM sqlite_master WHERE type='table' AND name=?;''', ('movies',)).fetchone()
+		if not ck_table:
+			dbcur.execute('''CREATE TABLE IF NOT EXISTS %s (imdb TEXT, tmdb TEXT, poster TEXT, fanart TEXT, landscape TEXT, banner TEXT, clearart TEXT, clearlogo TEXT, discart TEXT, keyart TEXT, UNIQUE(imdb));''' % 'movies')
+			dbcur.connection.commit()
+		try:
+			imdb = kwargs.get('imdb','')
+			artworkType =  kwargs.get('artworkType','')
+			url = kwargs.get('url','')
+			dbcur.execute(f'''INSERT INTO movies (imdb, {artworkType}) Values (?, ?) ON CONFLICT(imdb) DO UPDATE SET {artworkType} = excluded.{artworkType}''', (imdb, url))
+		except Exception as e:
+			log_utils.log("Exception: %s" % (str(e)), 1)  # Log the problematic item
+		dbcur.connection.commit()
+	except:
+		log_utils.error()
+	finally:
+		dbcur.close() ; dbcon.close()
 
 def get_connection(setRowFactory=False):
 	if not existsPath(dataPath): makeFile(dataPath)

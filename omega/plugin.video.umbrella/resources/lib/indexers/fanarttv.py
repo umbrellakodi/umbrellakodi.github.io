@@ -209,3 +209,24 @@ class FanartTv:
 		except:
 			from resources.lib.modules import log_utils
 			log_utils.error()
+
+	def get_all_movie_art(self, **kwargs):
+		imdb = kwargs.get('imdb', '')
+		artworkType = kwargs.get('artwork_type', '')
+		if imdb:
+			art = self.get_request(base_url % ('movies', imdb))
+		if art is None or art == '404:NOT FOUND':
+			return None
+
+		artworkList = []
+		if artworkType == 'poster':
+			art_items = art['movieposter']
+		elif artworkType == 'fanart':
+			art_items = art['moviebackground']
+		else:
+			return artworkList
+
+		for index, item in enumerate(art_items, start=1):
+			artworkList.append({'artworkType': artworkType, 'source': f'Fanart {index}', 'url': item.get('url')})
+
+		return artworkList

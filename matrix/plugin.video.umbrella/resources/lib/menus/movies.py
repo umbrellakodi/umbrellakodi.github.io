@@ -2133,7 +2133,7 @@ class Movies:
 				icon = meta.get('icon') or poster
 				banner = meta.get('banner3') or meta.get('banner2') or meta.get('banner') or addonBanner
 				art = {}
-				useCustomArtwork = customArtwork.fetch_movie(imdb) #new custom artwork database check
+				useCustomArtwork = customArtwork.fetch_movie(imdb, tmdb) #new custom artwork database check
 				clearart = meta.get('clearart', '')
 				discart = meta.get('discart', '')
 				keyart = meta.get('keyart', '')
@@ -2178,6 +2178,7 @@ class Movies:
 						cm.append((watchedMenu, 'RunPlugin(%s?action=playcount_Movie&name=%s&imdb=%s&query=5)' % (sysaddon, sysname, imdb)))
 						meta.update({'playcount': 0, 'overlay': 4})
 				except: pass
+				#cm.append(('Customize Artwork', 'RunPlugin(%s?action=customizeArt&type=%s&imdb=%s&tmdb=%s)' % (sysaddon, 'movie', imdb, tmdb)))
 				cm.append((playlistManagerMenu, 'RunPlugin(%s?action=playlist_Manager&name=%s&url=%s&meta=%s&art=%s)' % (sysaddon, sysname, sysurl, sysmeta, sysart)))
 				cm.append((queueMenu, 'RunPlugin(%s?action=playlist_QueueItem&name=%s)' % (sysaddon, sysname)))
 				cm.append((addToLibrary, 'RunPlugin(%s?action=library_movieToLibrary&name=%s&title=%s&year=%s&imdb=%s&tmdb=%s)' % (sysaddon, sysname, systitle, year, imdb, tmdb)))
