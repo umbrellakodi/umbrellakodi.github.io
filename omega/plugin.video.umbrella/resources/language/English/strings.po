@@ -5214,3 +5214,7 @@ msgstr ""
 msgctxt "#40567"
 msgid "[COLOR %s][B]Force Simkl Sync to local database[/B][/COLOR]"
 msgstr ""
+
+msgctxt "#40568"
+msgid "Customize Art"
+msgstr ""
