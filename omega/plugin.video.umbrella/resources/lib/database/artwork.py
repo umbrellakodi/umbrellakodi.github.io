@@ -90,7 +90,7 @@ def show_artwork_window(**kwargs):
 		window = ArtSelect('artwork.xml', control.addonPath(control.addonId()), media_type=media_type, heading=heading, items=itemsDumped)
 		selected_items = window.run()
 		del window
-		if selected_items:
+		if selected_items >= 0:
 			selectedUrl = items[selected_items].get('url')
 			if media_type == 'Movie':
 				add_movie_entry(artworkType=artworkType,media_type=media_type, imdb=imdb, tmdb=tmdb, tvdb=tvdb, season=season, episode=episode, url=selectedUrl)
