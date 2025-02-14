@@ -524,7 +524,7 @@ class Movies(TMDb):
 		if tmdbart is None:
 			return
 
-		artworkType = kwargs.get('artworkType', '')
+		artworkType = kwargs.get('artwork_type', '')
 		artworkList = []
 		tmdbart_items = []
 		if artworkType == 'poster':

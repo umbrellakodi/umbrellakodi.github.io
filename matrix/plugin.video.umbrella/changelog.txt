@@ -1,5 +1,5 @@
-[B]Update - v6.7.398 - Feb 14th, 2025[/B]
---[Change] Custom artwork for movies.
+[B]Update - v6.7.399 - Feb 14th, 2025[/B]
+--[Change] Set art customization to use standard select picker.
 --[Fix] Fixed simkl authentication popup.
 --[Fix] Changed format of date stored for Simkl items to allow for sorting by date added.
 --[Fix] Simkl Progress Activity now gives correct values to trigger a sync and refresh of list.

@@ -26,57 +26,8 @@ def fetch_movie(imdb, tmdb):
 		dbcur.close() ; dbcon.close()
 	return list
 
-def show_artwork_options_with_current(**kwargs):
-	mediatype = kwargs.get('mediatype', '')
-	#variables needed
-	refesh = True
-	heading = control.infoLabel('Container.ListItem.Title')
-	artworkType = kwargs.get('artworktype', '')
-	imdb = kwargs.get('imdb','')
-	tmdb = kwargs.get('tmdb', '')
-	tvdb = kwargs.get('tvdb','')
-	season = kwargs.get('season','')
-	episode = kwargs.get('episode','')
-	poster = kwargs.get('poster')
-	fanart = kwargs.get('fanart')
-	landscape = kwargs.get('landscape')
-	banner = kwargs.get('banner')
-	clearart = kwargs.get('clearart')
-	clearlogo = kwargs.get('clearlogo')
-	discart = kwargs.get('discart')
-	keyart = kwargs.get('keyart')
-	
-
-	try:
-		control.busy()
-		items = [{"poster": poster}, {"fanart": fanart}, {"landscape": landscape}, {"banner": banner}, {"clearart": clearart}, {"clearlogo": clearlogo}, {"discart": discart}, {"keyart": keyart }]
-		control.hide()
-		from resources.lib.windows.artselection import ArtTypeSelect
-		itemsDumped = jsdumps(items)
-		window = ArtTypeSelect('artwork.xml', control.addonPath(control.addonId()), artworkType=artworkType, mediatype=mediatype, heading=heading, items=itemsDumped)
-		selected_items = window.run()
-		del window
-		if selected_items or selected_items == 0:
-			selectedItem = items[selected_items]
-			for each in selectedItem.keys():
-				artworktype = each
-			if mediatype == 'movie':
-				heading = artworktype + ' artwork for: %s' % control.infoLabel('Container.ListItem.Title')
-				log_utils.log('Umbrella Customize Art "%s" Selected.' % (artworktype), 1)
-				show_artwork_window(imdb=imdb, tmdb=tmdb, mediatype=mediatype, heading=heading, artworktype=artworktype)
-		control.hide()
-	except:
-		log_utils.error()
-		control.hide()
-
-def show_artwork_standard_select(**kwargs):
+def manager(type=None, imdb=None, tmdb=None, tvdb=None, season=None, episode=None):
 	lists = []
-	imdb = kwargs.get('imdb','')
-	tmdb = kwargs.get('tmdb', '')
-	tvdb = kwargs.get('tvdb','')
-	season = kwargs.get('season','')
-	episode = kwargs.get('episode','')
-	mediatype = kwargs.get('mediatype', '')
 	try:
 		if season: season = int(season)
 		if episode: episode = int(episode)
@@ -98,35 +49,36 @@ def show_artwork_standard_select(**kwargs):
 			if items[select][1] == 'poster':
 				heading = str(items[select][1] ) + ' artwork for: %s' % control.infoLabel('Container.ListItem.Title')
 				log_utils.log('Umbrella Customize Art "%s" Selected. Current %s is: %s' % (items[select][1], items[select][1], control.infoLabel('Container.ListItem.Art(poster)')), 1)
-				show_artwork_window(imdb=imdb, tmdb=tmdb, mediatype=mediatype, heading=heading, artworktype=str(items[select][1] ))
+				show_artwork_window(imdb=imdb, tmdb=tmdb, media_type=media_type, heading=heading, artworktype=str(items[select][1] ))
 			if items[select][1] == 'fanart':
 				heading = str(items[select][1] ) + ' artwork for: %s' % control.infoLabel('Container.ListItem.Title')
 				log_utils.log('Umbrella Customize Art "%s" Selected. Current %s is: %s' % (items[select][1], items[select][1], control.infoLabel('Container.ListItem.Art(fanart)')), 1)
-				show_artwork_window(imdb=imdb, tmdb=tmdb, mediatype=mediatype, heading=heading, artworktype=str(items[select][1] ))
+				show_artwork_window(imdb=imdb, tmdb=tmdb, media_type=media_type, heading=heading, artworktype=str(items[select][1] ))
 			if items[select][1] == 'landscape':
 				heading = str(items[select][1] ) + ' artwork for: %s' % control.infoLabel('Container.ListItem.Title')
 				log_utils.log('Umbrella Customize Art "%s" Selected. Current %s is: %s' % (items[select][1], items[select][1], control.infoLabel('Container.ListItem.Art(landscape)')), 1)
-				show_artwork_window(imdb=imdb, tmdb=tmdb, mediatype=mediatype, heading=heading, artworktype=str(items[select][1] ))
+				show_artwork_window(imdb=imdb, tmdb=tmdb, media_type=media_type, heading=heading, artworktype=str(items[select][1] ))
 			if items[select][1] == 'banner':
 				heading = str(items[select][1] ) + ' artwork for: %s' % control.infoLabel('Container.ListItem.Title')
 				log_utils.log('Umbrella Customize Art "%s" Selected. Current %s is: %s' % (items[select][1], items[select][1], control.infoLabel('Container.ListItem.Art(banner)')), 1)
-				show_artwork_window(imdb=imdb, tmdb=tmdb, mediatype=mediatype, heading=heading, artworktype=str(items[select][1] ))
+				show_artwork_window(imdb=imdb, tmdb=tmdb, media_type=media_type, heading=heading, artworktype=str(items[select][1] ))
 			if items[select][1] == 'clearart':
 				heading = str(items[select][1] ) + ' artwork for: %s' % control.infoLabel('Container.ListItem.Title')
 				log_utils.log('Umbrella Customize Art "%s" Selected. Current %s is: %s' % (items[select][1], items[select][1], control.infoLabel('Container.ListItem.Art(clearart)')), 1)
-				show_artwork_window(imdb=imdb, tmdb=tmdb, mediatype=mediatype, heading=heading, artworktype=str(items[select][1] ))
+				show_artwork_window(imdb=imdb, tmdb=tmdb, media_type=media_type, heading=heading, artworktype=str(items[select][1] ))
 			if items[select][1] == 'clearlogo':
 				heading = str(items[select][1] ) + ' artwork for: %s' % control.infoLabel('Container.ListItem.Title')
 				log_utils.log('Umbrella Customize Art "%s" Selected. Current %s is: %s' % (items[select][1], items[select][1], control.infoLabel('Container.ListItem.Art(clearlogo)')), 1)
-				show_artwork_window(imdb=imdb, tmdb=tmdb, mediatype=mediatype, heading=heading, artworktype=str(items[select][1] ))
+				show_artwork_window(imdb=imdb, tmdb=tmdb, media_type=media_type, heading=heading, artworktype=str(items[select][1] ))
 			if items[select][1] == 'discart':
 				heading = str(items[select][1] ) + ' artwork for: %s' % control.infoLabel('Container.ListItem.Title')
 				log_utils.log('Umbrella Customize Art "%s" Selected. Current %s is: %s' % (items[select][1], items[select][1], control.infoLabel('Container.ListItem.Art(discart)')), 1)
-				show_artwork_window(imdb=imdb, tmdb=tmdb, mediatype=mediatype, heading=heading, artworktype=str(items[select][1] ))
+				show_artwork_window(imdb=imdb, tmdb=tmdb, media_type=media_type, heading=heading, artworktype=str(items[select][1] ))
 			if items[select][1] == 'keyart':
 				heading = str(items[select][1] ) + ' artwork for: %s' % control.infoLabel('Container.ListItem.Title')
 				log_utils.log('Umbrella Customize Art "%s" Selected. Current %s is: %s' % (items[select][1], items[select][1], control.infoLabel('Container.ListItem.Art(keyart)')), 1)
-				show_artwork_window(imdb=imdb, tmdb=tmdb, mediatype=mediatype, heading=heading, artworktype=str(items[select][1] ))
+				show_artwork_window(imdb=imdb, tmdb=tmdb, media_type=media_type, heading=heading, artworktype=str(items[select][1] ))
+			if items[select][0].startswith('Add'): refresh = False
 			control.hide()
 			if refresh: control.refresh()
 			control.trigger_widget_refresh()
@@ -135,7 +87,7 @@ def show_artwork_standard_select(**kwargs):
 		control.hide()
 
 def show_artwork_window(**kwargs):
-	mediatype = kwargs.get('mediatype', '')
+	media_type = kwargs.get('media_type', '')
 	heading = kwargs.get('heading', 'Umbrella Art')
 	artworkType = kwargs.get('artworktype', '')
 	imdb = kwargs.get('imdb','')
@@ -143,44 +95,42 @@ def show_artwork_window(**kwargs):
 	tvdb = kwargs.get('tvdb','')
 	season = kwargs.get('season','')
 	episode = kwargs.get('episode','')
-	refresh = True
 	try:
 		control.busy()
-		items = get_artwork(imdb=imdb, tmdb=tmdb, tvdb=tvdb, season=season, episode=episode, mediatype=mediatype, artworkType=artworkType)
+		items = get_artwork(imdb=imdb, tmdb=tmdb, tvdb=tvdb, season=season, episode=episode, media_type=media_type, artwork_type=artworkType)
+		if not items: return control.notification(control.infoLabel('Container.ListItem.Title'), 'No %s artwork found.' % artworkType)
 		control.hide()
 		itemsDumped = jsdumps(items)
 		from resources.lib.windows.artselection import ArtSelect
-		window = ArtSelect('artwork.xml', control.addonPath(control.addonId()), mediatype=mediatype, heading=heading, items=itemsDumped)
+		window = ArtSelect('artwork.xml', control.addonPath(control.addonId()), media_type=media_type, heading=heading, items=itemsDumped)
 		selected_items = window.run()
 		del window
-		if selected_items or selected_items == 0:
+		if selected_items >= 0:
 			selectedUrl = items[selected_items].get('url')
-			if mediatype == 'movie':
-				add_movie_entry(artworkType=artworkType,mediatype=mediatype, imdb=imdb, tmdb=tmdb, tvdb=tvdb, season=season, episode=episode, url=selectedUrl)
+			if media_type == 'Movie':
+				add_movie_entry(artworkType=artworkType,media_type=media_type, imdb=imdb, tmdb=tmdb, tvdb=tvdb, season=season, episode=episode, url=selectedUrl)
 			if control.setting('debug.level') == '1':
+				from resources.lib.modules import log_utils
 				log_utils.log('selected item: %s' % str(items[selected_items]), 1)
 		control.hide()
-		control.sleep(300)
-		if refresh: control.refresh()
-		control.trigger_widget_refresh()
 	except:
+		from resources.lib.modules import log_utils
 		log_utils.error()
 		control.hide()
 
 def get_artwork(**kwargs):
-	arttype = kwargs.get('mediatype')
-	if arttype == 'movie':
+	arttype = kwargs.get('media_type')
+	
+	if arttype == 'Movie':
 		artworkList = []
 		from resources.lib.indexers import fanarttv
-		fanartList = fanarttv.FanartTv().get_all_movie_art(imdb=kwargs.get('imdb',''), tmdb=kwargs.get('tmdb',''), artworkType=kwargs.get('artworkType'))
+		fanartList = fanarttv.FanartTv().get_all_movie_art(imdb=kwargs.get('imdb',''), tmdb=kwargs.get('tmdb',''), artwork_type=kwargs.get('artwork_type'))
 		if fanartList and fanartList != '404:NOT FOUND':
 			artworkList.extend(fanartList)
 		from resources.lib.indexers import tmdb
-		tmdbList = tmdb.Movies().get_all_movie_art(imdb=kwargs.get('imdb',''), tmdb=kwargs.get('tmdb',''), artworkType=kwargs.get('artworkType'))
+		tmdbList = tmdb.Movies().get_all_movie_art(imdb=kwargs.get('imdb',''), tmdb=kwargs.get('tmdb',''), artwork_type=kwargs.get('artwork_type'))
 		if tmdbList:
 			artworkList.extend(tmdbList)
-		if not artworkList:
-			return control.notification('No Artwork', 'No %s artwork was found for imdb id: %s' % (kwargs.get('artworkType'), kwargs.get('imdb')))
 		return artworkList
 
 	else:
@@ -208,7 +158,6 @@ def add_movie_entry(**kwargs):
 		log_utils.error()
 	finally:
 		dbcur.close() ; dbcon.close()
-		control.refresh()
 
 def get_connection(setRowFactory=False):
 	if not existsPath(dataPath): makeFile(dataPath)

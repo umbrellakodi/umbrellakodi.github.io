@@ -212,7 +212,7 @@ class FanartTv:
 
 	def get_all_movie_art(self, **kwargs):
 		imdb = kwargs.get('imdb', '')
-		artworkType = kwargs.get('artworkType', '')
+		artworkType = kwargs.get('artwork_type', '')
 		if imdb:
 			art = self.get_request(base_url % ('movies', imdb))
 		if art is None or art == '404:NOT FOUND':

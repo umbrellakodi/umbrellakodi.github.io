@@ -578,40 +578,6 @@
 					</dependencies>
 					<control type="spinner" format="string"/>
 				</setting>
-				<setting id="sort.movies.plantowatch.type" type="integer" label="40569" help="">
-					<level>0</level>
-					<default>5</default>
-					<constraints>
-						<options>
-							<option label="33564">0</option>
-							<option label="33039">1</option>
-							<option label="35187">2</option>
-							<option label="35188">3</option>
-							<option label="35391">4</option>
-							<option label="35392">5</option>
-							<option label="35393">6</option>
-						</options>
-					</constraints>
-					<control type="list" format="string">
-						<heading>40569</heading>
-					</control>
-				</setting>
-				<setting id="sort.movies.plantowatch.order" type="integer" label="33679" help="" parent="sort.movies.plantowatch.type">
-					<level>0</level>
-					<default>1</default>
-					<constraints>
-						<options>
-							<option label="33649">0</option>
-							<option label="33650">1</option>
-						</options>
-					</constraints>
-					<dependencies>
-						<dependency type="enable">
-							<condition operator="!is" setting="sort.movies.plantowatch.type">0</condition>
-						</dependency>
-					</dependencies>
-					<control type="spinner" format="string"/>
-				</setting>
 				<setting id="sort.movies.watchlist.type" type="integer" label="35574" help="">
 					<level>0</level>
 					<default>5</default>
@@ -1843,40 +1809,6 @@
 					<dependencies>
 						<dependency type="enable">
 							<condition operator="!is" setting="sort.shows.type">0</condition>
-						</dependency>
-					</dependencies>
-					<control type="spinner" format="string"/>
-				</setting>
-				<setting id="sort.shows.plantowatch.type" type="integer" label="40569" help="">
-					<level>0</level>
-					<default>5</default>
-					<constraints>
-						<options>
-							<option label="33564">0</option>
-							<option label="33039">1</option>
-							<option label="35187">2</option>
-							<option label="35188">3</option>
-							<option label="35391">4</option>
-							<option label="35392">5</option>
-							<option label="35393">6</option>
-						</options>
-					</constraints>
-					<control type="list" format="string">
-						<heading>40569</heading>
-					</control>
-				</setting>
-				<setting id="sort.shows.plantowatch.order" type="integer" label="33679" help="" parent="sort.shows.plantowatch.type">
-					<level>0</level>
-					<default>1</default>
-					<constraints>
-						<options>
-							<option label="33649">0</option>
-							<option label="33650">1</option>
-						</options>
-					</constraints>
-					<dependencies>
-						<dependency type="enable">
-							<condition operator="!is" setting="sort.shows.plantowatch.type">0</condition>
 						</dependency>
 					</dependencies>
 					<control type="spinner" format="string"/>
