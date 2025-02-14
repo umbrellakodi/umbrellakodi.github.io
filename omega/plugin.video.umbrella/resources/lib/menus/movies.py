@@ -1168,7 +1168,7 @@ class Movies:
 			self.list = simklsync.fetch_plantowatch('movies_plantowatch')
 			useNext = True
 			if create_directory:
-				self.sort(type='movies.watchlist') # sort before local pagination
+				self.sort(type='movies.plantowatch') # sort before local pagination
 				if getSetting('simkl.paginate.lists') == 'true' and self.list:
 					if len(self.list) == int(self.page_limit):
 						useNext = False
