@@ -219,14 +219,28 @@ class FanartTv:
 			return None
 
 		artworkList = []
+		art_items = []
 		if artworkType == 'poster':
-			art_items = art['movieposter']
+			art_items = art.get('movieposter')
 		elif artworkType == 'fanart':
-			art_items = art['moviebackground']
+			art_items = art.get('moviebackground')
+		elif artworkType == 'landscape':
+			art_items = art.get('moviethumb')
+		elif artworkType == 'banner':
+			art_items = art.get('moviebanner')
+		elif artworkType == 'clearlogo':
+			art_items = art.get('hdmovielogo', []) + art.get('movielogo', [])
+		elif artworkType == 'clearart':
+			art_items = art.get('hdmovieclearart')
+		elif artworkType == 'discart':
+			art_items = art.get('moviedisc')
+		elif artworkType == 'keyart':
+			art_items = [item for item in art.get('movieposter', []) if item.get('lang') == '00']
 		else:
 			return artworkList
 
-		for index, item in enumerate(art_items, start=1):
-			artworkList.append({'artworkType': artworkType, 'source': f'Fanart {index}', 'url': item.get('url')})
+		if art_items:
+			for index, item in enumerate(art_items, start=1):
+				artworkList.append({'artworkType': artworkType, 'source': f'Fanart {index}', 'url': item.get('url')})
 
 		return artworkList

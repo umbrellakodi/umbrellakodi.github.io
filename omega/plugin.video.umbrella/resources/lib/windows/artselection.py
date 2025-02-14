@@ -16,7 +16,7 @@ class ArtSelect(BaseDialog):
         self.heading = self.kwargs.get('heading', '')
         self.items = json.loads(self.kwargs['items'])
         try:
-            self.artworktype = self.items[0].get('artworkType','')
+            self.artworktype = self.items[0].get('artwork_type','')
         except:
             self.artworktype = ''
         self.item_list = []
@@ -65,6 +65,7 @@ class ArtSelect(BaseDialog):
                 else: listitem.setProperty('icon', '')
                 listitem.setProperty('line1', line1)
                 listitem.setProperty('line2', line2)
+                listitem.setProperty('artworktype', item['artworkType'])
                 listitem.setProperty('poster', item['url'])
                 yield listitem
         self.item_list = list(builder())

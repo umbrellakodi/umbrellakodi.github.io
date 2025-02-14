@@ -51,7 +51,9 @@ def manager(type=None, imdb=None, tmdb=None, tvdb=None, season=None, episode=Non
 				log_utils.log('Umbrella Customize Art "%s" Selected. Current %s is: %s' % (items[select][1], items[select][1], control.infoLabel('Container.ListItem.Art(poster)')), 1)
 				show_artwork_window(imdb=imdb, tmdb=tmdb, media_type=media_type, heading=heading, artworktype=str(items[select][1] ))
 			if items[select][1] == 'fanart':
+				heading = str(items[select][1] ) + ' artwork for: %s' % control.infoLabel('Container.ListItem.Title')
 				log_utils.log('Umbrella Customize Art "%s" Selected. Current %s is: %s' % (items[select][1], items[select][1], control.infoLabel('Container.ListItem.Art(fanart)')), 1)
+				show_artwork_window(imdb=imdb, tmdb=tmdb, media_type=media_type, heading=heading, artworktype=str(items[select][1] ))
 			if items[select][1] == 'landscape':
 				log_utils.log('Umbrella Customize Art "%s" Selected. Current %s is: %s' % (items[select][1], items[select][1], control.infoLabel('Container.ListItem.Art(landscape)')), 1)
 			if items[select][1] == 'banner':
@@ -105,6 +107,7 @@ def show_artwork_window(**kwargs):
 
 def get_artwork(**kwargs):
 	arttype = kwargs.get('media_type')
+	
 	if arttype == 'Movie':
 		artworkList = []
 		from resources.lib.indexers import fanarttv
@@ -113,7 +116,7 @@ def get_artwork(**kwargs):
 			artworkList.extend(fanartList)
 		from resources.lib.indexers import tmdb
 		tmdbList = tmdb.Movies().get_all_movie_art(imdb=kwargs.get('imdb',''), tmdb=kwargs.get('tmdb',''), artwork_type=kwargs.get('artwork_type'))
-		if len(tmdbList) > 0:
+		if tmdbList:
 			artworkList.extend(tmdbList)
 		return artworkList
 
