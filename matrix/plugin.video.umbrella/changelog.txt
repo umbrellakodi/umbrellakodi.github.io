@@ -1,4 +1,5 @@
-[B]Update - v6.7.397 - Feb 13th, 2025[/B]
+[B]Update - v6.7.398 - Feb 14th, 2025[/B]
+--[Change] Custom artwork for movies.
 --[Fix] Fixed simkl authentication popup.
 --[Fix] Changed format of date stored for Simkl items to allow for sorting by date added.
 --[Fix] Simkl Progress Activity now gives correct values to trigger a sync and refresh of list.

@@ -526,11 +526,23 @@ class Movies(TMDb):
 
 		artworkType = kwargs.get('artworkType', '')
 		artworkList = []
-
+		tmdbart_items = []
 		if artworkType == 'poster':
-			tmdbart_items = tmdbart['posters']
+			tmdbart_items = tmdbart.get('posters')
 		elif artworkType == 'fanart':
-			tmdbart_items = tmdbart['backdrops']
+			tmdbart_items = tmdbart.get('backdrops')
+		elif artworkType == 'landscape':
+			tmdbart_items = tmdbart.get('backdrops')
+		elif artworkType == 'banner':
+			return None
+		elif artworkType == 'clearlogo':
+			tmdbart_items = tmdbart.get('logos')
+		elif artworkType == 'cleart':
+			return None
+		elif artworkType == 'discart':
+			return None
+		elif artworkType == 'keyart':
+			return None
 		else:
 			return artworkList
 

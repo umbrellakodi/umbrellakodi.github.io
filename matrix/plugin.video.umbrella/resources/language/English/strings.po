@@ -5218,3 +5218,7 @@ msgstr ""
 msgctxt "#40568"
 msgid "Customize Art"
 msgstr ""
+
+msgctxt "#40569"
+msgid "Plan to Watch Sorting"
+msgstr ""

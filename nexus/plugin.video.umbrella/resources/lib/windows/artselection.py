@@ -65,13 +65,13 @@ class ArtSelect(BaseDialog):
                 else: listitem.setProperty('icon', '')
                 listitem.setProperty('line1', line1)
                 listitem.setProperty('line2', line2)
+                listitem.setProperty('artworktype', self.artworktype)
                 listitem.setProperty('poster', item['url'])
                 yield listitem
         self.item_list = list(builder())
 
     def set_properties(self):
         self.setProperty('heading', self.heading)
-        self.setProperty('artworktype', self.artworktype)
 
 class ArtTypeSelect(BaseDialog):
     def __init__(self, *args, **kwargs):

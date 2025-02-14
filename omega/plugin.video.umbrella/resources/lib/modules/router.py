@@ -824,6 +824,7 @@ def router(argv2):
 	elif action == 'customizeArt':
 		from resources.lib.database import artwork
 		artwork.show_artwork_options_with_current(mediatype=mediatype, imdb=imdb, tmdb=tmdb, poster=params.get('poster'), fanart=params.get('fanart'), landscape=params.get('landscape'), banner=params.get('banner'), clearart=params.get('clearart'), clearlogo=params.get('clearlogo'), discart=params.get('discart'), keyart=params.get('keyart'))
+		#artwork.show_artwork_standard_select(mediatype=mediatype, imdb=imdb, tmdb=tmdb, poster=params.get('poster'), fanart=params.get('fanart'), landscape=params.get('landscape'), banner=params.get('banner'), clearart=params.get('clearart'), clearlogo=params.get('clearlogo'), discart=params.get('discart'), keyart=params.get('keyart'))
 	####################################################
 	#---Tools
 	####################################################
