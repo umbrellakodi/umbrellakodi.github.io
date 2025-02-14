@@ -1,4 +1,4 @@
-<addon id="plugin.video.umbrella" name="Umbrella" provider-name="Umbrella" version="6.7.397">
+<addon id="plugin.video.umbrella" name="Umbrella" provider-name="Umbrella" version="6.7.398">
 	<requires>
 		<import addon="xbmc.python" version="3.0.0"/>
 		<import addon="script.module.requests"/>
@@ -179,7 +179,8 @@
 			<screenshot>resources/screenshots/screenshot003.jpg</screenshot>
 		</assets>
 		<news>
-[B]Update - v6.7.397 - Feb 13th, 2025[/B]
+[B]Update - v6.7.398 - Feb 14th, 2025[/B]
+--[Change] Custom artwork for movies.
 --[Fix] Fixed simkl authentication popup.
 --[Fix] Changed format of date stored for Simkl items to allow for sorting by date added.
 --[Fix] Simkl Progress Activity now gives correct values to trigger a sync and refresh of list.

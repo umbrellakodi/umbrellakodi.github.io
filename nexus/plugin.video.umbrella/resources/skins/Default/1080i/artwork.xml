@@ -60,6 +60,102 @@
                         <visible>String.IsEqual(Window().Property(artworktype),poster)</visible>
                     </control>
                 </control>
+                <control type="group">
+                    <control type="image">
+                        <left>830</left>
+                        <top>40</top>
+                        <height>720</height>
+                        <width>500</width>
+                        <aspectratio aligny="bottom">keep</aspectratio>
+                        <texture background="true">$INFO[ListItem.Property(poster)]</texture>
+                        <fadetime>100</fadetime>
+                        <visible>String.IsEqual(ListItem.Property(artworktype),poster)</visible>
+                    </control>
+                </control>
+                <control type="group">
+                    <control type="image">
+                        <left>830</left>
+                        <top>265</top>
+                        <height>281</height>
+                        <width>500</width>
+                        <aspectratio aligny="bottom">keep</aspectratio>
+                        <texture background="true">$INFO[ListItem.Property(poster)]</texture>
+                        <fadetime>100</fadetime>
+                        <visible>String.IsEqual(ListItem.Property(artworktype),fanart)</visible>
+                    </control>
+                </control>
+                <control type="group">
+                    <control type="image">
+                        <left>830</left>
+                        <top>265</top>
+                        <height>281</height>
+                        <width>500</width>
+                        <aspectratio aligny="bottom">keep</aspectratio>
+                        <texture background="true">$INFO[ListItem.Property(poster)]</texture>
+                        <fadetime>100</fadetime>
+                        <visible>String.IsEqual(ListItem.Property(artworktype),landscape)</visible>
+                    </control>
+                </control>
+                <control type="group">
+                    <control type="image">
+                        <left>830</left>
+                        <top>365</top>
+                        <height>93</height>
+                        <width>500</width>
+                        <aspectratio aligny="bottom">keep</aspectratio>
+                        <texture background="true">$INFO[ListItem.Property(poster)]</texture>
+                        <fadetime>100</fadetime>
+                        <visible>String.IsEqual(ListItem.Property(artworktype),banner)</visible>
+                    </control>
+                </control>
+                <control type="group">
+                    <control type="image">
+                        <left>830</left>
+                        <top>265</top>
+                        <height>281</height>
+                        <width>500</width>
+                        <aspectratio aligny="bottom">keep</aspectratio>
+                        <texture background="true">$INFO[ListItem.Property(poster)]</texture>
+                        <fadetime>100</fadetime>
+                        <visible>String.IsEqual(ListItem.Property(artworktype),clearart)</visible>
+                    </control>
+                </control>
+                <control type="group">
+                    <control type="image">
+                        <left>830</left>
+                        <top>265</top>
+                        <height>194</height>
+                        <width>500</width>
+                        <aspectratio aligny="bottom">keep</aspectratio>
+                        <texture background="true">$INFO[ListItem.Property(poster)]</texture>
+                        <fadetime>100</fadetime>
+                        <visible>String.IsEqual(ListItem.Property(artworktype),clearlogo)</visible>
+                    </control>
+                </control>
+                <control type="group">
+                    <control type="image">
+                        <left>830</left>
+                        <top>165</top>
+                        <height>450</height>
+                        <width>450</width>
+                        <aspectratio aligny="bottom">keep</aspectratio>
+                        <texture background="true">$INFO[ListItem.Property(poster)]</texture>
+                        <fadetime>100</fadetime>
+                        <visible>String.IsEqual(ListItem.Property(artworktype),discart)</visible>
+                    </control>
+                </control>
+                <control type="group">
+                    <control type="image">
+                        <left>800</left>
+                        <top>265</top>
+                        <height>333</height>
+                        <width>500</width>
+                        <aspectratio aligny="bottom">keep</aspectratio>
+                        <texture background="true">$INFO[ListItem.Property(poster)]</texture>
+                        <fadetime>100</fadetime>
+                        <visible>String.IsEqual(ListItem.Property(artworktype),keyart)</visible>
+                    </control>
+                </control>
             </control>
             <control type="fixedlist" id="2025">
                 <pagecontrol>2065</pagecontrol>

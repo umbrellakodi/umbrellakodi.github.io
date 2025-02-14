@@ -943,7 +943,7 @@ class TVshows:
 			self.list = simklsync.fetch_plantowatch('shows_plantowatch')
 			useNext = True
 			if create_directory:
-				self.sort(type='shows.watchlist') # sort before local pagination
+				self.sort(type='shows.plantowatch') # sort before local pagination
 				if getSetting('simkl.paginate.lists') == 'true' and self.list:
 					if len(self.list) == int(self.page_limit):
 						useNext = False
