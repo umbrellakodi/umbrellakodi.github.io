@@ -12,11 +12,11 @@ class ArtSelect(BaseDialog):
         BaseDialog.__init__(self, args)
         self.window_id = 2025
         self.kwargs = kwargs
-        self.media_type = self.kwargs.get('media_type', '')
+        self.mediatype = self.kwargs.get('mediatype', '')
         self.heading = self.kwargs.get('heading', '')
         self.items = json.loads(self.kwargs['items'])
         try:
-            self.artworktype = self.items[0].get('artwork_type','')
+            self.artworktype = self.items[0].get('artworkType','')
         except:
             self.artworktype = ''
         self.item_list = []
@@ -65,12 +65,71 @@ class ArtSelect(BaseDialog):
                 else: listitem.setProperty('icon', '')
                 listitem.setProperty('line1', line1)
                 listitem.setProperty('line2', line2)
-                listitem.setProperty('artworktype', item['artworkType'])
+                listitem.setProperty('artworktype', self.artworktype)
                 listitem.setProperty('poster', item['url'])
                 yield listitem
         self.item_list = list(builder())
 
     def set_properties(self):
         self.setProperty('heading', self.heading)
-        self.setProperty('artworktype', self.artworktype)
+
+class ArtTypeSelect(BaseDialog):
+    def __init__(self, *args, **kwargs):
+        BaseDialog.__init__(self, args)
+        self.window_id = 2025
+        self.kwargs = kwargs
+        self.mediatype = self.kwargs.get('mediatype', '')
+        self.heading = self.kwargs.get('heading', '')
+        self.items = json.loads(self.kwargs['items'])
+        self.item_list = []
+        self.chosen_indexes = []
+        self.selected = None
+        self.set_properties()
+        self.make_menu()
         
+    def onInit(self):
+        win = self.getControl(self.window_id)
+        win.addItems(self.item_list)
+        self.setFocusId(self.window_id)
+        
+    def run(self):
+        self.doModal()
+        self.clearProperties() 
+        return self.selected
+
+    def onClick(self, controlID):
+        self.control_id = None
+        if controlID in button_ids:
+            if controlID == ok_id:
+                self.selected = sorted(self.chosen_indexes)
+                self.close()
+            elif controlID == cancel_id:
+                self.close()
+        else: self.control_id = controlID
+
+    def onAction(self, action):
+        if action in self.selection_actions:
+            if not self.control_id: return
+            position = self.get_position(self.window_id)
+            self.selected = position
+            return self.close()
+        elif action in self.closing_actions:
+            return self.close()
+
+    def make_menu(self):
+        def builder():
+            for count, item in enumerate(self.items, 1):
+                listitem = self.make_listitem()
+                for each in item.keys():
+                    line1 = each
+                    listitem.setProperty('artworktype', each)
+                    listitem.setProperty('poster', str(item.get(each)))
+                line2 = ''
+                listitem.setProperty('icon', '')
+                listitem.setProperty('line1', line1)
+                listitem.setProperty('line2', line2)
+                yield listitem
+        self.item_list = list(builder())
+
+    def set_properties(self):
+        self.setProperty('heading', self.heading)
