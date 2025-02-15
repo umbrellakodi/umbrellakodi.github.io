@@ -21,6 +21,7 @@ from resources.lib.modules import trakt
 from resources.lib.modules import views
 from resources.lib.modules import mdblist
 from resources.lib.modules import simkl
+from resources.lib.database import artwork as customArtwork
 
 getLS = control.lang
 getSetting = control.setting
@@ -1960,8 +1961,28 @@ class TVshows:
 				icon = meta.get('icon') or poster
 				banner = meta.get('banner3') or meta.get('banner2') or meta.get('banner') or None #changed due to some skins using banner.
 				art = {}
-				art.update({'poster': poster, 'tvshow.poster': poster, 'fanart': fanart, 'icon': icon, 'thumb': thumb, 'banner': banner, 'clearlogo': meta.get('clearlogo', ''),
-						'tvshow.clearlogo': meta.get('clearlogo', ''), 'clearart': meta.get('clearart', ''), 'tvshow.clearart': meta.get('clearart', ''), 'landscape': landscape})
+				useCustomArtwork = customArtwork.fetch_show(imdb, tmdb, tvdb) #new custom artwork database check
+				clearlogo = meta.get('clearlogo', '')
+				clearart = meta.get('clearart', '')
+				discart = meta.get('discart', '')
+				keyart = meta.get('keyart', '')
+				if useCustomArtwork:
+					from resources.lib.modules import log_utils
+					log_utils.log('Detected show in database and will use custom values now.')
+					allowed_keys = {"poster", "fanart", "landscape", "banner", "clearart", "clearlogo", "discart", "keyart"}
+					for key in allowed_keys:
+						value = useCustomArtwork[0].get(key)
+						if value not in (None, "", " "):  # Ignore empty values. ugly but local() will not change values
+							if key == 'poster': poster = value
+							if key == 'fanart': fanart = value
+							if key == 'landscape': landscape = value
+							if key == 'banner': banner = value
+							if key == 'clearart': clearart = value
+							if key == 'clearlogo': clearlogo = value
+					if "poster" in useCustomArtwork[0] and useCustomArtwork[0].get("poster") not in (None, "", " "):
+						thumb = useCustomArtwork[0].get("poster")
+				art.update({'poster': poster, 'tvshow.poster': poster, 'fanart': fanart, 'icon': icon, 'thumb': thumb, 'banner': banner, 'clearlogo': clearlogo,
+						'tvshow.clearlogo': clearlogo, 'clearart': clearart, 'tvshow.clearart': clearart, 'landscape': landscape})
 				for k in ('metacache', 'poster2', 'poster3', 'fanart2', 'fanart3', 'banner2', 'banner3', 'trailer'): meta.pop(k, None)
 				meta.update({'poster': poster, 'fanart': fanart, 'banner': banner, 'thumb': thumb, 'icon': icon})
 				sysmeta, sysart = quote_plus(jsdumps(meta)), quote_plus(jsdumps(art))
@@ -1987,6 +2008,7 @@ class TVshows:
 						meta.update({'playcount': 0, 'overlay': 4})
 						cm.append((watchedMenu, 'RunPlugin(%s?action=playcount_TVShow&name=%s&imdb=%s&tvdb=%s&query=5)' % (sysaddon, systitle, imdb, tvdb)))
 				except: pass
+				cm.append(('Customize Artwork', 'RunPlugin(%s?action=customizeArt&mediatype=%s&imdb=%s&tmdb=%s&tvdb=%s&poster=%s&fanart=%s&landscape=%s&banner=%s&clearart=%s&clearlogo=%s)' % (sysaddon, 'show', imdb, tmdb, tvdb, poster, fanart, landscape, banner, clearart, clearlogo)))
 				cm.append((findSimilarMenu, 'Container.Update(%s?action=tvshows&url=%s)' % (sysaddon, quote_plus('https://api.trakt.tv/shows/%s/related?limit=20&page=1,return' % imdb))))
 				cm.append((playRandom, 'RunPlugin(%s?action=play_Random&rtype=season&tvshowtitle=%s&year=%s&imdb=%s&tmdb=%s&tvdb=%s&art=%s)' % (sysaddon, systitle, year, imdb, tmdb, tvdb, sysart)))
 				# cm.append((queueMenu, 'RunPlugin(%s?action=playlist_QueueItem&name=%s)' % (sysaddon, systitle)))

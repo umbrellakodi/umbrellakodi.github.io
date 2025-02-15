@@ -524,7 +524,7 @@ class Movies(TMDb):
 		if tmdbart is None:
 			return
 
-		artworkType = kwargs.get('artworkType', '')
+		artworkType = kwargs.get('artwork_type', '')
 		artworkList = []
 		tmdbart_items = []
 		if artworkType == 'poster':
@@ -548,7 +548,7 @@ class Movies(TMDb):
 
 		for index, item in enumerate(tmdbart_items, start=1):
 			filepath = item.get('file_path')
-			itemurl = '%s%s' % (self.poster_path, filepath) if filepath else ''
+			itemurl = '%s%s' % (self.profile_path, filepath) if filepath else ''
 			artworkList.append({'artworkType': artworkType, 'source': 'Tmdb %s' % index, 'url': itemurl})
 
 		return artworkList
@@ -1198,6 +1198,41 @@ class TVshows(TMDb):
 			from resources.lib.modules import log_utils
 			log_utils.error()
 		return self.list
+
+	def get_all_show_art(self, **kwargs):
+		tmdb = kwargs.get('tmdb', '')
+		if not tmdb:
+			return None
+
+		url = self.art_link % tmdb
+		tmdbart = self.get_request(url)
+		if tmdbart is None:
+			return
+
+		artworkType = kwargs.get('artwork_type', '')
+		artworkList = []
+		tmdbart_items = []
+		if artworkType == 'poster':
+			tmdbart_items = tmdbart.get('posters')
+		elif artworkType == 'fanart':
+			tmdbart_items = tmdbart.get('backdrops')
+		elif artworkType == 'landscape':
+			tmdbart_items = tmdbart.get('backdrops')
+		elif artworkType == 'banner':
+			return None
+		elif artworkType == 'clearlogo':
+			tmdbart_items = tmdbart.get('logos')
+		elif artworkType == 'cleart':
+			return None
+		else:
+			return artworkList
+
+		for index, item in enumerate(tmdbart_items, start=1):
+			filepath = item.get('file_path')
+			itemurl = '%s%s' % (self.profile_path, filepath) if filepath else ''
+			artworkList.append({'artworkType': artworkType, 'source': 'Tmdb %s' % index, 'url': itemurl})
+
+		return artworkList
 
 
 class Auth:

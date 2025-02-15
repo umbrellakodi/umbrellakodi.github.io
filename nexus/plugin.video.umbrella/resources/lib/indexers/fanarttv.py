@@ -212,7 +212,7 @@ class FanartTv:
 
 	def get_all_movie_art(self, **kwargs):
 		imdb = kwargs.get('imdb', '')
-		artworkType = kwargs.get('artworkType', '')
+		artworkType = kwargs.get('artwork_type', '')
 		if imdb:
 			art = self.get_request(base_url % ('movies', imdb))
 		if art is None or art == '404:NOT FOUND':
@@ -236,6 +236,37 @@ class FanartTv:
 			art_items = art.get('moviedisc')
 		elif artworkType == 'keyart':
 			art_items = [item for item in art.get('movieposter', []) if item.get('lang') == '00']
+		else:
+			return artworkList
+
+		if art_items:
+			for index, item in enumerate(art_items, start=1):
+				artworkList.append({'artworkType': artworkType, 'source': f'Fanart {index}', 'url': item.get('url')})
+
+		return artworkList
+
+	def get_all_show_art(self, **kwargs):
+		tvdb = kwargs.get('tvdb', '')
+		artworkType = kwargs.get('artwork_type', '')
+		if tvdb:
+			art = self.get_request(base_url % ('tv', tvdb))
+		if art is None or art == '404:NOT FOUND':
+			return None
+
+		artworkList = []
+		art_items = []
+		if artworkType == 'poster':
+			art_items = art.get('tvposter')
+		elif artworkType == 'fanart':
+			art_items = art.get('showbackground')
+		elif artworkType == 'landscape':
+			art_items = art.get('tvthumb')
+		elif artworkType == 'banner':
+			art_items = art.get('tvbanner')
+		elif artworkType == 'clearlogo':
+			art_items = art.get('hdtvlogo', []) + art.get('tvlogo', [])
+		elif artworkType == 'clearart':
+			art_items = art.get('hdclearart')
 		else:
 			return artworkList
 
