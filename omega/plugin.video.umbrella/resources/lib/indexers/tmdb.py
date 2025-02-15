@@ -550,7 +550,6 @@ class Movies(TMDb):
 			filepath = item.get('file_path')
 			itemurl = '%s%s' % (self.profile_path, filepath) if filepath else ''
 			artworkList.append({'artworkType': artworkType, 'source': 'Tmdb %s' % index, 'url': itemurl})
-
 		return artworkList
 
 

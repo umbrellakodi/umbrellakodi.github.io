@@ -242,7 +242,6 @@ class FanartTv:
 		if art_items:
 			for index, item in enumerate(art_items, start=1):
 				artworkList.append({'artworkType': artworkType, 'source': f'Fanart {index}', 'url': item.get('url')})
-
 		return artworkList
 
 	def get_all_show_art(self, **kwargs):
@@ -273,5 +272,4 @@ class FanartTv:
 		if art_items:
 			for index, item in enumerate(art_items, start=1):
 				artworkList.append({'artworkType': artworkType, 'source': f'Fanart {index}', 'url': item.get('url')})
-
 		return artworkList

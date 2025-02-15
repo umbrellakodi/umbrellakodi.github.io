@@ -12,7 +12,7 @@ class ArtSelect(BaseDialog):
         BaseDialog.__init__(self, args)
         self.window_id = 2025
         self.kwargs = kwargs
-        self.media_type = self.kwargs.get('media_type', '')
+        self.mediatype = self.kwargs.get('mediatype', '')
         self.heading = self.kwargs.get('heading', '')
         self.items = json.loads(self.kwargs['items'])
         try:
