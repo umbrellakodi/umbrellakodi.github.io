@@ -26,6 +26,27 @@ def fetch_movie(imdb, tmdb):
 		dbcur.close() ; dbcon.close()
 	return list
 
+def fetch_show(imdb=None, tmdb=None, tvdb=None):
+	list = ''
+	try:
+		dbcon = get_connection()
+		dbcur = get_connection_cursor(dbcon)
+		ck_table = dbcur.execute('''SELECT * FROM sqlite_master WHERE type='table' AND name=?;''', ('shows',)).fetchone()
+		if not ck_table:
+			dbcur.execute('''CREATE TABLE IF NOT EXISTS %s (imdb TEXT, tmdb TEXT, tvdb TEXT, poster TEXT, fanart TEXT, landscape TEXT, banner TEXT, clearart TEXT, clearlogo TEXT, season TEXT, episode TEXT, UNIQUE(imdb));''' % 'movies')
+			dbcur.connection.commit()
+			return list
+		try:
+			match = dbcur.execute('''SELECT * FROM shows WHERE imdb=? or tvdb=?''' , (imdb, tvdb,)).fetchall()
+			list = [{'imdb': i[0], 'tmdb': i[1], 'tvdb': i[2], 'poster': i[3], 'fanart': i[4], 'landscape': i[5], 'banner': i[6], 'clearart': i[7], 'clearlogo': i[8], 'season': i[8], 'episode': i[9]} for i in match]
+		except: pass
+	except:
+		
+		log_utils.error()
+	finally:
+		dbcur.close() ; dbcon.close()
+	return list
+
 def show_artwork_options_with_current(**kwargs):
 	mediatype = kwargs.get('mediatype', '')
 	#variables needed
