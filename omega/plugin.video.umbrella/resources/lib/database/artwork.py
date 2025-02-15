@@ -49,7 +49,7 @@ def show_artwork_options_with_current(**kwargs):
 
 	try:
 		control.busy()
-		items = [{"poster": poster}, {"fanart": fanart}, {"landscape": landscape}, {"banner": banner}, {"clearart": clearart}, {"clearlogo": clearlogo}, {"discart": discart}, {"keyart": keyart }]
+		items = [{"poster": poster}, {"fanart": fanart}, {"landscape": landscape}, {"banner": banner}, {"clearart": clearart}, {"clearlogo": clearlogo}, {"discart": discart}, {"keyart": keyart }, {"reset all": "reset_all"}]
 		control.hide()
 		from resources.lib.windows.artselection import ArtTypeSelect
 		itemsDumped = jsdumps(items)
@@ -60,7 +60,9 @@ def show_artwork_options_with_current(**kwargs):
 			selectedItem = items[selected_items]
 			for each in selectedItem.keys():
 				artworktype = each
-			if mediatype == 'movie':
+			if artworktype == 'reset all':
+				delete_artwork(imdb=imdb, tmdb=tmdb)
+			elif mediatype == 'movie':
 				heading = artworktype + ' artwork for: %s' % control.infoLabel('Container.ListItem.Title')
 				log_utils.log('Umbrella Customize Art "%s" Selected.' % (artworktype), 1)
 				show_artwork_window(imdb=imdb, tmdb=tmdb, mediatype=mediatype, heading=heading, artworktype=artworktype)
@@ -128,8 +130,6 @@ def show_artwork_standard_select(**kwargs):
 				log_utils.log('Umbrella Customize Art "%s" Selected. Current %s is: %s' % (items[select][1], items[select][1], control.infoLabel('Container.ListItem.Art(keyart)')), 1)
 				show_artwork_window(imdb=imdb, tmdb=tmdb, mediatype=mediatype, heading=heading, artworktype=str(items[select][1] ))
 			control.hide()
-			if refresh: control.refresh()
-			control.trigger_widget_refresh()
 	except:
 		log_utils.error()
 		control.hide()
@@ -147,6 +147,9 @@ def show_artwork_window(**kwargs):
 	try:
 		control.busy()
 		items = get_artwork(imdb=imdb, tmdb=tmdb, tvdb=tvdb, season=season, episode=episode, mediatype=mediatype, artworkType=artworkType)
+		if not items: return control.notification('Art Missing', 'No %s artwork found.' % artworkType)
+		resetItem = {'artworkType': items[0]['artworkType'], 'source': 'Reset to Default', 'url': ''}
+		items.append(resetItem)
 		control.hide()
 		itemsDumped = jsdumps(items)
 		from resources.lib.windows.artselection import ArtSelect
@@ -155,14 +158,13 @@ def show_artwork_window(**kwargs):
 		del window
 		if selected_items or selected_items == 0:
 			selectedUrl = items[selected_items].get('url')
+			if mediatype == 'movie' and selectedUrl == '': delete_artwork_one_item(artworkType=artworkType, imdb=imdb)
 			if mediatype == 'movie':
 				add_movie_entry(artworkType=artworkType,mediatype=mediatype, imdb=imdb, tmdb=tmdb, tvdb=tvdb, season=season, episode=episode, url=selectedUrl)
 			if control.setting('debug.level') == '1':
 				log_utils.log('selected item: %s' % str(items[selected_items]), 1)
 		control.hide()
 		control.sleep(300)
-		if refresh: control.refresh()
-		control.trigger_widget_refresh()
 	except:
 		log_utils.error()
 		control.hide()
@@ -209,6 +211,50 @@ def add_movie_entry(**kwargs):
 	finally:
 		dbcur.close() ; dbcon.close()
 		control.refresh()
+		control.trigger_widget_refresh()
+
+def delete_artwork(**kwargs):
+	try:
+		dbcon = get_connection()
+		dbcur = get_connection_cursor(dbcon)
+		ck_table = dbcur.execute('''SELECT * FROM sqlite_master WHERE type='table' AND name=?;''', ('movies',)).fetchone()
+		if not ck_table:
+			dbcur.execute('''CREATE TABLE IF NOT EXISTS %s (imdb TEXT, tmdb TEXT, poster TEXT, fanart TEXT, landscape TEXT, banner TEXT, clearart TEXT, clearlogo TEXT, discart TEXT, keyart TEXT, UNIQUE(imdb));''' % 'movies')
+			dbcur.connection.commit()
+		try:
+			imdb = kwargs.get('imdb','')
+			dbcur.execute("DELETE FROM movies WHERE imdb = ?;", (imdb,))
+		except Exception as e:
+			log_utils.log("Exception: %s" % (str(e)), 1)  # Log the problematic item
+		dbcur.connection.commit()
+	except:
+		log_utils.error()
+	finally:
+		dbcur.close() ; dbcon.close()
+		control.refresh()
+		control.trigger_widget_refresh()
+
+def delete_artwork_one_item(**kwargs):
+	try:
+		dbcon = get_connection()
+		dbcur = get_connection_cursor(dbcon)
+		ck_table = dbcur.execute('''SELECT * FROM sqlite_master WHERE type='table' AND name=?;''', ('movies',)).fetchone()
+		if not ck_table:
+			dbcur.execute('''CREATE TABLE IF NOT EXISTS %s (imdb TEXT, tmdb TEXT, poster TEXT, fanart TEXT, landscape TEXT, banner TEXT, clearart TEXT, clearlogo TEXT, discart TEXT, keyart TEXT, UNIQUE(imdb));''' % 'movies')
+			dbcur.connection.commit()
+		try:
+			imdb = kwargs.get('imdb','')
+			artworkType = kwargs.get('artwork_type')
+			dbcur.execute(f"UPDATE movies SET {artworkType} = NULL WHERE imdb = ?;", (imdb,))
+		except Exception as e:
+			log_utils.log("Exception: %s" % (str(e)), 1)  # Log the problematic item
+		dbcur.connection.commit()
+	except:
+		log_utils.error()
+	finally:
+		dbcur.close() ; dbcon.close()
+		control.refresh()
+		control.trigger_widget_refresh()
 
 def get_connection(setRowFactory=False):
 	if not existsPath(dataPath): makeFile(dataPath)
