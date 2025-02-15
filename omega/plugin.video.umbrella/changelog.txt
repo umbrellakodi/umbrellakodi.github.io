@@ -1,4 +1,4 @@
-[B]Update - v6.7.403 - Feb 14th, 2025[/B]
+[B]Update - v6.7.404 - Feb 15th, 2025[/B]
 --[Change] Added TV Shows custom art.
 --[Change] Added reset all for movie artwork.
 --[Change] Set art customization to use standard select picker.
