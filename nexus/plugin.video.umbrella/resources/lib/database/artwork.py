@@ -6,6 +6,7 @@ from sqlite3 import dbapi2 as db
 from json import loads as jsloads, dumps as jsdumps
 
 def fetch_movie(imdb, tmdb):
+	log_utils.log('Umbrella checking for custom art values in database for movie with imdb: %s' % imdb,1)
 	list = ''
 	try:
 		dbcon = get_connection()
@@ -54,66 +55,62 @@ def manager(mediatype=None, imdb=None, tmdb=None, tvdb=None, season=None, episod
 		if episode: episode = int(episode)
 		#media_type = 'Show' if tvdb else 'Movie'
 		mediatype = mediatype
+		items = []
+		movieartworkItems = ['poster', 'fanart', 'landscape', 'banner', 'clearart', 'clearlogo', 'discart', 'keyart']
+		tvshowartworkItmes = ['poster', 'fanart', 'landscape', 'banner', 'clearart', 'clearlogo']
 		if mediatype == 'movie':
-			items = [('poster', 'poster')]
-			items += [('fanart', 'fanart')]
-			items += [('landscape', 'landscape')]
-			items += [('banner', 'banner')]
-			items += [('clearart', 'clearart')]
-			items += [('clearlogo', 'clearlogo')]
-			items += [('discart', 'discart')]
-			items += [('keyart', 'keyart')]
-			items += [('reset all', 'reset all')]
+			for i in movieartworkItems:
+				item = control.item(label=i, offscreen=True)
+				item.setArt({'thumb': control.infoLabel('Container.ListItem.Art(%s)' % i)})
+				items.append(item)
 		else:
-			items = [('poster', 'poster')]
-			items += [('fanart', 'fanart')]
-			items += [('landscape', 'landscape')]
-			items += [('banner', 'banner')]
-			items += [('clearart', 'clearart')]
-			items += [('clearlogo', 'clearlogo')]
-			items += [('reset all', 'reset all')]
+			for i in tvshowartworkItmes:
+				item = control.item(label=i, offscreen=True)
+				item.setArt({'thumb': control.infoLabel('Container.ListItem.Art(%s)' % i)})
+				items.append(item)
+		resetItem = control.item(label='Reset All', offscreen=True)
+		items.append(resetItem)
 
 		control.hide()
-		select = control.selectDialog([i[0] for i in items], heading=control.addonInfo('name') + ' - ' + 'Customize Artwork')
+		select = control.selectDialog(items, heading=control.addonInfo('name') + ' - ' + 'Customize Artwork', useDetails=True)
 		refresh = True
 		if select == -1: return
 		if select >= 0:
-			if items[select][1] == 'reset all':
+			if items[select].getLabel() == 'Reset All':
 				log_utils.log('Clear all custom art')
 				delete_artwork(media_type=mediatype,imdb=imdb, tmdb=tmdb)
-			if items[select][1] == 'poster':
-				heading = str(items[select][1] ) + ' artwork for: %s' % control.infoLabel('Container.ListItem.Title')
-				log_utils.log('Umbrella Customize Art "%s" Selected. Current %s is: %s' % (items[select][1], items[select][1], control.infoLabel('Container.ListItem.Art(poster)')), 1)
-				show_artwork_window(imdb=imdb, tmdb=tmdb, tvdb=tvdb, mediatype=mediatype, heading=heading, artworktype=str(items[select][1]), title=control.infoLabel('Container.ListItem.Title'))
-			if items[select][1] == 'fanart':
-				heading = str(items[select][1] ) + ' artwork for: %s' % control.infoLabel('Container.ListItem.Title')
-				log_utils.log('Umbrella Customize Art "%s" Selected. Current %s is: %s' % (items[select][1], items[select][1], control.infoLabel('Container.ListItem.Art(fanart)')), 1)
-				show_artwork_window(imdb=imdb, tmdb=tmdb, tvdb=tvdb, mediatype=mediatype, heading=heading, artworktype=str(items[select][1]), title=control.infoLabel('Container.ListItem.Title'))
-			if items[select][1] == 'landscape':
-				heading = str(items[select][1] ) + ' artwork for: %s' % control.infoLabel('Container.ListItem.Title')
-				log_utils.log('Umbrella Customize Art "%s" Selected. Current %s is: %s' % (items[select][1], items[select][1], control.infoLabel('Container.ListItem.Art(landscape)')), 1)
-				show_artwork_window(imdb=imdb, tmdb=tmdb, tvdb=tvdb, mediatype=mediatype, heading=heading, artworktype=str(items[select][1]), title=control.infoLabel('Container.ListItem.Title'))
-			if items[select][1] == 'banner':
-				heading = str(items[select][1] ) + ' artwork for: %s' % control.infoLabel('Container.ListItem.Title')
-				log_utils.log('Umbrella Customize Art "%s" Selected. Current %s is: %s' % (items[select][1], items[select][1], control.infoLabel('Container.ListItem.Art(banner)')), 1)
-				show_artwork_window(imdb=imdb, tmdb=tmdb, tvdb=tvdb, mediatype=mediatype, heading=heading, artworktype=str(items[select][1]), title=control.infoLabel('Container.ListItem.Title'))
-			if items[select][1] == 'clearart':
-				heading = str(items[select][1] ) + ' artwork for: %s' % control.infoLabel('Container.ListItem.Title')
-				log_utils.log('Umbrella Customize Art "%s" Selected. Current %s is: %s' % (items[select][1], items[select][1], control.infoLabel('Container.ListItem.Art(clearart)')), 1)
-				show_artwork_window(imdb=imdb, tmdb=tmdb, tvdb=tvdb, mediatype=mediatype, heading=heading, artworktype=str(items[select][1]), title=control.infoLabel('Container.ListItem.Title'))
-			if items[select][1] == 'clearlogo':
-				heading = str(items[select][1] ) + ' artwork for: %s' % control.infoLabel('Container.ListItem.Title')
-				log_utils.log('Umbrella Customize Art "%s" Selected. Current %s is: %s' % (items[select][1], items[select][1], control.infoLabel('Container.ListItem.Art(clearlogo)')), 1)
-				show_artwork_window(imdb=imdb, tmdb=tmdb, tvdb=tvdb, mediatype=mediatype, heading=heading, artworktype=str(items[select][1]), title=control.infoLabel('Container.ListItem.Title'))
-			if items[select][1] == 'discart':
-				heading = str(items[select][1] ) + ' artwork for: %s' % control.infoLabel('Container.ListItem.Title')
-				log_utils.log('Umbrella Customize Art "%s" Selected. Current %s is: %s' % (items[select][1], items[select][1], control.infoLabel('Container.ListItem.Art(discart)')), 1)
-				show_artwork_window(imdb=imdb, tmdb=tmdb, tvdb=tvdb, mediatype=mediatype, heading=heading, artworktype=str(items[select][1]), title=control.infoLabel('Container.ListItem.Title'))
-			if items[select][1] == 'keyart':
-				heading = str(items[select][1] ) + ' artwork for: %s' % control.infoLabel('Container.ListItem.Title')
-				log_utils.log('Umbrella Customize Art "%s" Selected. Current %s is: %s' % (items[select][1], items[select][1], control.infoLabel('Container.ListItem.Art(keyart)')), 1)
-				show_artwork_window(imdb=imdb, tmdb=tmdb, tvdb=tvdb, mediatype=mediatype, heading=heading, artworktype=str(items[select][1]), title=control.infoLabel('Container.ListItem.Title'))
-			if items[select][0].startswith('Add'): refresh = False
+			if items[select].getLabel() == 'poster':
+				heading = str(items[select].getLabel()) + ' artwork for: %s' % control.infoLabel('Container.ListItem.Title')
+				log_utils.log('Umbrella Customize Art "%s" Selected. Current %s is: %s' % (items[select].getLabel(), items[select].getLabel(), control.infoLabel('Container.ListItem.Art(poster)')), 1)
+				show_artwork_window(imdb=imdb, tmdb=tmdb, tvdb=tvdb, mediatype=mediatype, heading=heading, artworktype=str(items[select].getLabel()), title=control.infoLabel('Container.ListItem.Title'))
+			if items[select].getLabel() == 'fanart':
+				heading = str(items[select].getLabel()) + ' artwork for: %s' % control.infoLabel('Container.ListItem.Title')
+				log_utils.log('Umbrella Customize Art "%s" Selected. Current %s is: %s' % (items[select].getLabel(), items[select].getLabel(), control.infoLabel('Container.ListItem.Art(fanart)')), 1)
+				show_artwork_window(imdb=imdb, tmdb=tmdb, tvdb=tvdb, mediatype=mediatype, heading=heading, artworktype=str(items[select].getLabel()), title=control.infoLabel('Container.ListItem.Title'))
+			if items[select].getLabel() == 'landscape':
+				heading = str(items[select].getLabel()) + ' artwork for: %s' % control.infoLabel('Container.ListItem.Title')
+				log_utils.log('Umbrella Customize Art "%s" Selected. Current %s is: %s' % (items[select].getLabel(), items[select].getLabel(), control.infoLabel('Container.ListItem.Art(landscape)')), 1)
+				show_artwork_window(imdb=imdb, tmdb=tmdb, tvdb=tvdb, mediatype=mediatype, heading=heading, artworktype=str(items[select].getLabel()), title=control.infoLabel('Container.ListItem.Title'))
+			if items[select].getLabel() == 'banner':
+				heading = str(items[select].getLabel()) + ' artwork for: %s' % control.infoLabel('Container.ListItem.Title')
+				log_utils.log('Umbrella Customize Art "%s" Selected. Current %s is: %s' % (items[select].getLabel(), items[select].getLabel(), control.infoLabel('Container.ListItem.Art(banner)')), 1)
+				show_artwork_window(imdb=imdb, tmdb=tmdb, tvdb=tvdb, mediatype=mediatype, heading=heading, artworktype=str(items[select].getLabel()), title=control.infoLabel('Container.ListItem.Title'))
+			if items[select].getLabel() == 'clearart':
+				heading = str(items[select].getLabel()) + ' artwork for: %s' % control.infoLabel('Container.ListItem.Title')
+				log_utils.log('Umbrella Customize Art "%s" Selected. Current %s is: %s' % (items[select].getLabel(), items[select].getLabel(), control.infoLabel('Container.ListItem.Art(clearart)')), 1)
+				show_artwork_window(imdb=imdb, tmdb=tmdb, tvdb=tvdb, mediatype=mediatype, heading=heading, artworktype=str(items[select].getLabel()), title=control.infoLabel('Container.ListItem.Title'))
+			if items[select].getLabel() == 'clearlogo':
+				heading = str(items[select].getLabel()) + ' artwork for: %s' % control.infoLabel('Container.ListItem.Title')
+				log_utils.log('Umbrella Customize Art "%s" Selected. Current %s is: %s' % (items[select].getLabel(), items[select].getLabel(), control.infoLabel('Container.ListItem.Art(clearlogo)')), 1)
+				show_artwork_window(imdb=imdb, tmdb=tmdb, tvdb=tvdb, mediatype=mediatype, heading=heading, artworktype=str(items[select].getLabel()), title=control.infoLabel('Container.ListItem.Title'))
+			if items[select].getLabel() == 'discart':
+				heading = str(items[select].getLabel()) + ' artwork for: %s' % control.infoLabel('Container.ListItem.Title')
+				log_utils.log('Umbrella Customize Art "%s" Selected. Current %s is: %s' % (items[select].getLabel(), items[select].getLabel(), control.infoLabel('Container.ListItem.Art(discart)')), 1)
+				show_artwork_window(imdb=imdb, tmdb=tmdb, tvdb=tvdb, mediatype=mediatype, heading=heading, artworktype=str(items[select].getLabel()), title=control.infoLabel('Container.ListItem.Title'))
+			if items[select].getLabel() == 'keyart':
+				heading = str(items[select].getLabel()) + ' artwork for: %s' % control.infoLabel('Container.ListItem.Title')
+				log_utils.log('Umbrella Customize Art "%s" Selected. Current %s is: %s' % (items[select].getLabel(), items[select].getLabel(), control.infoLabel('Container.ListItem.Art(keyart)')), 1)
+				show_artwork_window(imdb=imdb, tmdb=tmdb, tvdb=tvdb, mediatype=mediatype, heading=heading, artworktype=str(items[select].getLabel()), title=control.infoLabel('Container.ListItem.Title'))
 			control.hide()
 			if refresh: control.refresh()
 			control.trigger_widget_refresh()
