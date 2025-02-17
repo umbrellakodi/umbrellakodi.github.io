@@ -528,21 +528,13 @@ class Movies(TMDb):
 		artworkList = []
 		tmdbart_items = []
 		if artworkType == 'poster':
-			tmdbart_items = tmdbart.get('posters')
+			tmdbart_items = [item for item in tmdbart.get('posters', []) if (item.get('iso_639_1') == self.lang or item.get('iso_639_1') == None)]
 		elif artworkType == 'fanart':
-			tmdbart_items = tmdbart.get('backdrops')
+			tmdbart_items = [item for item in tmdbart.get('backdrops', []) if (item.get('iso_639_1') == self.lang or item.get('iso_639_1') == None)]
 		elif artworkType == 'landscape':
-			tmdbart_items = tmdbart.get('backdrops')
-		elif artworkType == 'banner':
-			return None
+			tmdbart_items = [item for item in tmdbart.get('backdrops', []) if (item.get('iso_639_1') == self.lang or item.get('iso_639_1') == None)]
 		elif artworkType == 'clearlogo':
-			tmdbart_items = tmdbart.get('logos')
-		elif artworkType == 'cleart':
-			return None
-		elif artworkType == 'discart':
-			return None
-		elif artworkType == 'keyart':
-			return None
+			tmdbart_items = [item for item in tmdbart.get('logos', []) if (item.get('iso_639_1') == self.lang or item.get('iso_639_1') == None)]
 		else:
 			return artworkList
 
@@ -550,6 +542,7 @@ class Movies(TMDb):
 			filepath = item.get('file_path')
 			itemurl = '%s%s' % (self.profile_path, filepath) if filepath else ''
 			artworkList.append({'artworkType': artworkType, 'source': 'Tmdb %s' % index, 'url': itemurl})
+		
 		return artworkList
 
 
@@ -1212,17 +1205,13 @@ class TVshows(TMDb):
 		artworkList = []
 		tmdbart_items = []
 		if artworkType == 'poster':
-			tmdbart_items = tmdbart.get('posters')
+			tmdbart_items = [item for item in tmdbart.get('posters', []) if (item.get('iso_639_1') == self.lang or item.get('iso_639_1') == None)]
 		elif artworkType == 'fanart':
-			tmdbart_items = tmdbart.get('backdrops')
+			tmdbart_items = [item for item in tmdbart.get('backdrops', []) if (item.get('iso_639_1') == self.lang or item.get('iso_639_1') == None)]
 		elif artworkType == 'landscape':
-			tmdbart_items = tmdbart.get('backdrops')
-		elif artworkType == 'banner':
-			return None
+			tmdbart_items = [item for item in tmdbart.get('backdrops', []) if (item.get('iso_639_1') == self.lang or item.get('iso_639_1') == None)]
 		elif artworkType == 'clearlogo':
-			tmdbart_items = tmdbart.get('logos')
-		elif artworkType == 'cleart':
-			return None
+			tmdbart_items = [item for item in tmdbart.get('logos', []) if (item.get('iso_639_1') == self.lang or item.get('iso_639_1') == None)]
 		else:
 			return artworkList
 
@@ -1230,7 +1219,7 @@ class TVshows(TMDb):
 			filepath = item.get('file_path')
 			itemurl = '%s%s' % (self.profile_path, filepath) if filepath else ''
 			artworkList.append({'artworkType': artworkType, 'source': 'Tmdb %s' % index, 'url': itemurl})
-
+		
 		return artworkList
 
 

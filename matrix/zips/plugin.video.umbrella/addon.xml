@@ -1,4 +1,4 @@
-<addon id="plugin.video.umbrella" name="Umbrella" provider-name="Umbrella" version="6.7.406">
+<addon id="plugin.video.umbrella" name="Umbrella" provider-name="Umbrella" version="6.7.408">
 	<requires>
 		<import addon="xbmc.python" version="3.0.0"/>
 		<import addon="script.module.requests"/>
@@ -179,7 +179,10 @@
 			<screenshot>resources/screenshots/screenshot003.jpg</screenshot>
 		</assets>
 		<news>
-[B]Update - v6.7.406 - Feb 16th, 2025[/B]
+[B]Update - v6.7.408 - Feb 16th, 2025[/B]
+--[Change] Added language filter to artwork.
+--[Change] Made art selections return to art type selection window for custom art.
+--[Change] Made artwork changes only refresh widgets if done from a widget.
 --[Change] Change art type selection menu to show current artwork.
 --[Change] Added TV Shows custom art.
 --[Change] Added reset all for movie artwork.

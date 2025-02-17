@@ -823,7 +823,7 @@ def router(argv2):
 		tools.resetCustomBG()
 	elif action == 'customizeArt':
 		from resources.lib.database import artwork
-		artwork.manager(mediatype=mediatype, imdb=imdb, tmdb=tmdb, tvdb=tvdb, season=season, episode=episode)
+		artwork.manager(mediatype=mediatype, imdb=imdb, tmdb=tmdb, tvdb=tvdb, season=season, episode=episode, poster=params.get('poster'), fanart=params.get('fanart'), landscape=params.get('landscape'), banner=params.get('banner'), clearart=params.get('clearart'), clearlogo=params.get('clearlogo'), discart=params.get('discart'), keyart=params.get('keyart'))
 	####################################################
 	#---Tools
 	####################################################

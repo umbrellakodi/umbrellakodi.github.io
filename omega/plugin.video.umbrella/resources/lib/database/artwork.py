@@ -48,7 +48,21 @@ def fetch_show(imdb=None, tmdb=None, tvdb=None):
 		dbcur.close() ; dbcon.close()
 	return list
 
-def manager(mediatype=None, imdb=None, tmdb=None, tvdb=None, season=None, episode=None):
+def manager(**kwargs):
+	mediatype = kwargs.get('mediatype')
+	imdb = kwargs.get('imdb')
+	tmdb = kwargs.get('tmdb')
+	tvdb = kwargs.get('tvdb')
+	season = kwargs.get('season')
+	episode = kwargs.get('episode')
+	poster = kwargs.get('poster')
+	fanart = kwargs.get('fanart')
+	landscape = kwargs.get('landscape')
+	banner = kwargs.get('banner')
+	clearlogo = kwargs.get('clearlogo')
+	clearart = kwargs.get('clearart')
+	discart = kwargs.get('discart')
+	keyart = kwargs.get('keyart')
 	lists = []
 	try:
 		if season: season = int(season)
@@ -56,24 +70,25 @@ def manager(mediatype=None, imdb=None, tmdb=None, tvdb=None, season=None, episod
 		#media_type = 'Show' if tvdb else 'Movie'
 		mediatype = mediatype
 		items = []
-		movieartworkItems = ['poster', 'fanart', 'landscape', 'banner', 'clearart', 'clearlogo', 'discart', 'keyart']
-		tvshowartworkItmes = ['poster', 'fanart', 'landscape', 'banner', 'clearart', 'clearlogo']
+		movieartworkItems = [{'poster': poster}, {'fanart': fanart}, {'landscape': landscape},{'banner': banner},{'clearart': clearart}, {'clearlogo': clearlogo}, {'discart': discart}, {'keyart': keyart}]
+		tvshowartworkItems = [{'poster': poster}, {'fanart': fanart}, {'landscape': landscape},{'banner': banner},{'clearart': clearart}, {'clearlogo': clearlogo}]
 		if mediatype == 'movie':
-			for i in movieartworkItems:
-				item = control.item(label=i, offscreen=True)
-				item.setArt({'thumb': control.infoLabel('Container.ListItem.Art(%s)' % i)})
-				items.append(item)
+			for artwork in movieartworkItems:
+				for key, value in artwork.items():
+					item = control.item(label=key, offscreen=True)
+					item.setArt({'thumb': value})
+					items.append(item)
 		else:
-			for i in tvshowartworkItmes:
-				item = control.item(label=i, offscreen=True)
-				item.setArt({'thumb': control.infoLabel('Container.ListItem.Art(%s)' % i)})
-				items.append(item)
+			for artwork in tvshowartworkItems:
+				for key, value in artwork.items():
+					item = control.item(label=key, offscreen=True)
+					item.setArt({'thumb': value})
+					items.append(item)
 		resetItem = control.item(label='Reset All', offscreen=True)
 		items.append(resetItem)
 
 		control.hide()
 		select = control.selectDialog(items, heading=control.addonInfo('name') + ' - ' + 'Customize Artwork', useDetails=True)
-		refresh = True
 		if select == -1: return
 		if select >= 0:
 			if items[select].getLabel() == 'Reset All':
@@ -82,80 +97,113 @@ def manager(mediatype=None, imdb=None, tmdb=None, tvdb=None, season=None, episod
 			if items[select].getLabel() == 'poster':
 				heading = str(items[select].getLabel()) + ' artwork for: %s' % control.infoLabel('Container.ListItem.Title')
 				log_utils.log('Umbrella Customize Art "%s" Selected. Current %s is: %s' % (items[select].getLabel(), items[select].getLabel(), control.infoLabel('Container.ListItem.Art(poster)')), 1)
-				show_artwork_window(imdb=imdb, tmdb=tmdb, tvdb=tvdb, mediatype=mediatype, heading=heading, artworktype=str(items[select].getLabel()), title=control.infoLabel('Container.ListItem.Title'))
+				show_artwork_window(imdb=imdb, tmdb=tmdb, tvdb=tvdb, mediatype=mediatype, heading=heading, artworktype=str(items[select].getLabel()), title=control.infoLabel('Container.ListItem.Title'), poster=poster, fanart=fanart, landscape=landscape, banner=banner, clearart=clearart, clearlogo=clearlogo, discart=discart, keyart=keyart)
 			if items[select].getLabel() == 'fanart':
 				heading = str(items[select].getLabel()) + ' artwork for: %s' % control.infoLabel('Container.ListItem.Title')
 				log_utils.log('Umbrella Customize Art "%s" Selected. Current %s is: %s' % (items[select].getLabel(), items[select].getLabel(), control.infoLabel('Container.ListItem.Art(fanart)')), 1)
-				show_artwork_window(imdb=imdb, tmdb=tmdb, tvdb=tvdb, mediatype=mediatype, heading=heading, artworktype=str(items[select].getLabel()), title=control.infoLabel('Container.ListItem.Title'))
+				show_artwork_window(imdb=imdb, tmdb=tmdb, tvdb=tvdb, mediatype=mediatype, heading=heading, artworktype=str(items[select].getLabel()), title=control.infoLabel('Container.ListItem.Title'), poster=poster, fanart=fanart, landscape=landscape, banner=banner, clearart=clearart, clearlogo=clearlogo, discart=discart, keyart=keyart)
 			if items[select].getLabel() == 'landscape':
 				heading = str(items[select].getLabel()) + ' artwork for: %s' % control.infoLabel('Container.ListItem.Title')
 				log_utils.log('Umbrella Customize Art "%s" Selected. Current %s is: %s' % (items[select].getLabel(), items[select].getLabel(), control.infoLabel('Container.ListItem.Art(landscape)')), 1)
-				show_artwork_window(imdb=imdb, tmdb=tmdb, tvdb=tvdb, mediatype=mediatype, heading=heading, artworktype=str(items[select].getLabel()), title=control.infoLabel('Container.ListItem.Title'))
+				show_artwork_window(imdb=imdb, tmdb=tmdb, tvdb=tvdb, mediatype=mediatype, heading=heading, artworktype=str(items[select].getLabel()), title=control.infoLabel('Container.ListItem.Title'), poster=poster, fanart=fanart, landscape=landscape, banner=banner, clearart=clearart, clearlogo=clearlogo, discart=discart, keyart=keyart)
 			if items[select].getLabel() == 'banner':
 				heading = str(items[select].getLabel()) + ' artwork for: %s' % control.infoLabel('Container.ListItem.Title')
 				log_utils.log('Umbrella Customize Art "%s" Selected. Current %s is: %s' % (items[select].getLabel(), items[select].getLabel(), control.infoLabel('Container.ListItem.Art(banner)')), 1)
-				show_artwork_window(imdb=imdb, tmdb=tmdb, tvdb=tvdb, mediatype=mediatype, heading=heading, artworktype=str(items[select].getLabel()), title=control.infoLabel('Container.ListItem.Title'))
+				show_artwork_window(imdb=imdb, tmdb=tmdb, tvdb=tvdb, mediatype=mediatype, heading=heading, artworktype=str(items[select].getLabel()), title=control.infoLabel('Container.ListItem.Title'), poster=poster, fanart=fanart, landscape=landscape, banner=banner, clearart=clearart, clearlogo=clearlogo, discart=discart, keyart=keyart)
 			if items[select].getLabel() == 'clearart':
 				heading = str(items[select].getLabel()) + ' artwork for: %s' % control.infoLabel('Container.ListItem.Title')
 				log_utils.log('Umbrella Customize Art "%s" Selected. Current %s is: %s' % (items[select].getLabel(), items[select].getLabel(), control.infoLabel('Container.ListItem.Art(clearart)')), 1)
-				show_artwork_window(imdb=imdb, tmdb=tmdb, tvdb=tvdb, mediatype=mediatype, heading=heading, artworktype=str(items[select].getLabel()), title=control.infoLabel('Container.ListItem.Title'))
+				show_artwork_window(imdb=imdb, tmdb=tmdb, tvdb=tvdb, mediatype=mediatype, heading=heading, artworktype=str(items[select].getLabel()), title=control.infoLabel('Container.ListItem.Title'), poster=poster, fanart=fanart, landscape=landscape, banner=banner, clearart=clearart, clearlogo=clearlogo, discart=discart, keyart=keyart)
 			if items[select].getLabel() == 'clearlogo':
 				heading = str(items[select].getLabel()) + ' artwork for: %s' % control.infoLabel('Container.ListItem.Title')
 				log_utils.log('Umbrella Customize Art "%s" Selected. Current %s is: %s' % (items[select].getLabel(), items[select].getLabel(), control.infoLabel('Container.ListItem.Art(clearlogo)')), 1)
-				show_artwork_window(imdb=imdb, tmdb=tmdb, tvdb=tvdb, mediatype=mediatype, heading=heading, artworktype=str(items[select].getLabel()), title=control.infoLabel('Container.ListItem.Title'))
+				show_artwork_window(imdb=imdb, tmdb=tmdb, tvdb=tvdb, mediatype=mediatype, heading=heading, artworktype=str(items[select].getLabel()), title=control.infoLabel('Container.ListItem.Title'), poster=poster, fanart=fanart, landscape=landscape, banner=banner, clearart=clearart, clearlogo=clearlogo, discart=discart, keyart=keyart)
 			if items[select].getLabel() == 'discart':
 				heading = str(items[select].getLabel()) + ' artwork for: %s' % control.infoLabel('Container.ListItem.Title')
 				log_utils.log('Umbrella Customize Art "%s" Selected. Current %s is: %s' % (items[select].getLabel(), items[select].getLabel(), control.infoLabel('Container.ListItem.Art(discart)')), 1)
-				show_artwork_window(imdb=imdb, tmdb=tmdb, tvdb=tvdb, mediatype=mediatype, heading=heading, artworktype=str(items[select].getLabel()), title=control.infoLabel('Container.ListItem.Title'))
+				show_artwork_window(imdb=imdb, tmdb=tmdb, tvdb=tvdb, mediatype=mediatype, heading=heading, artworktype=str(items[select].getLabel()), title=control.infoLabel('Container.ListItem.Title'), poster=poster, fanart=fanart, landscape=landscape, banner=banner, clearart=clearart, clearlogo=clearlogo, discart=discart, keyart=keyart)
 			if items[select].getLabel() == 'keyart':
 				heading = str(items[select].getLabel()) + ' artwork for: %s' % control.infoLabel('Container.ListItem.Title')
 				log_utils.log('Umbrella Customize Art "%s" Selected. Current %s is: %s' % (items[select].getLabel(), items[select].getLabel(), control.infoLabel('Container.ListItem.Art(keyart)')), 1)
-				show_artwork_window(imdb=imdb, tmdb=tmdb, tvdb=tvdb, mediatype=mediatype, heading=heading, artworktype=str(items[select].getLabel()), title=control.infoLabel('Container.ListItem.Title'))
+				show_artwork_window(imdb=imdb, tmdb=tmdb, tvdb=tvdb, mediatype=mediatype, heading=heading, artworktype=str(items[select].getLabel()), title=control.infoLabel('Container.ListItem.Title'), poster=poster, fanart=fanart, landscape=landscape, banner=banner, clearart=clearart, clearlogo=clearlogo, discart=discart, keyart=keyart)
 			control.hide()
-			if refresh: control.refresh()
-			control.trigger_widget_refresh()
+
+			is_widget = 'plugin' not in control.infoLabel('Container.PluginName')
+			if is_widget: control.trigger_widget_refresh()
+			control.refresh()
+			
 	except:
 		log_utils.error()
 		control.hide()
 
 def show_artwork_window(**kwargs):
-	mediatype = kwargs.get('mediatype', '')
-	heading = kwargs.get('heading', 'Umbrella Art')
-	artworkType = kwargs.get('artworktype', '')
-	imdb = kwargs.get('imdb','')
-	tmdb = kwargs.get('tmdb', '')
-	tvdb = kwargs.get('tvdb','')
-	season = kwargs.get('season','')
-	episode = kwargs.get('episode','')
-	title = kwargs.get('title')
-	try:
-		control.busy()
-		items = get_artwork(imdb=imdb, tmdb=tmdb, tvdb=tvdb, season=season, episode=episode, mediatype=mediatype, artwork_type=artworkType)
-		if not items: return control.notification(title, 'No %s artwork found.' % artworkType)
-		resetItem = {'artworkType': items[0]['artworkType'], 'source': 'Reset to Default', 'url': ''}
-		items.append(resetItem)
-		control.hide()
-		itemsDumped = jsdumps(items)
-		from resources.lib.windows.artselection import ArtSelect
-		window = ArtSelect('artwork.xml', control.addonPath(control.addonId()), mediatype=mediatype, heading=heading, items=itemsDumped)
-		selected_items = window.run()
-		del window
-		if selected_items or selected_items == 0:
-			selectedUrl = items[selected_items].get('url')
-			if mediatype == 'show' and selectedUrl == '': delete_artwork_one_item(media_type=mediatype, artworkType=artworkType, imdb=imdb, tvdb=tvdb)
-			if mediatype == 'movie' and selectedUrl == '': delete_artwork_one_item(media_type=mediatype, artworkType=artworkType, imdb=imdb)
-			if mediatype == 'show':
-				add_show_entry(artworkType=artworkType,media_type=mediatype, imdb=imdb, tmdb=tmdb, tvdb=tvdb, season=season, episode=episode, url=selectedUrl)
-			if mediatype == 'movie':
-				add_movie_entry(artworkType=artworkType,media_type=mediatype, imdb=imdb, tmdb=tmdb, tvdb=tvdb, season=season, episode=episode, url=selectedUrl)
-			if control.setting('debug.level') == '1':
-				from resources.lib.modules import log_utils
-				log_utils.log('selected item: %s' % str(items[selected_items]), 1)
-		control.hide()
-	except:
-		from resources.lib.modules import log_utils
-		log_utils.error()
-		control.hide()
+    global mediatype, heading, artworkType, imdb, tmdb, tvdb, season, episode, title
+    global poster, fanart, landscape, banner, clearart, clearlogo, discart, keyart
+
+    mediatype = kwargs.get('mediatype', '')
+    heading = kwargs.get('heading', 'Umbrella Art')
+    artworkType = kwargs.get('artworktype', '')
+    imdb = kwargs.get('imdb', '')
+    tmdb = kwargs.get('tmdb', '')
+    tvdb = kwargs.get('tvdb', '')
+    season = kwargs.get('season', '')
+    episode = kwargs.get('episode', '')
+    title = kwargs.get('title')
+    poster = kwargs.get('poster')
+    fanart = kwargs.get('fanart')
+    landscape = kwargs.get('landscape')
+    banner = kwargs.get('banner')
+    clearart = kwargs.get('clearart')
+    clearlogo = kwargs.get('clearlogo')
+    discart = kwargs.get('discart')
+    keyart = kwargs.get('keyart')
+
+    try:
+        control.busy()
+        items = get_artwork(imdb=imdb, tmdb=tmdb, tvdb=tvdb, season=season, episode=episode, mediatype=mediatype, artwork_type=artworkType)
+        if not items: 
+            return control.notification(title, 'No %s artwork found.' % artworkType)
+
+        resetItem = {'artworkType': items[0]['artworkType'], 'source': 'Reset to Default', 'url': ''}
+        items.append(resetItem)
+        control.hide()
+        itemsDumped = jsdumps(items)
+
+        from resources.lib.windows.artselection import ArtSelect
+        window = ArtSelect('artwork.xml', control.addonPath(control.addonId()), mediatype=mediatype, heading=heading, items=itemsDumped)
+        selected_items = window.run()
+        del window
+
+        if selected_items or selected_items == 0:
+            selectedUrl = items[selected_items].get('url')
+
+            if mediatype == 'show' and selectedUrl == '':
+                delete_artwork_one_item(media_type=mediatype, artworkType=artworkType, imdb=imdb, tvdb=tvdb)
+                return
+            if mediatype == 'movie' and selectedUrl == '':
+                delete_artwork_one_item(media_type=mediatype, artworkType=artworkType, imdb=imdb)
+                return
+
+            globals()[artworkType] = selectedUrl
+
+            if mediatype == 'show':
+                add_show_entry(artworkType=artworkType, media_type=mediatype, imdb=imdb, tmdb=tmdb, tvdb=tvdb, season=season, episode=episode, url=selectedUrl)
+            if mediatype == 'movie':
+                add_movie_entry(artworkType=artworkType, media_type=mediatype, imdb=imdb, tmdb=tmdb, tvdb=tvdb, season=season, episode=episode, url=selectedUrl)
+
+            if control.setting('debug.level') == '1':
+                from resources.lib.modules import log_utils
+                log_utils.log('selected item: %s' % str(items[selected_items]), 1)
+
+        control.hide()
+        manager(mediatype=mediatype, imdb=imdb, tmdb=tmdb, tvdb=tvdb, season=season, episode=episode, 
+                poster=poster, fanart=fanart, landscape=landscape, banner=banner, clearart=clearart, 
+                clearlogo=clearlogo, discart=discart, keyart=keyart)
+
+    except:
+        from resources.lib.modules import log_utils
+        log_utils.error()
+        control.hide()
 
 def get_artwork(**kwargs):
 	arttype = kwargs.get('mediatype')
