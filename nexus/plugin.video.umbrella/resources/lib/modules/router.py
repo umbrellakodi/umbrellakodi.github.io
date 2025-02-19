@@ -895,6 +895,12 @@ def router(argv2):
 			unfinished = (params.get('unfinished') == 'True') if params.get('unfinished') else False
 			tvshow = (params.get('tvshow') == 'tvshow')
 			trakt.manager(name, imdb, tvdb, season, episode, watched=watched, unfinished=unfinished,tvshow=tvshow)
+		elif action == 'tools_simklManager':
+			watched = (params.get('watched') == 'True') if params.get('watched') else None
+			unfinished = (params.get('unfinished') == 'True') if params.get('unfinished') else False
+			tvshow = (params.get('tvshow') == 'tvshow')
+			from resources.lib.modules import simkl
+			simkl.manager(name, imdb, tvdb, season, episode, watched=watched, unfinished=unfinished,tvshow=tvshow)
 		elif action == 'tools_likeList':
 			from resources.lib.modules import trakt
 			trakt.like_list(params.get('list_owner'), params.get('list_name'), params.get('list_id'))

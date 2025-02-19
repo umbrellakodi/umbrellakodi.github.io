@@ -1,5 +1,5 @@
 <?xml version='1.0' encoding='utf-8'?>
-<addons><addon id="plugin.video.umbrella" name="Umbrella" provider-name="Umbrella" version="6.7.408">
+<addons><addon id="plugin.video.umbrella" name="Umbrella" provider-name="Umbrella" version="6.7.409">
 	<requires>
 		<import addon="xbmc.python" version="3.0.0" />
 		<import addon="script.module.requests" />
@@ -180,7 +180,8 @@
 			<screenshot>resources/screenshots/screenshot003.jpg</screenshot>
 		</assets>
 		<news>
-[B]Update - v6.7.408 - Feb 16th, 2025[/B]
+[B]Update - v6.7.409 - Feb 19th, 2025[/B]
+--[Change] Added add/remove to simkl lists to context menus.
 --[Change] Added language filter to artwork.
 --[Change] Made art selections return to art type selection window for custom art.
 --[Change] Made artwork changes only refresh widgets if done from a widget.

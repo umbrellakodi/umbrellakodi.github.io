@@ -451,10 +451,10 @@ def markSeasonAsWatched(imdb, tvdb, season):
 			control.sleep(1000) # POST 1 call per sec rate-limit
 			result = simkl.post_request('/sync/history', {"shows": [{"seasons": [{"number": season}], "ids": {"tvdb": tvdb}}]})
 			if not result: return False
-		if result['added']['shows'] != 0: 
+		if result['not_found']['shows'] == []:
 			simklsync.remove_hold_item(imdb)
 			simklsync.remove_plan_to_watch(imdb, 'shows_plantowatch')
-		return result['added']['shows'] != 0
+		return result['added']['episodes'] != 0
 	except: log_utils.error()
 
 def markSeasonAsNotWatched(imdb, tvdb, season):
@@ -467,7 +467,7 @@ def markSeasonAsNotWatched(imdb, tvdb, season):
 			control.sleep(1000) # POST 1 call per sec rate-limit
 			result = SIMKL.post_request('/sync/history/remove', {"shows": [{"seasons": [{"number": season}], "ids": {"tvdb": tvdb}}]})
 			if not result: return False
-		return result['deleted']['shows'] != 0
+		return result['deleted']['episodes'] != 0
 	except: log_utils.error()
 
 def markEpisodeAsWatched(imdb, tvdb, season, episode):
@@ -478,7 +478,7 @@ def markEpisodeAsWatched(imdb, tvdb, season, episode):
 		if not result: result = False
 		if (result['not_found']['episodes'] == 0 or result['not_found']['shows'] == 0) and tvdb:
 			control.sleep(1000)
-			result = simkl.post_request('/sync/history', {"shows": [{"seasons": [{"episodes": [{"number": episode}], "number": season}], "ids": {"imdb": tvdb}}]})
+			result = simkl.post_request('/sync/history', {"shows": [{"seasons": [{"episodes": [{"number": episode}], "number": season}], "ids": {"tvdb": tvdb}}]})
 			if not result: result = False
 			result = result['added']['episodes'] !=0
 		else:
@@ -499,7 +499,7 @@ def markEpisodeAsNotWatched(imdb, tvdb, season, episode):
 		if not result: return False
 		if (result['not_found']['episodes'] == 0 or result['not_found']['shows'] == 0) and tvdb:
 			control.sleep(1000)
-			result = simkl.post_request('/sync/history/remove', {"shows": [{"seasons": [{"episodes": [{"number": episode}], "number": season}], "ids": {"imdb": tvdb}}]})
+			result = simkl.post_request('/sync/history/remove', {"shows": [{"seasons": [{"episodes": [{"number": episode}], "number": season}], "ids": {"tvdb": tvdb}}]})
 			if not result: return False
 		return result['deleted']['episodes'] !=0
 	except: log_utils.error()
@@ -1163,13 +1163,132 @@ def timeoutsyncMovies():
 	timeout = simklsync.timeout(syncMovies)
 	return timeout
 
-#Type of watchlists to pull:
-#watching (tv only)
-#plantowatch
-#hold (tv only)
-#completed
-#dropped
+def manager(name, imdb=None, tvdb=None, season=None, episode=None, refresh=True, watched=None, unfinished=False, tvshow=None):
+	try:
+		if season: season = int(season)
+		if episode: episode = int(episode)
+		media_type = 'Show' if tvdb else 'Movie'
+		if watched is not None:
+			if watched is True:
+				items = [(getLS(33652) % highlightColor, 'unwatch')]
+			else:
+				items = [(getLS(33651) % highlightColor, 'watch')]
+		else:
+			items = [(getLS(33651) % highlightColor, 'watch')]
+			items += [(getLS(33652) % highlightColor, 'unwatch')]
+		if media_type == 'Show':
+			items += [(getLS(40570) % highlightColor, '/sync/plantowatch')] #add to show plan to watch
+			items += [(getLS(40571) % highlightColor, '/sync/plantowatch/remove')] #remove show from plan to watch
+			items += [(getLS(40582) % highlightColor, '/sync/hold')] #add to show plan to watch
+			items += [(getLS(40583) % highlightColor, '/sync/hold/remove')] #remove show from plan to watch
+			items += [(getLS(40580) % highlightColor, '/sync/dropped')] #add to show plan to watch
+			items += [(getLS(40581) % highlightColor, '/sync/dropped/remove')] #remove show from plan to watch
+		else: 
+			items += [(getLS(40574) % highlightColor, '/sync/plantowatch')] #add movie
+			items += [(getLS(40575) % highlightColor, '/sync/plantowatch/remove')] #remove movie
+			items += [(getLS(40578) % highlightColor, '/sync/hold')] #add hold
+			items += [(getLS(40579) % highlightColor, '/sync/hold/remove')] # remove hold
 
+
+		control.hide()
+		select = control.selectDialog([i[0] for i in items], heading=control.addonInfo('name') + ' - ' + getLS(40576))
+
+		if select == -1: return
+		if select >= 0:
+			if items[select][1] == 'watch':
+				watch(control.infoLabel('Container.ListItem.DBTYPE'), name, imdb=imdb, tvdb=tvdb, season=season, episode=episode, refresh=refresh)
+			elif items[select][1] == 'unwatch':
+				unwatch(control.infoLabel('Container.ListItem.DBTYPE'), name, imdb=imdb, tvdb=tvdb, season=season, episode=episode, refresh=refresh)
+			else:
+				if items[select][1] == '/sync/plantowatch':
+					listname = "Plan to Watch"
+					add_item = add_to_list(listname="plantowatch", imdb=imdb, tvdb=tvdb, mediatype=media_type)
+					if add_item: 
+						sync_plantowatch(forced=True)
+						simklsync.delete_dropped_items([tvdb], 'shows_hold', 'tvdb')
+				if items[select][1] == '/sync/plantowatch/remove':
+					listname = "Plan to Watch"
+					if media_type == 'Movie': 
+						simklsync.delete_plantowatch_items([imdb], 'movies_plantowatch', 'imdb')
+					else: 
+						simklsync.delete_plantowatch_items([tvdb], 'shows_plantowatch', 'tvdb')
+					remove_item = add_to_list(imdb=imdb, tvdb=tvdb, mediatype=media_type, listname="dropped")
+					if remove_item: 
+						sync_dropped(forced=True)
+						sync_hold(forced=True)
+				if items[select][1] == '/sync/dropped':
+					listname = "Dropped"
+					add_item = add_to_list(listname="dropped", imdb=imdb, tvdb=tvdb, mediatype=media_type)
+					if add_item: 
+						sync_dropped(forced=True)
+						simklsync.delete_dropped_items([tvdb], 'shows_hold', 'tvdb')
+				if items[select][1] == '/sync/dropped/remove':
+					listname = "Dropped"
+					if media_type == 'Movie': 
+						simklsync.delete_dropped_items([imdb], 'movies_dropped', 'imdb')
+					else: 
+						simklsync.delete_dropped_items([tvdb], 'shows_dropped', 'tvdb')
+					remove_item_from_list(imdb=imdb, tvdb=tvdb, mediatype=media_type, listname=listname)
+				if items[select][1] == '/sync/hold':
+					listname = "Hold"
+					add_item = add_to_list(listname="hold", imdb=imdb, tvdb=tvdb, mediatype=media_type)
+					if add_item: 
+						sync_hold(forced=True)
+						simklsync.delete_plantowatch_items([tvdb], 'shows_plantowatch', 'tvdb')
+						sync_plantowatch(forced=True)
+
+				if items[select][1] == '/sync/hold/remove':
+					listname = "Hold"
+					simklsync.delete_dropped_items([tvdb], 'shows_hold', 'tvdb')
+					remove_item = add_to_list(imdb=imdb, tvdb=tvdb, mediatype=media_type, listname="dropped")
+					if remove_item: 
+						sync_hold(forced=True)
+				control.hide()
+				message = getLS(40585) if 'remove' in items[select][1] else getLS(40584)
+				if items[select][0].startswith('Add'): refresh = False
+				control.hide()
+				if refresh: control.refresh()
+				control.trigger_widget_refresh()
+				if getSetting('simkl.general.notifications') == 'true': control.notification(title=name, message=message + ' (%s)' % listname)
+	except:
+		log_utils.error()
+		control.hide()
+
+def remove_item_from_list(**kwargs):
+	try:
+		link = '/sync/history/remove' #post
+		listname = kwargs.get('listname')
+		imdb = kwargs.get('imdb')
+		tvdb = kwargs.get('tvdb')
+		mediatype = kwargs.get('mediatype')
+		if mediatype == 'Movie':
+			post = {"movies":[{"ids":{"imdb":imdb}}]}
+		else:
+			post = {"shows":[{"ids":{"imdb":imdb,"tvdb":tvdb}}]}
+		response = post_request(link, data=post)
+		if response: return True
+		else: return None
+	except:
+		log_utils.error()
+
+def add_to_list(**kwargs):
+	try:
+		link = '/sync/add-to-list' #post
+		listname = kwargs.get('listname')
+		imdb = kwargs.get('imdb')
+		tvdb = kwargs.get('tvdb')
+		mediatype = kwargs.get('mediatype')
+		if mediatype == 'Movie':
+			post = {"movies":[{"to":listname,"ids":{"imdb":imdb}}]}
+		else:
+			post = {"shows":[{"to":listname,"ids":{"imdb":imdb,"tvdb":tvdb}}]}
+		response = post_request(link, data=post)
+		if response:
+			result = response.get('added').get(mediatype.lower() +'s')
+		if result: return True
+		else: return None
+	except:
+		log_utils.error()
 
 def force_simklSync(silent=False):
 	if not silent:

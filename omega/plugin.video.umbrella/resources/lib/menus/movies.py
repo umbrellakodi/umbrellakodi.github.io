@@ -186,6 +186,7 @@ class Movies:
 		self.useReleaseYear = getSetting('movies.showyear') == 'true'
 		self.lang = control.apiLanguage()['trakt']
 		self.prefer_fanArt = getSetting('prefer.fanarttv') == 'true'
+		self.simklCredentials = simkl.getSimKLCredentialsInfo()
 
 	def get(self, url, idx=True, create_directory=True, folderName=''):
 		self.list = []
@@ -2071,6 +2072,7 @@ class Movies:
 		traktManagerMenu, addToLibrary, addToFavourites, removeFromFavourites = getLS(32070), getLS(32551), getLS(40463), getLS(40468)
 		nextMenu, clearSourcesMenu = getLS(32053), getLS(32611)
 		rescrapeMenu, findSimilarMenu = getLS(32185), getLS(32184)
+		simklManagerMenu = getLS(40577) % self.highlight_color
 		from resources.lib.modules import favourites
 		favoriteItems = favourites.getFavourites(content='movies')
 		favoriteItems = [x[1].get('imdb') for x in favoriteItems]
@@ -2170,6 +2172,8 @@ class Movies:
 					watched = getMovieOverlay(indicators, imdb) == '5'
 					if self.traktCredentials:
 						cm.append((traktManagerMenu, 'RunPlugin(%s?action=tools_traktManager&name=%s&imdb=%s&watched=%s&unfinished=%s)' % (sysaddon, sysname, imdb, watched, unfinished)))
+					if self.simklCredentials:
+						cm.append((simklManagerMenu, 'RunPlugin(%s?action=tools_simklManager&name=%s&imdb=%s&watched=%s&unfinished=%s)' % (sysaddon, sysname, imdb, watched, unfinished)))
 					if watched:
 						cm.append((unwatchedMenu, 'RunPlugin(%s?action=playcount_Movie&name=%s&imdb=%s&query=4)' % (sysaddon, sysname, imdb)))
 						meta.update({'playcount': 1, 'overlay': 5})

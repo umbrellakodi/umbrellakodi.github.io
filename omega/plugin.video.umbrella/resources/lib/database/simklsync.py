@@ -355,7 +355,7 @@ def insert_hold(items, table, new_sync=True):
 	finally:
 		dbcur.close() ; dbcon.close()
 
-def remove_hold_item(imdb):
+def remove_hold_item(tvdb):
 	try:
 		dbcon = get_connection()
 		dbcur = get_connection_cursor(dbcon)
@@ -368,7 +368,7 @@ def remove_hold_item(imdb):
 			return
 
 		try:
-			dbcur.execute('''DELETE FROM %s WHERE %s=?;''' % (table, 'imdb'), (imdb,))
+			dbcur.execute('''DELETE FROM %s WHERE %s=?;''' % (table, 'tvdb'), (tvdb,))
 		except:
 			
 			log_utils.error()
@@ -494,6 +494,56 @@ def delete_plantowatch_items(items, table, col_name='simkl'):
 				log_utils.error()
 		timestamp = datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%S.000Z")
 		dbcur.execute('''INSERT OR REPLACE INTO service Values (?, ?)''', ('last_plantowatch_at', timestamp))
+		dbcur.connection.commit()
+	except:
+		
+		log_utils.error()
+	finally:
+		dbcur.close() ; dbcon.close()
+
+def delete_hold_items(items, table, col_name='simkl'):
+	try:
+		dbcon = get_connection()
+		dbcur = get_connection_cursor(dbcon)
+		ck_table = dbcur.execute('''SELECT * FROM sqlite_master WHERE type='table' AND name=?;''', (table,)).fetchone()
+		if not ck_table:
+			dbcur.execute('''CREATE TABLE IF NOT EXISTS %s (title TEXT, year TEXT, premiered TEXT, imdb TEXT, tmdb TEXT, tvdb TEXT, simkl TEXT, rating FLOAT, votes INTEGER, listed_at TEXT, UNIQUE(imdb, tmdb, tvdb, simkl));''' % table)
+			dbcur.execute('''CREATE TABLE IF NOT EXISTS service (setting TEXT, value TEXT, UNIQUE(setting));''')
+			dbcur.connection.commit()
+			return
+		for item in items:
+			try:
+				dbcur.execute('''DELETE FROM %s WHERE %s=?;''' % (table, col_name), (item,))
+			except:
+				
+				log_utils.error()
+		timestamp = datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%S.000Z")
+		dbcur.execute('''INSERT OR REPLACE INTO service Values (?, ?)''', ('last_hold_at', timestamp))
+		dbcur.connection.commit()
+	except:
+		
+		log_utils.error()
+	finally:
+		dbcur.close() ; dbcon.close()
+
+def delete_dropped_items(items, table, col_name='simkl'):
+	try:
+		dbcon = get_connection()
+		dbcur = get_connection_cursor(dbcon)
+		ck_table = dbcur.execute('''SELECT * FROM sqlite_master WHERE type='table' AND name=?;''', (table,)).fetchone()
+		if not ck_table:
+			dbcur.execute('''CREATE TABLE IF NOT EXISTS %s (title TEXT, year TEXT, premiered TEXT, imdb TEXT, tmdb TEXT, tvdb TEXT, simkl TEXT, rating FLOAT, votes INTEGER, listed_at TEXT, UNIQUE(imdb, tmdb, tvdb, simkl));''' % table)
+			dbcur.execute('''CREATE TABLE IF NOT EXISTS service (setting TEXT, value TEXT, UNIQUE(setting));''')
+			dbcur.connection.commit()
+			return
+		for item in items:
+			try:
+				dbcur.execute('''DELETE FROM %s WHERE %s=?;''' % (table, col_name), (item,))
+			except:
+				
+				log_utils.error()
+		timestamp = datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%S.000Z")
+		dbcur.execute('''INSERT OR REPLACE INTO service Values (?, ?)''', ('last_hold_at', timestamp))
 		dbcur.connection.commit()
 	except:
 		

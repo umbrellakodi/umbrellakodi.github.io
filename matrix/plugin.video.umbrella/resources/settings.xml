@@ -3751,6 +3751,16 @@
 						<heading>40006</heading>
 					</control>
 				</setting>
+				<setting id="simkl.general.notifications" type="boolean" label="33052" help="">
+					<level>0</level>
+					<default>true</default>
+					<dependencies>
+						<dependency type="visible">
+							<condition operator="!is" setting="simkltoken"/>
+						</dependency>
+					</dependencies>
+					<control type="toggle"/>
+				</setting>
 				<setting id="simkl.directProgress.scrape" type="boolean" label="35492" help="">
 					<level>0</level>
 					<default>false</default>
