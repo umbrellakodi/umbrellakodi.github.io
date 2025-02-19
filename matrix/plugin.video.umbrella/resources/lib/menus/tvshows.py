@@ -1969,7 +1969,6 @@ class TVshows:
 				discart = meta.get('discart', '')
 				keyart = meta.get('keyart', '')
 				if useCustomArtwork:
-					log_utils.log('Detected show in database and will use custom values now.')
 					allowed_keys = {"poster", "fanart", "landscape", "banner", "clearart", "clearlogo", "discart", "keyart"}
 					for key in allowed_keys:
 						value = useCustomArtwork[0].get(key)

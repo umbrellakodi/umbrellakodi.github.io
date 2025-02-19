@@ -2140,8 +2140,6 @@ class Movies:
 				discart = meta.get('discart', '')
 				keyart = meta.get('keyart', '')
 				if useCustomArtwork:
-					from resources.lib.modules import log_utils
-					log_utils.log('Detected movie in database and will use custom values now.')
 					allowed_keys = {"poster", "fanart", "landscape", "banner", "clearart", "clearlogo", "discart", "keyart"}
 					for key in allowed_keys:
 						value = useCustomArtwork[0].get(key)
