@@ -1,4 +1,4 @@
-<addon id="plugin.video.umbrella" name="Umbrella" provider-name="Umbrella" version="6.7.409">
+<addon id="plugin.video.umbrella" name="Umbrella" provider-name="Umbrella" version="6.7.410">
 	<requires>
 		<import addon="xbmc.python" version="3.0.0"/>
 		<import addon="script.module.requests"/>
@@ -27,6 +27,15 @@
 					[String.IsEqual(ListItem.dbtype,episode) | String.IsEqual(ListItem.dbtype,tvshow) | String.IsEqual(ListItem.dbtype,movie)]
 				</visible>
 			</item>
+			<item library="resources\lib\context\artworkCustomize.py">
+				<label>$INFO[Window(home).Property(context.umbrella.showUmbrella)]Customize Artwork</label>
+				<visible>
+					!String.IsEmpty(Window(home).Property(context.umbrella.artworkCustomize)) +
+					String.StartsWith(ListItem.path,plugin://plugin.video.umbrella/) +
+					String.IsEqual(ListItem.Property(isUmbrella_widget),true) +
+					[String.IsEqual(ListItem.dbtype,tvshow) | String.IsEqual(ListItem.dbtype,movie)]
+				</visible>
+			</item>
 			<item library="resources\lib\context\playTrailer.py">
 				<label>$INFO[Window(home).Property(context.umbrella.showUmbrella)]Play Trailer</label>
 				<visible>
@@ -43,6 +52,15 @@
 					String.StartsWith(ListItem.path,plugin://plugin.video.umbrella/) +
 					String.IsEqual(ListItem.Property(isUmbrella_widget),true) +
 					[String.IsEqual(ListItem.dbtype,tvshow) | String.IsEqual(ListItem.dbtype,movie)]
+				</visible>
+			</item>
+			<item library="resources\lib\context\simklManager.py">
+				<label>$INFO[Window(home).Property(context.umbrella.showUmbrella)]Simkl Manager</label>
+				<visible>
+					!String.IsEmpty(Window(home).Property(context.umbrella.simklManager)) +
+					String.StartsWith(ListItem.path,plugin://plugin.video.umbrella/) +
+					String.IsEqual(ListItem.Property(isUmbrella_widget),true) +
+					[String.IsEqual(ListItem.dbtype,episode) | String.IsEqual(ListItem.dbtype,tvshow) | String.IsEqual(ListItem.dbtype,season) | String.IsEqual(ListItem.dbtype,movie)]
 				</visible>
 			</item>
 			<item library="resources\lib\context\traktManager.py">
@@ -179,43 +197,26 @@
 			<screenshot>resources/screenshots/screenshot003.jpg</screenshot>
 		</assets>
 		<news>
-[B]Update - v6.7.409 - Feb 19th, 2025[/B]
---[Change] Added add/remove to simkl lists to context menus.
+[B]Update - v6.7.410 - Feb 19th, 2025[/B]
+--[Change] Removed some logging. Getting closer to a release for this update.
+--[Change] Added Context Menu Items for Simkl and Customize Artwork
 --[Change] Added language filter to artwork.
 --[Change] Made art selections return to art type selection window for custom art.
 --[Change] Made artwork changes only refresh widgets if done from a widget.
---[Change] Change art type selection menu to show current artwork.
 --[Change] Added TV Shows custom art.
 --[Change] Added reset all for movie artwork.
---[Change] Set art customization to use standard select picker.
---[Fix] Fixed simkl authentication popup.
---[Fix] Changed format of date stored for Simkl items to allow for sorting by date added.
---[Fix] Simkl Progress Activity now gives correct values to trigger a sync and refresh of list.
---[Fix] Simkl and Trakt simultaneous mark of episode fixed.
 --[Change] Added 0 count in for unwatched content. 
---[Fix] Fixed incorrect address used for Progress Episodes on Simkl.
 --[Change] Added use Fanart for thumb.
---[Fix] Fixed an error causing movies in any status from simkl to show as watched.
 --[Change] Trakt and Simkl can now be used simultaneously. You will need to select 1 of the 2 services for indicators, but both will mark watched or unwatched when authenticated.
 --[Change] Marking a movie or show watched now removes it from the plan to watch or hold list on Simkl.
 --[Change] TV Shows Simkl added Watching, Completed, Plan to Watch, Dropped, and Hold.
 --[Change] Movies Simkl added Completed, Plan to Watch, Dropped
---[Fix] Fixed errors in code causing activity checks to return 0 or null.
---[Change] Adjusted marking episodes as watched to simkl api bug fix.
---[Change] Made simkl force a sync immediately on authorization.
---[Change] Made change to background sync to include all status available from simkl instead of watching only.
---[Change] Made change to account info in Simkl so information is cached.
 --[Change] Added confirmation windows when authorizing services to use for indicators if available.
---[Change] Made change for if service is revoked the indicators revert back to local.
 --[Change] Moved Trakt sync interval setting to new setting in General settings. It is now Background Services Sync Interval.
 --[Change] Added Simkl as option for indicators. Make a selection for local, trakt or simkl.
 --[Change] Added watched/ unwatched from Simkl.
---[Change] Added TV Shows watchlist from Simkl.
---[Change] Added Movies history from Simkl to My Movies section.
---[Change] Added Movies watchlist from Simkl. (Plan to Watch)
 --[Change] Added Progress Episode from Simkl to My TV Shows section.
---[Change] Added Progress Shows from Simkl to My TV Shows section.
---[Change] Added Watchlist from Simkl to My TV Shows section.
+--[Change] Added Watching Shows from Simkl to My TV Shows section.
 --[Change] Modifed similar from library function for speed.
 --[Change] Removed function to cache list of movies in library.
 --[Change] Added Settings Simkl to Tools menu.

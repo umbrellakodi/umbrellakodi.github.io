@@ -6,7 +6,6 @@ from sqlite3 import dbapi2 as db
 from json import loads as jsloads, dumps as jsdumps
 
 def fetch_movie(imdb, tmdb):
-	log_utils.log('Umbrella checking for custom art values in database for movie with imdb: %s' % imdb,1)
 	list = ''
 	try:
 		dbcon = get_connection()

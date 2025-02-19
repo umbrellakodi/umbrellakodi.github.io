@@ -6225,6 +6225,11 @@
 					<default>true</default>
 					<control type="toggle"/>
 				</setting>
+				<setting id="context.umbrella.artworkCustomize" type="boolean" label="40568" help="">
+					<level>0</level>
+					<default>true</default>
+					<control type="toggle"/>
+				</setting>
 				<setting id="context.umbrella.addLibtoFavourite" type="boolean" label="40471" help="">
 					<level>0</level>
 					<default>true</default>
@@ -6242,6 +6247,11 @@
 					<control type="toggle"/>
 				</setting>
 				<setting id="context.umbrella.traktManager" type="boolean" label="32515" help="">
+					<level>0</level>
+					<default>true</default>
+					<control type="toggle"/>
+				</setting>
+				<setting id="context.umbrella.simklManager" type="boolean" label="40576" help="">
 					<level>0</level>
 					<default>true</default>
 					<control type="toggle"/>

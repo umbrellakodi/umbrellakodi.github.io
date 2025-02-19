@@ -517,9 +517,11 @@ def refresh_contextProperties():
 	for prop in (
 		'context.umbrella.addtoLibrary',
 		'context.umbrella.addtoFavourite',
+		'context.umbrella.artworkCustomize',
 		'context.umbrella.playTrailer',
 		'context.umbrella.playTrailerSelect',
 		'context.umbrella.traktManager',
+		'context.umbrella.simklManager',
 		'context.umbrella.clearProviders',
 		'context.umbrella.clearBookmark',
 		'context.umbrella.rescrape',
