@@ -13,3 +13,5 @@ xml/script-umbrestuary-widget_custom2.xml
 xml/script-umbrestuary-widget_custom3.xml
 xml/script-umbrestuary-search_history.xml
 xml/script-skinshortcuts-includes.xml
+*.sh
+.DS_Store
