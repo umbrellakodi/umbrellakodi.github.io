@@ -520,7 +520,7 @@ class Movies(TMDb):
 			return None
 
 		url = self.art_link % tmdb
-		tmdbart = self.get_request(url)
+		tmdbart = self.all_artwork_movie(url=url)
 		if tmdbart is None:
 			return
 
@@ -545,6 +545,14 @@ class Movies(TMDb):
 		
 		return artworkList
 
+	def all_artwork_movie(self, **kwargs):
+		try:
+			url = kwargs.get('url')
+			from resources.lib.database import cache
+			art = cache.get(self.get_request, 10000, url)
+			return art
+		except:
+			return None
 
 class TVshows(TMDb):
 	def __init__(self):
@@ -1197,7 +1205,7 @@ class TVshows(TMDb):
 			return None
 
 		url = self.art_link % tmdb
-		tmdbart = self.get_request(url)
+		tmdbart = self.all_artwork_show(url=url)
 		if tmdbart is None:
 			return
 
@@ -1221,6 +1229,15 @@ class TVshows(TMDb):
 			artworkList.append({'artworkType': artworkType, 'source': 'Tmdb %s' % index, 'url': itemurl})
 		
 		return artworkList
+
+	def all_artwork_show(self, **kwargs):
+		try:
+			url = kwargs.get('url')
+			from resources.lib.database import cache
+			art = cache.get(self.get_request, 10000, url)
+			return art
+		except:
+			return None
 
 
 class Auth:

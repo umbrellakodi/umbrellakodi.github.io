@@ -1,4 +1,5 @@
-[B]Update - v6.7.410 - Feb 19th, 2025[/B]
+[B]Update - v6.7.412 - Feb 20th, 2025[/B]
+--[Change] Added cache for custom art.
 --[Change] Removed some logging. Getting closer to a release for this update.
 --[Change] Added Context Menu Items for Simkl and Customize Artwork
 --[Change] Added language filter to artwork.

@@ -217,6 +217,7 @@ class FanartTv:
 			return None
 
 		art = self.get_request(base_url % ('movies', imdb))
+		art = self.all_artwork_movie(imdb=imdb)
 		if art is None or art == '404:NOT FOUND':
 			return None
 
@@ -251,7 +252,7 @@ class FanartTv:
 		artworkType = kwargs.get('artwork_type', '')
 		if not tvdb:
 			return None
-		art = self.get_request(base_url % ('tv', tvdb))
+		art = self.all_artwork_show(tvdb=tvdb)
 		if art is None or art == '404:NOT FOUND':
 			return None
 
@@ -276,3 +277,15 @@ class FanartTv:
 			artworkList.append({'artworkType': artworkType, 'source': f'Fanart {index}', 'url': item.get('url')})
 		
 		return artworkList
+
+	def all_artwork_show(self, **kwargs):
+		tvdb = kwargs.get('tvdb')
+		from resources.lib.database import fanarttv_cache
+		art = fanarttv_cache.get(self.get_request, 10000, base_url % ('tv', tvdb),tvdb)
+		return art
+
+	def all_artwork_movie(self, **kwargs):
+		imdb = kwargs.get('imdb')
+		from resources.lib.database import fanarttv_cache
+		art = fanarttv_cache.get(self.get_request, 10000, base_url % ('movies', imdb))
+		return art
