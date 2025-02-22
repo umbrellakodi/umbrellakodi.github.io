@@ -2238,6 +2238,7 @@ class Movies:
 					try: item.setProperty('WatchedProgress', str(int(float(resumetime) / float(runtime) * 100)))
 					except: pass
 				#item.setInfo(type='video', infoLabels=control.metadataClean(meta))
+				if unfinished: item.setProperty('unfinished', 'true') 
 				try: 
 					resumetime = resumetime
 				except:

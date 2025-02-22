@@ -1,4 +1,4 @@
-<addon id="plugin.video.umbrella" name="Umbrella" provider-name="Umbrella" version="6.7.412">
+<addon id="plugin.video.umbrella" name="Umbrella" provider-name="Umbrella" version="6.7.413">
 	<requires>
 		<import addon="xbmc.python" version="3.0.0"/>
 		<import addon="script.module.requests"/>
@@ -33,7 +33,7 @@
 					!String.IsEmpty(Window(home).Property(context.umbrella.artworkCustomize)) +
 					String.StartsWith(ListItem.path,plugin://plugin.video.umbrella/) +
 					String.IsEqual(ListItem.Property(isUmbrella_widget),true) +
-					[String.IsEqual(ListItem.dbtype,tvshow) | String.IsEqual(ListItem.dbtype,movie)]
+					[String.IsEqual(ListItem.dbtype,tvshow) | String.IsEqual(ListItem.dbtype,movie) | String.IsEqual(ListItem.dbtype,season)]
 				</visible>
 			</item>
 			<item library="resources\lib\context\playTrailer.py">
@@ -197,12 +197,12 @@
 			<screenshot>resources/screenshots/screenshot003.jpg</screenshot>
 		</assets>
 		<news>
-[B]Update - v6.7.412 - Feb 20th, 2025[/B]
+[B]Update - v6.7.413 - Feb 21st, 2025[/B]
+--[Change] Added custom art for seasons.
+--[Fix] Changed custom view for conflicts with some skins (af2).
 --[Change] Added cache for custom art.
---[Change] Removed some logging. Getting closer to a release for this update.
 --[Change] Added Context Menu Items for Simkl and Customize Artwork
 --[Change] Added language filter to artwork.
---[Change] Made art selections return to art type selection window for custom art.
 --[Change] Made artwork changes only refresh widgets if done from a widget.
 --[Change] Added TV Shows custom art.
 --[Change] Added reset all for movie artwork.

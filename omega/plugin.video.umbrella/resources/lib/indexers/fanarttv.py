@@ -281,7 +281,7 @@ class FanartTv:
 	def all_artwork_show(self, **kwargs):
 		tvdb = kwargs.get('tvdb')
 		from resources.lib.database import fanarttv_cache
-		art = fanarttv_cache.get(self.get_request, 10000, base_url % ('tv', tvdb),tvdb)
+		art = fanarttv_cache.get(self.get_request, 10000, base_url % ('tv', tvdb))
 		return art
 
 	def all_artwork_movie(self, **kwargs):

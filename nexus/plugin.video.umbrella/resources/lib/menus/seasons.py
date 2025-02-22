@@ -15,6 +15,7 @@ from resources.lib.modules import control
 from resources.lib.modules.playcount import getSeasonIndicators, getSeasonOverlay, getSeasonCount
 from resources.lib.modules import trakt, simkl
 from resources.lib.modules import views
+from resources.lib.database import artwork as customArtwork
 
 getLS = control.lang
 getSetting = control.setting
@@ -194,8 +195,25 @@ class Seasons:
 				icon = meta.get('icon') or poster
 				banner = meta.get('banner') or addonBanner
 				art = {}
+				useCustomArtwork = customArtwork.fetch_season(imdb, tmdb, tvdb, season) #new custom artwork database check
+				clearart = meta.get('clearart', '')
+				clearlogo = meta.get('clearlogo','')
+				if useCustomArtwork:
+					allowed_keys = {"poster", "fanart", "landscape", "banner", "clearart", "clearlogo"}
+					for key in allowed_keys:
+						value = useCustomArtwork[0].get(key)
+						if value not in (None, "", " "):  # Ignore empty values. ugly but local() will not change values
+							if key == 'poster': poster = value
+							if key == 'fanart': fanart = value
+							if key == 'landscape': landscape = value
+							if key == 'banner': banner = value
+							if key == 'clearart': clearart = value
+							if key == 'clearlogo': clearlogo = value
+					if "poster" in useCustomArtwork[0] and useCustomArtwork[0].get("poster") not in (None, "", " "):
+						thumb = useCustomArtwork[0].get("poster")
+						season_poster = useCustomArtwork[0].get("poster")
 				art.update({'poster': season_poster, 'tvshow.poster': poster, 'season.poster': season_poster, 'fanart': fanart, 'icon': icon, 'thumb': thumb, 'banner': banner,
-						'tvshow.clearlogo': meta.get('clearlogo', ''), 'clearart': meta.get('clearart', ''), 'tvshow.clearart': meta.get('clearart', ''), 'landscape': landscape})
+						'tvshow.clearlogo': clearlogo, 'clearart': clearart, 'tvshow.clearart': clearart, 'landscape': landscape})
 				# for k in ('poster2', 'poster3', 'fanart2', 'fanart3', 'banner2', 'banner3'): meta.pop(k, None)
 				meta.update({'poster': poster, 'fanart': fanart, 'banner': banner, 'thumb': thumb, 'season_poster': season_poster, 'icon': icon, 'title': label})
 				sysmeta = quote_plus(jsdumps(meta))
@@ -213,6 +231,7 @@ class Seasons:
 						meta.update({'playcount': 0, 'overlay': 4})
 						cm.append((watchedMenu, 'RunPlugin(%s?action=playcount_TVShow&name=%s&imdb=%s&tvdb=%s&season=%s&query=5)' % (sysaddon, systitle, imdb, tvdb, season)))
 				except: pass
+				cm.append(('Customize Artwork', 'RunPlugin(%s?action=customizeArt&mediatype=%s&imdb=%s&tmdb=%s&tvdb=%s&poster=%s&fanart=%s&landscape=%s&banner=%s&clearart=%s&clearlogo=%s&season=%s)' % (sysaddon, 'season', imdb, tmdb, tvdb, poster, fanart, landscape, banner, clearart, clearlogo, season)))
 				cm.append((playRandom, 'RunPlugin(%s?action=play_Random&rtype=episode&tvshowtitle=%s&year=%s&imdb=%s&tmdb=%s&tvdb=%s&meta=%s&season=%s)' % (sysaddon, systitle, year, imdb, tmdb, tvdb, sysmeta, season)))
 				# cm.append((queueMenu, 'RunPlugin(%s?action=playlist_QueueItem&name=%s)' % (sysaddon, systitle)))
 				# cm.append((showPlaylistMenu, 'RunPlugin(%s?action=playlist_Show)' % sysaddon))

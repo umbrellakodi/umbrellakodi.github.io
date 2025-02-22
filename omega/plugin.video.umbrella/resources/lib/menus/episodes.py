@@ -1258,6 +1258,7 @@ class Episodes:
 				item.setProperty('IsPlayable', 'true')
 				item.setProperty('tvshow.tmdb_id', tmdb)
 				item.setProperty('episode_type', episodeType)
+				if unfinished: item.setProperty('unfinished', 'true') 
 				if is_widget: 
 					item.setProperty('isUmbrella_widget', 'true')
 					if self.hide_watched_in_widget:

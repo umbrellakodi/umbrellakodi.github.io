@@ -1,9 +1,9 @@
-[B]Update - v6.7.412 - Feb 20th, 2025[/B]
+[B]Update - v6.7.413 - Feb 21st, 2025[/B]
+--[Change] Added custom art for seasons.
+--[Fix] Changed custom view for conflicts with some skins (af2).
 --[Change] Added cache for custom art.
---[Change] Removed some logging. Getting closer to a release for this update.
 --[Change] Added Context Menu Items for Simkl and Customize Artwork
 --[Change] Added language filter to artwork.
---[Change] Made art selections return to art type selection window for custom art.
 --[Change] Made artwork changes only refresh widgets if done from a widget.
 --[Change] Added TV Shows custom art.
 --[Change] Added reset all for movie artwork.
