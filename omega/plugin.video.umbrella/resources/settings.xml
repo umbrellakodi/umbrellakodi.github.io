@@ -245,6 +245,16 @@
 						<heading>32392</heading>
 					</control>
 				</setting>
+				<!-- <setting id="originCountry" type="string" label="TMDB Lists Origin Countries" help="">
+					<level>0</level>
+					<default/>
+					<constraints>
+						<allowempty>true</allowempty>
+					</constraints>
+					<control type="button" format="action">
+						<data>RunPlugin(plugin://plugin.video.umbrella/?action=originCountry)</data>
+					</control>
+				</setting> -->
 				<setting id="searchmovie.indexer" type="integer" label="40332" help="">
 					<level>0</level>
 					<default>0</default>
@@ -6477,7 +6487,7 @@
 				</setting>
 				<setting id="simkl.UpcomingProgress.prependDate" type="boolean" label="40558" help="">
 					<level>0</level>
-					<default>fakse</default>
+					<default>false</default>
 					<dependencies>
 						<dependency type="visible">
 							<condition on="property" name="InfoBool">false</condition>

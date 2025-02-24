@@ -952,6 +952,9 @@ def router(argv2):
 		elif action == 'tools_umbrellaExternalProvider':
 			from resources.lib.modules import tools
 			tools.external_providers()
+	elif action == 'originCountry':
+		from resources.lib.modules import tools
+		tools.originCountry_Select()
 
 
 	####################################################

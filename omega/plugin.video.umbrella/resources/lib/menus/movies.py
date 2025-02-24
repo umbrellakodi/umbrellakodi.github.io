@@ -2166,6 +2166,7 @@ class Movies:
 				cm = []
 				if trailer:
 					cm.append((trailerMenu, 'RunPlugin(%s?action=play_Trailer_Context&type=%s&name=%s&year=%s&imdb=%s&url=%s)' % (sysaddon, 'movie', sysname, year, imdb, trailer)))
+				cm.append(('Play Trailer (Select)', 'RunPlugin(%s?action=play_Trailer_Select&type=%s&name=%s&year=%s&windowedtrailer=0)' % (sysaddon, 'movie', sysname, year)))
 				try:
 					watched = getMovieOverlay(indicators, imdb) == '5'
 					if self.traktCredentials:

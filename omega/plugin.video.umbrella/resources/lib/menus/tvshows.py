@@ -1997,6 +1997,7 @@ class TVshows:
 				cm = []
 				if trailer:
 					cm.append((trailerMenu, 'RunPlugin(%s?action=play_Trailer_Context&type=%s&name=%s&year=%s&imdb=%s&url=%s)' % (sysaddon, 'show', systitle, year, imdb, trailer)))
+				cm.append(('Play Trailer (Select)', 'RunPlugin(%s?action=play_Trailer_Select&type=%s&name=%s&year=%s&windowedtrailer=0)' % (sysaddon, 'show', systitle, year)))
 				try:
 					watched = (getTVShowOverlay(indicators[1], imdb, tvdb) == '5') if indicators else False
 					if self.traktCredentials:
