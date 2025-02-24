@@ -358,14 +358,16 @@ def unwatch(content_type, name, imdb=None, tvdb=None, season=None, episode=None,
 	if not success: log_utils.log(getLS(40562) % name + ' : ids={imdb: %s, tvdb: %s}' % (imdb, tvdb), __name__, level=log_utils.LOGDEBUG)
 
 def getSimKLCredentialsInfo():
-	token = getSetting('simkltoken')
-	if (token == ''): return False
-	return True
+	# token = getSetting('simkltoken')
+	# if (token == ''): return False
+	# return True
+	return False
 
 def getSimKLIndicatorsInfo():
-	indicators = getSetting('indicators.alt')
-	indicators = True if indicators == '2' else False
-	return indicators
+	# indicators = getSetting('indicators.alt')
+	# indicators = True if indicators == '2' else False
+	# return indicators
+	return False
 
 def post_request(url, data=None):
 	if type(data) == dict or type(data) == list: data = json.dumps(data)
