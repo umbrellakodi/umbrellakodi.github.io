@@ -679,6 +679,7 @@ def syncAccounts():
 	try:
 		if setting('umbrella.colorSecond') == 'false':
 			homeWindow.setProperty('umbrella.updateSettings', 'false')
+			setSetting('simkltoken', '')
 			setSetting('highlight.color', 'FFFFFF33')
 			setSetting('highlight.color.display', '[COLOR=FFFFFF33]FFFFFF33[/COLOR]')
 			setSetting('movie.unaired.identify', 'FF5CFF34')
