@@ -55,6 +55,7 @@ class Navigator:
 		if favorite: self.addDirectoryItem(40464, 'favouriteNavigator&folderName=%s' % quote_plus(getLS(40464)), 'highly-rated.png', 'DefaultFolder.png')
 		if getMenuEnabled('navi.prem.services'): self.addDirectoryItem('Premium Services', 'premiumNavigator&folderName=%s'% quote_plus('Premium Services'), 'premium.png', 'DefaultFolder.png')
 		if getMenuEnabled('navi.changelog'): self.addDirectoryItem(32014, 'tools_ShowChangelog&name=Umbrella', 'changelog.png', 'DefaultAddonHelper.png', isFolder=False)
+		if getMenuEnabled('navi.fullchangelog'): self.addDirectoryItem(40589, 'tools_ShowFullChangelog&name=Umbrella', 'changelog.png', 'DefaultAddonHelper.png', isFolder=False)
 		self.endDirectory()
 
 	def movies(self, lite=False, folderName=''):
@@ -436,6 +437,7 @@ class Navigator:
 		self.addDirectoryItem(32524, 'tools_viewLogFile&name=Umbrella', 'tools.png', 'DefaultAddonProgram.png', isFolder=False)
 		self.addDirectoryItem(32525, 'tools_clearLogFile', 'tools.png', 'DefaultAddonProgram.png', isFolder=False)
 		self.addDirectoryItem(32526, 'tools_ShowChangelog&name=Umbrella', 'tools.png', 'DefaultAddonProgram.png', isFolder=False)
+		self.addDirectoryItem(32529, 'tools_ShowFullChangelog&name=Umbrella', 'tools.png', 'DefaultAddonProgram.png', isFolder=False)
 		self.addDirectoryItem(32527, 'tools_uploadLogFile&name=Umbrella', 'tools.png', 'DefaultAddonProgram.png', isFolder=False)
 		self.addDirectoryItem(32532, 'tools_viewLogFile&name=Kodi', 'tools.png', 'DefaultAddonProgram.png', isFolder=False)
 		self.addDirectoryItem(32198, 'tools_uploadLogFile&name=Kodi', 'tools.png', 'DefaultAddonProgram.png', isFolder=False)

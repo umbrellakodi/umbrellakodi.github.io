@@ -1030,6 +1030,11 @@
 					<default>true</default>
 					<control type="toggle"/>
 				</setting>
+				<setting id="navi.fullchangelog" type="boolean" label="32014" help="">
+					<level>0</level>
+					<default>false</default>
+					<control type="toggle"/>
+				</setting>
 			</group>
 		</category>
 		<category id="navigation(movies)" label="40364" help="40366">
@@ -6643,6 +6648,14 @@
 				<setting id="showChangeLogButtonUmbrella" type="action" label="32101" help="">
 					<level>0</level>
 					<data>RunPlugin(plugin://plugin.video.umbrella/?action=tools_ShowChangelog&amp;name=Umbrella)</data>
+					<constraints>
+						<allowempty>true</allowempty>
+					</constraints>
+					<control type="button" format="action"/>
+				</setting>
+				<setting id="showFullChangeLogButtonUmbrella" type="action" label="40590" help="">
+					<level>0</level>
+					<data>RunPlugin(plugin://plugin.video.umbrella/?action=tools_ShowFullChangelog&amp;name=Umbrella)</data>
 					<constraints>
 						<allowempty>true</allowempty>
 					</constraints>

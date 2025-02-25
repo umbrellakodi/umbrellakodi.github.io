@@ -143,18 +143,13 @@ class ReuseLanguageInvokerCheck:
 	def run(self):
 		control.log('[ plugin.video.umbrella ]  ReuseLanguageInvokerCheck Service Starting...', LOGINFO)
 		try:
-			#import xml.etree.ElementTree as ET
-			from xml.dom.minidom import parse as mdParse
+			import xml.etree.ElementTree as ET
 			from resources.lib.modules.language_invoker import gen_file_hash
 			addon_xml = control.joinPath(control.addonPath('plugin.video.umbrella'), 'addon.xml')
-			#tree = ET.parse(addon_xml)
-			#root = tree.getroot()
+			tree = ET.parse(addon_xml)
+			root = tree.getroot()
 			current_addon_setting = control.addon('plugin.video.umbrella').getSetting('reuse.languageinvoker')
-			#try: current_xml_setting = [str(i.text) for i in root.iter('reuselanguageinvoker')][0]
-			try:
-				tree = mdParse(addon_xml)
-				reuse = tree.getElementsByTagName("reuselanguageinvoker")[0]
-				current_xml_setting = reuse.firstChild.data
+			try: current_xml_setting = [str(i.text) for i in root.iter('reuselanguageinvoker')][0]
 			except: return control.log('[ plugin.video.umbrella ]  ReuseLanguageInvokerCheck failed to get settings.xml value', LOGINFO)
 			if current_addon_setting == '':
 				current_addon_setting = 'true'
@@ -162,19 +157,16 @@ class ReuseLanguageInvokerCheck:
 			if current_xml_setting == current_addon_setting:
 				return control.log('[ plugin.video.umbrella ]  ReuseLanguageInvokerCheck Service Finished', LOGINFO)
 			control.okDialog(message='%s\n%s' % (control.lang(33023), control.lang(33020)))
-			#item.text = current_addon_setting
-			tree.getElementsByTagName("reuselanguageinvoker")[0].firstChild.data = current_addon_setting
-			hash_start = gen_file_hash(addon_xml)
-			newxml = str(tree.toxml())[22:] #for some reason to xml adds this so we remove it."<?xml version="1.0" ?>"
-			with open(addon_xml, "w") as f:
-				f.write(newxml)
-			#tree.write(addon_xml)
-			hash_end = gen_file_hash(addon_xml)
-			control.log('[ plugin.video.umbrella ]  ReuseLanguageInvokerCheck Service Finished', LOGINFO)
-			if hash_start != hash_end:
-				current_profile = control.infoLabel('system.profilename')
-				control.execute('LoadProfile(%s)' % current_profile)
-			else: control.okDialog(title='default', message=33022)
+			for item in root.iter('reuselanguageinvoker'):
+				item.text = current_addon_setting
+				hash_start = gen_file_hash(addon_xml)
+				tree.write(addon_xml)
+				hash_end = gen_file_hash(addon_xml)
+				control.log('[ plugin.video.umbrella ]  ReuseLanguageInvokerCheck Service Finished', LOGINFO)
+				if hash_start != hash_end:
+					current_profile = control.infoLabel('system.profilename')
+					control.execute('LoadProfile(%s)' % current_profile)
+				else: control.okDialog(title='default', message=33022)
 			return
 		except:
 			log_utils.error()

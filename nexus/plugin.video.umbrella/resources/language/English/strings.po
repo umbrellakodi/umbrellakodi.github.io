@@ -1791,7 +1791,7 @@ msgid "[B]My Accounts - View Log File[/B]"
 msgstr ""
 
 msgctxt "#32529"
-msgid "[B]My Accounts - Show Changelog[/B]"
+msgid "[B]Umbrella - Show Full Changelog[/B]"
 msgstr ""
 
 msgctxt "#32530"
@@ -5299,4 +5299,10 @@ msgctxt "#40588"
 msgid "Use origin countries in requests"
 msgstr ""
 
+msgctxt "#40589"
+msgid "Full Change Log!!"
+msgstr ""
 
+msgctxt "#40590"
+msgid "Show [COLOR yellow]Full Changelog[/COLOR]..."
+msgstr ""

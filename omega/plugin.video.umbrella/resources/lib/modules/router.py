@@ -840,6 +840,9 @@ def router(argv2):
 		elif action == 'tools_ShowChangelog':
 			from resources.lib.modules import changelog
 			changelog.get(name)
+		elif action == 'tools_ShowFullChangelog':
+			from resources.lib.modules import changelog
+			changelog.get(name, full=True)
 		elif action == 'tools_ShowHelp':
 			from resources.help import help
 			help.get(name)
