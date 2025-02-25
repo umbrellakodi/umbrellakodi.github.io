@@ -245,16 +245,31 @@
 						<heading>32392</heading>
 					</control>
 				</setting>
-				<!-- <setting id="originCountry" type="string" label="TMDB Lists Origin Countries" help="">
+				<setting id="useLanguageforOriginal" type="boolean" label="40587" help="">
 					<level>0</level>
-					<default/>
+					<default>true</default>
+					<control type="toggle"/>
+				</setting>
+				<setting id="useOriginCountries" type="boolean" label="40588" help="">
+					<level>0</level>
+					<default>false</default>
+					<control type="toggle"/>
+				</setting>
+				<setting id="originCountry" type="string" label="40586" help="" parent="useOriginCountries">
+					<level>0</level>
+					<default>US|CA|GB</default>
 					<constraints>
 						<allowempty>true</allowempty>
 					</constraints>
+					<dependencies>
+						<dependency type="visible">
+							<condition operator="is" setting="useOriginCountries">true</condition>
+						</dependency>
+					</dependencies>
 					<control type="button" format="action">
 						<data>RunPlugin(plugin://plugin.video.umbrella/?action=originCountry)</data>
 					</control>
-				</setting> -->
+				</setting>
 				<setting id="searchmovie.indexer" type="integer" label="40332" help="">
 					<level>0</level>
 					<default>0</default>

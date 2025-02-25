@@ -5286,3 +5286,17 @@ msgstr ""
 msgctxt "#40585"
 msgid "Item Removed From Simkl"
 msgstr ""
+
+msgctxt "#40586"
+msgid "TMDB Lists Origin Countries"
+msgstr ""
+
+msgctxt "#40587"
+msgid "Use api language for original language in requests"
+msgstr ""
+
+msgctxt "#40588"
+msgid "Use origin countries in requests"
+msgstr ""
+
+
