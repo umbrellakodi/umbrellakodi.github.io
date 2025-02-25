@@ -1,4 +1,4 @@
-<addon id="plugin.video.umbrella" name="Umbrella" provider-name="Umbrella" version="6.7.418">
+<addon id="plugin.video.umbrella" name="Umbrella" provider-name="Umbrella" version="6.7.419">
 	<requires>
 		<import addon="xbmc.python" version="3.0.0"/>
 		<import addon="script.module.requests"/>
@@ -197,7 +197,8 @@
 			<screenshot>resources/screenshots/screenshot003.jpg</screenshot>
 		</assets>
 		<news>
-[B]Update - v6.7.418 - Feb 24th, 2025[/B]
+[B]Update - v6.7.419 - Feb 24th, 2025[/B]
+--[Change] MORE simkl removal.
 --[Change] Changed changelog to now only be the latest changes.
 --[Change] Reverted to using original reuselanguage invoker code using element tree.
 --[Fix] Updated All-Debrid to use latest API changes for auth and magnet status.

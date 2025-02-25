@@ -160,11 +160,11 @@ class Navigator:
 			self.addDirectoryItem(getLS(40465), 'getFavouritesMovies&url=favourites_movies&folderName=%s' % (quote_plus(getLS(40465))), 'movies.png', 'DefaultMovies.png')
 		if getMenuEnabled('navi.movie.mdblist.userList') and getSetting('mdblist.api') != '':
 			self.addDirectoryItem(40087, 'mdbUserListMovies&folderName=%s' % quote_plus(getLS(40087)), 'mdblist.png' if self.iconLogos else 'movies.png', 'DefaultMovies.png')
-		if self.simkltoken:
-			self.addDirectoryItem('Simkl Completed', 'movies&url=simklhistory&folderName=%s' % quote_plus('Simkl Completed'), 'simkl.png' ,'simkl.png')
-				#self.addDirectoryItem(40549, 'movies&url=https://api.simkl.com/sync/all-items/movies/plantowatch?&folderName=%s' % quote_plus(getLS(40549)), 'simkl.png' ,'simkl.png')
-			self.addDirectoryItem('Simkl Plan to Watch', 'movies&url=simklwatchlist&folderName=%s' % 'Simkl Plan to Watch', 'simkl.png', 'simkl.png')
-			self.addDirectoryItem('Simkl Dropped', 'movies&url=simkldropped&folderName=%s' % 'Simkl Dropped', 'simkl.png', 'simkl.png')
+		# if self.simkltoken:
+		# 	self.addDirectoryItem('Simkl Completed', 'movies&url=simklhistory&folderName=%s' % quote_plus('Simkl Completed'), 'simkl.png' ,'simkl.png')
+		# 		#self.addDirectoryItem(40549, 'movies&url=https://api.simkl.com/sync/all-items/movies/plantowatch?&folderName=%s' % quote_plus(getLS(40549)), 'simkl.png' ,'simkl.png')
+		# 	self.addDirectoryItem('Simkl Plan to Watch', 'movies&url=simklwatchlist&folderName=%s' % 'Simkl Plan to Watch', 'simkl.png', 'simkl.png')
+		# 	self.addDirectoryItem('Simkl Dropped', 'movies&url=simkldropped&folderName=%s' % 'Simkl Dropped', 'simkl.png', 'simkl.png')
 		if self.traktCredentials:
 			if self.traktIndicators:
 				self.addDirectoryItem(35308, 'moviesUnfinished&url=traktunfinished&folderName=%s' % quote_plus(getLS(35308)), 'trakt.png', 'trakt.png', queue=True)
@@ -199,13 +199,13 @@ class Navigator:
 			self.addDirectoryItem(32443 if self.indexLabels else 32442, 'tvshows&url=trakttrending&folderName=%s' % quote_plus(getLS(32443 if self.indexLabels else 32442)), 'trakt.png' if self.iconLogos else 'trending.png', 'DefaultTVShows.png')
 		if getMenuEnabled('navi.tv.trakt.trendingrecent'):
 			self.addDirectoryItem(40388 if self.indexLabels else 40389, 'tvshows&url=trakttrending_recent&folderName=%s' % quote_plus(getLS(40388 if self.indexLabels else 40389)), 'trakt.png' if self.iconLogos else 'trending.png', 'DefaultTVShows.png')
-		if self.simkltoken:
-			if getMenuEnabled('navi.tv.simkl.trendingtoday'):
-				self.addDirectoryItem(40350 if self.indexLabels else 40351, 'simklTvshows&url=simkltrendingtoday&folderName=%s' % quote_plus(getLS(40350 if self.indexLabels else 40351)), 'simkl.png' if self.iconLogos else 'trending.png', 'DefaultTVShows.png')
-			if getMenuEnabled('navi.tv.simkl.trendingweek'):
-				self.addDirectoryItem(40352 if self.indexLabels else 40353, 'simklTvshows&url=simkltrendingweek&folderName=%s' % quote_plus(getLS(40352 if self.indexLabels else 40353)), 'simkl.png' if self.iconLogos else 'trending.png', 'DefaultTVShows.png')
-			if getMenuEnabled('navi.tv.simkl.trendingweek'):	
-				self.addDirectoryItem(40354 if self.indexLabels else 40355, 'simklTvshows&url=simkltrendingmonth&folderName=%s' % quote_plus(getLS(40354 if self.indexLabels else 40355)), 'simkl.png' if self.iconLogos else 'trending.png', 'DefaultTVShows.png')
+		# if self.simkltoken:
+		# 	if getMenuEnabled('navi.tv.simkl.trendingtoday'):
+		# 		self.addDirectoryItem(40350 if self.indexLabels else 40351, 'simklTvshows&url=simkltrendingtoday&folderName=%s' % quote_plus(getLS(40350 if self.indexLabels else 40351)), 'simkl.png' if self.iconLogos else 'trending.png', 'DefaultTVShows.png')
+		# 	if getMenuEnabled('navi.tv.simkl.trendingweek'):
+		# 		self.addDirectoryItem(40352 if self.indexLabels else 40353, 'simklTvshows&url=simkltrendingweek&folderName=%s' % quote_plus(getLS(40352 if self.indexLabels else 40353)), 'simkl.png' if self.iconLogos else 'trending.png', 'DefaultTVShows.png')
+		# 	if getMenuEnabled('navi.tv.simkl.trendingweek'):	
+		# 		self.addDirectoryItem(40354 if self.indexLabels else 40355, 'simklTvshows&url=simkltrendingmonth&folderName=%s' % quote_plus(getLS(40354 if self.indexLabels else 40355)), 'simkl.png' if self.iconLogos else 'trending.png', 'DefaultTVShows.png')
 		if getMenuEnabled('navi.tv.tmdb.trendingday'):
 			self.addDirectoryItem(40330 if self.indexLabels else 32442, 'tvshows&url=tmdbrecentday&folderName=%s' % quote_plus(getLS(40354 if self.indexLabels else 40355)), 'tmdb.png' if self.iconLogos else 'trending.png', 'DefaultTVShows.png')
 		if getMenuEnabled('navi.tv.tmdb.trendingweek'):
@@ -260,15 +260,15 @@ class Navigator:
 		if self.favoriteEpisodes: self.addDirectoryItem(getLS(40467), 'getFavouritesEpisodes&folderName=%s' % (quote_plus(getLS(40467))), 'tvshows.png', 'DefaultTVShows.png')
 		if getMenuEnabled('navi.tv.mdblist.userList') and getSetting('mdblist.api') != '':
 			self.addDirectoryItem(40087, 'mdbUserListTV&folderName=%s' % quote_plus(getLS(40087)), 'mdblist.png' if self.iconLogos else 'tvshows.png', 'DefaultMovies.png')
-		if self.simklCredentials:
-			if self.simklIndicators:
-				self.addDirectoryItem('Simkl Progress Episodes', 'simkl_calendar&url=/sync/all-items/shows/watching&folderName=%s' % quote_plus("Simkl Progress Episodes"), 'simkl.png', 'simkl.png', queue=True)
-			#self.addDirectoryItem('Simkl Progress Shows', 'simkl_shows_progress&url=/sync/all-items/sync/movies/watching?extended=full&folderName=%s' % quote_plus("Simkl Progress Shows"), 'simkl.png', 'simkl.png', queue=True)
-			self.addDirectoryItem('Simkl Watching', 'tvshows&url=simklwatching&folderName=%s' % quote_plus("Simkl Watching"), 'simkl.png', 'simkl.png', queue=True)
-			self.addDirectoryItem('Simkl Plan to Watch', 'tvshows&url=simklwatchlist&folderName=%s' % quote_plus('Simkl Plan to Watch'), 'simkl.png', 'simkl.png')
-			self.addDirectoryItem('Simkl On Hold', 'tvshows&url=simklonhold&folderName=%s' % quote_plus('Simkl On Hold'), 'simkl.png', 'simkl.png')
-			self.addDirectoryItem('Simkl Completed', 'tvshows&url=simklhistory&folderName=%s' % quote_plus('Simkl Completed'), 'simkl.png' ,'simkl.png')
-			self.addDirectoryItem('Simkl Dropped', 'tvshows&url=simkldropped&folderName=%s' % quote_plus('Simkl Dropped'), 'simkl.png', 'simkl.png')
+		# if self.simklCredentials:
+		# 	if self.simklIndicators:
+		# 		self.addDirectoryItem('Simkl Progress Episodes', 'simkl_calendar&url=/sync/all-items/shows/watching&folderName=%s' % quote_plus("Simkl Progress Episodes"), 'simkl.png', 'simkl.png', queue=True)
+		# 	#self.addDirectoryItem('Simkl Progress Shows', 'simkl_shows_progress&url=/sync/all-items/sync/movies/watching?extended=full&folderName=%s' % quote_plus("Simkl Progress Shows"), 'simkl.png', 'simkl.png', queue=True)
+		# 	self.addDirectoryItem('Simkl Watching', 'tvshows&url=simklwatching&folderName=%s' % quote_plus("Simkl Watching"), 'simkl.png', 'simkl.png', queue=True)
+		# 	self.addDirectoryItem('Simkl Plan to Watch', 'tvshows&url=simklwatchlist&folderName=%s' % quote_plus('Simkl Plan to Watch'), 'simkl.png', 'simkl.png')
+		# 	self.addDirectoryItem('Simkl On Hold', 'tvshows&url=simklonhold&folderName=%s' % quote_plus('Simkl On Hold'), 'simkl.png', 'simkl.png')
+		# 	self.addDirectoryItem('Simkl Completed', 'tvshows&url=simklhistory&folderName=%s' % quote_plus('Simkl Completed'), 'simkl.png' ,'simkl.png')
+		# 	self.addDirectoryItem('Simkl Dropped', 'tvshows&url=simkldropped&folderName=%s' % quote_plus('Simkl Dropped'), 'simkl.png', 'simkl.png')
 			
 		if self.traktCredentials:
 			if self.traktIndicators:
