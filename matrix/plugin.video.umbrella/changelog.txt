@@ -1,2 +1,2 @@
-[B]Update - v6.7.422 - Mar 10th, 2025[/B]
---[Fix] Quick fix for counts not showing correctly in season views.
+[B]Update - v6.7.423 - Mar 27th, 2025[/B]
+--[Fix] Change in colorpick code.
