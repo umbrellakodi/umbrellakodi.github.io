@@ -1,7 +1,8 @@
-[B]Update - v6.7.424 - April 1st, 2025[/B]
+[B]Update - v6.7.425 - April 1st, 2025[/B]
 --[Change] Added support for MDblist Watchlist.
 --[Change] Added mdblist watchlist to context menu.
 --[Fix] Change in colorpick code.
+--[Fix] Fixed broken settings.
 
 [B]Update - v6.7.42 - Mar 10th, 2025[/B]
 --[Fix] Quick fix for counts not showing correctly in season views.
