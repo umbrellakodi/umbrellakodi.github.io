@@ -1,5 +1,6 @@
-[B]Update - v6.7.425 - April 1st, 2025[/B]
+[B]Update - v6.7.426 - April 2nd, 2025[/B]
 --[Change] Added support for MDblist Watchlist.
 --[Change] Added mdblist watchlist to context menu.
+--[Change] Added mdblist watchlist sorting to use watchlist sorting settings.
 --[Fix] Change in colorpick code.
 --[Fix] Fixed broken settings.

@@ -153,6 +153,9 @@ def _map_user_watchlist_items(response, listType):
         item['id'] = i.get('id')
         item['imdb'] = i.get('imdb_id')
         item['release_year'] = i.get('release_year')
+        watchlist_at = i.get('watchlist_at')
+        watchlist_fixed = watchlist_at.replace(" ", "T")[:-3] + "Z"
+        item['added'] = watchlist_fixed
         items_append(item)
     return items
 

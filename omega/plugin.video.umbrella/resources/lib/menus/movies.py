@@ -365,6 +365,7 @@ class Movies:
 			self.list = cache.get(mdblist.get_user_watchlist, 0, listType)
 			if self.list is None: self.list = []
 			self.worker()
+			self.sort(type='movies.watchlist')
 			return self.movieDirectory(self.list, folderName=folderName)
 
 		except:

@@ -1492,6 +1492,7 @@ class TVshows:
 			self.list = cache.get(mdblist.get_user_watchlist, 0, listType)
 			if self.list is None: self.list = []
 			self.worker()
+			self.sort(type='shows.watchlist')
 			return self.tvshowDirectory(self.list, folderName=folderName)
 
 		except:
