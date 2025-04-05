@@ -1,9 +1,11 @@
-[B]Update - v6.7.426 - April 2nd, 2025[/B]
+[B]Update - v6.7.427 - April 5th, 2025[/B]
+--[Change] Added dynamic qr_code creation for all prompts.
+--[Change] Renamed all artwork in common folder to use custom names to avoid conflicts with skins.
+
+[B]Update - v6.7.43 - April 3rd, 2025[/B]
 --[Change] Added support for MDblist Watchlist.
---[Change] Added mdblist watchlist to context menu.
---[Change] Added mdblist watchlist sorting to use watchlist sorting settings.
 --[Fix] Change in colorpick code.
---[Fix] Fixed broken settings.
+--[Info] MDBList will be changed to use local cache in a future update.
 
 [B]Update - v6.7.42 - Mar 10th, 2025[/B]
 --[Fix] Quick fix for counts not showing correctly in season views.
