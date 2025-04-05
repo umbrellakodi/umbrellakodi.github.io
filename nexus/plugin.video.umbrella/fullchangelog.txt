@@ -1,4 +1,4 @@
-[B]Update - v6.7.427 - April 5th, 2025[/B]
+[B]Update - v6.7.428 - April 5th, 2025[/B]
 --[Change] Added dynamic qr_code creation for all prompts.
 --[Change] Renamed all artwork in common folder to use custom names to avoid conflicts with skins.
 

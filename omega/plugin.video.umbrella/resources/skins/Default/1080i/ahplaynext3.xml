@@ -152,8 +152,8 @@
                         <font>font10</font>
                         <textcolor>FFB7B4BB</textcolor>
                         <focusedcolor>FF302F2F</focusedcolor>
-                        <texturefocus colordiffuse="$INFO[Window().Property(skin.selectColor)]" border="30">common/circle.png</texturefocus>
-                        <texturenofocus colordiffuse="1fdedede" border="30">common/circle.png</texturenofocus>
+                        <texturefocus colordiffuse="$INFO[Window().Property(skin.selectColor)]" border="30">common/umbrellacircle.png</texturefocus>
+                        <texturenofocus colordiffuse="1fdedede" border="30">common/umbrellacircle.png</texturenofocus>
                         <align>center</align>
                         <visible>String.IsEmpty(Window().Property(umbrella.hidebutton))</visible>
                     </control>
@@ -167,8 +167,8 @@
                         <font>font10</font>
                         <textcolor>FFB7B4BB</textcolor>
                         <focusedcolor>FF302F2F</focusedcolor>
-                        <texturefocus colordiffuse="$INFO[Window().Property(skin.selectColor)]" border="30">common/circle.png</texturefocus>
-                        <texturenofocus colordiffuse="1fdedede" border="30">common/circle.png</texturenofocus>
+                        <texturefocus colordiffuse="$INFO[Window().Property(skin.selectColor)]" border="30">common/umbrellacircle.png</texturefocus>
+                        <texturenofocus colordiffuse="1fdedede" border="30">common/umbrellacircle.png</texturenofocus>
                         <align>center</align>
                     </control>
                     <control type="button" id="3012">
@@ -181,8 +181,8 @@
                         <font>font10</font>
                         <textcolor>FFB7B4BB</textcolor>
                         <focusedcolor>FF302F2F</focusedcolor>
-                        <texturefocus colordiffuse="$INFO[Window().Property(skin.selectColor)]" border="30">common/circle.png</texturefocus>
-                        <texturenofocus colordiffuse="1fdedede" border="30">common/circle.png</texturenofocus>
+                        <texturefocus colordiffuse="$INFO[Window().Property(skin.selectColor)]" border="30">common/umbrellacircle.png</texturefocus>
+                        <texturenofocus colordiffuse="1fdedede" border="30">common/umbrellacircle.png</texturenofocus>
                         <align>center</align>
                     </control>
                 </control>

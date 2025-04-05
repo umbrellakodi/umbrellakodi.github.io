@@ -110,7 +110,7 @@
                 <centertop>52%</centertop>
                 <centerleft>50%</centerleft>
                 <aspectratio scalediffuse="false">keep</aspectratio>
-                <texture colordiffuse="b3181818">common/circle.png</texture>
+                <texture colordiffuse="b3181818">common/umbrellacircle.png</texture>
                 <visible>Integer.IsGreater(Player.TimeRemaining,60)</visible>
             </control>
             <control type="image" description="blackline">
@@ -119,7 +119,7 @@
                 <centertop>52%</centertop>
                 <centerleft>50%</centerleft>
                 <aspectratio scalediffuse="false">keep</aspectratio>
-                <texture colordiffuse="b3181818">common/circle.png</texture>
+                <texture colordiffuse="b3181818">common/umbrellacircle.png</texture>
                 <visible>!Integer.IsGreater(Player.TimeRemaining,59)</visible>
             </control>
             <control type="label">

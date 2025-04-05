@@ -70,7 +70,7 @@
                 <font>font12</font>
                 <textcolor>$INFO[Window.Property(umbrella.buttonTextColorNS)]</textcolor>
                 <focusedcolor>$INFO[Window.Property(umbrella.buttonTextColor)]</focusedcolor>
-                <texturefocus colordiffuse="$INFO[Window.Property(umbrella.buttonColor)]" border="30">common/circle.png</texturefocus>
+                <texturefocus colordiffuse="$INFO[Window.Property(umbrella.buttonColor)]" border="30">common/umbrellacircle.png</texturefocus>
                 <texturenofocus colordiffuse="$INFO[Window.Property(umbrella.buttonnofocus)]" border="30">common/umbcircle2.png</texturenofocus>
                 <align>center</align>
             </control>
@@ -86,7 +86,7 @@
                 <font>font12</font>
                 <textcolor>$INFO[Window.Property(umbrella.buttonTextColorNS)]</textcolor>
                 <focusedcolor>$INFO[Window.Property(umbrella.buttonTextColor)]</focusedcolor>
-                <texturefocus colordiffuse="$INFO[Window.Property(umbrella.buttonColor)]" border="30">common/circle.png</texturefocus>
+                <texturefocus colordiffuse="$INFO[Window.Property(umbrella.buttonColor)]" border="30">common/umbrellacircle.png</texturefocus>
                 <texturenofocus colordiffuse="$INFO[Window.Property(umbrella.buttonnofocus)]" border="30">common/umbcircle2.png</texturenofocus>
                 <align>center</align>
             </control>

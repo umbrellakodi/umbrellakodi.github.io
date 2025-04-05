@@ -1,4 +1,4 @@
-<addon id="plugin.video.umbrella" name="Umbrella" provider-name="Umbrella" version="6.7.427">
+<addon id="plugin.video.umbrella" name="Umbrella" provider-name="Umbrella" version="6.7.428">
 	<requires>
 		<import addon="xbmc.python" version="3.0.0" />
 		<import addon="script.module.requests" />
@@ -197,7 +197,7 @@
 			<screenshot>resources/screenshots/screenshot003.jpg</screenshot>
 		</assets>
 		<news>
-[B]Update - v6.7.427 - April 5th, 2025[/B]
+[B]Update - v6.7.428 - April 5th, 2025[/B]
 --[Change] Added dynamic qr_code creation for all prompts.
 --[Change] Renamed all artwork in common folder to use custom names to avoid conflicts with skins.
 
