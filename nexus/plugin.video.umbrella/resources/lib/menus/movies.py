@@ -2196,7 +2196,7 @@ class Movies:
 					if self.traktCredentials:
 						cm.append((traktManagerMenu, 'RunPlugin(%s?action=tools_traktManager&name=%s&imdb=%s&watched=%s&unfinished=%s)' % (sysaddon, sysname, imdb, watched, unfinished)))
 					if self.mdblist_authed:
-						cm.append(('MDBList Watchlist', 'RunPlugin(%s?action=tools_mdbWatchlist&name=%s&imdb=%s)' % (sysaddon, sysname, imdb)))
+						cm.append(('MDBList Manager', 'RunPlugin(%s?action=tools_mdbWatchlist&name=%s&imdb=%s)' % (sysaddon, sysname, imdb)))
 					if self.simklCredentials:
 						cm.append((simklManagerMenu, 'RunPlugin(%s?action=tools_simklManager&name=%s&imdb=%s&watched=%s&unfinished=%s)' % (sysaddon, sysname, imdb, watched, unfinished)))
 					if watched:
