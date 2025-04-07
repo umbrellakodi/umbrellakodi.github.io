@@ -155,7 +155,7 @@ class RealDebrid:
 		line = '%s\n%s\n%s'
 		if control.setting('dialogs.useumbrelladialog') == 'true':
 			from resources.lib.modules import tools
-			rd_qr = tools.make_qr("https://real-debrid.com/device")
+			rd_qr = tools.make_qr(response.get('direct_verification_url'))
 			self.progressDialog = control.getProgressWindow(getLS(40055), rd_qr, 1)
 			self.progressDialog.set_controls()
 		else:

@@ -78,7 +78,7 @@ class SIMKL:
 		line = '%s\n%s\n%s'
 		if control.setting('dialogs.useumbrelladialog') == 'true':
 			from resources.lib.modules import tools
-			sim_qr = tools.make_qr("https://simkl.com/pin/")
+			sim_qr = tools.make_qr(f"https://simkl.com/pin/{response['user_code']}")
 			self.progressDialog = control.getProgressWindow(getLS(40346), sim_qr, 1)
 			self.progressDialog.set_controls()
 		else:
