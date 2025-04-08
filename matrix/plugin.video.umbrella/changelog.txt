@@ -1,5 +1,5 @@
-[B]Update - v6.7.430 - April 7th, 2025[/B]
---[Change] Wasting my time adding support for MDBList Watchlist from library. (if it is already in your library, why are you adding it to a watchlist?)
+[B]Update - v6.7.431 - April 7th, 2025[/B]
+--[Fix] Fixed issue with mdblists and tv shows.
 --[Change] Added support for adding/ removing from MDBList Static Lists.
 --[Change] Changed qr generation on rd codes to use direct verification url.
 --[Change] Added dynamic qr_code creation for all prompts.
