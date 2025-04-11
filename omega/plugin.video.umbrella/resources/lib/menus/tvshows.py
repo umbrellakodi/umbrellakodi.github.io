@@ -1450,10 +1450,10 @@ class TVshows:
 		if self.list is None: self.list = []
 		if create_directory: self.tvshowDirectory(self.list, folderName=folderName)
 		return self.list
-	def getMDBUserList(self, create_directory=True, folderName=''):
+	def getMDBUserList(self, create_directory=True, folderName='', addremove=False):
 		self.list = []
 		try:
-			self.list = cache.get(self.mbd_user_lists, 0)
+			self.list = cache.get(self.mbd_user_lists, 0, addremove)
 			if self.list is None: self.list = []
 			if create_directory: self.addDirectory(self.list, folderName=folderName)
 			return self.list
@@ -1461,13 +1461,13 @@ class TVshows:
 		except:
 			
 			log_utils.error()
-	def mbd_user_lists(self):
+	def mbd_user_lists(self, addremove):
 		try:
 			listType = 'show'
-			items = mdblist.getMDBUserList(self, listType)
+			items = mdblist.getMDBUserList(self, listType, addremove=addremove)
 			next = ''
 		except:
-			
+
 			log_utils.error()
 		for item in items:
 			try:

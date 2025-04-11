@@ -93,17 +93,19 @@ def _map_list_items(response):
         item['release_year'] = i.get('release_year')
         items_append(item)
     return items
-def getMDBUserList(self, listType):
+def getMDBUserList(self, listType, addremove=False):
+    
     try:
         response = session.get(mdblist_baseurl + mdblist_user_list + mdblist_api + mdblist_page_limit, timeout=20)
         if isinstance(response, dict): 
             log_utils.log(response.error, level=log_utils.LOGDEBUG)
             return None
-        items = _map_user_list_items(response, listType)
+        items = _map_user_list_items(response, listType, addremove=addremove)
         return items
     except: log_utils.error('get MDBList Error: ')
     return None
-def _map_user_list_items(response, listType):
+def _map_user_list_items(response, listType, addremove=False):
+
     items = []
     items_append = items.append
     icon = 'userlists.png' if iconLogos else 'mdblist.png'
@@ -123,7 +125,11 @@ def _map_user_list_items(response, listType):
             item['unique_ids'] = {
                 'mdblist': i.get('id'),
                 'slug': i.get('slug')}
-            items_append(item)
+            if addremove:
+                if i.get('dynamic') == False:
+                    items_append(item)
+            else:
+                items_append(item)
     return items
 
 def get_user_watchlist(listType):
@@ -167,10 +173,10 @@ def manager(name, imdb=None, tvdb=None, tmdb=None):
         items += [(getLS(40597) % highlight_color, 'remove')]
         if not tvdb or tvdb == 'None':
             from resources.lib.menus import movies
-            result = movies.Movies().getMDBUserList(create_directory=False)
+            result = movies.Movies().getMDBUserList(create_directory=False, addremove=True)
         else:
             from resources.lib.menus import tvshows
-            result = tvshows.TVShows().getMDBUserList(create_directory=False)
+            result = tvshows.TVshows().getMDBUserList(create_directory=False, addremove=True)
         lists = [(i['name'], i['list_id']) for i in result]
         lists2 = [(i['name'], i['list_id']) for i in result]
         lists = [lists[i//2] for i in range(len(lists)*2)]

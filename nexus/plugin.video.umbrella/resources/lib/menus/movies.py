@@ -326,10 +326,10 @@ class Movies:
 				from resources.lib.modules import log_utils
 				log_utils.error()
 		return self.list
-	def getMDBUserList(self, create_directory=True, folderName=''):
+	def getMDBUserList(self, create_directory=True, folderName='', addremove=False):
 		self.list = []
 		try:
-			self.list = cache.get(self.mbd_user_lists, 0)
+			self.list = cache.get(self.mbd_user_lists, 0, addremove)
 			if self.list is None: self.list = []
 			if create_directory: self.addDirectory(self.list, folderName=folderName)
 			return self.list
@@ -337,10 +337,10 @@ class Movies:
 		except:
 			from resources.lib.modules import log_utils
 			log_utils.error()
-	def mbd_user_lists(self):
+	def mbd_user_lists(self, addremove):
 		try:
 			listType = 'movie'
-			items = mdblist.getMDBUserList(self, listType)
+			items = mdblist.getMDBUserList(self, listType, addremove)
 			next = ''
 		except:
 			from resources.lib.modules import log_utils
