@@ -1,4 +1,4 @@
-<addon id="plugin.video.umbrella" name="Umbrella" provider-name="Umbrella" version="6.7.432">
+<addon id="plugin.video.umbrella" name="Umbrella" provider-name="Umbrella" version="6.7.433">
 	<requires>
 		<import addon="xbmc.python" version="3.0.0" />
 		<import addon="script.module.requests" />
@@ -205,8 +205,9 @@
 			<screenshot>resources/screenshots/screenshot003.jpg</screenshot>
 		</assets>
 		<news>
-[B]Update - v6.7.432 - April 11th, 2025[/B]
+[B]Update - v6.7.433 - April 12th, 2025[/B]
 --[Change] Modified MDBList add and remove to only use watchlist and static lists.
+--[Change] Suggested library change from PR request.
 		</news>
 	</extension>
 
