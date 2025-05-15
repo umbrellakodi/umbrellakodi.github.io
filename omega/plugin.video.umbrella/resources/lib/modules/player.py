@@ -1186,7 +1186,11 @@ class Bookmarks:
 			if media_length == 0: return
 			percent = float((current_time / media_length)) * 100
 			seekable = (int(current_time) > 180 and (percent < int(markwatched_percentage)))
-			if seekable: trakt.scrobbleMovie(imdb, tmdb, percent) if media_type == 'movie' else trakt.scrobbleEpisode(imdb, tmdb, tvdb, season, episode, percent)
+			if seekable: 
+				trakt.scrobbleMovie(imdb, tmdb, percent) if media_type == 'movie' else trakt.scrobbleEpisode(imdb, tmdb, tvdb, season, episode, percent)
+				if getSetting('scrobblerest.key') != '':
+					from resources.lib.modules import scrobblesync
+					scrobblesync.scrobbleMovie(imdb, tmdb, percent)
 			if percent >= int(markwatched_percentage): trakt.scrobbleReset(imdb, tmdb, tvdb, season, episode, refresh=False)
 		except:
 			log_utils.error()

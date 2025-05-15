@@ -5248,6 +5248,33 @@
 					</control>
 				</setting>
 			</group>
+			<group id ="5" label="40602">
+				<setting id="scrobblesync.key" type="string" label="40601" help="">
+					<level>0</level>
+					<default/>
+					<constraints>
+						<allowempty>true</allowempty>
+					</constraints>
+					<dependencies>
+						<dependency type="enable">
+							<condition on="property" name="InfoBool">true</condition>
+						</dependency>
+					</dependencies>
+					<control type="edit" format="string">
+						<heading>40601</heading>
+					</control>
+				</setting>
+				<setting id="scrobblesync.scrobble.notify" type="boolean" label="32099" help="" parent="">
+					<level>0</level>
+					<default>false</default>
+					<dependencies>
+						<dependency type="visible">
+								<condition operator="!is" setting="scrobblesync.key"/>
+						</dependency>
+					</dependencies>
+					<control type="toggle"/>
+				</setting>
+			</group>
 		</category>
 		<category id="library" label="32541" help="40192">
 			<group id="1">

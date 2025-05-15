@@ -5338,3 +5338,19 @@ msgstr ""
 msgctxt "#40598"
 msgid "MDBList Watchlist Lib"
 msgstr ""
+
+msgctxt "#40599"
+msgid "ScrobbleSync: Scrobbled"
+msgstr ""
+
+msgctxt "#40600"
+msgid "ScrobbleSync: Scrobble Failed"
+msgstr ""
+
+msgctxt "#40601"
+msgid "ScrobbleSync API Key"
+msgstr ""
+
+msgctxt "#40602"
+msgid "ScrobbleSync"
+msgstr ""
