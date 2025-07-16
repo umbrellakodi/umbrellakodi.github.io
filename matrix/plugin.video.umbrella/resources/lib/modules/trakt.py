@@ -31,13 +31,14 @@ server_notification = getSetting('trakt.server.notifications') == 'true'
 service_syncInterval = int(getSetting('background.service.syncInterval')) if getSetting('background.service.syncInterval') else 15
 trakt_icon = control.joinPath(control.artPath(), 'trakt.png')
 #trakt_qr = control.joinPath(control.artPath(), 'traktqr.png')
+trakt_token = getSetting('trakt.user.token')
 
 def getTrakt(url, post=None, extended=False, silent=False):
 	try:
 		if not url.startswith(BASE_URL): url = urljoin(BASE_URL, url)
 		if headers['trakt-api-key'] == '': headers['trakt-api-key']=traktClientID()
 		if post: post = jsdumps(post)
-		if getTraktCredentialsInfo(): headers['Authorization'] = 'Bearer %s' % getSetting('trakt.user.token')
+		if getTraktCredentialsInfo(): headers['Authorization'] = 'Bearer %s' % trakt_token
 		if post:
 			response = session.post(url, data=post, headers=headers, timeout=20)
 		else:
@@ -49,10 +50,10 @@ def getTrakt(url, post=None, extended=False, silent=False):
 			if extended: return response, response.headers
 			else: return response
 		elif status_code == '401': # Re-Auth token
-			log_utils.log('TRAKT: %s Status Code Returned on call to url: %s. Token Used: %s' % (status_code, url, getSetting('trakt.user.token')), level=log_utils.LOGINFO)
 			if response.headers.get('x-private-user') == 'true':
 				#log_utils.log('URL:%s Has a Private User Header:Ignoring' % url, level=log_utils.LOGWARNING)
 				return None
+			log_utils.log('TRAKT: %s Status Code Returned on call to url: %s. Token Used: %s' % (status_code, url, trakt_token), level=log_utils.LOGINFO)
 			success = re_auth(headers)
 			if success: return getTrakt(url, extended=extended, silent=silent)
 		elif status_code == '429':
@@ -92,7 +93,7 @@ def re_auth(headers):
 	try:
 		oauth = urljoin(BASE_URL, '/oauth/token')
 		opost = {'client_id': traktClientID(), 'client_secret': traktClientSecret(), 'redirect_uri': REDIRECT_URI, 'grant_type': 'refresh_token', 'refresh_token': getSetting('trakt.refreshtoken')}
-		log_utils.log('TRAKT: Re-Authenticating Refresh Token: %s Trakt Token: %s' % (getSetting('trakt.refreshtoken'),getSetting('trakt.user.token')), level=log_utils.LOGINFO)
+		log_utils.log('TRAKT: Re-Authenticating Refresh Token: %s Trakt Token: %s' % (getSetting('trakt.refreshtoken'),trakt_token), level=log_utils.LOGINFO)
 		response = session.post(url=oauth, data=jsdumps(opost), headers=headers, timeout=20)
 		status_code = str(response.status_code)
 
@@ -107,7 +108,7 @@ def re_auth(headers):
 				control.notification(title=32315, message=33677)
 				return False
 			token, refresh = response['access_token'], response['refresh_token']
-			log_utils.log('TRAKT: Response Token: %s Response Refresh Token: %s ' % (getSetting('trakt.refreshtoken'),getSetting('trakt.user.token')), level=log_utils.LOGINFO)
+			log_utils.log('TRAKT: Response Token: %s Response Refresh Token: %s ' % (getSetting('trakt.refreshtoken'),trakt_token), level=log_utils.LOGINFO)
 			#expires = str(time() + 7776000)
 			expires = str(time.time() + 86400) #new 24 hour token
 			expires_from_trakt = response['expires_in']
@@ -146,7 +147,7 @@ def traktAuth(fromSettings=0):
 			control.setSetting('trakt.refreshtoken', deviceCode["refresh_token"])
 			control.sleep(1000)
 			try:
-				headers['Authorization'] = 'Bearer %s' % getSetting('trakt.user.token')
+				headers['Authorization'] = 'Bearer %s' % trakt_token
 				user = getTrakt('users/me', post=None)
 				username = user.json()
 				control.setSetting('trakt.user.name', str(username['username']))
@@ -299,7 +300,7 @@ def getTraktAccountInfo():
 def getTraktAccountSettings():
 	#account_info = self.call("users/settings", with_auth=True)
 	#stats = self.call("users/%s/stats" % account_info['user']['ids']['slug'], with_auth=True)
-	headers['Authorization'] = 'Bearer %s' % getSetting('trakt.user.token')
+	headers['Authorization'] = 'Bearer %s' % trakt_token
 	account_info = getTrakt('users/settings', post=None)
 	account_info_encoded = account_info.json()
 	stats = getTrakt('users/%s/stats' % account_info_encoded['user']['ids']['slug'])
@@ -392,7 +393,7 @@ def unwatch(content_type, name, imdb=None, tvdb=None, season=None, episode=None,
 
 def like_list(list_owner, list_name, list_id):
 	try:
-		headers['Authorization'] = 'Bearer %s' % getSetting('trakt.user.token')
+		headers['Authorization'] = 'Bearer %s' % trakt_token
 		# resp_code = client._basic_request('https://api.trakt.tv/users/%s/lists/%s/like' % (list_owner, list_id), headers=headers, method='POST', ret_code=True)
 		resp_code = session.post('https://api.trakt.tv/users/%s/lists/%s/like' % (list_owner, list_id), headers=headers).status_code
 		if resp_code == 204:
@@ -404,7 +405,7 @@ def like_list(list_owner, list_name, list_id):
 
 def unlike_list(list_owner, list_name, list_id):
 	try:
-		headers['Authorization'] = 'Bearer %s' % getSetting('trakt.user.token')
+		headers['Authorization'] = 'Bearer %s' % trakt_token
 		# resp_code = client._basic_request('https://api.trakt.tv/users/%s/lists/%s/like' % (list_owner, list_id), headers=headers, method='DELETE', ret_code=True)
 		resp_code = session.delete('https://api.trakt.tv/users/%s/lists/%s/like' % (list_owner, list_id), headers=headers).status_code
 		if resp_code == 204:
@@ -418,7 +419,7 @@ def remove_liked_lists(trakt_ids):
 	if not trakt_ids: return
 	success = None
 	try:
-		headers['Authorization'] = 'Bearer %s' % getSetting('trakt.user.token')
+		headers['Authorization'] = 'Bearer %s' % trakt_token
 		for id in trakt_ids:
 			list_owner = id.get('list_owner')
 			list_id = id.get('trakt_id')
@@ -1435,7 +1436,7 @@ def scrobbleReset(imdb, tmdb=None, tvdb=None, season=None, episode=None, refresh
 		content_type = 'movie' if not episode else 'episode'
 		resume_info = traktsync.fetch_bookmarks(imdb, tmdb, tvdb, season, episode, ret_type='resume_info')
 		if resume_info == '0': return control.hide() # returns string "0" if no data in db 
-		headers['Authorization'] = 'Bearer %s' % getSetting('trakt.user.token')
+		headers['Authorization'] = 'Bearer %s' % trakt_token
 		if headers['trakt-api-key'] == '': headers['trakt-api-key']=traktClientID()
 		success = session.delete('https://api.trakt.tv/sync/playback/%s' % resume_info[1], headers=headers).status_code == 204
 		if content_type == 'movie':
@@ -1471,7 +1472,7 @@ def scrobbleResetItems(imdb_ids, tvdb_dicts=None, refresh=True, widgetRefresh=Fa
 					resume_info_index = [resume_info.index(i) for i in resume_info if i['imdb'] == imdb][0]
 					resume_dict = resume_info[resume_info_index]
 					resume_id = resume_dict['resume_id']
-					headers['Authorization'] = 'Bearer %s' % getSetting('trakt.user.token')
+					headers['Authorization'] = 'Bearer %s' % trakt_token
 					success = session.delete('https://api.trakt.tv/sync/playback/%s' % resume_id, headers=headers).status_code == 204
 					if not success: raise Exception()
 					items = [{'type': 'movie', 'movie': {'ids': {'imdb': imdb}}}]
@@ -1492,7 +1493,7 @@ def scrobbleResetItems(imdb_ids, tvdb_dicts=None, refresh=True, widgetRefresh=Fa
 					resume_dict = resume_info[resume_info_index]
 					label_string = resume_dict['tvshowtitle'] + ' - ' + 'S%02dE%02d' % (int(season), int(episode))
 					resume_id = resume_dict['resume_id']
-					headers['Authorization'] = 'Bearer %s' % getSetting('trakt.user.token')
+					headers['Authorization'] = 'Bearer %s' % trakt_token
 					success = session.delete('https://api.trakt.tv/sync/playback/%s' % resume_id, headers=headers).status_code == 204
 					if not success: raise Exception()
 					items = [{'type': 'episode', 'episode': {'season': season, 'number': episode}, 'show': {'ids': {'imdb': imdb, 'tvdb': tvdb}}}]
