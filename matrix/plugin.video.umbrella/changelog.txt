@@ -1,3 +1,2 @@
-[B]Update - v6.7.437 - July 16th, 2025[/B]
---[Change] Changed how often settings are being accessed in Trakt function and set trakt_token as a variable.
---[Change] Made changes to Trakt code to log refresh tokens and check re-auth process.
+[B]Update - v6.7.438 - July 16th, 2025[/B]
+--[Change] Multiple changes to Trakt module and handling of tokens.

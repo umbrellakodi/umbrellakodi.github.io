@@ -24,7 +24,7 @@ BASE_URL = 'https://api.trakt.tv'
 headers = {'Content-Type': 'application/json', 'trakt-api-key': '', 'trakt-api-version': '2'}
 REDIRECT_URI = 'urn:ietf:wg:oauth:2.0:oob'
 session = requests.Session()
-retries = Retry(total=4, backoff_factor=0.3, status_forcelist=[429, 500, 502, 503, 504, 520, 521, 522, 524, 530])
+retries = Retry(total=4, backoff_factor=1, status_forcelist=[429, 500, 502, 503, 504, 520, 521, 522, 524, 530])
 session.mount('https://api.trakt.tv', HTTPAdapter(max_retries=retries, pool_maxsize=100))
 highlight_color = getSetting('highlight.color')
 server_notification = getSetting('trakt.server.notifications') == 'true'
@@ -33,12 +33,14 @@ trakt_icon = control.joinPath(control.artPath(), 'trakt.png')
 #trakt_qr = control.joinPath(control.artPath(), 'traktqr.png')
 trakt_token = getSetting('trakt.user.token')
 
-def getTrakt(url, post=None, extended=False, silent=False):
+def getTrakt(url, post=None, extended=False, silent=False, reauth_attempts=0):
 	try:
 		if not url.startswith(BASE_URL): url = urljoin(BASE_URL, url)
 		if headers['trakt-api-key'] == '': headers['trakt-api-key']=traktClientID()
 		if post: post = jsdumps(post)
-		if getTraktCredentialsInfo(): headers['Authorization'] = 'Bearer %s' % trakt_token
+		if getTraktCredentialsInfo(): 
+			current_token = getSetting('trakt.user.token')
+			headers['Authorization'] = 'Bearer %s' % current_token
 		if post:
 			response = session.post(url, data=post, headers=headers, timeout=20)
 		else:
@@ -53,65 +55,84 @@ def getTrakt(url, post=None, extended=False, silent=False):
 			if response.headers.get('x-private-user') == 'true':
 				#log_utils.log('URL:%s Has a Private User Header:Ignoring' % url, level=log_utils.LOGWARNING)
 				return None
-			log_utils.log('TRAKT: %s Status Code Returned on call to url: %s. Token Used: %s' % (status_code, url, trakt_token), level=log_utils.LOGINFO)
+			# Prevent infinite re-auth loops
+			if reauth_attempts >= 2:
+				log_utils.log('TRAKT: Too many re-auth attempts, stopping to prevent infinite loop', level=log_utils.LOGWARNING)
+				return None
+			log_utils.log('TRAKT: %s Status Code Returned on call to url: %s. Token Used: %s (attempt %d)' % (status_code, url, current_token, reauth_attempts + 1), level=log_utils.LOGINFO)
 			success = re_auth(headers)
-			if success: return getTrakt(url, extended=extended, silent=silent)
+			if success: return getTrakt(url, extended=extended, silent=silent, reauth_attempts=reauth_attempts + 1)
 		elif status_code == '429':
 			if 'Retry-After' in response.headers: # API REQUESTS ARE BEING THROTTLED, INTRODUCE WAIT TIME (1000 get requests every 5 minutes, 1 post/put/delte every per second)
 				throttleTime = response.headers['Retry-After']
 				if not silent and server_notification and not control.condVisibility('Player.HasVideo'):
 					control.notification(title=32315, message='Trakt Throttling Applied, Sleeping for %s seconds' % throttleTime) # message lang code 33674
 				control.sleep((int(throttleTime) + 1) * 1000)
-				return getTrakt(url, extended=extended, silent=silent)
+				return getTrakt(url, extended=extended, silent=silent, reauth_attempts=reauth_attempts)
 		else: return None
 	except: log_utils.error('getTrakt Error: ')
 	return None
 
 def error_handler(url, response, status_code, silent=False):
-	if status_code.startswith('5') or (response and isinstance(response, str) and '<html' in response) or not str(response): # covers Maintenance html responses ["Bad Gateway", "We're sorry, but something went wrong (500)"])
+	if status_code.startswith('5') or (response and isinstance(response, str) and '<html' in response) or not str(response): # covers Maintenance html responses
 		log_utils.log('Temporary Trakt Server Problem: %s:%s' % (status_code, response), level=log_utils.LOGINFO)
 		if (not silent) and server_notification: control.notification(title=32315, message=33676)
 	elif status_code == '423':
-		log_utils.log('Locked User Account - Contact Trakt Support: %s' % str(response.text), level=log_utils.LOGWARNING)
+		response_text = response.text if not isinstance(response, str) and hasattr(response, 'text') else str(response)
+		log_utils.log('Locked User Account - Contact Trakt Support: %s' % response_text, level=log_utils.LOGWARNING)
 		if (not silent) and server_notification: control.notification(title=32315, message=33675)
 	elif status_code == '404':
-		log_utils.log('getTrakt() (404:NOT FOUND): URL=(%s): %s' % (url, str(response.text)), level=log_utils.LOGWARNING)
+		response_text = response.text if not isinstance(response, str) and hasattr(response, 'text') else str(response)
+		log_utils.log('getTrakt() (404:NOT FOUND): URL=(%s): %s' % (url, response_text), level=log_utils.LOGWARNING)
 
 def getTraktAsJson(url, post=None, silent=False):
 	try:
 		res_headers = {}
 		r = getTrakt(url=url, post=post, extended=True, silent=silent)
+		if not r: return None
 		if isinstance(r, tuple) and len(r) == 2: r, res_headers = r[0], r[1]
-		if not r: return
+		if not r: return None
 		r = r.json()
 		if 'X-Sort-By' in res_headers and 'X-Sort-How' in res_headers:
 			r = sort_list(res_headers['X-Sort-By'], res_headers['X-Sort-How'], r)
 		return r
-	except: log_utils.error()
+	except Exception as e: 
+		log_utils.log('TRAKT: Error in getTraktAsJson: %s' % str(e), level=log_utils.LOGWARNING)
+		return None
 
 def re_auth(headers):
 	try:
 		oauth = urljoin(BASE_URL, '/oauth/token')
 		opost = {'client_id': traktClientID(), 'client_secret': traktClientSecret(), 'redirect_uri': REDIRECT_URI, 'grant_type': 'refresh_token', 'refresh_token': getSetting('trakt.refreshtoken')}
-		log_utils.log('TRAKT: Re-Authenticating Refresh Token: %s Trakt Token: %s' % (getSetting('trakt.refreshtoken'),trakt_token), level=log_utils.LOGINFO)
+		log_utils.log('TRAKT: Re-Authenticating Refresh Token: %s Trakt Token: %s' % (getSetting('trakt.refreshtoken'),getSetting('trakt.user.token')), level=log_utils.LOGINFO)
 		response = session.post(url=oauth, data=jsdumps(opost), headers=headers, timeout=20)
 		status_code = str(response.status_code)
 
 		error_handler(oauth, response, status_code)
 		if status_code not in ('401', '403', '405'):
-			try: response = response.json()
-			except:
-				log_utils.error()
+			try: 
+				response_json = response.json()
+			except Exception as e:
+				log_utils.log('TRAKT: JSON decode error in re_auth: %s - Response text: %s' % (str(e), response.text), level=log_utils.LOGWARNING)
 				return False
-			if 'error' in response and response['error'] == 'invalid_grant':
-				log_utils.log('Please Re-Authorize your Trakt Account: %s : %s' % (status_code, str(response)), __name__, level=log_utils.LOGWARNING)
+			
+			if 'error' in response_json and response_json['error'] == 'invalid_grant':
+				log_utils.log('Please Re-Authorize your Trakt Account: %s : %s' % (status_code, str(response_json)), __name__, level=log_utils.LOGWARNING)
 				control.notification(title=32315, message=33677)
+				# Clear invalid tokens to force re-authorization
+				control.homeWindow.setProperty('umbrella.updateSettings', 'false')
+				setSetting('trakt.isauthed', 'false')
+				setSetting('trakt.user.token', '')
+				setSetting('trakt.refreshtoken', '')
+				setSetting('trakt.token.expires', '')
+				control.homeWindow.setProperty('umbrella.updateSettings', 'true')
 				return False
-			token, refresh = response['access_token'], response['refresh_token']
-			log_utils.log('TRAKT: Response Token: %s Response Refresh Token: %s ' % (getSetting('trakt.refreshtoken'),trakt_token), level=log_utils.LOGINFO)
-			#expires = str(time() + 7776000)
-			expires = str(time.time() + 86400) #new 24 hour token
-			expires_from_trakt = response['expires_in']
+			
+			token, refresh = response_json['access_token'], response_json['refresh_token']
+			log_utils.log('TRAKT: Response Token: %s Response Refresh Token: %s ' % (token, refresh), level=log_utils.LOGINFO)
+			# Use Trakt's provided expiration time instead of hardcoded 24 hours
+			expires_from_trakt = response_json['expires_in']
+			expires = str(time.time() + expires_from_trakt)
 			log_utils.log('TRAKT: Umbrella Trakt Expire: %s Trakt Expire: %s' % (str(expires),str(expires_from_trakt)), level=log_utils.LOGINFO)
 			control.homeWindow.setProperty('umbrella.updateSettings', 'false')
 			setSetting('trakt.isauthed', 'true')
@@ -125,9 +146,20 @@ def re_auth(headers):
 			log_utils.log('Trakt Token Successfully Re-Authorized: expires on %s' % str(datetime.fromtimestamp(float(expires))), level=log_utils.LOGDEBUG)
 			return True
 		else:
-			log_utils.log('Error while Re-Authorizing Trakt Token: %s : %s' % (status_code, str(response)), level=log_utils.LOGWARNING)
+			log_utils.log('Error while Re-Authorizing Trakt Token: %s : %s' % (status_code, response.text), level=log_utils.LOGWARNING)
+			# If we get 401/403/405 on refresh, the refresh token is invalid
+			if status_code in ('401', '403'):
+				log_utils.log('TRAKT: Refresh token appears to be invalid, clearing tokens', level=log_utils.LOGWARNING)
+				control.homeWindow.setProperty('umbrella.updateSettings', 'false')
+				setSetting('trakt.isauthed', 'false')
+				setSetting('trakt.user.token', '')
+				setSetting('trakt.refreshtoken', '')
+				setSetting('trakt.token.expires', '')
+				control.homeWindow.setProperty('umbrella.updateSettings', 'true')
 			return False
-	except: log_utils.error()
+	except Exception as e: 
+		log_utils.log('TRAKT: Exception in re_auth: %s' % str(e), level=log_utils.LOGWARNING)
+		return False
 
 def traktAuth(fromSettings=0):
 	try:
@@ -135,8 +167,9 @@ def traktAuth(fromSettings=0):
 		deviceCode = getTraktDeviceToken(traktDeviceCode)
 		if deviceCode:
 			deviceCode = deviceCode.json()
-			#expires_at = time.time() + 7776000
-			expires_at = time.time() + 86400 #new value for 24 hours.
+			# Use Trakt's provided expiration time instead of hardcoded 24 hours
+			expires_from_trakt = deviceCode.get('expires_in', 86400)  # fallback to 24 hours if not provided
+			expires_at = time.time() + expires_from_trakt
 			control.homeWindow.setProperty('umbrella.updateSettings', 'false')
 			control.setSetting('trakt.token.expires', str(expires_at))
 			control.setSetting('trakt.user.token', deviceCode["access_token"])
@@ -1344,7 +1377,7 @@ def getPeople(id, content_type, full=True):
 
 def SearchAll(title, year, full=True):
 	try:
-		return SearchMovie(title, year, full) + SearchTVShow(title, year, full)
+		return SearchMovie(title, year, full) , SearchTVShow(title, year, full)
 	except:
 		log_utils.error()
 		return

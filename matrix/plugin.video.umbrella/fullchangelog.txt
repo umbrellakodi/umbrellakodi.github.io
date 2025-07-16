@@ -1,5 +1,5 @@
-[B]Update - v6.7.436 - July 16th, 2025[/B]
---[Change] Made changes to Trakt code to log refresh tokens and check re-auth process.
+[B]Update - v6.7.438 - July 16th, 2025[/B]
+--[Change] Multiple changes to Trakt module and handling of tokens.
 
 [B]Update - v6.7.47 - July 1st, 2025[/B]
 --[Change] Made changes to Trakt code for time. Thanks kodifitzwell
