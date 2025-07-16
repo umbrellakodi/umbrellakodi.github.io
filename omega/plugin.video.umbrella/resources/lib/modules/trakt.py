@@ -49,6 +49,7 @@ def getTrakt(url, post=None, extended=False, silent=False):
 			if extended: return response, response.headers
 			else: return response
 		elif status_code == '401': # Re-Auth token
+			log_utils.log('TRAKT: %s Status Code Returned on call to url: %s. Token Used: %s' % (status_code, url, getSetting('trakt.user.token')), level=log_utils.LOGINFO)
 			if response.headers.get('x-private-user') == 'true':
 				#log_utils.log('URL:%s Has a Private User Header:Ignoring' % url, level=log_utils.LOGWARNING)
 				return None
@@ -91,6 +92,7 @@ def re_auth(headers):
 	try:
 		oauth = urljoin(BASE_URL, '/oauth/token')
 		opost = {'client_id': traktClientID(), 'client_secret': traktClientSecret(), 'redirect_uri': REDIRECT_URI, 'grant_type': 'refresh_token', 'refresh_token': getSetting('trakt.refreshtoken')}
+		log_utils.log('TRAKT: Re-Authenticating Refresh Token: %s Trakt Token: %s' % (getSetting('trakt.refreshtoken'),getSetting('trakt.user.token')), level=log_utils.LOGINFO)
 		response = session.post(url=oauth, data=jsdumps(opost), headers=headers, timeout=20)
 		status_code = str(response.status_code)
 
@@ -105,8 +107,11 @@ def re_auth(headers):
 				control.notification(title=32315, message=33677)
 				return False
 			token, refresh = response['access_token'], response['refresh_token']
+			log_utils.log('TRAKT: Response Token: %s Response Refresh Token: %s ' % (getSetting('trakt.refreshtoken'),getSetting('trakt.user.token')), level=log_utils.LOGINFO)
 			#expires = str(time() + 7776000)
 			expires = str(time.time() + 86400) #new 24 hour token
+			expires_from_trakt = response['expires_in']
+			log_utils.log('TRAKT: Umbrella Trakt Expire: %s Trakt Expire: %s' % (str(expires),str(expires_from_trakt)), level=log_utils.LOGINFO)
 			control.homeWindow.setProperty('umbrella.updateSettings', 'false')
 			setSetting('trakt.isauthed', 'true')
 			setSetting('trakt.user.token', token)

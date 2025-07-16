@@ -1,2 +1,2 @@
-[B]Update - v6.7.435 - July 1st, 2025[/B]
---[Change] Made changes to Trakt code for time.
+[B]Update - v6.7.436 - July 16th, 2025[/B]
+--[Change] Made changes to Trakt code to log refresh tokens and check re-auth process.

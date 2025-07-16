@@ -1,5 +1,8 @@
-[B]Update - v6.7.435 - July 1st, 2025[/B]
---[Change] Made changes to Trakt code for time.
+[B]Update - v6.7.436 - July 16th, 2025[/B]
+--[Change] Made changes to Trakt code to log refresh tokens and check re-auth process.
+
+[B]Update - v6.7.47 - July 1st, 2025[/B]
+--[Change] Made changes to Trakt code for time. Thanks kodifitzwell
 
 [B]Update - v6.7.46 - June 16th, 2025[/B]
 --[Change] Modified MDBList add and remove to only use watchlist and static lists.

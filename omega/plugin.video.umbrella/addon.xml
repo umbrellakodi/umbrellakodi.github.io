@@ -1,4 +1,4 @@
-<addon id="plugin.video.umbrella" name="Umbrella" provider-name="Umbrella" version="6.7.435">
+<addon id="plugin.video.umbrella" name="Umbrella" provider-name="Umbrella" version="6.7.436">
 	<requires>
 		<import addon="xbmc.python" version="3.0.0" />
 		<import addon="script.module.requests" />
@@ -205,8 +205,8 @@
 			<screenshot>resources/screenshots/screenshot003.jpg</screenshot>
 		</assets>
 		<news>
-[B]Update - v6.7.435 - July 1st, 2025[/B]
---[Change] Made changes to Trakt code for time.
+[B]Update - v6.7.436 - July 16th, 2025[/B]
+--[Change] Made changes to Trakt code to log refresh tokens and check re-auth process.
 		</news>
 	</extension>
 
