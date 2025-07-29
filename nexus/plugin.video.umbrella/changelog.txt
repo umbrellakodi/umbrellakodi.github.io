@@ -1,4 +1,2 @@
-[B]Update - v6.7.439 - July 17th, 2025[/B]
---[Change] Multiple changes to Trakt module and handling of tokens.
---[Change] Made changes to playnext code to address issue with last episode in season.
---[Change] Made changes to the cloud scraper code to avoid sending None or empty titles.
+[B]Update - v6.7.440 - July 29th, 2025[/B]
+--[Fix] Made some changes to exception handling code in service.py to show exceptions better.
