@@ -1,4 +1,4 @@
-[B]Update - v6.7.441 - Oct 3rd, 2025[/B]
+[B]Update - v6.7.442 - Oct 3rd, 2025[/B]
 --[Fix] Fixed custom artwork to pull fanart correctly from tmdb. Thanks Adam!
 
 [B]Update - v6.7.440 - July 29th, 2025[/B]

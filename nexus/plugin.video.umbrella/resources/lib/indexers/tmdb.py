@@ -1218,7 +1218,7 @@ class TVshows(TMDb):
 		if artworkType == 'poster':
 			tmdbart_items = [item for item in tmdbart.get('posters', []) if (item.get('iso_639_1') == self.lang or item.get('iso_639_1') == None)]
 		elif artworkType == 'fanart':
-			tmdbart_items = [item for item in tmdbart.get('backdrops', []) if (item.get('iso_639_1') == self.lang or item.get('iso_639_1') == None)]
+			tmdbart_items = [item for item in tmdbart.get('backdrops', []) if (item.get('iso_639_1') == self.lang or item.get('iso_639_1') == 'xx')]
 		elif artworkType == 'landscape':
 			tmdbart_items = [item for item in tmdbart.get('backdrops', []) if (item.get('iso_639_1') == self.lang or item.get('iso_639_1') == None)]
 		elif artworkType == 'clearlogo':
