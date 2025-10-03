@@ -1,2 +1,3 @@
-[B]Update - v6.7.442 - Oct 3rd, 2025[/B]
+[B]Update - v6.7.443 - Oct 3rd, 2025[/B]
 --[Fix] Fixed custom artwork to pull fanart correctly from tmdb. Thanks Adam!
+--[Fix] Fixed where library items would crash on scraping due to blank fanart from library scraper.
