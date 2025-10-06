@@ -15,11 +15,11 @@ from resources.lib.database import metacache, providerscache
 from resources.lib.modules import cleandate
 from resources.lib.modules import control
 from resources.lib.modules import debrid
-from resources.lib.modules import log_utils
 from resources.lib.modules import string_tools
 from resources.lib.modules.source_utils import supported_video_extensions, getFileType, aliases_check
 from resources.lib.cloud_scrapers import cloudSources
 from resources.lib.internal_scrapers import internalSources
+from resources.lib.modules import log_utils
 
 homeWindow = control.homeWindow
 playerWindow = control.playerWindow
@@ -63,10 +63,10 @@ class Sources:
 		self.useTitleSubs = getSetting('sources.useTitleSubs') == 'true'
 
 	def log_safe(self):
-		"""Call self.log_safe() safely from any thread."""
+		"""Call log_utils.error() safely from any thread."""
 		try:
 			from resources.lib.modules import log_utils
-			self.log_safe()
+			log_utils.error()
 		except Exception:
 			import traceback
 			print('[Umbrella] log_utils unavailable')
@@ -792,7 +792,6 @@ class Sources:
 			uncached_filter = [i for i in next_sources if re.match(r'^uncached.*torrent', i['source'])]
 			next_sources = [i for i in next_sources if i not in uncached_filter]
 		except:
-			from resources.lib.modules import log_utils
 			self.log_safe()
 			return playerWindow.clearProperty('umbrella.preResolved_nextUrl')
 
@@ -828,7 +827,6 @@ class Sources:
 						break
 				except: pass
 			except: 
-				from resources.lib.modules import log_utils
 				self.log_safe()
 		control.sleep(200)
 
@@ -841,7 +839,6 @@ class Sources:
 			dbcur.execute('''CREATE TABLE IF NOT EXISTS rel_aliases (title TEXT, aliases TEXT, UNIQUE(title));''')
 			dbcur.connection.commit()
 		except: 
-			from resources.lib.modules import log_utils
 			self.log_safe()
 		finally:
 			dbcur.close() ; dbcon.close()
@@ -861,7 +858,6 @@ class Sources:
 				dbcur.execute('''DELETE FROM rel_src WHERE (source=? AND imdb_id='' AND season='' AND episode='')''', (source,))
 				dbcur.connection.commit()
 			except: 
-				from resources.lib.modules import log_utils
 				self.log_safe()
 		try:
 			sources = []
@@ -873,7 +869,6 @@ class Sources:
 					sources = eval(db_movie[4])
 					return self.scraper_sources.extend(sources)
 		except: 
-			from resources.lib.modules import log_utils
 			self.log_safe()
 		try:
 			sources = []
@@ -884,7 +879,6 @@ class Sources:
 				dbcur.execute('''INSERT OR REPLACE INTO rel_src Values (?, ?, ?, ?, ?, ?)''', (source, imdb, '', '', repr(sources), datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")))
 				dbcur.connection.commit()
 		except: 
-			from resources.lib.modules import log_utils
 			self.log_safe()
 
 	def getEpisodeSource(self, imdb, season, episode, data, source, call, pack):
@@ -904,7 +898,6 @@ class Sources:
 				dbcur.execute('''DELETE FROM rel_src WHERE (source=? AND imdb_id='' AND season='' AND episode='')''', (source, ))
 				dbcur.connection.commit()
 			except: 
-				from resources.lib.modules import log_utils
 				self.log_safe()
 		if not pack: # singleEpisodes db check
 			try:
@@ -916,7 +909,6 @@ class Sources:
 						sources = eval(db_singleEpisodes[4])
 						return self.scraper_sources.extend(sources)
 			except: 
-				from resources.lib.modules import log_utils
 				self.log_safe()
 		elif pack == 'season': # seasonPacks db check
 			try:
@@ -929,7 +921,6 @@ class Sources:
 						sources = [i for i in sources if not 'episode_start' in i or i['episode_start'] <= int(episode) <= i['episode_end']] # filter out range items that do not apply to current episode for return
 						return self.scraper_sources.extend(sources)
 			except: 
-				from resources.lib.modules import log_utils
 				self.log_safe()
 		elif pack == 'show': # showPacks db check
 			try:
@@ -942,14 +933,12 @@ class Sources:
 						sources = [i for i in sources if i.get('last_season') >= int(season)] # filter out range items that do not apply to current season for return
 						return self.scraper_sources.extend(sources)
 			except: 
-				from resources.lib.modules import log_utils
 				self.log_safe()
 
 		try: #dummy write or threads wait till return from scrapers...write for each is needed
 			dbcur.execute('''INSERT OR REPLACE INTO rel_src Values (?, ?, ?, ?, ?, ?)''', ('dummy write', '', '', '', '', ''))
 			dbcur.connection.commit()
 		except:
-			from resources.lib.modules import log_utils
 			self.log_safe()
 		if not pack: # singleEpisodes scraper call
 			try:
@@ -961,7 +950,6 @@ class Sources:
 					return self.scraper_sources.extend(sources)
 				return
 			except: 
-				from resources.lib.modules import log_utils
 				return self.log_safe()
 		elif pack == 'season': # seasonPacks scraper call
 			try:
@@ -974,7 +962,6 @@ class Sources:
 					return self.scraper_sources.extend(sources)
 				return
 			except: 
-				from resources.lib.modules import log_utils
 				return self.log_safe()
 		elif pack == 'show': # showPacks scraper call
 			try:
@@ -986,7 +973,6 @@ class Sources:
 					sources = [i for i in sources if i.get('last_season') >= int(season)] # filter out range items that do not apply to current season for return
 					return self.scraper_sources.extend(sources)
 			except: 
-				from resources.lib.modules import log_utils
 				self.log_safe()
 
 	def sourcesFilter(self):
@@ -1527,7 +1513,6 @@ class Sources:
 			else: control.notification(message=32401)
 			control.cancelPlayback()
 		except: 
-			from resources.lib.modules import log_utils
 			self.log_safe()
 
 	def getAliasTitles(self, imdb, content):
