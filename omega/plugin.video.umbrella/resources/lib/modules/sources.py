@@ -773,6 +773,7 @@ class Sources:
 		return self.sources
 
 	def preResolve(self, next_sources, next_meta):
+		from resources.lib.modules import log_utils
 		try:
 			if not next_sources: raise Exception()
 			homeWindow.setProperty(self.metaProperty, jsdumps(next_meta))
@@ -826,6 +827,7 @@ class Sources:
 			dbcur.close() ; dbcon.close()
 
 	def getMovieSource(self, imdb, data, source, call):
+		from resources.lib.modules import log_utils
 		try:
 			dbcon = database.connect(sourceFile, timeout=60)
 			dbcon.execute('''PRAGMA page_size = 32768''')
@@ -861,6 +863,7 @@ class Sources:
 		except: log_utils.error()
 
 	def getEpisodeSource(self, imdb, season, episode, data, source, call, pack):
+		from resources.lib.modules import log_utils
 		try:
 			dbcon = database.connect(sourceFile, timeout=60)
 			dbcon.execute('''PRAGMA page_size = 32768''')
