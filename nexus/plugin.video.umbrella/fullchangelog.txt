@@ -1,8 +1,6 @@
-[B]Update - v6.7.445 - Oct 6th, 2025[/B]
+[B]Update - v6.7.449 - Oct 6th, 2025[/B]
 --[Fix] Fixed custom artwork to pull fanart correctly from tmdb. Thanks Adam!
 --[Fix] Fixed where library items would crash on scraping due to blank fanart from library scraper.
---[Fix] Fixed error from circular import of log_utils due to threading.
---[Changes] More changes to avoid circular logging errors.
 
 [B]Update - v6.7.440 - July 29th, 2025[/B]
 --[Fix] Made some changes to exception handling code in service.py to show exceptions better.
