@@ -956,7 +956,8 @@ def router(argv2):
 			if query == 'settings':
 				isFromSettings=True
 			from resources.lib.modules import library
-			library.lib_tools().importListsNow(isFromSettings)
+			#library.lib_tools().importListsNow(isFromSettings)
+			library.lib_tools().importListsNowMulti(isFromSettings)
 		elif action == 'tools_traktImportListsNowNoSelect':
 			isFromSettings=False
 			if query == 'settings':

@@ -305,7 +305,7 @@ class lib_tools:
 			from resources.lib.modules import log_utils
 			log_utils.error()
 
-	def importListsNow(self, fromSettings=False):
+	def importListsNowTrakt(self, fromSettings=False):
 		try:
 			allTraktItems = self.getAllTraktLists()
 			for z in allTraktItems:
@@ -317,6 +317,45 @@ class lib_tools:
 			del window
 			if fromSettings == True:
 				control.openSettings('12.2', 'plugin.video.umbrella')
+				
+		except:
+			from resources.lib.modules import log_utils
+			log_utils.error()
+	
+	def importListsNowMdbList(self, fromSettings=False):
+		try:
+			control.notification(message='MDB List Import Not Yet Implemented')
+			if fromSettings == True:
+				control.openSettings('12.2', 'plugin.video.umbrella')
+				
+		except:
+			from resources.lib.modules import log_utils
+			log_utils.error()
+	
+	def importListsNowMulti(self, selected_items, fromSettings=False):
+		try:
+			items = []
+			isTraktEnabled = control.setting('trakt.user.token') != ''
+			isMDBListEnable = control.setting('mdblist.api') != ''
+			if not isTraktEnabled and not isMDBListEnable:
+				control.notification(message=32113)
+				return	
+			if isTraktEnabled:
+				items.append({'name': 'Trakt', 'url': 'trakt'})
+			if isMDBListEnable:
+				items.append({'name': 'MDBLists', 'url': 'mdb'})	
+			select = control.selectDialog([i.get('name') for i in items], heading='Select Service to Import From')
+			if select == -1: 
+				if fromSettings == True:
+					return control.openSettings('12.2', 'plugin.video.umbrella')
+				else:
+					return
+			if items[select].get('url') == 'trakt':
+				self.importListsNowTrakt(fromSettings)
+			elif items[select].get('url') == 'mdb':
+				self.importListsNowMdbList(fromSettings)
+			
+			
 				
 		except:
 			from resources.lib.modules import log_utils
