@@ -69,7 +69,9 @@ def getTrakt(url, post=None, extended=False, silent=False, reauth_attempts=0):
 				control.sleep((int(throttleTime) + 1) * 1000)
 				return getTrakt(url, extended=extended, silent=silent, reauth_attempts=reauth_attempts)
 		else: return None
-	except: log_utils.error('getTrakt Error: ')
+	except:
+		try: log_utils.error('getTrakt Error: ')
+		except: pass
 	return None
 
 def error_handler(url, response, status_code, silent=False):
@@ -104,21 +106,17 @@ def get_all_pages(url, silent=False):
 	try:
 		sep = '&' if '?' in url else '?'
 		page_url = url + sep + 'page=1&limit=1000'
-		r = getTrakt(page_url, extended=True, silent=silent)
-		if not r: return None
-		if isinstance(r, tuple) and len(r) == 2: response, res_headers = r[0], r[1]
-		else: response, res_headers = r, {}
+		response = getTrakt(page_url, silent=silent)
+		if not response: return None
 		results = response.json()
-		if not isinstance(results, list): return results
-		total_pages = int(res_headers.get('X-Pagination-Page-Count', 1))
+		if not results or type(results) is not list: return results
+		total_pages = int(response.headers.get('X-Pagination-Page-Count', 1))
 		for page in range(2, total_pages + 1):
 			page_url = url + sep + 'page=%d&limit=1000' % page
-			r = getTrakt(page_url, extended=True, silent=silent)
-			if not r: break
-			if isinstance(r, tuple) and len(r) == 2: response = r[0]
-			else: response = r
+			response = getTrakt(page_url, silent=silent)
+			if not response: break
 			page_results = response.json()
-			if isinstance(page_results, list): results.extend(page_results)
+			if type(page_results) is list: results.extend(page_results)
 		return results
 	except Exception as e:
 		log_utils.log('TRAKT: Error in get_all_pages: %s' % str(e), level=log_utils.LOGWARNING)
@@ -1775,9 +1773,9 @@ def sync_collection(activities=None, forced=False):
 		link = '/users/me/collection/%s?extended=full'
 		if forced:
 			items = get_all_pages(link % 'movies', silent=True)
-			traktsync.insert_collection(items, 'movies_collection')
+			if items is not None: traktsync.insert_collection(items, 'movies_collection')
 			items = get_all_pages(link % 'shows', silent=True)
-			traktsync.insert_collection(items, 'shows_collection')
+			if items is not None: traktsync.insert_collection(items, 'shows_collection')
 			#log_utils.log('Forced - Trakt Collection Sync Complete', __name__, log_utils.LOGDEBUG)
 		else:
 			db_last_collected = traktsync.last_sync('last_collected_at')
@@ -1790,10 +1788,10 @@ def sync_collection(activities=None, forced=False):
 				traktsync.delete_tables(clr_traktSync)
 				# indicators = cachesyncMovies() # could maybe check watched status here to satisfy sort method
 				items = get_all_pages(link % 'movies', silent=True)
-				traktsync.insert_collection(items, 'movies_collection')
+				if items is not None: traktsync.insert_collection(items, 'movies_collection')
 				# indicators = cachesyncTVShows() # could maybe check watched status here to satisfy sort method
 				items = get_all_pages(link % 'shows', silent=True)
-				traktsync.insert_collection(items, 'shows_collection')
+				if items is not None: traktsync.insert_collection(items, 'shows_collection')
 	except: log_utils.error()
 
 def sync_watch_list(activities=None, forced=False):

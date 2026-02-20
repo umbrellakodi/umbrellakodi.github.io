@@ -1,4 +1,4 @@
-[B]Update - v6.7.455 - Feb 19th, 2026[/B]
+[B]Update - v6.7.456 - Feb 20th, 2026[/B]
 --[Fix] Resolved issue with genres by decade ending in 2024.
 --[Fix] Removed IMDd Lists that were restricted to 25 results.
 --[Fix] Trakt Pagination API changes to comply with Trakt's new requirements.

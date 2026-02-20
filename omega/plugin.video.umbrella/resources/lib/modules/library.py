@@ -949,13 +949,36 @@ class libmovies:
 				url = url
 			try:
 				if 'trakt' in url and type=="mixed":
-					from resources.lib.menus import movies
-					items = movies.Movies().trakt_list_mixed(url, control.setting('trakt.user.name').strip())
+					from resources.lib.modules import trakt as trakt_api
+					raw_movies = trakt_api.get_all_pages(url) or []
+					shows_url = url.split('movies')[0] + 'shows'
+					raw_shows = trakt_api.get_all_pages(shows_url) or []
+					log_utils.log('[ plugin.video.umbrella ] list_update: "%s" fetched %d movies + %d shows from Trakt (all pages)' % (list_name, len(raw_movies), len(raw_shows)), level=log_utils.LOGINFO)
+					items = []
+					for item in raw_movies:
+						try:
+							movie = item.get('movie') or item
+							items.append({'title': movie.get('title'), 'originaltitle': movie.get('title'), 'year': str(movie.get('year', '') or ''), 'imdb': str(movie.get('ids', {}).get('imdb', '') or ''), 'tmdb': str(movie.get('ids', {}).get('tmdb', '') or ''), 'tvdb': '', 'mediatype': 'movies'})
+						except: log_utils.error()
+					for item in raw_shows:
+						try:
+							show = item.get('show') or item
+							items.append({'title': show.get('title'), 'originaltitle': show.get('title'), 'tvshowtitle': show.get('title'), 'year': str(show.get('year', '') or ''), 'imdb': str(show.get('ids', {}).get('imdb', '') or ''), 'tmdb': str(show.get('ids', {}).get('tmdb', '') or ''), 'tvdb': str(show.get('ids', {}).get('tvdb', '') or ''), 'mediatype': 'tvshows'})
+						except: log_utils.error()
 					items = self.checkListDB(items, url)
+					log_utils.log('[ plugin.video.umbrella ] list_update: "%s" — %d new items to import after dedup check' % (list_name, len(items) if items else 0), level=log_utils.LOGINFO)
 				if 'trakt' in url and type=="movies" and 'watchlist' not in url and 'me/collection' not in url:
-					from resources.lib.menus import movies
-					items = movies.Movies().trakt_list(url, control.setting('trakt.user.name').strip(), folderName='Trakt Watchlist')
+					from resources.lib.modules import trakt as trakt_api
+					raw_items = trakt_api.get_all_pages(url) or []
+					log_utils.log('[ plugin.video.umbrella ] list_update: "%s" fetched %d movies from Trakt (all pages)' % (list_name, len(raw_items)), level=log_utils.LOGINFO)
+					items = []
+					for item in raw_items:
+						try:
+							movie = item.get('movie') or item
+							items.append({'title': movie.get('title'), 'originaltitle': movie.get('title'), 'year': str(movie.get('year', '') or ''), 'imdb': str(movie.get('ids', {}).get('imdb', '') or ''), 'tmdb': str(movie.get('ids', {}).get('tmdb', '') or ''), 'tvdb': '', 'mediatype': 'movies'})
+						except: log_utils.error()
 					items = self.checkListDB(items, url)
+					log_utils.log('[ plugin.video.umbrella ] list_update: "%s" — %d new items to import after dedup check' % (list_name, len(items) if items else 0), level=log_utils.LOGINFO)
 				if 'trakt' in url and type=="movies" and 'watchlist' in url:
 					from resources.lib.menus import movies
 					items = movies.Movies().traktWatchlist(url, create_directory=None, folderName='Trakt Movies')
@@ -1057,6 +1080,8 @@ class libmovies:
 			query2 = '''SELECT * FROM %s;''' % listId
 			results = dbcur.execute(query2).fetchall()
 			if not results: #need to build a table here for the list none exists.
+				from resources.lib.modules import log_utils
+				log_utils.log('[ plugin.video.umbrella ] checkListDB: first run for %s — seeding with %d items, all will be imported' % (listId, len(items)), level=log_utils.LOGINFO)
 				length = len(items)
 				for i in range(length):
 					dateImported = datetime.now()
@@ -1065,19 +1090,17 @@ class libmovies:
 				dbcur.connection.commit()
 				return items
 			else:
-				#go through the items in database and compare to list now.
-				backitems = items.copy()
+				# Build a set of already-imported keys for O(n) lookup (was O(n²))
 				length = len(items)
-				length2 = len(results)
-				for i in range(length):
-					for j in range(length2):
-						if items[i].get('title') == results[j][0] and items[i].get('tmdb') == results[j][1] and items[i].get('imdb') == results[j][2]:
-							#check each item here and see if new episodes have been released before removing it from items to be returned.
-							if items[i].get('mediatype') == 'tvshows':
-								if libtvshows().dbepisodeCheck(items[i], results[j][3]) == False:
-									backitems.remove(items[i])
-							else:
-								backitems.remove(items[i])
+				db_keys = {(r[0], r[1], r[2]): r[3] for r in results}  # (title, tmdb, imdb) -> last_import
+				backitems = []
+				for item in items:
+					key = (item.get('title'), item.get('tmdb'), item.get('imdb'))
+					if key not in db_keys:
+						backitems.append(item)
+					elif item.get('mediatype') == 'tvshows':
+						if libtvshows().dbepisodeCheck(item, db_keys[key]) != False:
+							backitems.append(item)
 				if len(backitems) > 0:
 					dateImported = datetime.now()
 					query3 = '''DROP TABLE IF EXISTS %s;''' % listId
@@ -1303,9 +1326,17 @@ class libtvshows:
 				url = url
 			try:
 				if 'trakt' in url and 'watchlist' not in url and 'me/collection' not in url:
-					from resources.lib.menus import tvshows
-					items = tvshows.TVshows().trakt_list(url, control.setting('trakt.user.name').strip(), folderName='Trakt List')
+					from resources.lib.modules import trakt as trakt_api
+					raw_items = trakt_api.get_all_pages(url) or []
+					log_utils.log('[ plugin.video.umbrella ] list_update: "%s" fetched %d shows from Trakt (all pages)' % (list_name, len(raw_items)), level=log_utils.LOGINFO)
+					items = []
+					for item in raw_items:
+						try:
+							show = item.get('show') or item
+							items.append({'title': show.get('title'), 'originaltitle': show.get('title'), 'tvshowtitle': show.get('title'), 'year': str(show.get('year', '') or ''), 'imdb': str(show.get('ids', {}).get('imdb', '') or ''), 'tmdb': str(show.get('ids', {}).get('tmdb', '') or ''), 'tvdb': str(show.get('ids', {}).get('tvdb', '') or ''), 'mediatype': 'tvshows'})
+						except: log_utils.error()
 					items = libmovies().checkListDB(items, url)
+					log_utils.log('[ plugin.video.umbrella ] list_update: "%s" — %d new items to import after dedup check' % (list_name, len(items) if items else 0), level=log_utils.LOGINFO)
 				if 'trakt' in url and 'watchlist' in url:
 					from resources.lib.menus import tvshows
 					items = tvshows.TVshows().traktWatchlist(url, create_directory=None, folderName='Trakt Watchlist')
@@ -1375,8 +1406,8 @@ class libtvshows:
 			try:
 				from resources.lib.menus import seasons, episodes
 				seasons = seasons.Seasons().tmdb_list(tvshowtitle, imdb, tmdb, tvdb, art=None) # fetch fresh meta (uncached)
-				# status = seasons[0]['status'].lower()
 			except: return log_utils.error()
+			if not seasons: return
 			files_added = 0
 			for season in seasons:
 				try: items = episodes.Episodes().tmdb_list(tvshowtitle, imdb, tmdb, tvdb, meta=season, season=season['season'])
