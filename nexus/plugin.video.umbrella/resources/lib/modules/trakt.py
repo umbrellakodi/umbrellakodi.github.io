@@ -104,22 +104,130 @@ def getTraktAsJson(url, post=None, silent=False):
 def get_all_pages(url, silent=False):
 	"""Fetch all pages from a paginated Trakt endpoint and return combined results."""
 	try:
+		# Clean URL to ensure no existing pagination params
+		if '&page=' in url:
+			url = url.split('&page=')[0]
+		if '?page=' in url:
+			url = url.split('?page=')[0]
+		if '&limit=' in url:
+			url = url.split('&limit=')[0]
+		if '?limit=' in url:
+			url = url.split('?limit=')[0]
+		
 		sep = '&' if '?' in url else '?'
-		page_url = url + sep + 'page=1&limit=1000'
-		response = getTrakt(page_url, silent=silent)
-		if not response: return None
-		results = response.json()
-		if not results or type(results) is not list: return results
-		total_pages = int(response.headers.get('X-Pagination-Page-Count', 1))
-		for page in range(2, total_pages + 1):
-			page_url = url + sep + 'page=%d&limit=1000' % page
+		limit = 1000
+		page = 1
+		results = []
+		
+		log_utils.log('TRAKT: get_all_pages starting for URL: %s' % url, level=log_utils.LOGINFO)
+		
+		while True:
+			page_url = url + sep + 'page=%d&limit=%d' % (page, limit)
+			log_utils.log('TRAKT: get_all_pages - Fetching page %d from: %s' % (page, page_url), level=log_utils.LOGINFO)
 			response = getTrakt(page_url, silent=silent)
-			if not response: break
-			page_results = response.json()
-			if type(page_results) is list: results.extend(page_results)
+			if not response: 
+				if page == 1: 
+					log_utils.log('TRAKT: get_all_pages - No response on first page for URL: %s' % url, level=log_utils.LOGWARNING)
+					return None
+				log_utils.log('TRAKT: get_all_pages - No response on page %d, stopping' % page, level=log_utils.LOGINFO)
+				break
+			
+			log_utils.log('TRAKT: get_all_pages - Got response for page %d, status: %s' % (page, response.status_code if hasattr(response, 'status_code') else 'unknown'), level=log_utils.LOGINFO)
+			log_utils.log('TRAKT: get_all_pages - Response object type: %s, has headers: %s' % (type(response).__name__, hasattr(response, 'headers')), level=log_utils.LOGWARNING)
+			
+			try:
+				log_utils.log('TRAKT: get_all_pages - About to call response.json() for page %d...' % page, level=log_utils.LOGWARNING)
+				page_results = response.json()
+				try:
+					page_length = len(page_results)
+				except:
+					page_length = 'N/A'
+				log_utils.log('TRAKT: get_all_pages - JSON parsed successfully, type: %s, length: %s' % (type(page_results).__name__, page_length), level=log_utils.LOGWARNING)
+			except Exception as e:
+				log_utils.log('TRAKT: get_all_pages - JSON decode error on page %d: %s' % (page, str(e)), level=log_utils.LOGWARNING)
+				import traceback
+				log_utils.log('TRAKT: get_all_pages - JSON error traceback: %s' % traceback.format_exc(), level=log_utils.LOGWARNING)
+				if page == 1: return None
+				break
+			
+			log_utils.log('TRAKT: get_all_pages - Checking if page_results is valid list...', level=log_utils.LOGWARNING)
+			if not page_results:
+				log_utils.log('TRAKT: get_all_pages - Empty result on page %d, stopping' % page, level=log_utils.LOGWARNING)
+				if page == 1: return page_results if page_results is not None else []
+				break
+			
+			# Try to process as list - if it fails, handle accordingly
+			try:
+				# Try to get length - if it works, it's likely a list/iterable
+				items_count = len(page_results)
+				log_utils.log('TRAKT: get_all_pages - page_results has length: %d' % items_count, level=log_utils.LOGWARNING)
+				
+				# Try to extend - if this works, it's definitely a list/iterable
+				results.extend(page_results)
+				items_this_page = items_count
+				log_utils.log('TRAKT: get_all_pages - Successfully extended results, items_this_page=%d, total_results=%d' % (items_this_page, len(results)), level=log_utils.LOGWARNING)
+			except (TypeError, AttributeError) as e:
+				log_utils.log('TRAKT: get_all_pages - Cannot process as list on page %d: %s, type=%s' % (page, str(e), type(page_results).__name__), level=log_utils.LOGWARNING)
+				if page == 1: return page_results
+				log_utils.log('TRAKT: get_all_pages - Non-list result on page %d, stopping' % page, level=log_utils.LOGWARNING)
+				break
+			except Exception as e:
+				log_utils.log('TRAKT: get_all_pages - Unexpected error processing page %d: %s' % (page, str(e)), level=log_utils.LOGWARNING)
+				import traceback
+				log_utils.log('TRAKT: get_all_pages - Error traceback: %s' % traceback.format_exc(), level=log_utils.LOGWARNING)
+				if page == 1: return None
+				break
+			
+			
+			# Get pagination headers - log all headers for debugging
+			all_headers = dict(response.headers) if hasattr(response, 'headers') else {}
+			total_pages = response.headers.get('X-Pagination-Page-Count') if hasattr(response, 'headers') else None
+			current_page_header = response.headers.get('X-Pagination-Page') if hasattr(response, 'headers') else None
+			total_items = response.headers.get('X-Pagination-Item-Count') if hasattr(response, 'headers') else None
+			
+			# Log pagination info with all relevant headers
+			pagination_headers = {k: v for k, v in all_headers.items() if 'pagination' in k.lower()}
+			log_utils.log('TRAKT: get_all_pages - Page %d: %d items (total so far: %d)' % (page, items_this_page, len(results)), level=log_utils.LOGWARNING)
+			log_utils.log('TRAKT: get_all_pages - Pagination headers: %s' % str(pagination_headers), level=log_utils.LOGWARNING)
+			
+			# If we got fewer items than the limit, we've reached the last page
+			if items_this_page < limit:
+				log_utils.log('TRAKT: get_all_pages - Last page reached (got %d items, limit is %d)' % 
+					(items_this_page, limit), level=log_utils.LOGINFO)
+				break
+			
+			# Check pagination headers if available
+			if total_pages:
+				try:
+					total_pages = int(total_pages)
+					log_utils.log('TRAKT: get_all_pages - Header says total_pages=%d, current page=%d' % (total_pages, page), level=log_utils.LOGINFO)
+					if page >= total_pages:
+						log_utils.log('TRAKT: get_all_pages - All pages fetched according to header (page %d of %d)' % 
+							(page, total_pages), level=log_utils.LOGINFO)
+						break
+				except (ValueError, TypeError) as e:
+					log_utils.log('TRAKT: get_all_pages - Error parsing total_pages header "%s": %s' % (total_pages, str(e)), level=log_utils.LOGINFO)
+			
+			# If we got exactly the limit, there might be more pages - continue
+			log_utils.log('TRAKT: get_all_pages - Got exactly %d items, continuing to next page...' % limit, level=log_utils.LOGINFO)
+			page += 1
+			
+			# Safety limit to prevent infinite loops (max 100 pages = 100,000 items)
+			if page > 100:
+				log_utils.log('TRAKT: get_all_pages reached safety limit of 100 pages for URL: %s' % url, level=log_utils.LOGWARNING)
+				break
+		
+		log_utils.log('TRAKT: get_all_pages - Exiting while loop, about to return results', level=log_utils.LOGWARNING)
+		log_utils.log('TRAKT: get_all_pages - Completed: Total items fetched: %d across %d pages' % 
+			(len(results), page), level=log_utils.LOGWARNING)
+		
+		log_utils.log('TRAKT: get_all_pages - Returning %d results' % len(results), level=log_utils.LOGWARNING)
 		return results
 	except Exception as e:
 		log_utils.log('TRAKT: Error in get_all_pages: %s' % str(e), level=log_utils.LOGWARNING)
+		import traceback
+		log_utils.log('TRAKT: get_all_pages traceback: %s' % traceback.format_exc(), level=log_utils.LOGWARNING)
+		log_utils.log('TRAKT: get_all_pages - Returning None due to exception, had collected %d results so far' % len(results) if 'results' in locals() else 0, level=log_utils.LOGWARNING)
 		return None
 
 def re_auth(headers):

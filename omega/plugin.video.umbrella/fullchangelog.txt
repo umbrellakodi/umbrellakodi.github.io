@@ -1,4 +1,8 @@
 
+
+[B]Update - v6.7.457 - Feb 20th, 2026[/B]
+--[Fix] Extreme logging added for importing.
+
 [B]Update - v6.7.456 - Feb 20th, 2026[/B]
 --[Fix] Changes for importing large red-coat lists.
 
