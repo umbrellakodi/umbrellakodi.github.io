@@ -729,7 +729,7 @@ class TVshows:
 		elif decade == '2010-2019':
 			decades = '2010-2019'
 		elif decade == '2020-2029':
-			decades = '2020-2024'
+			decades = '2020-2026'
 		if listType == 'trending':
 			url = self.trakttrending_link +'&genres=%s&years=%s&languages=%s'% (genreslug, decades, filterLang)
 			self.list = cache.get(self.trakt_list,self.trakt_hours, url, self.trakt_user, folderName) #trakt trending with genre
@@ -1450,6 +1450,32 @@ class TVshows:
 		if self.list is None: self.list = []
 		if create_directory: self.tvshowDirectory(self.list, folderName=folderName)
 		return self.list
+	def mdb_list_for_library(self, url):
+		"""Fetch all show items from an MDBList list URL and enrich with TMDB metadata for library import."""
+		self.list = []
+		try:
+			from resources.lib.modules import mdblist
+			items = mdblist.get_list_items_for_library(url)
+			if not items: return []
+			for item in items:
+				if item.get('mediatype') != 'tvshow':
+					continue
+				values = {
+					'title': item.get('title', ''),
+					'tvshowtitle': item.get('title', ''),
+					'originaltitle': item.get('title', ''),
+					'year': item.get('year', ''),
+					'imdb': item.get('imdb', ''),
+					'mediatype': 'tvshow',
+				}
+				self.list.append(values)
+			if self.list:
+				self.worker()
+		except:
+			from resources.lib.modules import log_utils
+			log_utils.error()
+		return self.list if self.list else []
+
 	def getMDBUserList(self, create_directory=True, folderName='', addremove=False):
 		self.list = []
 		try:

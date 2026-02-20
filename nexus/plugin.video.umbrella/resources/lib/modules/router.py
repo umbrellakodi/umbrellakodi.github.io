@@ -951,6 +951,12 @@ def router(argv2):
 				isFromSettings=True
 			from resources.lib.modules import library
 			library.lib_tools().importListsManager(isFromSettings)
+		elif action == 'tools_importListManagerMulti':
+			isFromSettings=False
+			if query == 'settings':
+				isFromSettings=True
+			from resources.lib.modules import library
+			library.lib_tools().importListsManagerMulti(isFromSettings)
 		elif action == 'tools_traktImportListsNow':
 			isFromSettings=False
 			if query == 'settings':
@@ -964,6 +970,12 @@ def router(argv2):
 				isFromSettings=True
 			from resources.lib.modules import library
 			library.lib_tools().importListsNowNoSelect(isFromSettings)
+		elif action == 'tools_mdblistImportListsNow':
+			isFromSettings=False
+			if query == 'settings':
+				isFromSettings=True
+			from resources.lib.modules import library
+			library.lib_tools().importListsNowMdbList(isFromSettings)
 		elif action == 'tools_umbrellaProper':
 			from resources.lib.modules import tools
 			tools.nonsense()

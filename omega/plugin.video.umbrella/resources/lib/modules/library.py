@@ -194,7 +194,7 @@ class lib_tools:
 				t2 = cleandate.datetime_from_string(str(last_service), '%Y-%m-%d %H:%M:%S.%f', False)
 				t3 = datetime.now()
 				check = abs(t3 - t2) >= t1
-				if not check: 
+				if not check:
 					if control.monitor.waitForAbort(10): break
 					continue
 				if (control.player.isPlaying() or control.condVisibility('Library.IsScanningVideo')): continue
@@ -214,9 +214,10 @@ class lib_tools:
 					control.setSetting('library.autoimportlists_last', str(last_service_setting))
 					self.updateSettings()
 				except: log_utils.error()
-				if control.setting('library.service.update') == 'false' or service_update is False: continue
+				if control.setting('library.service.update') == 'false' or service_update is False:
+					continue
 				libepisodes().update()
-				if auto_import_on:
+				if control.setting('library.autoimportlists') == 'true':
 					libmovies().list_update()
 					libtvshows().list_update()
 					last_service_setting = datetime.now().strftime('%Y-%m-%d %H:%M')
@@ -281,25 +282,33 @@ class lib_tools:
 			allTraktItems = self.getAllTraktLists()
 			for z in allTraktItems:
 				z['selected'] = ''
-			dbItems = self.getDBItems()
-			if len(dbItems) == 0:
-				self.createDBItems(allTraktItems)
-			else:
-				for y in allTraktItems:
-					for x in dbItems:
-						if x[5] == y['list_id']:
-							y['selected'] = x[6]
+			try:
+				dbcon = database.connect(control.libcacheFile)
+				dbcur = dbcon.cursor()
+				dbcur.execute('''CREATE TABLE IF NOT EXISTS lists (type TEXT, list_name TEXT, url TEXT, UNIQUE(type, list_name, url));''')
+				selected_urls = set(row[2] for row in dbcur.execute('''SELECT * FROM lists WHERE url NOT LIKE '%api.mdblist.com%';''').fetchall())
+				dbcur.close() ; dbcon.close()
+			except:
+				selected_urls = set()
+			for y in allTraktItems:
+				if y.get('url') in selected_urls:
+					y['selected'] = 'true'
 			items = allTraktItems
 			from resources.lib.windows.traktimportlist_manager import TraktImportListManagerXML
 			window = TraktImportListManagerXML('traktimportlist_manager.xml', control.addonPath(control.addonId()), results=items)
 			selected_items = window.run()
 			del window
-			if selected_items:
-				selected = len(selected_items)
-				control.setSetting('library.autoimportlists.number', str(selected))
+			self.updateLists(selected_items, allTraktItems)
+			if selected_items is not None:
+				try:
+					dbcon = database.connect(control.libcacheFile)
+					dbcur = dbcon.cursor()
+					total = dbcur.execute('''SELECT COUNT(*) FROM lists;''').fetchone()[0]
+					dbcur.close() ; dbcon.close()
+					control.setSetting('library.autoimportlists.number', str(total))
+				except: pass
 			if fromSettings == True:
 				control.openSettings('12.2', 'plugin.video.umbrella')
-			self.updateLists(selected_items, allTraktItems)
 				
 		except:
 			from resources.lib.modules import log_utils
@@ -324,39 +333,49 @@ class lib_tools:
 	
 	def importListsNowMdbList(self, fromSettings=False):
 		try:
-			control.notification(message='MDB List Import Not Yet Implemented')
+			allMDBItems = self.getAllMDBLists()
+			if not allMDBItems:
+				control.notification(message='No MDBList lists found. Check your API key in settings.')
+				if fromSettings == True:
+					control.openSettings('12.2', 'plugin.video.umbrella')
+				return
+			for z in allMDBItems:
+				z['selected'] = ''
+			from resources.lib.windows.mdblistimportlists_now import MDBListsImportListsNowXML
+			window = MDBListsImportListsNowXML('mdblistmportlists_now.xml', control.addonPath(control.addonId()), results=allMDBItems)
+			window.run()
+			del window
 			if fromSettings == True:
 				control.openSettings('12.2', 'plugin.video.umbrella')
-				
 		except:
 			from resources.lib.modules import log_utils
 			log_utils.error()
 	
-	def importListsNowMulti(self, selected_items, fromSettings=False):
+	def importListsNowMulti(self, fromSettings=False):
 		try:
 			items = []
 			isTraktEnabled = control.setting('trakt.user.token') != ''
 			isMDBListEnable = control.setting('mdblist.api') != ''
 			if not isTraktEnabled and not isMDBListEnable:
 				control.notification(message=32113)
-				return	
+				return
 			if isTraktEnabled:
 				items.append({'name': 'Trakt', 'url': 'trakt'})
 			if isMDBListEnable:
-				items.append({'name': 'MDBLists', 'url': 'mdb'})	
-			select = control.selectDialog([i.get('name') for i in items], heading='Select Service to Import From')
-			if select == -1: 
-				if fromSettings == True:
-					return control.openSettings('12.2', 'plugin.video.umbrella')
-				else:
+				items.append({'name': 'MDBLists', 'url': 'mdb'})
+			if len(items) == 1:
+				selected_url = items[0].get('url')
+			else:
+				select = control.selectDialog([i.get('name') for i in items], heading='Select Service to Import From')
+				if select == -1:
+					if fromSettings == True:
+						return control.openSettings('12.2', 'plugin.video.umbrella')
 					return
-			if items[select].get('url') == 'trakt':
+				selected_url = items[select].get('url')
+			if selected_url == 'trakt':
 				self.importListsNowTrakt(fromSettings)
-			elif items[select].get('url') == 'mdb':
+			elif selected_url == 'mdb':
 				self.importListsNowMdbList(fromSettings)
-			
-			
-				
 		except:
 			from resources.lib.modules import log_utils
 			log_utils.error()
@@ -434,6 +453,59 @@ class lib_tools:
 			log_utils.error()
 		finally:
 			dbcur.close() ; dbcon.close()
+
+	def getAllMDBLists(self):
+		full_list = []
+		try:
+			if not control.player.isPlaying(): control.busy()
+			mdblist_api = control.setting('mdblist.api')
+			if not mdblist_api:
+				control.hide()
+				return full_list
+			from resources.lib.modules import mdblist
+			user_name = ''
+			user_slug = ''
+			try:
+				user_response = mdblist.session.get('%s/user?apikey=%s' % (mdblist.mdblist_baseurl, mdblist_api), timeout=10)
+				if user_response.status_code == 200:
+					user_data = user_response.json()
+					user_name = user_data.get('name', '') or user_data.get('username', '')
+					user_slug = user_name.lower().replace(' ', '-')
+			except: pass
+			response = mdblist.session.get(mdblist.mdblist_baseurl + mdblist.mdblist_user_list + mdblist_api, timeout=20)
+			if response.status_code != 200:
+				control.hide()
+				return full_list
+			list_item_url = 'https://api.mdblist.com/lists/%s/items?apikey=%s&page=1'
+			for i in response.json():
+				mediatype = i.get('mediatype')
+				if mediatype == 'movie':
+					action = 'movies'
+				elif mediatype == 'show':
+					action = 'tvshows'
+				else:
+					action = 'mixed'
+				list_id = i.get('id')
+				list_name = i.get('name', '')
+				full_list.append({
+					'name': list_name,
+					'url': list_item_url % (list_id, mdblist_api),
+					'list_owner': user_name,
+					'list_owner_slug': user_slug,
+					'list_name': list_name,
+					'list_id': str(list_id),
+					'list_count': i.get('items', 0),
+					'action': action,
+					'likes': 0,
+					'selected': '',
+				})
+			control.hide()
+		except:
+			full_list = []
+			control.hide()
+			from resources.lib.modules import log_utils
+			log_utils.error()
+		return full_list
 
 	def getAllTraktLists(self):
 		full_list = []
@@ -621,17 +693,114 @@ class lib_tools:
 			control.makeFile(control.dataPath)
 			dbcon = database.connect(control.libcacheFile)
 			dbcur = dbcon.cursor()
-			dbcur.execute('''DROP TABLE IF EXISTS lists;''')
 			dbcur.execute('''CREATE TABLE IF NOT EXISTS lists (type TEXT, list_name TEXT, url TEXT, UNIQUE(type, list_name, url));''')
+			dbcur.execute('''DELETE FROM lists WHERE url NOT LIKE '%api.mdblist.com%';''')
 			lengthItm = len(items)
 			for l in range(lengthItm):
 				dbcur.execute('''INSERT OR REPLACE INTO lists Values (?, ?, ?)''', (items[l]['type'], items[l]['list_name'], items[l]['url']))
 			dbcur.connection.commit()
-		except: 
+		except:
 			from resources.lib.modules import log_utils
 			log_utils.error()
 		finally:
 			dbcur.close() ; dbcon.close()
+
+	def updateMDBLists(self, items, allMDBItems):
+		if items is None: return
+		try:
+			control.makeFile(control.dataPath)
+			dbcon = database.connect(control.libcacheFile)
+			dbcur = dbcon.cursor()
+			dbcur.execute('''CREATE TABLE IF NOT EXISTS available_import_lists (item_count INT, type TEXT, list_owner TEXT, list_owner_slug TEXT, list_name TEXT, list_id TEXT, selected TEXT, url TEXT, UNIQUE(list_id));''')
+			for i in allMDBItems:
+				selected = 'true' if any(x['url'] == i['url'] for x in items) else ''
+				dbcur.execute('''INSERT OR REPLACE INTO available_import_lists Values (?, ?, ?, ?, ?, ?, ?, ?)''', (i['list_count'], i['action'], i['list_owner'], i['list_owner_slug'], i['list_name'], i['list_id'], selected, i['url']))
+			dbcur.connection.commit()
+		except:
+			from resources.lib.modules import log_utils
+			log_utils.error()
+		finally:
+			dbcur.close() ; dbcon.close()
+		try:
+			control.makeFile(control.dataPath)
+			dbcon = database.connect(control.libcacheFile)
+			dbcur = dbcon.cursor()
+			dbcur.execute('''CREATE TABLE IF NOT EXISTS lists (type TEXT, list_name TEXT, url TEXT, UNIQUE(type, list_name, url));''')
+			dbcur.execute('''DELETE FROM lists WHERE url LIKE '%api.mdblist.com%';''')
+			for item in items:
+				dbcur.execute('''INSERT OR REPLACE INTO lists Values (?, ?, ?)''', (item['type'], item['list_name'], item['url']))
+			dbcur.connection.commit()
+		except:
+			from resources.lib.modules import log_utils
+			log_utils.error()
+		finally:
+			dbcur.close() ; dbcon.close()
+
+	def importListsManagerMdbList(self, fromSettings=False):
+		try:
+			allMDBItems = self.getAllMDBLists()
+			if not allMDBItems:
+				control.notification(message='No MDBList lists found. Check your API key in settings.')
+				if fromSettings:
+					control.openSettings('12.2', 'plugin.video.umbrella')
+				return
+			try:
+				dbcon = database.connect(control.libcacheFile)
+				dbcur = dbcon.cursor()
+				dbcur.execute('''CREATE TABLE IF NOT EXISTS lists (type TEXT, list_name TEXT, url TEXT, UNIQUE(type, list_name, url));''')
+				selected_urls = set(row[2] for row in dbcur.execute('''SELECT * FROM lists WHERE url LIKE '%api.mdblist.com%';''').fetchall())
+				dbcur.close() ; dbcon.close()
+			except:
+				selected_urls = set()
+			for z in allMDBItems:
+				z['selected'] = 'true' if z.get('url') in selected_urls else ''
+			from resources.lib.windows.mdblistimportlists_now import MDBListsImportListsNowXML
+			window = MDBListsImportListsNowXML('mdblistmportlists_now.xml', control.addonPath(control.addonId()), results=allMDBItems, mode='manager')
+			selected_items = window.run()
+			del window
+			if selected_items is not None:
+				self.updateMDBLists(selected_items, allMDBItems)
+				try:
+					dbcon = database.connect(control.libcacheFile)
+					dbcur = dbcon.cursor()
+					total = dbcur.execute('''SELECT COUNT(*) FROM lists;''').fetchone()[0]
+					dbcur.close() ; dbcon.close()
+					control.setSetting('library.autoimportlists.number', str(total))
+				except: pass
+			if fromSettings:
+				control.openSettings('12.2', 'plugin.video.umbrella')
+		except:
+			from resources.lib.modules import log_utils
+			log_utils.error()
+
+	def importListsManagerMulti(self, fromSettings=False):
+		try:
+			items = []
+			isTraktEnabled = control.setting('trakt.user.token') != ''
+			isMDBListEnabled = control.setting('mdblist.api') != ''
+			if not isTraktEnabled and not isMDBListEnabled:
+				control.notification(message=32113)
+				return
+			if isTraktEnabled:
+				items.append({'name': 'Trakt', 'url': 'trakt'})
+			if isMDBListEnabled:
+				items.append({'name': 'MDBLists', 'url': 'mdb'})
+			if len(items) == 1:
+				selected_url = items[0].get('url')
+			else:
+				select = control.selectDialog([i.get('name') for i in items], heading='Select Service to Manage')
+				if select == -1:
+					if fromSettings:
+						return control.openSettings('12.2', 'plugin.video.umbrella')
+					return
+				selected_url = items[select].get('url')
+			if selected_url == 'trakt':
+				self.importListsManager(fromSettings)
+			elif selected_url == 'mdb':
+				self.importListsManagerMdbList(fromSettings)
+		except:
+			from resources.lib.modules import log_utils
+			log_utils.error()
 
 	def cacheLibraryforSimilar(self):
 		#used to cache movies for large library.
@@ -762,7 +931,7 @@ class libmovies:
 		except: log_utils.error()
 		try:
 			results = dbcur.execute('''SELECT * FROM lists WHERE type LIKE "movies%" OR type LIKE "mixed%";''').fetchall()
-			if not results: 
+			if not results:
 				if service_notification and general_notification:
 					return #control.notification(message=32113)
 				else:
@@ -799,6 +968,17 @@ class libmovies:
 					from resources.lib.indexers import tmdb
 					if '/list/' not in url: items = tmdb.Movies().tmdb_list(url)
 					else: items = tmdb.Movies().tmdb_collections_list(url)
+				if 'api.mdblist.com' in url:
+					if type == 'mixed':
+						from resources.lib.menus import movies as movies_menu
+						from resources.lib.menus import tvshows as tvshows_menu
+						movie_items = movies_menu.Movies().mdb_list_for_library(url, media_type='movie')
+						tv_items = tvshows_menu.TVshows().mdb_list_for_library(url)
+						items = (movie_items or []) + (tv_items or [])
+					else:
+						from resources.lib.menus import movies
+						items = movies.Movies().mdb_list_for_library(url, media_type=type)
+					items = self.checkListDB(items, url)
 			except: log_utils.error()
 			if not items: continue
 			if service_notification and not control.condVisibility('Window.IsVisible(infodialog)') and not control.condVisibility('Player.HasVideo'):
@@ -817,7 +997,7 @@ class libmovies:
 					except: log_utils.error()
 				elif content == 'tvshows' or content == 'tvshow':
 					try:
-						files_added = libtvshows().add(i['title'], i['year'], i['imdb'], i['tmdb'], i['tvdb'], range=True)
+						files_added = libtvshows().add(i['title'], i['year'], i['imdb'], i.get('tmdb', ''), i.get('tvdb', ''), range=True)
 						if files_added is None: continue
 						if general_notification and files_added > 0: control.notification(title=i['title'], message=32554)
 						if files_added > 0: total_added += 1
@@ -1105,7 +1285,7 @@ class libtvshows:
 		except: log_utils.error()
 		try:
 			results = dbcur.execute('''SELECT * FROM lists WHERE type LIKE "tvshows%";''').fetchall()
-			if not results: 
+			if not results:
 				if service_notification and general_notification:
 					return #control.notification(message=32124)
 				else:
@@ -1138,6 +1318,10 @@ class libtvshows:
 					from resources.lib.indexers import tmdb
 					if '/list/' not in url: items = tmdb.TVshows().tmdb_list(url)
 					else: items = tmdb.TVshows().tmdb_collections_list(url)
+				if 'api.mdblist.com' in url:
+					from resources.lib.menus import tvshows
+					items = tvshows.TVshows().mdb_list_for_library(url)
+					items = libmovies().checkListDB(items, url)
 			except: log_utils.error()
 			if not items: continue
 			if service_notification and not control.condVisibility('Window.IsVisible(infodialog)') and not control.condVisibility('Player.HasVideo'):

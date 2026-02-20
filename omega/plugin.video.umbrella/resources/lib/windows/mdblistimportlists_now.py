@@ -14,6 +14,7 @@ class MDBListsImportListsNowXML(BaseDialog):
 		BaseDialog.__init__(self, args)
 		self.window_id = 2050
 		self.results = kwargs.get('results')
+		self.mode = kwargs.get('mode', 'now')
 		self.highlight_color = getSetting('highlight.color')
 		self.total_results = str(len(self.results))
 		self.selected_items = []
@@ -56,7 +57,7 @@ class MDBListsImportListsNowXML(BaseDialog):
 							self.selected_items.append({'type': item.getProperty('umbrella.action'), 'list_name': item.getProperty('umbrella.list_name'), 'url': item.getProperty('umbrella.url')})
 					itemtopass = self.selected_items
 					self.close()
-					if len(itemtopass) > 0:
+					if self.mode == 'now' and len(itemtopass) > 0:
 						lib_tools().importNow(itemtopass)
 				elif focus_id == 2052: # Cancel Button
 					self.selected_items = None
