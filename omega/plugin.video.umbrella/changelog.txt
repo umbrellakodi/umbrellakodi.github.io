@@ -1,5 +1,5 @@
-[B]Update - v6.7.457 - Feb 20th, 2026[/B]
---[Logging] Extreme logging added for importing lists.
+[B]Update - v6.7.458 - Feb 20th, 2026[/B]
+--[Fix] Changed pagingation method for Trakt lists to use page numbers.
 --[Fix] Resolved issue with genres by decade ending in 2024.
 --[Fix] Removed IMDd Lists that were restricted to 25 results.
 --[Fix] Trakt Pagination API changes to comply with Trakt's new requirements.

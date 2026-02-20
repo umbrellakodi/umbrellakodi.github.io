@@ -1,4 +1,5 @@
-
+[B]Update - v6.7.458 - Feb 20th, 2026[/B]
+--[Fix] Changed pagingation method for Trakt lists to use page numbers.
 
 [B]Update - v6.7.457 - Feb 20th, 2026[/B]
 --[Fix] Extreme logging added for importing.
