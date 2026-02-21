@@ -5221,19 +5221,7 @@
 					</control>
 				</setting>
 			</group>
-			<group id="4" label="32034">
-				<setting id="imdbuser" type="string" label="40171" help="">
-					<level>0</level>
-					<default/>
-					<constraints>
-						<allowempty>true</allowempty>
-					</constraints>
-					<control type="edit" format="string">
-						<heading>40171</heading>
-					</control>
-				</setting>
-			</group>
-			<group id="5" label="40172">
+			<group id="4" label="40172">
 				<setting id="mdblist.api" type="string" label="40085" help="">
 					<level>0</level>
 					<default/>

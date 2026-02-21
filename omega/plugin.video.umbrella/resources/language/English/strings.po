@@ -191,7 +191,7 @@ msgid "Episode Lists"
 msgstr ""
 
 msgctxt "#32042"
-msgid "No Trakt or IMDb account found."
+msgid "No Trakt, MDbList, or TMDb account found."
 msgstr ""
 
 msgctxt "#32043"

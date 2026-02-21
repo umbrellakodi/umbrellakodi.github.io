@@ -24,9 +24,8 @@ session.mount('https://api.themoviedb.org', HTTPAdapter(max_retries=retries, poo
 
 
 def getTMDbV4CredentialsInfo():
-	import xbmcaddon
-	token = getSetting('tmdb.v4.accesstoken') or xbmcaddon.Addon().getSetting('tmdb.v4.accesstoken')
-	account = getSetting('tmdb.v4.accountid') or xbmcaddon.Addon().getSetting('tmdb.v4.accountid')
+	token = getSetting('tmdb.v4.accesstoken')
+	account = getSetting('tmdb.v4.accountid')
 	return bool(token and account)
 
 

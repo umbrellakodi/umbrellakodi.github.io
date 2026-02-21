@@ -8,6 +8,7 @@ from urllib.parse import quote_plus
 from resources.lib.modules import control
 from resources.lib.modules.trakt import getTraktCredentialsInfo, getTraktIndicatorsInfo
 from resources.lib.modules import simkl
+from resources.lib.modules.tmdb4 import getTMDbV4CredentialsInfo
 from resources.lib.modules import favourites
 from json import loads as jsloads
 
@@ -26,7 +27,7 @@ class Navigator:
 		self.simklCredentials = simkl.getSimKLCredentialsInfo()
 		self.traktIndicators = getTraktIndicatorsInfo()
 		self.simklIndicators = simkl.getSimKLIndicatorsInfo()
-		self.imdbCredentials = getSetting('imdbuser') != ''
+		self.tmdbCredentials = getTMDbV4CredentialsInfo()
 		self.simkltoken = getSetting('simkltoken') != ''
 		self.tmdbSessionID = getSetting('tmdb.sessionid') != ''
 		self.reuselanguageinv = getSetting('reuse.languageinvoker') == 'true'
@@ -176,7 +177,6 @@ class Navigator:
 			self.addDirectoryItem(32683, 'movies&url=traktwatchlist&folderName=%s' % quote_plus(getLS(32683)), 'trakt.png', 'trakt.png')
 			self.addDirectoryItem(32032, 'movies&url=traktcollection&folderName=%s' % quote_plus(getLS(32032)), 'trakt.png', 'trakt.png')
 			self.addDirectoryItem('My Liked Lists', 'movies_LikedLists&folderName=My Liked Lists', 'trakt.png', 'trakt.png', queue=True)
-		if self.imdbCredentials: self.addDirectoryItem(32682, 'movies&url=imdbwatchlist&folderName=%s' % quote_plus(getLS(32682)), 'imdb.png', 'imdb.png', queue=True) #watchlist broken currently 10-2022
 		
 
 		if not lite:
@@ -294,7 +294,6 @@ class Navigator:
 			self.addDirectoryItem(32683, 'tvshows&url=traktwatchlist&folderName=%s' % quote_plus(getLS(32683)), 'trakt.png', 'trakt.png')
 			self.addDirectoryItem(32032, 'tvshows&url=traktcollection&folderName=%s' % quote_plus(getLS(32032)), 'trakt.png', 'trakt.png')
 			self.addDirectoryItem('My Liked Lists', 'shows_LikedLists&folderName=My Liked Lists', 'trakt.png', 'trakt.png', queue=True)
-		if self.imdbCredentials: self.addDirectoryItem(32682, 'tvshows&url=imdbwatchlist&folderName=%s' % quote_plus(getLS(32682)), 'imdb.png', 'imdb.png')
 		if not lite:
 			self.addDirectoryItem(32031, 'tvliteNavigator&folderName=%s' % quote_plus(getLS(32031)), 'tvshows.png', 'DefaultTVShows.png')
 			self.addDirectoryItem(33045, 'tvPerson', 'imdb.png' if self.iconLogos else 'people-search.png', 'DefaultAddonsSearch.png', isFolder=False)
@@ -647,7 +646,7 @@ class Navigator:
 			return
 
 	def accountCheck(self):
-		if not self.traktCredentials and not self.imdbCredentials and not self.simklCredentials:
+		if not self.traktCredentials and not self.simklCredentials and not self.tmdbCredentials:
 			control.hide()
 			control.notification(message=32042, icon='WARNING')
 			sysexit()

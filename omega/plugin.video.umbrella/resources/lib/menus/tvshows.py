@@ -44,9 +44,8 @@ class TVshows:
 		self.highlight_color = control.setting('highlight.color')
 		self.date_time = datetime.now()
 		self.today_date = (self.date_time).strftime('%Y-%m-%d')
-		self.imdb_user = getSetting('imdbuser').replace('ur', '')
 		self.tvdb_key = getSetting('tvdb.apikey')
-		self.user = str(self.imdb_user) + str(self.tvdb_key)
+		self.user = str(self.tvdb_key)
 		self.useContainerTitles = getSetting('enable.containerTitles') == 'true'
 		self.trakt_directProgressScrape = getSetting('trakt.directProgress.scrape') == 'true'
 		self.trakt_progress_hours = int(getSetting('cache.traktprogress'))
@@ -70,11 +69,7 @@ class TVshows:
 		self.language_link = 'https://www.imdb.com/search/title/?title_type=tv_series,tv_miniseries&num_votes=100,&production_status=released&primary_language=%s&sort=%s&count=%s&start=1' % ('%s', self.imdb_sort(type='imdbshows'), self.genre_limit)
 		self.certification_link = 'https://www.imdb.com/search/title/?title_type=tv_series,tv_miniseries&release_date=,date[0]&certificates=%s&sort=%s&count=%s&start=1' % ('%s', self.imdb_sort(type='imdbshows'), self.genre_limit)
 		self.year_link = 'https://www.imdb.com/search/title/?title_type=tv_series,tv_miniseries&num_votes=100,&production_status=released&year=%s,%s&sort=moviemeter,asc&count=%s&start=1' % ('%s', '%s', self.genre_limit)
-		self.imdbwatchlist_link = 'https://www.imdb.com/user/ur%s/watchlist/?sort=date_added,desc&title_type=tv_series,tv_miniseries' % self.imdb_user # only used to get users watchlist ID
-		self.imdbwatchlist2_link = 'https://www.imdb.com/list/%s/?view=detail&sort=%s&title_type=tvSeries&start=1' % ('%s', self.imdb_sort(type='shows.watchlist'))
-		self.imdblists_link = 'https://www.imdb.com/user/ur%s/lists?tab=all&sort=mdfd&order=desc&filter=titles' % self.imdb_user
 		self.imdblist_link = 'https://www.imdb.com/list/%s/?view=detail&sort=%s&title_type=tvSeries,tvMiniSeries&start=1' % ('%s', self.imdb_sort())
-		self.imdbratings_link = 'https://www.imdb.com/user/ur%s/ratings?sort=your_rating,desc&mode=detail&start=1' % self.imdb_user # IMDb ratings does not take title_type so filter in imdb_list() function
 		self.anime_link = 'https://www.imdb.com/search/title/?title_type=tv_series,tv_miniseries&keywords=anime-animation,anime'
 
 		self.trakt_user = getSetting('trakt.user.name').strip()
@@ -219,7 +214,7 @@ class TVshows:
 				self.list = cache.get(self.trakt_list, self.trakt_hours, url, self.trakt_user, folderName) #trakt other
 				if idx: self.worker()
 			elif u in self.imdb_link and ('/user/' in url or '/list/' in url):
-				isRatinglink=True if self.imdbratings_link in url else False
+				isRatinglink=False
 				self.list = cache.get(self.imdb_list, 0, url, isRatinglink, folderName)
 				if idx: self.worker()
 				# self.sort() # switched to request sorting for imdb
@@ -835,12 +830,6 @@ class TVshows:
 			userlists += lists
 		except: pass
 		try:
-			if not self.imdb_user: raise Exception()
-			self.list = []
-			lists = cache.get(self.imdb_user_list, 0, self.imdblists_link)
-			userlists += lists
-		except: pass
-		try:
 			if self.tmdb_session_id == '': raise Exception()
 			self.list = []
 			url = self.tmdb_link + '/3/account/{account_id}/lists?api_key=%s&language=en-US&session_id=%s&page=1' % ('%s', self.tmdb_session_id)
@@ -871,10 +860,6 @@ class TVshows:
 		if self.tmdb_session_id != '': # TMDb Watchlist
 			url = self.tmdb_link + '/3/account/{account_id}/watchlist/tv?api_key=%s&session_id=%s&sort_by=created_at.asc&page=1' % ('%s', self.tmdb_session_id)
 			self.list.insert(0, {'name': getLS(32033), 'url': url, 'image': 'tmdb.png', 'icon': 'DefaultVideoPlaylists.png', 'action': 'tmdbTvshows'})
-		if self.imdb_user != '': # imdb Watchlist
-			self.list.insert(0, {'name': getLS(32033), 'url': self.imdbwatchlist_link, 'image': 'imdb.png', 'icon': 'DefaultVideoPlaylists.png', 'action': 'tvshows&folderName=%s' % quote_plus(getLS(32033))})
-		if self.imdb_user != '': # imdb My Ratings
-			self.list.insert(0, {'name': getLS(32025), 'url': self.imdbratings_link, 'image': 'imdb.png', 'icon': 'DefaultVideoPlaylists.png', 'action': 'tvshows&folderName=%s' % quote_plus(getLS(32025))})
 		if create_directory: self.addDirectory(self.list, folderName=folderName)
 		return self.list
 
@@ -1554,11 +1539,6 @@ class TVshows:
 		try:
 			for i in re.findall(r'date\[(\d+)\]', url):
 				url = url.replace('date[%s]' % i, (self.date_time - timedelta(days=int(i))).strftime('%Y-%m-%d'))
-			# def imdb_watchlist_id(url):
-			# 	return client.parseDOM(client.request(url), 'meta', ret='content', attrs = {'property': 'pageId'})[0]
-			# if url == self.imdbwatchlist_link:
-			# 	url = cache.get(imdb_watchlist_id, 8640, url)
-			# 	url = self.imdbwatchlist2_link % url
 			result = client.request(url)
 			result = result.replace('\n', ' ')
 			items = client.parseDOM(result, 'div', attrs = {'class': '.+? lister-item'}) + client.parseDOM(result, 'div', attrs = {'class': 'lister-item .+?'})
@@ -1628,11 +1608,6 @@ class TVshows:
 			try:
 				for i in re.findall(r'date\[(\d+)\]', url):
 					url = url.replace('date[%s]' % i, (self.date_time - timedelta(days=int(i))).strftime('%Y-%m-%d'))
-				def imdb_watchlist_id(url):
-					return client.parseDOM(client.request(url), 'meta', ret='content', attrs = {'property': 'pageId'})[0]
-				if url == self.imdbwatchlist_link:
-					url = cache.get(imdb_watchlist_id, 8640, url)
-					url = self.imdbwatchlist2_link % url
 				result = client.request(url)
 				result = result.replace('\n', ' ')
 				items = client.parseDOM(result, 'div', attrs = {'class': 'ipc-metadata-list-summary-item__tc'})
@@ -1680,31 +1655,6 @@ class TVshows:
 			except:
 				
 				log_utils.error()
-		return list
-
-	def imdb_user_list(self, url):
-		list = []
-		try:
-			result = client.request(url)
-			#items = client.parseDOM(result, 'li', attrs={'class': 'ipl-zebra-list__item user-list'})
-			items = client.parseDOM(result, 'li', attrs={'class': 'ipc-metadata-list-summary-item'})
-		except:
-			
-			log_utils.error()
-		for item in items:
-			try:
-				#name = client.parseDOM(item, 'a')[0]
-				#name = client.replaceHTMLCodes(name)
-				name = client.parseDOM(item, 'a', attrs={'class': 'ipc-metadata-list-summary-item__t'})[0]
-				url = client.parseDOM(item, 'a', ret='href')[0]
-				url = url.split('/list/', 1)[-1].strip('/')
-				url = self.imdblist_link % url
-				url = client.replaceHTMLCodes(url)
-				list.append({'name': name, 'url': url, 'context': url, 'image': 'imdb.png', 'icon': 'DefaultVideoPlaylists.png', 'action': 'tvshows&folderName=%s' % quote_plus(name)})
-			except:
-				
-				log_utils.error()
-		list = sorted(list, key=lambda k: re.sub(r'(^the |^a |^an )', '', k['name'].lower()))
 		return list
 
 	def tvshow_progress(self, url, folderName=''):
