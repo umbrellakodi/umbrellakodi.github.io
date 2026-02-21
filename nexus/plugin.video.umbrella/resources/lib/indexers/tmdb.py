@@ -1268,6 +1268,30 @@ class TVshows(TMDb):
 		except:
 			return None
 
+	def get_all_episode_art(self, **kwargs):
+		tmdb = kwargs.get('tmdb', '')
+		season = kwargs.get('season', '')
+		episode = kwargs.get('episode', '')
+		if not tmdb or season == '' or episode == '':
+			return None
+		url = base_link + 'tv/%s/season/%s/episode/%s/images?api_key=%s' % (tmdb, season, episode, self.API_key)
+		try:
+			from resources.lib.database import cache
+			tmdbart = cache.get(self.get_request, 10000, url)
+		except:
+			return None
+		if not tmdbart:
+			return None
+		artworkType = kwargs.get('artwork_type', '')
+		artworkList = []
+		if artworkType == 'thumb':
+			tmdbart_items = tmdbart.get('stills', [])
+			for index, item in enumerate(tmdbart_items, start=1):
+				filepath = item.get('file_path')
+				itemurl = '%s%s' % (self.profile_path, filepath) if filepath else ''
+				artworkList.append({'artworkType': artworkType, 'source': 'Tmdb %s' % index, 'url': itemurl})
+		return artworkList
+
 
 class Auth:
 	def __init__(self):

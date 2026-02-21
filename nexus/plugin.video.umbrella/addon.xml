@@ -1,4 +1,4 @@
-<addon id="plugin.video.umbrella" name="Umbrella" provider-name="Umbrella" version="6.7.460">
+<addon id="plugin.video.umbrella" name="Umbrella" provider-name="Umbrella" version="6.7.461">
 	<requires>
 		<import addon="xbmc.python" version="3.0.0" />
 		<import addon="script.module.requests" />
@@ -214,7 +214,8 @@
 			<screenshot>resources/screenshots/screenshot003.jpg</screenshot>
 		</assets>
 		<news>
-[B]Update - v6.7.460 - Feb 21st, 2026[/B]
+[B]Update - v6.7.461 - Feb 21st, 2026[/B]
+--[New] Episode level art customization added.
 --[New] TMDdb v4 List Support Added.
 --[New] TMDdb v4 lists can be imported into the Kodi library using the existing list import functionality, alongside Trakt lists and MDBList lists.
 --[Fix] Changed pagingation method for Trakt lists to use page numbers.
