@@ -1,4 +1,4 @@
-[B]Update - v6.7.462 - Feb 21st, 2026[/B]
+[B]Update - v6.7.463 - Feb 21st, 2026[/B]
 --[Removed] imdb user id in settings and lists from imdb user removed.
 --[New] Episode level art customization added.
 --[New] TMDdb v4 List Support Added.
