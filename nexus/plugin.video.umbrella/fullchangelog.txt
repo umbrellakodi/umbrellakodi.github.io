@@ -1,4 +1,8 @@
 
+
+[B]Update - v6.7.459 - Feb 21st, 2026[/B]
+--[Change] Updated visibility settings of import items in library to be visible when tmdb is authorized.
+
 [B]Update - v6.7.458 - Feb 20th, 2026[/B]
 --[New] Added tmdb v4 list import to library.
 
