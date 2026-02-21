@@ -1,4 +1,6 @@
-[B]Update - v6.7.458 - Feb 20th, 2026[/B]
+[B]Update - v6.7.459 - Feb 20th, 2026[/B]
+--[New] TMDdb v4 List Support Added.
+--[New] TMDdb v4 lists can be imported into the Kodi library using the existing list import functionality, alongside Trakt lists and MDBList lists.
 --[Fix] Changed pagingation method for Trakt lists to use page numbers.
 --[Fix] Resolved issue with genres by decade ending in 2024.
 --[Fix] Removed IMDd Lists that were restricted to 25 results.

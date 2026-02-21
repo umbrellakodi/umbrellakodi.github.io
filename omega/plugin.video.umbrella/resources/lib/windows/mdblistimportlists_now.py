@@ -15,6 +15,8 @@ class MDBListsImportListsNowXML(BaseDialog):
 		self.window_id = 2050
 		self.results = kwargs.get('results')
 		self.mode = kwargs.get('mode', 'now')
+		self.service_icon = kwargs.get('service_icon', joinPath(artPath(), 'mdblist.png'))
+		self.service_label = kwargs.get('service_label', '')
 		self.highlight_color = getSetting('highlight.color')
 		self.total_results = str(len(self.results))
 		self.selected_items = []
@@ -58,7 +60,7 @@ class MDBListsImportListsNowXML(BaseDialog):
 					itemtopass = self.selected_items
 					self.close()
 					if self.mode == 'now' and len(itemtopass) > 0:
-						lib_tools().importNow(itemtopass)
+						lib_tools().importNow(itemtopass, service=self.service_label)
 				elif focus_id == 2052: # Cancel Button
 					self.selected_items = None
 					self.close()
@@ -112,7 +114,7 @@ class MDBListsImportListsNowXML(BaseDialog):
 		try:
 			self.setProperty('umbrella.total_results', self.total_results)
 			self.setProperty('umbrella.highlight.color', self.highlight_color)
-			self.setProperty('umbrella.mdblist_icon', joinPath(artPath(), 'mdblist.png'))
+			self.setProperty('umbrella.mdblist_icon', self.service_icon)
 		except:
 			from resources.lib.modules import log_utils
 			log_utils.error()

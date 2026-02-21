@@ -169,6 +169,8 @@ class TVshows:
 		self.simkl_link = 'https://api.simkl.com'
 		self.prefer_fanArt = getSetting('prefer.fanarttv') == 'true'
 		self.mdblist_authed = getSetting('mdblist.api') != ''
+		from resources.lib.modules import tmdb4
+		self.tmdbv4Credentials = tmdb4.getTMDbV4CredentialsInfo()
 
 	def get(self, url, idx=True, create_directory=True, folderName=''):
 		self.list = []
@@ -846,6 +848,14 @@ class TVshows:
 			for i in range(len(lists)): lists[i].update({'image': 'tmdb.png', 'icon': 'DefaultVideoPlaylists.png', 'action': 'tmdbTvshows'})
 			userlists += lists
 		except: pass
+		try:
+			if not self.tmdbv4Credentials: raise Exception()
+			from resources.lib.modules import tmdb4
+			v4_lists = tmdb4.get_user_lists()
+			for lst in v4_lists:
+				url = self.tmdb_link + '/4/list/%s?page=1' % lst.get('id')
+				userlists.append({'name': lst.get('name', ''), 'url': url, 'image': 'tmdb.png', 'icon': 'DefaultVideoPlaylists.png', 'action': 'tmdbTvshows&folderName=%s' % quote_plus(lst.get('name', ''))})
+		except: pass
 		self.list = []
 		for i in range(len(userlists)): # Filter the user's own lists that were
 			contains = False
@@ -1510,6 +1520,20 @@ class TVshows:
 				log_utils.error()
 		return self.list
 
+	def tmdb_v4_userlists(self, create_directory=True, folderName=''):
+		self.list = []
+		try:
+			from resources.lib.modules import tmdb4
+			v4_lists = tmdb4.get_user_lists()
+			for lst in v4_lists:
+				url = self.tmdb_link + '/4/list/%s?page=1' % lst.get('id')
+				self.list.append({'name': lst.get('name', ''), 'url': url, 'image': 'tmdb.png', 'icon': 'DefaultVideoPlaylists.png', 'action': 'tmdbTvshows&folderName=%s' % quote_plus(lst.get('name', ''))})
+			if self.list is None: self.list = []
+			if create_directory: self.addDirectory(self.list, folderName=folderName)
+			return self.list
+		except:
+			log_utils.error()
+
 	def get_mdbuser_watchlist(self, create_directory=True, folderName=''):
 		self.list = []
 		try:
@@ -2060,6 +2084,8 @@ class TVshows:
 				except: pass
 				if self.mdblist_authed:
 					cm.append(('MDBList Manager', 'RunPlugin(%s?action=tools_mdbWatchlist&name=%s&tvdb=%s&tmdb=%s)' % (sysaddon,systitle, tvdb, tmdb)))
+				if self.tmdbv4Credentials:
+					cm.append((getLS(40606) if getLS(40606) else 'TMDB List Manager', 'RunPlugin(%s?action=tools_tmdbListManager&name=%s&tmdb=%s&mediatype=tv)' % (sysaddon, systitle, tmdb)))
 				cm.append(('Customize Artwork', 'RunPlugin(%s?action=customizeArt&mediatype=%s&imdb=%s&tmdb=%s&tvdb=%s&poster=%s&fanart=%s&landscape=%s&banner=%s&clearart=%s&clearlogo=%s)' % (sysaddon, 'show', imdb, tmdb, tvdb, poster, fanart, landscape, banner, clearart, clearlogo)))
 				cm.append((findSimilarMenu, 'Container.Update(%s?action=tvshows&url=%s)' % (sysaddon, quote_plus('https://api.trakt.tv/shows/%s/related?limit=20&page=1,return' % imdb))))
 				cm.append((playRandom, 'RunPlugin(%s?action=play_Random&rtype=season&tvshowtitle=%s&year=%s&imdb=%s&tmdb=%s&tvdb=%s&art=%s)' % (sysaddon, systitle, year, imdb, tmdb, tvdb, sysart)))

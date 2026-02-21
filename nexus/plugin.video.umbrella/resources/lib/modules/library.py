@@ -229,14 +229,14 @@ class lib_tools:
 			except:
 				log_utils.error()
     
-	def importNow(self, selected_items, select=True):
-		
+	def importNow(self, selected_items, select=True, service='Trakt'):
+
 		if control.setting('library.autoimportlists_last') == getLS(40224):
 			from resources.lib.modules.control import lang
 			if not yesnoDialog(getLS(40227), '', ''): return
 		control.setSetting('library.autoimportlists_last', getLS(40224))
 		if service_notification:
-			control.notification(message=40210)
+			control.notification(message='Updating library from %s List(s).' % service)
 		try:
 			allTraktItems = lib_tools().getAllTraktLists()
 			if select: lib_tools().updateLists(selected_items, allTraktItems)
@@ -247,13 +247,13 @@ class lib_tools:
 			control.setSetting('library.autoimportlists_last', str(last_service_setting))
 			lib_tools().updateSettings()
 			if service_notification:
-				control.notification(message=40229)
+				control.notification(message='%s Import Completed.' % service)
 		except:
 			control.setSetting('library.autoimportlists_last', 'Error')
 			from resources.lib.modules import log_utils
 			log_utils.error()
 			if service_notification:
-				control.notification(message=40230)
+				control.notification(message='%s Import Error.' % service)
 
 	def clearListfromDB(self, listId):
 		try:
@@ -342,7 +342,7 @@ class lib_tools:
 			for z in allMDBItems:
 				z['selected'] = ''
 			from resources.lib.windows.mdblistimportlists_now import MDBListsImportListsNowXML
-			window = MDBListsImportListsNowXML('mdblistmportlists_now.xml', control.addonPath(control.addonId()), results=allMDBItems)
+			window = MDBListsImportListsNowXML('mdblistmportlists_now.xml', control.addonPath(control.addonId()), results=allMDBItems, service_label='MDBList')
 			window.run()
 			del window
 			if fromSettings == True:
@@ -351,18 +351,43 @@ class lib_tools:
 			from resources.lib.modules import log_utils
 			log_utils.error()
 	
+	def importListsNowTMDbV4(self, fromSettings=False):
+		try:
+			allV4Items = self.getAllTMDbV4Lists()
+			if not allV4Items:
+				control.notification(message='No TMDb v4 lists found. Check your authentication in settings.')
+				if fromSettings:
+					control.openSettings(id='plugin.video.umbrella')
+				return
+			for z in allV4Items:
+				z['selected'] = ''
+			from resources.lib.windows.mdblistimportlists_now import MDBListsImportListsNowXML
+			from resources.lib.modules.control import joinPath, artPath
+			window = MDBListsImportListsNowXML('mdblistmportlists_now.xml', control.addonPath(control.addonId()), results=allV4Items,
+				service_icon=joinPath(artPath(), 'tmdb.png'), service_label='TMDb')
+			window.run()
+			del window
+			if fromSettings:
+				control.openSettings(id='plugin.video.umbrella')
+		except:
+			from resources.lib.modules import log_utils
+			log_utils.error()
+
 	def importListsNowMulti(self, fromSettings=False):
 		try:
 			items = []
 			isTraktEnabled = control.setting('trakt.user.token') != ''
 			isMDBListEnable = control.setting('mdblist.api') != ''
-			if not isTraktEnabled and not isMDBListEnable:
+			isTMDbV4Enabled = control.setting('tmdb.v4.accesstoken') != ''
+			if not isTraktEnabled and not isMDBListEnable and not isTMDbV4Enabled:
 				control.notification(message=32113)
 				return
 			if isTraktEnabled:
 				items.append({'name': 'Trakt', 'url': 'trakt'})
 			if isMDBListEnable:
 				items.append({'name': 'MDBLists', 'url': 'mdb'})
+			if isTMDbV4Enabled:
+				items.append({'name': 'TMDb Lists', 'url': 'tmdb4'})
 			if len(items) == 1:
 				selected_url = items[0].get('url')
 			else:
@@ -376,6 +401,8 @@ class lib_tools:
 				self.importListsNowTrakt(fromSettings)
 			elif selected_url == 'mdb':
 				self.importListsNowMdbList(fromSettings)
+			elif selected_url == 'tmdb4':
+				self.importListsNowTMDbV4(fromSettings)
 		except:
 			from resources.lib.modules import log_utils
 			log_utils.error()
@@ -496,6 +523,42 @@ class lib_tools:
 					'list_id': str(list_id),
 					'list_count': i.get('items', 0),
 					'action': action,
+					'likes': 0,
+					'selected': '',
+				})
+			control.hide()
+		except:
+			full_list = []
+			control.hide()
+			from resources.lib.modules import log_utils
+			log_utils.error()
+		return full_list
+
+	def getAllTMDbV4Lists(self):
+		full_list = []
+		try:
+			if not control.player.isPlaying(): control.busy()
+			from resources.lib.modules import tmdb4
+			if not tmdb4.getTMDbV4CredentialsInfo():
+				control.hide()
+				return full_list
+			v4_lists = tmdb4.get_user_lists()
+			if not v4_lists:
+				control.hide()
+				return full_list
+			for lst in v4_lists:
+				list_id = str(lst.get('id', ''))
+				list_name = lst.get('name', '')
+				url = 'https://api.themoviedb.org/4/list/%s?page=1' % list_id
+				full_list.append({
+					'name': list_name,
+					'url': url,
+					'list_owner': '',
+					'list_owner_slug': '',
+					'list_name': list_name,
+					'list_id': 'tmdb4_%s' % list_id,
+					'list_count': lst.get('number_of_items', 0),
+					'action': 'mixed',
 					'likes': 0,
 					'selected': '',
 				})
@@ -736,6 +799,37 @@ class lib_tools:
 		finally:
 			dbcur.close() ; dbcon.close()
 
+	def updateTMDbV4Lists(self, items, allV4Items):
+		if items is None: return
+		try:
+			control.makeFile(control.dataPath)
+			dbcon = database.connect(control.libcacheFile)
+			dbcur = dbcon.cursor()
+			dbcur.execute('''CREATE TABLE IF NOT EXISTS available_import_lists (item_count INT, type TEXT, list_owner TEXT, list_owner_slug TEXT, list_name TEXT, list_id TEXT, selected TEXT, url TEXT, UNIQUE(list_id));''')
+			for i in allV4Items:
+				selected = 'true' if any(x['url'] == i['url'] for x in items) else ''
+				dbcur.execute('''INSERT OR REPLACE INTO available_import_lists Values (?, ?, ?, ?, ?, ?, ?, ?)''', (i['list_count'], i['action'], i['list_owner'], i['list_owner_slug'], i['list_name'], i['list_id'], selected, i['url']))
+			dbcur.connection.commit()
+		except:
+			from resources.lib.modules import log_utils
+			log_utils.error()
+		finally:
+			dbcur.close() ; dbcon.close()
+		try:
+			control.makeFile(control.dataPath)
+			dbcon = database.connect(control.libcacheFile)
+			dbcur = dbcon.cursor()
+			dbcur.execute('''CREATE TABLE IF NOT EXISTS lists (type TEXT, list_name TEXT, url TEXT, UNIQUE(type, list_name, url));''')
+			dbcur.execute('''DELETE FROM lists WHERE url LIKE '%api.themoviedb.org/4/list%';''')
+			for item in items:
+				dbcur.execute('''INSERT OR REPLACE INTO lists Values (?, ?, ?)''', (item['type'], item['list_name'], item['url']))
+			dbcur.connection.commit()
+		except:
+			from resources.lib.modules import log_utils
+			log_utils.error()
+		finally:
+			dbcur.close() ; dbcon.close()
+
 	def importListsManagerMdbList(self, fromSettings=False):
 		try:
 			allMDBItems = self.getAllMDBLists()
@@ -773,18 +867,60 @@ class lib_tools:
 			from resources.lib.modules import log_utils
 			log_utils.error()
 
+	def importListsManagerTMDbV4(self, fromSettings=False):
+		try:
+			allV4Items = self.getAllTMDbV4Lists()
+			if not allV4Items:
+				control.notification(message='No TMDb v4 lists found. Check your authentication in settings.')
+				if fromSettings:
+					control.openSettings(id='plugin.video.umbrella')
+				return
+			try:
+				dbcon = database.connect(control.libcacheFile)
+				dbcur = dbcon.cursor()
+				dbcur.execute('''CREATE TABLE IF NOT EXISTS lists (type TEXT, list_name TEXT, url TEXT, UNIQUE(type, list_name, url));''')
+				selected_urls = set(row[2] for row in dbcur.execute('''SELECT * FROM lists WHERE url LIKE '%api.themoviedb.org/4/list%';''').fetchall())
+				dbcur.close() ; dbcon.close()
+			except:
+				selected_urls = set()
+			for z in allV4Items:
+				z['selected'] = 'true' if z.get('url') in selected_urls else ''
+			from resources.lib.windows.mdblistimportlists_now import MDBListsImportListsNowXML
+			from resources.lib.modules.control import joinPath, artPath
+			window = MDBListsImportListsNowXML('mdblistmportlists_now.xml', control.addonPath(control.addonId()), results=allV4Items, mode='manager',
+				service_icon=joinPath(artPath(), 'tmdb.png'))
+			selected_items = window.run()
+			del window
+			if selected_items is not None:
+				self.updateTMDbV4Lists(selected_items, allV4Items)
+				try:
+					dbcon = database.connect(control.libcacheFile)
+					dbcur = dbcon.cursor()
+					total = dbcur.execute('''SELECT COUNT(*) FROM lists;''').fetchone()[0]
+					dbcur.close() ; dbcon.close()
+					control.setSetting('library.autoimportlists.number', str(total))
+				except: pass
+			if fromSettings:
+				control.openSettings(id='plugin.video.umbrella')
+		except:
+			from resources.lib.modules import log_utils
+			log_utils.error()
+
 	def importListsManagerMulti(self, fromSettings=False):
 		try:
 			items = []
 			isTraktEnabled = control.setting('trakt.user.token') != ''
 			isMDBListEnabled = control.setting('mdblist.api') != ''
-			if not isTraktEnabled and not isMDBListEnabled:
+			isTMDbV4Enabled = control.setting('tmdb.v4.accesstoken') != ''
+			if not isTraktEnabled and not isMDBListEnabled and not isTMDbV4Enabled:
 				control.notification(message=32113)
 				return
 			if isTraktEnabled:
 				items.append({'name': 'Trakt', 'url': 'trakt'})
 			if isMDBListEnabled:
 				items.append({'name': 'MDBLists', 'url': 'mdb'})
+			if isTMDbV4Enabled:
+				items.append({'name': 'TMDb Lists', 'url': 'tmdb4'})
 			if len(items) == 1:
 				selected_url = items[0].get('url')
 			else:
@@ -798,6 +934,8 @@ class lib_tools:
 				self.importListsManager(fromSettings)
 			elif selected_url == 'mdb':
 				self.importListsManagerMdbList(fromSettings)
+			elif selected_url == 'tmdb4':
+				self.importListsManagerTMDbV4(fromSettings)
 		except:
 			from resources.lib.modules import log_utils
 			log_utils.error()

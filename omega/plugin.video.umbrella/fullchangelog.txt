@@ -1,3 +1,7 @@
+
+[B]Update - v6.7.458 - Feb 20th, 2026[/B]
+--[New] Added tmdb v4 list import to library.
+
 [B]Update - v6.7.458 - Feb 20th, 2026[/B]
 --[Fix] Changed pagingation method for Trakt lists to use page numbers.
 

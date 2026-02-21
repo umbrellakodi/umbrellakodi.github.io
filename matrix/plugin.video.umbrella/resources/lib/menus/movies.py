@@ -193,6 +193,8 @@ class Movies:
 		self.prefer_fanArt = getSetting('prefer.fanarttv') == 'true'
 		self.simklCredentials = simkl.getSimKLCredentialsInfo()
 		self.mdblist_authed = getSetting('mdblist.api') != ''
+		from resources.lib.modules import tmdb4
+		self.tmdbv4Credentials = tmdb4.getTMDbV4CredentialsInfo()
 
 	def get(self, url, idx=True, create_directory=True, folderName=''):
 		self.list = []
@@ -358,6 +360,21 @@ class Movies:
 				from resources.lib.modules import log_utils
 				log_utils.error()
 		return self.list
+	def tmdb_v4_userlists(self, create_directory=True, folderName=''):
+		self.list = []
+		try:
+			from resources.lib.modules import tmdb4
+			v4_lists = tmdb4.get_user_lists()
+			for lst in v4_lists:
+				url = self.tmdb_link + '/4/list/%s?page=1' % lst.get('id')
+				self.list.append({'name': lst.get('name', ''), 'url': url, 'image': 'tmdb.png', 'icon': 'DefaultVideoPlaylists.png', 'action': 'tmdbmovies&folderName=%s' % quote_plus(lst.get('name', ''))})
+			if self.list is None: self.list = []
+			if create_directory: self.addDirectory(self.list, folderName=folderName)
+			return self.list
+		except:
+			from resources.lib.modules import log_utils
+			log_utils.error()
+
 	def get_mdbuser_watchlist(self, create_directory=True, folderName=''):
 		self.list = []
 		try:
@@ -1117,6 +1134,14 @@ class Movies:
 			lists = cache.get(tmdb_indexer().userlists, 0, url)
 			for i in range(len(lists)): lists[i].update({'image': 'tmdb.png', 'icon': 'DefaultVideoPlaylists.png', 'action': 'tmdbmovies&folderName=%s' % quote_plus(lists[i]['name'])})
 			userlists += lists
+		except: pass
+		try:
+			if not self.tmdbv4Credentials: raise Exception()
+			from resources.lib.modules import tmdb4
+			v4_lists = tmdb4.get_user_lists()
+			for lst in v4_lists:
+				url = self.tmdb_link + '/4/list/%s?page=1' % lst.get('id')
+				userlists.append({'name': lst.get('name', ''), 'url': url, 'image': 'tmdb.png', 'icon': 'DefaultVideoPlaylists.png', 'action': 'tmdbmovies&folderName=%s' % quote_plus(lst.get('name', ''))})
 		except: pass
 		self.list = []
 		for i in range(len(userlists)): # Filter the user's own lists that were
@@ -2223,6 +2248,8 @@ class Movies:
 						cm.append((traktManagerMenu, 'RunPlugin(%s?action=tools_traktManager&name=%s&imdb=%s&watched=%s&unfinished=%s)' % (sysaddon, sysname, imdb, watched, unfinished)))
 					if self.mdblist_authed:
 						cm.append(('MDBList Manager', 'RunPlugin(%s?action=tools_mdbWatchlist&name=%s&imdb=%s)' % (sysaddon, sysname, imdb)))
+					if self.tmdbv4Credentials:
+						cm.append((getLS(40606) if getLS(40606) else 'TMDB List Manager', 'RunPlugin(%s?action=tools_tmdbListManager&name=%s&tmdb=%s&mediatype=movie)' % (sysaddon, sysname, tmdb)))
 					if self.simklCredentials:
 						cm.append((simklManagerMenu, 'RunPlugin(%s?action=tools_simklManager&name=%s&imdb=%s&watched=%s&unfinished=%s)' % (sysaddon, sysname, imdb, watched, unfinished)))
 					if watched:

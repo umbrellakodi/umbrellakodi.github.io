@@ -5149,7 +5149,79 @@
 					</control>
 				</setting>
 			</group>
-			<group id="3" label="32034">
+			<group id="3" label="40609">
+				<setting id="tmdb.v4.readtoken" type="string" label="40601" help="">
+					<level>0</level>
+					<default/>
+					<constraints>
+						<allowempty>true</allowempty>
+					</constraints>
+					<control type="edit" format="string">
+						<heading>40601</heading>
+					</control>
+				</setting>
+				<setting id="tmdb.v4.accesstoken" type="string" label="40602" help="">
+					<level>0</level>
+					<default/>
+					<constraints>
+						<allowempty>true</allowempty>
+					</constraints>
+					<dependencies>
+						<dependency type="enable">
+							<condition on="property" name="InfoBool">false</condition>
+						</dependency>
+					</dependencies>
+					<control type="edit" format="string">
+						<heading>40602</heading>
+					</control>
+				</setting>
+				<setting id="tmdb.v4.accountid" type="string" label="40603" help="">
+					<level>0</level>
+					<default/>
+					<constraints>
+						<allowempty>true</allowempty>
+					</constraints>
+					<dependencies>
+						<dependency type="enable">
+							<condition on="property" name="InfoBool">false</condition>
+						</dependency>
+					</dependencies>
+					<control type="edit" format="string">
+						<heading>40603</heading>
+					</control>
+				</setting>
+				<setting id="tmdbv4AuthButton" type="action" label="40604" help="">
+					<level>0</level>
+					<data>RunPlugin(plugin://plugin.video.umbrella/?action=tmdb_v4_authenticate)</data>
+					<constraints>
+						<allowempty>true</allowempty>
+					</constraints>
+					<dependencies>
+						<dependency type="visible">
+							<condition operator="is" setting="tmdb.v4.accesstoken"></condition>
+						</dependency>
+					</dependencies>
+					<control type="button" format="action">
+						<close>true</close>
+					</control>
+				</setting>
+				<setting id="tmdbv4RevokeButton" type="action" label="40605" help="">
+					<level>0</level>
+					<data>RunPlugin(plugin://plugin.video.umbrella/?action=tmdb_v4_revoke)</data>
+					<constraints>
+						<allowempty>true</allowempty>
+					</constraints>
+					<dependencies>
+						<dependency type="visible">
+							<condition operator="!is" setting="tmdb.v4.accesstoken"></condition>
+						</dependency>
+					</dependencies>
+					<control type="button" format="action">
+						<close>true</close>
+					</control>
+				</setting>
+			</group>
+			<group id="4" label="32034">
 				<setting id="imdbuser" type="string" label="40171" help="">
 					<level>0</level>
 					<default/>
@@ -5161,7 +5233,7 @@
 					</control>
 				</setting>
 			</group>
-			<group id="4" label="40172">
+			<group id="5" label="40172">
 				<setting id="mdblist.api" type="string" label="40085" help="">
 					<level>0</level>
 					<default/>
