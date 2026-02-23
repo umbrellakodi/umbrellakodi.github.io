@@ -155,7 +155,7 @@ class Movies(TMDb):
 		#big thanks to extreme pettiness for this change.
 		self.movie_link = base_link + 'movie/%s?api_key=%s&language=%s&append_to_response=credits,release_dates,videos,alternative_titles,images' % ('%s', self.API_key, self.lang)
 		###  other "append_to_response" options external_ids,images,translations
-		self.art_link = base_link + 'movie/%s/images?api_key=%s' % ('%s', self.API_key)
+		self.art_link = base_link + 'movie/%s/images?api_key=%s&language=%s&include_image_language=xx,null' % ('%s', self.API_key, self.lang)
 		self.external_ids = base_link + 'movie/%s/external_ids?api_key=%s' % ('%s', self.API_key)
 		# self.user = str(self.imdb_user) + str(self.API_key)
 		self.user = str(self.API_key)
@@ -552,11 +552,8 @@ class Movies(TMDb):
 		tmdbart_items = []
 		if artworkType == 'poster':
 			tmdbart_items = [item for item in tmdbart.get('posters', []) if (item.get('iso_639_1') == self.lang or item.get('iso_639_1') == None)]
-		#changed due to tmdb using "xx" for fanart.
-		#elif artworkType == 'fanart': 
-		#	tmdbart_items = [item for item in tmdbart.get('backdrops', []) if (item.get('iso_639_1') == self.lang or item.get('iso_639_1') == None)] 
 		elif artworkType == 'fanart':
-			tmdbart_items = [item for item in tmdbart.get('backdrops', []) if (item.get('iso_639_1') == self.lang or item.get('iso_639_1') == 'xx')]
+			tmdbart_items = [item for item in tmdbart.get('backdrops', []) if (item.get('iso_639_1') == self.lang or item.get('iso_639_1') == 'xx' or item.get('iso_639_1') == None)]
 		elif artworkType == 'landscape':
 			tmdbart_items = [item for item in tmdbart.get('backdrops', []) if (item.get('iso_639_1') == self.lang or item.get('iso_639_1') == None)]
 		elif artworkType == 'clearlogo':
@@ -587,7 +584,7 @@ class TVshows(TMDb):
 		self.meta = []
 		self.show_link = base_link + 'tv/%s?api_key=%s&language=%s&append_to_response=credits,content_ratings,external_ids,alternative_titles,videos,images' % ('%s', self.API_key, self.lang)
 		# 'append_to_response=translations, aggregate_credits' (DO NOT USE, response data way to massive and bogs the response time)
-		self.art_link = base_link + 'tv/%s/images?api_key=%s' % ('%s', self.API_key)
+		self.art_link = base_link + 'tv/%s/images?api_key=%s&language=%s&include_image_language=xx,null' % ('%s', self.API_key, self.lang)
 		self.tvdb_key = getSetting('tvdb.api.key')
 		self.imdb_user = getSetting('imdb.user').replace('ur', '')
 		self.user = str(self.imdb_user) + str(self.tvdb_key)
@@ -1244,7 +1241,7 @@ class TVshows(TMDb):
 		if artworkType == 'poster':
 			tmdbart_items = [item for item in tmdbart.get('posters', []) if (item.get('iso_639_1') == self.lang or item.get('iso_639_1') == None)]
 		elif artworkType == 'fanart':
-			tmdbart_items = [item for item in tmdbart.get('backdrops', []) if (item.get('iso_639_1') == self.lang or item.get('iso_639_1') == None)]
+			tmdbart_items = [item for item in tmdbart.get('backdrops', []) if (item.get('iso_639_1') == self.lang or item.get('iso_639_1') == 'xx' or item.get('iso_639_1') == None)]
 		elif artworkType == 'landscape':
 			tmdbart_items = [item for item in tmdbart.get('backdrops', []) if (item.get('iso_639_1') == self.lang or item.get('iso_639_1') == None)]
 		elif artworkType == 'clearlogo':

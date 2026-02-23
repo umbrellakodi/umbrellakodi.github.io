@@ -1,4 +1,6 @@
 [B]Update - v6.7.467 - Feb 23rd, 2026[/B]
+--[Fix] Changed tmdb to get artwork for fanart differently for custom artwork.
+--[Change] Changed art locations so icons would not need to be reloaded on each update.
 --[Change] Added tinyurl as a fallback for long tmdb v4 authorization urls.
 --[Change] Modified TMDB artwork retrieval to include None as a valid language option for artwork.
 
