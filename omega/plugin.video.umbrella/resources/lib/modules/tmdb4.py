@@ -68,6 +68,17 @@ def getTMDbV4(url, post=None, delete=False):
 		log_utils.error()
 		return None
 
+def _shorten_url(long_url):
+	"""Try to shorten a URL via TinyURL. Returns None on failure."""
+	try:
+		r = session.get('https://tinyurl.com/api-create.php', params={'url': long_url}, timeout=5)
+		if r.status_code == 200 and r.text.strip().startswith('https://'):
+			return r.text.strip()
+	except:
+		pass
+	return None
+
+
 def authenticate(fromSettings=0):
 	import time
 	import traceback
@@ -103,26 +114,30 @@ def authenticate(fromSettings=0):
 			return
 
 		approval_url = 'https://www.themoviedb.org/auth/access?request_token=%s' % request_token
-		message = 'Scan QR or visit URL to authorize:[CR][CR]%s' % approval_url
+		short_url = _shorten_url(approval_url)
+		display_url = short_url if short_url else approval_url
+		message = 'Scan QR or visit:[CR]%s' % display_url
 
 		dialog_shown = False
 		approved = False
 
+		# Always try the umbrella dialog for auth — QR is essential for TV use.
+		# Fall back to standard Kodi dialog only if the umbrella dialog fails.
 		try:
-			if control.setting('dialogs.useumbrelladialog') == 'true':
-				from resources.lib.modules import tools
-				tmdb_qr = tools.make_qr(approval_url, 'tmdb_qr.png')
-				progressDialog = control.getProgressWindow('TMDB v4 Authentication', tmdb_qr, 1)
-				progressDialog.set_controls()
-				progressDialog.update(0, message)
-			else:
-				progressDialog = control.progressDialog
-				progressDialog.create('TMDB v4 Authentication', message)
+			from resources.lib.modules import tools
+			tmdb_qr = tools.make_qr(approval_url, 'tmdb_qr.png')
+			progressDialog = control.getProgressWindow('TMDB v4 Authentication', tmdb_qr, 1)
+			progressDialog.set_controls()
+			progressDialog.update(0, message)
+		except:
+			progressDialog = control.progressDialog
+			progressDialog.create('TMDB v4 Authentication', message)
 
-			dialog_shown = True
-			start = time.time()
+		dialog_shown = True
+		start = time.time()
 
-			# Step 2: Poll for approval
+		# Step 2: Poll for approval
+		try:
 			while not progressDialog.iscanceled() and (time.time() - start) < 600:
 				control.sleep(2000)
 
@@ -140,11 +155,9 @@ def authenticate(fromSettings=0):
 						setSetting('tmdb.v4.accountid', account_id)
 						approved = True
 						break
-
 		except Exception as e:
-			log_utils.log('TMDB v4: Dialog exception: %s' % str(e), level=log_utils.LOGWARNING)
+			log_utils.log('TMDB v4: Poll exception: %s' % str(e), level=log_utils.LOGWARNING)
 			log_utils.log(traceback.format_exc(), level=log_utils.LOGWARNING)
-
 		finally:
 			if dialog_shown:
 				try:

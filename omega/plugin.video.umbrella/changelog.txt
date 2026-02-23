@@ -1,5 +1,4 @@
-[B]Update - v6.7.465 - Feb 23rd, 2026[/B]
---[Change] Re-added Simkl. Please remember whatever service is set in Settings:General for indicators will be the one used for in progress episodes and watched and unwatched indicators and counters.
---[Change] Added pagination to Progress TV Shows and Progress Episodes.
---[Change] Made list artwork set in tmdb v4 appear as list artwork for lists from tmdb v4.
---[Change] Made premium services only show the services you have enabled.
+[B]Update - v6.7.467 - Feb 23rd, 2026[/B]
+--[Change] Changed art locations so icons would not need to be reloaded on each update.
+--[Change] Added tinyurl as a fallback for long tmdb v4 authorization urls.
+--[Change] Modified TMDB artwork retrieval to include None as a valid language option for artwork.

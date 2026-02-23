@@ -904,6 +904,7 @@ class Episodes:
 			url = '/sync/all-items/shows/watching?extended=full'
 			result = simkl.getSimklAsJson(url)
 		except: return
+		if not result: return
 		items = []
 		# progress_showunaired = getSetting('trakt.progress.showunaired') == 'true'
 		for item in result:
