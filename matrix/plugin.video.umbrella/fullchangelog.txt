@@ -1,3 +1,6 @@
+[B]Update - v6.7.464 - Feb 23rd, 2026[/B]
+--[Fix] Changed episode artwork to use a try catch to prevent errors stopping episode lists from loading when artwork was not set.
+
 [B]Update - v6.7.463 - Feb 21st, 2026[/B]
 --[Removed] imdb user id in settings and lists from imdb user removed.
 --[New] Episode level art customization added.
