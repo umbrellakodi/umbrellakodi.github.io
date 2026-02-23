@@ -362,7 +362,9 @@ class Movies:
 			v4_lists = tmdb4.get_user_lists()
 			for lst in v4_lists:
 				url = self.tmdb_link + '/4/list/%s?page=1' % lst.get('id')
-				self.list.append({'name': lst.get('name', ''), 'url': url, 'image': 'tmdb.png', 'icon': 'DefaultVideoPlaylists.png', 'action': 'tmdbmovies&folderName=%s' % quote_plus(lst.get('name', ''))})
+				art_path = lst.get('poster_path') or lst.get('backdrop_path', '')
+				image = ('https://image.tmdb.org/t/p/w500' + art_path) if art_path else 'tmdb.png'
+				self.list.append({'name': lst.get('name', ''), 'url': url, 'image': image, 'icon': 'DefaultVideoPlaylists.png', 'action': 'tmdbmovies&folderName=%s' % quote_plus(lst.get('name', ''))})
 			if self.list is None: self.list = []
 			if create_directory: self.addDirectory(self.list, folderName=folderName)
 			return self.list
@@ -1130,7 +1132,9 @@ class Movies:
 			v4_lists = tmdb4.get_user_lists()
 			for lst in v4_lists:
 				url = self.tmdb_link + '/4/list/%s?page=1' % lst.get('id')
-				userlists.append({'name': lst.get('name', ''), 'url': url, 'image': 'tmdb.png', 'icon': 'DefaultVideoPlaylists.png', 'action': 'tmdbmovies&folderName=%s' % quote_plus(lst.get('name', ''))})
+				art_path = lst.get('poster_path') or lst.get('backdrop_path', '')
+				image = ('https://image.tmdb.org/t/p/w500' + art_path) if art_path else 'tmdb.png'
+				userlists.append({'name': lst.get('name', ''), 'url': url, 'image': image, 'icon': 'DefaultVideoPlaylists.png', 'action': 'tmdbmovies&folderName=%s' % quote_plus(lst.get('name', ''))})
 		except: pass
 		self.list = []
 		for i in range(len(userlists)): # Filter the user's own lists that were

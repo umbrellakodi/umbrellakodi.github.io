@@ -10,7 +10,7 @@ from resources.lib.modules import control
 from resources.lib.database import simklsync, cache
 from resources.lib.modules import log_utils
 from datetime import datetime
-from threading import Thread
+from threading import Thread, Lock
 from concurrent.futures import ThreadPoolExecutor
 from urllib.parse import urljoin
 from resources.lib.modules import cleandate
@@ -30,6 +30,8 @@ session.mount('https://api.simkl.com', HTTPAdapter(max_retries=retries, pool_max
 #sim_qr = control.joinPath(control.artPath(), 'simklqr.png')
 highlightColor = control.setting('highlight.color')
 headers = {}
+_last_request_time = 0.0
+_request_lock = Lock()
 
 class SIMKL:
 	name = "Simkl"
@@ -61,7 +63,7 @@ class SIMKL:
 					log_utils.error()
 					control.okDialog(title='default', message=40347)
 					if fromSettings == 1:
-						control.openSettings('9.0', 'plugin.video.umbrella')
+						control.openSettings('8.0', 'plugin.video.umbrella')
 				return
 		else:
 			log_utils.error()
@@ -78,7 +80,7 @@ class SIMKL:
 		line = '%s\n%s\n%s'
 		if control.setting('dialogs.useumbrelladialog') == 'true':
 			from resources.lib.modules import tools
-			sim_qr = tools.make_qr(f"https://simkl.com/pin/{response['user_code']}")
+			sim_qr = tools.make_qr(f"https://simkl.com/pin/{response['user_code']}", 'simkl_qr.png')
 			self.progressDialog = control.getProgressWindow(getLS(40346), sim_qr, 1)
 			self.progressDialog.set_controls()
 		else:
@@ -105,7 +107,7 @@ class SIMKL:
 			control.notification(message="Simkl Authorized", icon=simkl_icon)
 			if not control.yesnoDialog('Do you want to set Simkl as your service for your watched and unwatched indicators?','','','Indicators', 'No', 'Yes'):
 				if fromSettings == 1:
-					control.openSettings('9.0', 'plugin.video.umbrella')
+					control.openSettings('8.0', 'plugin.video.umbrella')
 				force_simklSync(silent=True)
 				return True, None
 			force_simklSync(silent=True)
@@ -114,12 +116,12 @@ class SIMKL:
 			control.homeWindow.setProperty('umbrella.updateSettings', 'true')
 			control.setSetting('indicators', 'Simkl')
 			if fromSettings == 1:
-				control.openSettings('9.0', 'plugin.video.umbrella')
+				control.openSettings('8.0', 'plugin.video.umbrella')
 			return True, None
 		except:
 			log_utils.error('Simkl Authorization Failed : ')
 			if fromSettings == 1:
-				control.openSettings('9.0', 'plugin.video.umbrella')
+				control.openSettings('8.0', 'plugin.video.umbrella')
 			return False, None
 
 	def reset_authorization(self, fromSettings=0):
@@ -144,7 +146,7 @@ class SIMKL:
 				control.setSetting('indicators.alt', '0')
 				control.setSetting('indicators', 'Local')
 			if fromSettings == 1:
-				control.openSettings('9.0', 'plugin.video.umbrella')
+				control.openSettings('8.0', 'plugin.video.umbrella')
 			control.dialog.ok(getLS(40342), getLS(32320))
 		except: log_utils.error()
 
@@ -186,7 +188,18 @@ class SIMKL:
 			return control.selectDialog(items, heading=heading)
 		except: log_utils.error()
 
+def _throttle():
+	"""Ensure at most 1 Simkl API request per second to avoid rate limiting."""
+	global _last_request_time
+	with _request_lock:
+		now = time.time()
+		wait = 1.0 - (now - _last_request_time)
+		if wait > 0:
+			time.sleep(wait)
+		_last_request_time = time.time()
+
 def get_request(url):
+	_throttle()
 	try:
 		if not url.startswith(BASE_URL): url = urljoin(BASE_URL, url)
 		if '?' not in url:
@@ -359,19 +372,22 @@ def unwatch(content_type, name, imdb=None, tvdb=None, season=None, episode=None,
 		else: control.notification(title=40342, message=getLS(40562) % ('[COLOR %s]%s[/COLOR]' % (highlightColor, name)))
 	if not success: log_utils.log(getLS(40562) % name + ' : ids={imdb: %s, tvdb: %s}' % (imdb, tvdb), __name__, level=log_utils.LOGDEBUG)
 
+def _ts_to_iso(unix_ts):
+	"""Convert Unix timestamp int to ISO8601 string for Simkl date_from parameter."""
+	return datetime.utcfromtimestamp(unix_ts).strftime('%Y-%m-%dT%H:%M:%SZ')
+
 def getSimKLCredentialsInfo():
-	# token = getSetting('simkltoken')
-	# if (token == ''): return False
-	# return True
-	return False
+	token = getSetting('simkltoken')
+	if (token == ''): return False
+	return True
 
 def getSimKLIndicatorsInfo():
-	# indicators = getSetting('indicators.alt')
-	# indicators = True if indicators == '2' else False
-	# return indicators
-	return False
+	indicators = getSetting('indicators.alt')
+	indicators = True if indicators == '2' else False
+	return indicators
 
 def post_request(url, data=None):
+	_throttle()
 	if type(data) == dict or type(data) == list: data = json.dumps(data)
 	if not url.startswith(BASE_URL): url = urljoin(BASE_URL, url)
 	if '?' not in url:
@@ -609,22 +625,17 @@ def batchCacheSyncSeason(data):
     #Process all items in data in chunks because simkl api had limit of 100 items per request
     extended_param = 'full,specials' if getSetting('tv.specials') == 'true' else 'full'
 
-    def process_chunk(chunk):
-        #Handles API request and season syncing for a batch.
-        formatted_data = [show for show in chunk]  # Format each batch
+    for chunk in chunked_iterator(data, 100):  # Process chunks sequentially to avoid request bursts
+        formatted_data = [show for show in chunk]
         results = post_request(f'/sync/watched?extended={extended_param}', data=formatted_data)
         if not results:
-            return
-        with ThreadPoolExecutor() as executor:
+            continue
+        with ThreadPoolExecutor() as executor:  # Parallel cache writes only (no API calls)
             for show in chunk:
                 imdb = show.get('imdb')
                 tvdb = show.get('tvdb')
                 simkl_id = show.get('simkl')
                 executor.submit(cachesyncSeasons, imdb, tvdb, simkl_id, 0, results)
-
-    with ThreadPoolExecutor() as executor:
-        for chunk in chunked_iterator(data, 100):  # Process 100 items at a time
-            executor.submit(process_chunk, chunk)
 
 def cachesyncSeasons(imdb, tvdb, simkl_id=None, timeout=0, data=None):
 	try:
@@ -900,221 +911,185 @@ def sync_watchedProgress(activities=None, forced=False):
 	except: log_utils.error()
 
 def sync_plantowatch(activities=None, forced=False):
-    
     try:
-        link = '/sync/all-items/%s/plantowatch'
-        
-        def fetch_and_insert(category, table_name):
-            response = get_request(link % category)
-            if response and isinstance(response, dict):  # Ensure response is not None and is a dictionary
-                items = response.get(category, [])
-                if items:
-                    simklsync.insert_plantowatch(items, table_name)
+        def full_sync():
+            clr = {'movies_plantowatch': True, 'shows_plantowatch': True, 'shows_watching': False,
+                   'shows_hold': False, 'movies_dropped': False, 'shows_dropped': False,
+                   'watched': False, 'movies_completed': False, 'shows_completed': False}
+            simklsync.delete_tables(clr)
+            for category, table in [('movies', 'movies_plantowatch'), ('shows', 'shows_plantowatch')]:
+                response = get_request('/sync/all-items/%s/plantowatch' % category)
+                if response and isinstance(response, dict):
+                    items = response.get(category, [])
+                    if items:
+                        simklsync.insert_plantowatch(items, table, new_sync=False)
+
+        def delta_sync(db_ts):
+            date_from = _ts_to_iso(db_ts)
+            for category, table in [('movies', 'movies_plantowatch'), ('shows', 'shows_plantowatch')]:
+                response = get_request('/sync/all-items/%s/plantowatch?date_from=%s' % (category, date_from))
+                if response and isinstance(response, dict):
+                    items = response.get(category, [])
+                    if items:
+                        simklsync.upsert_items(items, table, 'last_plantowatch_at', 'plantowatch')
 
         if forced:
-            fetch_and_insert('movies', 'movies_plantowatch')
-            fetch_and_insert('shows', 'shows_plantowatch')
+            full_sync()
         else:
-            db_last_watchList = simklsync.last_sync('last_plantowatch_at')
+            db_last = simklsync.last_sync('last_plantowatch_at')
             plantoWatch = getPlantowatchActivity(activities)
-            
-            if (plantoWatch - db_last_watchList >= 60) or plantoWatch == 0:  # Ensure at least 1-minute difference
-                log_utils.log(
-                    'Simkl (plantowatch) Sync Update...(local db latest "plantowatch_at" = %s, simkl api latest "last_plantowatch_at" = %s)' %
-                    (str(db_last_watchList), str(plantoWatch)),
-                    __name__, log_utils.LOGINFO
-                )
-                
-                clr_simklsync = {
-                    'movies_plantowatch': True,
-                    'shows_plantowatch': True,
-                    'shows_watching': False,
-                    'shows_hold': False,
-                    'movies_dropped': False,
-                    'shows_dropped': False,
-                    'watched': False,
-                    'movies_completed': False,
-                    'shows_completed': False
-                }
-                simklsync.delete_tables(clr_simklsync)
-                
-                fetch_and_insert('movies', 'movies_plantowatch')
-                fetch_and_insert('shows', 'shows_plantowatch')
-
+            if (plantoWatch - db_last >= 60) or plantoWatch == 0:
+                log_utils.log('Simkl (plantowatch) Sync Update...(local db = %s, api = %s)' % (str(db_last), str(plantoWatch)), __name__, log_utils.LOGINFO)
+                if db_last == 0:
+                    full_sync()
+                else:
+                    delta_sync(db_last)
     except Exception as e:
-        log_utils.error('Error in sync_plantowatch: %s' % str(e), log_utils.LOGINFO)
+        log_utils.error('Error in sync_plantowatch: %s' % str(e))
 
 def sync_completed(activities=None, forced=False):
     try:
-        link = '/sync/all-items/%s/completed'
+        def full_sync():
+            clr = {'movies_plantowatch': False, 'shows_plantowatch': False, 'shows_watching': False,
+                   'shows_hold': False, 'movies_dropped': False, 'shows_dropped': False,
+                   'watched': False, 'movies_completed': True, 'shows_completed': True}
+            simklsync.delete_tables(clr)
+            for category, table in [('movies', 'movies_completed'), ('shows', 'shows_completed')]:
+                response = get_request('/sync/all-items/%s/completed' % category)
+                if response and isinstance(response, dict):
+                    items = response.get(category, [])
+                    if items:
+                        simklsync.insert_completed(items, table, new_sync=False)
 
-        def fetch_and_insert(category, table_name):
-            response = get_request(link % category)
-            if response and isinstance(response, dict):  # Ensure response is not None and is a dictionary
-                items = response.get(category, [])
-                if items:
-                    simklsync.insert_completed(items, table_name)
+        def delta_sync(db_ts):
+            date_from = _ts_to_iso(db_ts)
+            for category, table in [('movies', 'movies_completed'), ('shows', 'shows_completed')]:
+                response = get_request('/sync/all-items/%s/completed?date_from=%s' % (category, date_from))
+                if response and isinstance(response, dict):
+                    items = response.get(category, [])
+                    if items:
+                        simklsync.upsert_items(items, table, 'last_completed_at', 'completed')
 
         if forced:
-            fetch_and_insert('movies', 'movies_completed')
-            fetch_and_insert('shows', 'shows_completed')
+            full_sync()
         else:
-            db_last_historyList = simklsync.last_sync('last_completed_at')
+            db_last = simklsync.last_sync('last_completed_at')
             historyListActivity = getHistoryListedActivity(activities)
-
-            if (historyListActivity - db_last_historyList >= 60) or historyListActivity == 0:  # Ensure at least 1-minute difference
-                log_utils.log(
-                    'Simkl Completed Sync Update...(local db latest "last_completed_at" = %s, simkl api latest "last_completed_at" = %s)' %
-                    (str(db_last_historyList), str(historyListActivity)),
-                    __name__, log_utils.LOGINFO
-                )
-
-                clr_simklsync = {
-                    'movies_plantowatch': False,
-                    'shows_plantowatch': False,
-                    'shows_watching': False,
-                    'shows_hold': False,
-                    'movies_dropped': False,
-                    'shows_dropped': False,
-                    'watched': False,
-                    'movies_completed': True,
-                    'shows_completed': True
-                }
-                simklsync.delete_tables(clr_simklsync)
-
-                fetch_and_insert('movies', 'movies_completed')
-                fetch_and_insert('shows', 'shows_completed')
-
+            if (historyListActivity - db_last >= 60) or historyListActivity == 0:
+                log_utils.log('Simkl (completed) Sync Update...(local db = %s, api = %s)' % (str(db_last), str(historyListActivity)), __name__, log_utils.LOGINFO)
+                if db_last == 0:
+                    full_sync()
+                else:
+                    delta_sync(db_last)
     except Exception as e:
-        log_utils.error('Error in sync_completed: %s' % str(e), log_utils.LOGINFO)
+        log_utils.error('Error in sync_completed: %s' % str(e))
 
 def sync_watching(activities=None, forced=False):
     try:
-        link = '/sync/all-items/%s/watching'
-        
-        def fetch_and_insert(category, table_name):
-            response = get_request(link % category)
-            if response and isinstance(response, dict):  # Ensure response is not None and is a dictionary
-                items = response.get(category, [])
+        def full_sync():
+            clr = {'movies_plantowatch': False, 'shows_plantowatch': False, 'shows_watching': True,
+                   'shows_hold': False, 'movies_dropped': False, 'shows_dropped': False,
+                   'watched': False, 'movies_completed': False, 'shows_completed': False}
+            simklsync.delete_tables(clr)
+            response = get_request('/sync/all-items/shows/watching')
+            if response and isinstance(response, dict):
+                items = response.get('shows', [])
                 if items:
-                    simklsync.insert_watching(items, table_name)
+                    simklsync.insert_watching(items, 'shows_watching', new_sync=False)
+
+        def delta_sync(db_ts):
+            date_from = _ts_to_iso(db_ts)
+            response = get_request('/sync/all-items/shows/watching?date_from=%s' % date_from)
+            if response and isinstance(response, dict):
+                items = response.get('shows', [])
+                if items:
+                    simklsync.upsert_items(items, 'shows_watching', 'last_watching_at', 'watching')
 
         if forced:
-            fetch_and_insert('shows', 'shows_watching')
+            full_sync()
         else:
-            db_last_watchList = simklsync.last_sync('last_watching_at')
+            db_last = simklsync.last_sync('last_watching_at')
             watching = getWatchingActivity(activities)
-            
-            if (watching - db_last_watchList >= 60) or watching == 0:  # Ensure at least 1-minute difference
-                log_utils.log(
-                    'Simkl (watching) Sync Update...(local db latest "watching_at" = %s, simkl api latest "last_watching_at" = %s)' %
-                    (str(db_last_watchList), str(watching)),
-                    __name__, log_utils.LOGINFO
-                )
-                
-                clr_simklsync = {
-                    'movies_plantowatch': False,
-                    'shows_plantowatch': False,
-                    'shows_watching': True,
-                    'shows_hold': False,
-                    'movies_dropped': False,
-                    'shows_dropped': False,
-                    'watched': False,
-                    'movies_completed': False,
-                    'shows_completed': False
-                }
-                simklsync.delete_tables(clr_simklsync)
-                
-                fetch_and_insert('shows', 'shows_watching')
-
+            if (watching - db_last >= 60) or watching == 0:
+                log_utils.log('Simkl (watching) Sync Update...(local db = %s, api = %s)' % (str(db_last), str(watching)), __name__, log_utils.LOGINFO)
+                if db_last == 0:
+                    full_sync()
+                else:
+                    delta_sync(db_last)
     except Exception as e:
-        log_utils.error('Error in sync_watching: %s' % str(e), log_utils.LOGINFO)
+        log_utils.error('Error in sync_watching: %s' % str(e))
         
 def sync_hold(activities=None, forced=False):
     try:
-        link = '/sync/all-items/%s/hold'
-        
-        def fetch_and_insert(category, table_name):
-            response = get_request(link % category)
-            if response and isinstance(response, dict):  # Ensure response is not None and is a dictionary
-                items = response.get(category, [])
+        def full_sync():
+            clr = {'movies_plantowatch': False, 'shows_plantowatch': False, 'shows_watching': False,
+                   'shows_hold': True, 'movies_dropped': False, 'shows_dropped': False,
+                   'watched': False, 'movies_completed': False, 'shows_completed': False}
+            simklsync.delete_tables(clr)
+            response = get_request('/sync/all-items/shows/hold')
+            if response and isinstance(response, dict):
+                items = response.get('shows', [])
                 if items:
-                    simklsync.insert_hold(items, table_name)
+                    simklsync.insert_hold(items, 'shows_hold', new_sync=False)
+
+        def delta_sync(db_ts):
+            date_from = _ts_to_iso(db_ts)
+            response = get_request('/sync/all-items/shows/hold?date_from=%s' % date_from)
+            if response and isinstance(response, dict):
+                items = response.get('shows', [])
+                if items:
+                    simklsync.upsert_items(items, 'shows_hold', 'last_hold_at', 'hold')
 
         if forced:
-            fetch_and_insert('shows', 'shows_hold')
+            full_sync()
         else:
-            db_last_watchList = simklsync.last_sync('last_hold_at')
+            db_last = simklsync.last_sync('last_hold_at')
             hold = getHoldActivity(activities)
-            
-            if (hold - db_last_watchList >= 60) or hold == 0:  # Ensure at least 1-minute difference
-                log_utils.log(
-                    'Simkl (hold) Sync Update...(local db latest "hold_at" = %s, simkl api latest "last_hold_at" = %s)' %
-                    (str(db_last_watchList), str(hold)),
-                    __name__, log_utils.LOGINFO
-                )
-                
-                clr_simklsync = {
-                    'movies_plantowatch': False,
-                    'shows_plantowatch': False,
-                    'shows_watching': False,
-                    'shows_hold': True,
-                    'movies_dropped': False,
-                    'shows_dropped': False,
-                    'watched': False,
-                    'movies_completed': False,
-                    'shows_completed': False
-                }
-                simklsync.delete_tables(clr_simklsync)
-                
-                fetch_and_insert('shows', 'shows_hold')
-
+            if (hold - db_last >= 60) or hold == 0:
+                log_utils.log('Simkl (hold) Sync Update...(local db = %s, api = %s)' % (str(db_last), str(hold)), __name__, log_utils.LOGINFO)
+                if db_last == 0:
+                    full_sync()
+                else:
+                    delta_sync(db_last)
     except Exception as e:
-        log_utils.error('Error in sync_hold: %s' % str(e), log_utils.LOGINFO)
+        log_utils.error('Error in sync_hold: %s' % str(e))
 
 def sync_dropped(activities=None, forced=False):
     try:
-        link = '/sync/all-items/%s/dropped'
-        
-        def fetch_and_insert(category, table_name):
-            response = get_request(link % category)
-            if response and isinstance(response, dict):  # Ensure response is not None and is a dictionary
-                items = response.get(category, [])
-                if items:
-                    simklsync.insert_dropped(items, table_name)
+        def full_sync():
+            clr = {'movies_plantowatch': False, 'shows_plantowatch': False, 'shows_watching': False,
+                   'shows_hold': False, 'movies_dropped': True, 'shows_dropped': True,
+                   'watched': False, 'movies_completed': False, 'shows_completed': False}
+            simklsync.delete_tables(clr)
+            for category, table in [('shows', 'shows_dropped'), ('movies', 'movies_dropped')]:
+                response = get_request('/sync/all-items/%s/dropped' % category)
+                if response and isinstance(response, dict):
+                    items = response.get(category, [])
+                    if items:
+                        simklsync.insert_dropped(items, table, new_sync=False)
+
+        def delta_sync(db_ts):
+            date_from = _ts_to_iso(db_ts)
+            for category, table in [('shows', 'shows_dropped'), ('movies', 'movies_dropped')]:
+                response = get_request('/sync/all-items/%s/dropped?date_from=%s' % (category, date_from))
+                if response and isinstance(response, dict):
+                    items = response.get(category, [])
+                    if items:
+                        simklsync.upsert_items(items, table, 'last_dropped_at', 'dropped')
 
         if forced:
-            fetch_and_insert('shows', 'shows_dropped')
-            fetch_and_insert('movies', 'movies_dropped')
+            full_sync()
         else:
-            db_last_dropped = simklsync.last_sync('last_dropped_at')
-            hold = getDroppedActivity(activities)
-            
-            if (hold - db_last_dropped >= 60) or hold == 0:  # Ensure at least 1-minute difference
-                log_utils.log(
-                    'Simkl (dropped) Sync Update...(local db latest "dropped_at" = %s, simkl api latest "last_dropped_at" = %s)' %
-                    (str(db_last_dropped), str(hold)),
-                    __name__, log_utils.LOGINFO
-                )
-                
-                clr_simklsync = {
-                    'movies_plantowatch': False,
-                    'shows_plantowatch': False,
-                    'shows_watching': False,
-                    'shows_hold': False,
-                    'movies_dropped': True,
-                    'shows_dropped': True,
-                    'watched': False,
-                    'movies_completed': False,
-                    'shows_completed': False
-                }
-                simklsync.delete_tables(clr_simklsync)
-                
-                fetch_and_insert('shows', 'shows_dropped')
-                fetch_and_insert('movies', 'movies_dropped')
-
+            db_last = simklsync.last_sync('last_dropped_at')
+            dropped_activity = getDroppedActivity(activities)
+            if (dropped_activity - db_last >= 60) or dropped_activity == 0:
+                log_utils.log('Simkl (dropped) Sync Update...(local db = %s, api = %s)' % (str(db_last), str(dropped_activity)), __name__, log_utils.LOGINFO)
+                if db_last == 0:
+                    full_sync()
+                else:
+                    delta_sync(db_last)
     except Exception as e:
-        log_utils.error('Error in sync_hold: %s' % str(e), log_utils.LOGINFO)
+        log_utils.error('Error in sync_dropped: %s' % str(e))
 
 
 def service_syncSeasons(): # season indicators and counts for watched shows ex. [['1', '2', '3'], {1: {'total': 8, 'watched': 8, 'unwatched': 0}, 2: {'total': 10, 'watched': 10, 'unwatched': 0}}]
@@ -1134,6 +1109,46 @@ def service_syncSeasons(): # season indicators and counts for watched shows ex. 
 		batchCacheSyncSeason(batch)
 	except: log_utils.error()
 
+def _merge_watched_movies(db_ts):
+	"""Fetch only movies changed since db_ts and merge into existing watched cache."""
+	try:
+		date_from = _ts_to_iso(db_ts)
+		delta = post_request('/sync/all-items/movies/completed?date_from=%s' % date_from)
+		if not delta: return
+		delta_movies = delta.get('movies', [])
+		if not delta_movies: return
+		delta_imdb = {str(i['movie']['ids'].get('imdb')) for i in delta_movies if i.get('movie', {}).get('ids', {}).get('imdb')}
+		existing = simklsync.cache_existing(syncMovies) or []
+		merged = [imdb for imdb in existing if imdb not in delta_imdb]
+		merged.extend(str(i['movie']['ids']['imdb']) for i in delta_movies if i.get('movie', {}).get('ids', {}).get('imdb'))
+		key = simklsync._hash_function(syncMovies, ())
+		simklsync.cache_insert(key, repr(merged))
+	except: log_utils.error()
+
+def _merge_watched_tvshows(db_ts):
+	"""Fetch only shows changed since db_ts and merge into existing watched cache."""
+	try:
+		date_from = _ts_to_iso(db_ts)
+		delta = post_request('/sync/all-items/shows/?extended=full&date_from=%s' % date_from)
+		if not delta: return
+		valid_statuses = {"watching", "completed", "hold", "dropped", "plantowatch"}
+		delta_indicators = [
+			(
+				{'imdb': s['show']['ids'].get('imdb'), 'tvdb': str(s['show']['ids'].get('tvdb', '')),
+				 'tmdb': str(s['show']['ids'].get('tmdb', '')), 'simkl': str(s['show']['ids'].get('simkl', ''))},
+				s['total_episodes_count'] - s['not_aired_episodes_count'],
+				[(season['number'], ep['number']) for season in s.get('seasons', []) for ep in season.get('episodes', [])]
+			)
+			for s in delta.get('shows', []) if s.get('status') in valid_statuses
+		]
+		delta_imdb = {i[0].get('imdb') for i in delta_indicators if i[0].get('imdb')}
+		existing = simklsync.cache_existing(syncTVShows) or []
+		merged = [i for i in existing if i[0].get('imdb') not in delta_imdb]
+		merged.extend(delta_indicators)
+		key = simklsync._hash_function(syncTVShows, ())
+		simklsync.cache_insert(key, repr(merged))
+	except: log_utils.error()
+
 def sync_watched(activities=None, forced=False):
 	try:
 		if forced:
@@ -1145,21 +1160,28 @@ def sync_watched(activities=None, forced=False):
 		else:
 			moviesWatchedActivity = getMoviesWatchedActivity(activities)
 			db_movies_last_watched = timeoutsyncMovies()
-			if (moviesWatchedActivity - db_movies_last_watched >= 30) or moviesWatchedActivity == 0: # do not sync unless 30secs more to allow for variation between simkl post and local db update.
-				log_utils.log('Simkl Watched Movie Sync Update...(local db latest "watched_at" = %s, simkl api latest "watched_at" = %s)' % \
-								(str(db_movies_last_watched), str(moviesWatchedActivity)), __name__, log_utils.LOGDEBUG)
-				cachesyncMovies()
+			if (moviesWatchedActivity - db_movies_last_watched >= 30) or moviesWatchedActivity == 0:
+				log_utils.log('Simkl Watched Movie Sync Update...(local db = %s, api = %s)' % (str(db_movies_last_watched), str(moviesWatchedActivity)), __name__, log_utils.LOGDEBUG)
+				if db_movies_last_watched == 0:
+					cachesyncMovies()
+				else:
+					_merge_watched_movies(db_movies_last_watched)
 			episodesWatchedActivity = getEpisodesWatchedActivity(activities)
 			if episodesWatchedActivity == 0:
 				episodesWatchedActivity = 10000000
 			db_last_syncTVShows = timeoutsyncTVShows()
 			db_last_syncSeasons = simklsync.last_sync('last_syncSeasons_at')
 			if any(episodesWatchedActivity > value for value in (db_last_syncTVShows, db_last_syncSeasons)):
-				log_utils.log('Simkl Watched Shows Sync Update...(local db latest "watched_at" = %s, simkl api latest "watched_at" = %s)' % \
-								(str(min(db_last_syncTVShows, db_last_syncSeasons)), str(episodesWatchedActivity)), __name__, log_utils.LOGDEBUG)
-				cachesyncTVShows()
-				control.sleep(5000)
-				service_syncSeasons() # syncs all watched shows season indicators and counts
+				older_ts = min(db_last_syncTVShows, db_last_syncSeasons)
+				log_utils.log('Simkl Watched Shows Sync Update...(local db = %s, api = %s)' % (str(older_ts), str(episodesWatchedActivity)), __name__, log_utils.LOGDEBUG)
+				if older_ts == 0:
+					cachesyncTVShows()
+					control.sleep(5000)
+					service_syncSeasons()
+				else:
+					_merge_watched_tvshows(older_ts)
+					control.sleep(2000)
+					service_syncSeasons()
 				simklsync.insert_syncSeasons_at()
 	except: log_utils.error()
 

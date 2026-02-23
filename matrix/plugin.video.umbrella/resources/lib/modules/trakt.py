@@ -268,7 +268,7 @@ def traktAuth(fromSettings=0):
 			except: pass
 			control.notification(message=40107, icon=trakt_icon)
 			if fromSettings == 1:
-				control.openSettings('8.0', 'plugin.video.umbrella')
+				control.openSettings('9.0', 'plugin.video.umbrella')
 			if not control.yesnoDialog('Do you want to set Trakt as your service for your watched and unwatched indicators?','','','Indicators', 'No', 'Yes'): return True
 			control.homeWindow.setProperty('umbrella.updateSettings', 'false')
 			control.setSetting('indicators.alt', '1')
@@ -276,7 +276,7 @@ def traktAuth(fromSettings=0):
 			control.setSetting('indicators', 'Trakt')
 			return True
 		if fromSettings == 1:
-				control.openSettings('8.0', 'plugin.video.umbrella')
+				control.openSettings('9.0', 'plugin.video.umbrella')
 		control.notification(message=40108, icon=trakt_icon)
 		return False
 	except:
@@ -307,7 +307,7 @@ def traktRevoke(fromSettings=0):
 				control.setSetting('indicators.alt', '0')
 				control.setSetting('indicators', 'Local')
 			if fromSettings == 1:
-				control.openSettings('8.0', 'plugin.video.umbrella')
+				control.openSettings('9.0', 'plugin.video.umbrella')
 				control.dialog.ok(control.lang(32315), control.lang(40109))
 		except:
 			log_utils.error()
@@ -335,7 +335,7 @@ def getTraktDeviceToken(traktDeviceCode):
 		line = '%s\n%s\n%s'
 		if control.setting('dialogs.useumbrelladialog') == 'true':
 			from resources.lib.modules import tools
-			trakt_qr = tools.make_qr(f"https://trakt.tv/activate?code={str(traktDeviceCode['user_code'])}")
+			trakt_qr = tools.make_qr(f"https://trakt.tv/activate?code={str(traktDeviceCode['user_code'])}", 'trakt_qr.png')
 			progressDialog = control.getProgressWindow(getLS(32073), trakt_qr, 1)
 			progressDialog.set_controls()
 			progressDialog.update(0, control.progress_line % (verification_url, user_code))

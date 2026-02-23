@@ -166,15 +166,43 @@ class Episodes:
 	def unfinished(self, url, create_directory=True, folderName=''):
 		self.list = []
 		try:
-			try: url = getattr(self, url + '_link')
-			except: pass
+			url = url or 'traktunfinished'
+			base_url = url.split('?')[0] if '?' in url else url
+			try: api_url = getattr(self, base_url + '_link')
+			except: api_url = url
 			items = traktsync.fetch_bookmarks(imdb='', ret_all=True, ret_type='episodes')
-			if trakt.getPausedActivity() > cache.timeout(self.trakt_episodes_list, url, self.trakt_user, self.lang, items):
-				self.list = cache.get(self.trakt_episodes_list, 0, url, self.trakt_user, self.lang, items)
-			else: self.list = cache.get(self.trakt_episodes_list, self.trakt_unfinished_hours, url, self.trakt_user, self.lang, items)
+			if trakt.getPausedActivity() > cache.timeout(self.trakt_episodes_list, api_url, self.trakt_user, self.lang, items):
+				self.list = cache.get(self.trakt_episodes_list, 0, api_url, self.trakt_user, self.lang, items)
+			else: self.list = cache.get(self.trakt_episodes_list, self.trakt_unfinished_hours, api_url, self.trakt_user, self.lang, items)
 			if self.list is None: self.list = []
 			self.list = sorted(self.list, key=lambda k: k['paused_at'], reverse=True)
-			if create_directory: self.episodeDirectory(self.list, unfinished=True, next=False, folderName=folderName)
+			if self.list and not self.showunaired:
+				self.list = [i for i in self.list if i.get('unaired', '') != 'true']
+			is_widget = 'plugin' not in control.infoLabel('Container.PluginName')
+			if self.list and is_widget and getSetting('enable.umbrellahidewatched') == 'true':
+				self.list = [i for i in self.list if str(i.get('playcount', '0')) != '1']
+			useNext = True
+			next_url = ''
+			page_limit = max(1, int(self.count) if self.count else 20)
+			if create_directory and getSetting('trakt.paginate.lists') == 'true' and self.list and len(self.list) > page_limit:
+				try:
+					q = dict(parse_qsl(urlsplit(url).query)) if '?' in url else {}
+					index = int(q.get('page', 1)) - 1
+				except:
+					index = 0
+				paginated_ids = [self.list[x:x + page_limit] for x in range(0, len(self.list), page_limit)]
+				total_pages = len(paginated_ids)
+				self.list = paginated_ids[index] if index < total_pages else (paginated_ids[0] if paginated_ids else [])
+				try:
+					if index + 1 < total_pages:
+						next_page = index + 2
+						next_url = 'plugin://plugin.video.umbrella/?action=episodesUnfinished&url=%s&page=%s&folderName=%s' % (
+							quote_plus('traktunfinished?limit=%s&page=%s' % (page_limit, next_page)),
+							str(next_page), quote_plus(folderName))
+				except: pass
+			for i in range(len(self.list)): self.list[i]['next'] = next_url
+			hasNext = bool(next_url)
+			if create_directory: self.episodeDirectory(self.list, unfinished=True, next=hasNext, folderName=folderName)
 			return self.list
 		except:
 			from resources.lib.modules import log_utils
@@ -234,13 +262,17 @@ class Episodes:
 	def calendar(self, url, folderName=''):
 		self.list = []
 		try:
-			try: url = getattr(self, url + '_link')
-			except: pass
-			isTraktHistory = (url.split('&page=')[0] in self.trakthistory_link)
-			if self.trakt_link in url and url == self.progress_link:
-				if trakt.getProgressActivity() > cache.timeout(self.trakt_progress_list, url, self.trakt_user, self.lang, self.trakt_directProgressScrape):
-					self.list = cache.get(self.trakt_progress_list, 0, url, self.trakt_user, self.lang, self.trakt_directProgressScrape)
-				else: self.list = cache.get(self.trakt_progress_list, self.trakt_progress_hours, url, self.trakt_user, self.lang, self.trakt_directProgressScrape)
+			url_param = url or 'progress'
+			base_url = url_param.split('?')[0] if url_param else 'progress'
+			try: url = getattr(self, base_url + '_link')
+			except: url = url_param
+			isTraktHistory = (url.split('&page=')[0] in self.trakthistory_link) if url else False
+			isProgressView = (base_url == 'progress')
+			if isProgressView or (self.trakt_link in str(url) and url == self.progress_link):
+				api_url = self.progress_link
+				if trakt.getProgressActivity() > cache.timeout(self.trakt_progress_list, api_url, self.trakt_user, self.lang, self.trakt_directProgressScrape):
+					self.list = cache.get(self.trakt_progress_list, 0, api_url, self.trakt_user, self.lang, self.trakt_directProgressScrape)
+				else: self.list = cache.get(self.trakt_progress_list, self.trakt_progress_hours, api_url, self.trakt_user, self.lang, self.trakt_directProgressScrape)
 				self.sort(type='progress')
 				if self.list is None: self.list = []
 				# place new season ep1's at top of list for 1 week
@@ -288,6 +320,26 @@ class Episodes:
 				self.list = cache.get(self.tvmaze_list, 1, url, False)
 			if self.list is None: self.list = []
 			hasNext = True if isTraktHistory else False
+			next_url = ''
+			if isProgressView and getSetting('trakt.paginate.lists') == 'true' and self.list and len(self.list) > max(1, int(self.count) if self.count else 20):
+				page_limit = max(1, int(self.count) if self.count else 20)
+				try:
+					q = dict(parse_qsl(urlsplit(url_param).query)) if '?' in url_param else {}
+					index = int(q.get('page', 1)) - 1
+				except:
+					index = 0
+				paginated_ids = [self.list[x:x + page_limit] for x in range(0, len(self.list), page_limit)]
+				total_pages = len(paginated_ids)
+				self.list = paginated_ids[index] if index < total_pages else (paginated_ids[0] if paginated_ids else [])
+				try:
+					if index + 1 < total_pages:
+						next_page = index + 2
+						next_url = 'plugin://plugin.video.umbrella/?action=calendar&url=%s&page=%s&folderName=%s' % (
+							quote_plus('progress?limit=%s&page=%s' % (page_limit, next_page)),
+							str(next_page), quote_plus(folderName))
+						hasNext = True
+				except: pass
+			for i in range(len(self.list)): self.list[i]['next'] = next_url
 			self.episodeDirectory(self.list, unfinished=False, next=hasNext, folderName=folderName)
 			return self.list
 		except:

@@ -29,6 +29,12 @@ class Navigator:
 		self.simklIndicators = simkl.getSimKLIndicatorsInfo()
 		self.tmdbCredentials = getTMDbV4CredentialsInfo()
 		self.simkltoken = getSetting('simkltoken') != ''
+		self.alldebridCredentials = getSetting('alldebridtoken') != ''
+		self.easynewsCredentials = getSetting('easynews.user') != ''
+		self.offcloudCredentials = getSetting('offcloudtoken') != ''
+		self.torboxCredentials = getSetting('torboxtoken') != ''
+		self.premiumizeCredentials = getSetting('premiumizetoken') != ''
+		self.realdebridCredentials = getSetting('realdebridtoken') != ''
 		self.tmdbSessionID = getSetting('tmdb.sessionid') != ''
 		self.reuselanguageinv = getSetting('reuse.languageinvoker') == 'true'
 		self.highlight_color = getSetting('highlight.color')
@@ -165,11 +171,12 @@ class Navigator:
 		# TMDb User Lists
 		if getSetting('tmdb.v4.accesstoken') != '':
 			self.addDirectoryItem('TMDb User Lists','tmdbUserListsMovies&folderName=%s' % quote_plus('TMDb User Lists'),'tmdb.png' if self.iconLogos else 'movies.png','DefaultMovies.png')
-		# if self.simkltoken:
-		# 	self.addDirectoryItem('Simkl Completed', 'movies&url=simklhistory&folderName=%s' % quote_plus('Simkl Completed'), 'simkl.png' ,'simkl.png')
-		# 		#self.addDirectoryItem(40549, 'movies&url=https://api.simkl.com/sync/all-items/movies/plantowatch?&folderName=%s' % quote_plus(getLS(40549)), 'simkl.png' ,'simkl.png')
-		# 	self.addDirectoryItem('Simkl Plan to Watch', 'movies&url=simklwatchlist&folderName=%s' % 'Simkl Plan to Watch', 'simkl.png', 'simkl.png')
-		# 	self.addDirectoryItem('Simkl Dropped', 'movies&url=simkldropped&folderName=%s' % 'Simkl Dropped', 'simkl.png', 'simkl.png')
+		if self.simkltoken:
+			if getMenuEnabled('navi.movie.simkl.completed'):
+				self.addDirectoryItem(40548, 'movies&url=simklhistory&folderName=%s' % quote_plus(getLS(40548)), 'simkl.png', 'simkl.png')
+			if getMenuEnabled('navi.movie.simkl.plantowatch'):
+				self.addDirectoryItem(40550, 'movies&url=simklwatchlist&folderName=%s' % quote_plus(getLS(40550)), 'simkl.png', 'simkl.png')
+			self.addDirectoryItem('Simkl Dropped', 'movies&url=simkldropped&folderName=%s' % quote_plus('Simkl Dropped'), 'simkl.png', 'simkl.png')
 		if self.traktCredentials:
 			if self.traktIndicators:
 				self.addDirectoryItem(35308, 'moviesUnfinished&url=traktunfinished&folderName=%s' % quote_plus(getLS(35308)), 'trakt.png', 'trakt.png', queue=True)
@@ -203,13 +210,13 @@ class Navigator:
 			self.addDirectoryItem(32443 if self.indexLabels else 32442, 'tvshows&url=trakttrending&folderName=%s' % quote_plus(getLS(32443 if self.indexLabels else 32442)), 'trakt.png' if self.iconLogos else 'trending.png', 'DefaultTVShows.png')
 		if getMenuEnabled('navi.tv.trakt.trendingrecent'):
 			self.addDirectoryItem(40388 if self.indexLabels else 40389, 'tvshows&url=trakttrending_recent&folderName=%s' % quote_plus(getLS(40388 if self.indexLabels else 40389)), 'trakt.png' if self.iconLogos else 'trending.png', 'DefaultTVShows.png')
-		# if self.simkltoken:
-		# 	if getMenuEnabled('navi.tv.simkl.trendingtoday'):
-		# 		self.addDirectoryItem(40350 if self.indexLabels else 40351, 'simklTvshows&url=simkltrendingtoday&folderName=%s' % quote_plus(getLS(40350 if self.indexLabels else 40351)), 'simkl.png' if self.iconLogos else 'trending.png', 'DefaultTVShows.png')
-		# 	if getMenuEnabled('navi.tv.simkl.trendingweek'):
-		# 		self.addDirectoryItem(40352 if self.indexLabels else 40353, 'simklTvshows&url=simkltrendingweek&folderName=%s' % quote_plus(getLS(40352 if self.indexLabels else 40353)), 'simkl.png' if self.iconLogos else 'trending.png', 'DefaultTVShows.png')
-		# 	if getMenuEnabled('navi.tv.simkl.trendingweek'):	
-		# 		self.addDirectoryItem(40354 if self.indexLabels else 40355, 'simklTvshows&url=simkltrendingmonth&folderName=%s' % quote_plus(getLS(40354 if self.indexLabels else 40355)), 'simkl.png' if self.iconLogos else 'trending.png', 'DefaultTVShows.png')
+		if self.simkltoken:
+			if getMenuEnabled('navi.tv.simkl.trendingtoday'):
+				self.addDirectoryItem(40350 if self.indexLabels else 40351, 'simklTvshows&url=simkltrendingtoday&folderName=%s' % quote_plus(getLS(40350 if self.indexLabels else 40351)), 'simkl.png' if self.iconLogos else 'trending.png', 'DefaultTVShows.png')
+			if getMenuEnabled('navi.tv.simkl.trendingweek'):
+				self.addDirectoryItem(40352 if self.indexLabels else 40353, 'simklTvshows&url=simkltrendingweek&folderName=%s' % quote_plus(getLS(40352 if self.indexLabels else 40353)), 'simkl.png' if self.iconLogos else 'trending.png', 'DefaultTVShows.png')
+			if getMenuEnabled('navi.tv.simkl.trendingmonth'):
+				self.addDirectoryItem(40354 if self.indexLabels else 40355, 'simklTvshows&url=simkltrendingmonth&folderName=%s' % quote_plus(getLS(40354 if self.indexLabels else 40355)), 'simkl.png' if self.iconLogos else 'trending.png', 'DefaultTVShows.png')
 		if getMenuEnabled('navi.tv.tmdb.trendingday'):
 			self.addDirectoryItem(40330 if self.indexLabels else 32442, 'tvshows&url=tmdbrecentday&folderName=%s' % quote_plus(getLS(40354 if self.indexLabels else 40355)), 'tmdb.png' if self.iconLogos else 'trending.png', 'DefaultTVShows.png')
 		if getMenuEnabled('navi.tv.tmdb.trendingweek'):
@@ -268,15 +275,14 @@ class Navigator:
 		# TMDb User Lists
 		if getSetting('tmdb.v4.accesstoken') != '':
 			self.addDirectoryItem('TMDb User Lists','tmdbUserListsTV&folderName=%s' % quote_plus('TMDb User Lists'),'tmdb.png' if self.iconLogos else 'tvshows.png','DefaultTVShows.png')
-		# if self.simklCredentials:
-		# 	if self.simklIndicators:
-		# 		self.addDirectoryItem('Simkl Progress Episodes', 'simkl_calendar&url=/sync/all-items/shows/watching&folderName=%s' % quote_plus("Simkl Progress Episodes"), 'simkl.png', 'simkl.png', queue=True)
-		# 	#self.addDirectoryItem('Simkl Progress Shows', 'simkl_shows_progress&url=/sync/all-items/sync/movies/watching?extended=full&folderName=%s' % quote_plus("Simkl Progress Shows"), 'simkl.png', 'simkl.png', queue=True)
-		# 	self.addDirectoryItem('Simkl Watching', 'tvshows&url=simklwatching&folderName=%s' % quote_plus("Simkl Watching"), 'simkl.png', 'simkl.png', queue=True)
-		# 	self.addDirectoryItem('Simkl Plan to Watch', 'tvshows&url=simklwatchlist&folderName=%s' % quote_plus('Simkl Plan to Watch'), 'simkl.png', 'simkl.png')
-		# 	self.addDirectoryItem('Simkl On Hold', 'tvshows&url=simklonhold&folderName=%s' % quote_plus('Simkl On Hold'), 'simkl.png', 'simkl.png')
-		# 	self.addDirectoryItem('Simkl Completed', 'tvshows&url=simklhistory&folderName=%s' % quote_plus('Simkl Completed'), 'simkl.png' ,'simkl.png')
-		# 	self.addDirectoryItem('Simkl Dropped', 'tvshows&url=simkldropped&folderName=%s' % quote_plus('Simkl Dropped'), 'simkl.png', 'simkl.png')
+		if self.simklCredentials:
+			if self.simklIndicators:
+				self.addDirectoryItem('Simkl Progress Episodes', 'simkl_calendar&url=/sync/all-items/shows/watching&folderName=%s' % quote_plus("Simkl Progress Episodes"), 'simkl.png', 'simkl.png', queue=True)
+			self.addDirectoryItem('Simkl Watching', 'tvshows&url=simklwatching&folderName=%s' % quote_plus("Simkl Watching"), 'simkl.png', 'simkl.png', queue=True)
+			self.addDirectoryItem('Simkl Plan to Watch', 'tvshows&url=simklwatchlist&folderName=%s' % quote_plus('Simkl Plan to Watch'), 'simkl.png', 'simkl.png')
+			self.addDirectoryItem('Simkl On Hold', 'tvshows&url=simklonhold&folderName=%s' % quote_plus('Simkl On Hold'), 'simkl.png', 'simkl.png')
+			self.addDirectoryItem('Simkl Completed', 'tvshows&url=simklhistory&folderName=%s' % quote_plus('Simkl Completed'), 'simkl.png', 'simkl.png')
+			self.addDirectoryItem('Simkl Dropped', 'tvshows&url=simkldropped&folderName=%s' % quote_plus('Simkl Dropped'), 'simkl.png', 'simkl.png')
 			
 		if self.traktCredentials:
 			if self.traktIndicators:
@@ -392,12 +398,13 @@ class Navigator:
 		#-- Sorting and Filtering - 4
 		self.addDirectoryItem(40162, 'tools_openSettings&query=6.0', 'tools.png', 'DefaultAddonService.png', isFolder=False)
 		#-- Accounts - 7
-		self.addDirectoryItem(32044, 'tools_openSettings&query=9.0', 'tools.png', 'DefaultAddonService.png', isFolder=False)
+		self.addDirectoryItem(32044, 'tools_openSettings&query=10.0', 'tools.png', 'DefaultAddonService.png', isFolder=False)
 		#-- Providers - 
-		self.addDirectoryItem(40452, 'tools_openSettings&query=10.0', 'tools.png', 'DefaultAddonService.png', isFolder=False)
-		self.addDirectoryItem(40124, 'tools_openSettings&query=11.0', 'tools.png', 'DefaultAddonService.png', isFolder=False)
+		self.addDirectoryItem(40452, 'tools_openSettings&query=11.0', 'tools.png', 'DefaultAddonService.png', isFolder=False)
+		self.addDirectoryItem(40124, 'tools_openSettings&query=12.0', 'tools.png', 'DefaultAddonService.png', isFolder=False)
+		self.addDirectoryItem(40611, 'tools_openSettings&query=8.0', 'tools.png', 'DefaultAddonService.png', isFolder=False)
 		#self.addDirectoryItem(40559, 'tools_openSettings&query=9.0', 'tools.png', 'DefaultAddonService.png', isFolder=False)
-		self.addDirectoryItem(40123, 'tools_openSettings&query=8.0', 'tools.png', 'DefaultAddonService.png', isFolder=False)
+		self.addDirectoryItem(40123, 'tools_openSettings&query=9.0', 'tools.png', 'DefaultAddonService.png', isFolder=False)
 		if self.simklCredentials: self.addDirectoryItem(40551, 'tools_simklToolsNavigator&folderName=%s' % quote_plus(getLS(40552)), 'tools.png', 'DefaultAddonService.png', isFolder=True)
 		if self.traktCredentials: self.addDirectoryItem(35057, 'tools_traktToolsNavigator&folderName=%s' % quote_plus(getLS(40461)), 'tools.png', 'DefaultAddonService.png', isFolder=True)
 		#-- Navigation - 1
@@ -405,9 +412,9 @@ class Navigator:
 		#-- Playback - 3
 		self.addDirectoryItem(32045, 'tools_openSettings&query=5.0', 'tools.png', 'DefaultAddonService.png', isFolder=False)
 		#-- Downloads - 10
-		self.addDirectoryItem(32048, 'tools_openSettings&query=13.0', 'tools.png', 'DefaultAddonService.png', isFolder=False)
+		self.addDirectoryItem(32048, 'tools_openSettings&query=14.0', 'tools.png', 'DefaultAddonService.png', isFolder=False)
 		#-- Subtitles - 11
-		self.addDirectoryItem(32046, 'tools_openSettings&query=14.0', 'tools.png', 'DefaultAddonService.png', isFolder=False)
+		self.addDirectoryItem(32046, 'tools_openSettings&query=15.0', 'tools.png', 'DefaultAddonService.png', isFolder=False)
 		self.addDirectoryItem(32556, 'library_Navigator&folderName=%s' % quote_plus(getLS(32541)), 'tools.png', 'DefaultAddonService.png', isFolder=True)
 		self.addDirectoryItem(32049, 'tools_viewTypesNavigator', 'settings.png', 'DefaultAddonService.png', isFolder=True)
 		self.addDirectoryItem(32361, 'tools_resetViewTypes', 'settings.png', 'DefaultAddonService.png', isFolder=False)
@@ -516,13 +523,13 @@ class Navigator:
 
 	def premium_services(self, folderName=''):
 		if self.useContainerTitles: control.setContainerName(folderName)
-		if getMenuEnabled('navi.alldebrid'): self.addDirectoryItem(40059, 'ad_ServiceNavigator&folderName=%s' % quote_plus(getLS(40059)), 'alldebrid.png', 'alldebrid.png')
-		if getMenuEnabled('navi.easynews'): self.addDirectoryItem(32327, 'en_ServiceNavigator&folderName=%s' % quote_plus(getLS(32327)), 'easynews.png', 'easynews.png')
-		if getMenuEnabled('navi.offcloud'): self.addDirectoryItem(40540, 'oc_ServiceNavigator&folderName=%s' % quote_plus(getLS(40540)), 'offcloud.png', 'offcloud.png')
+		if getMenuEnabled('navi.alldebrid') and self.alldebridCredentials: self.addDirectoryItem(40059, 'ad_ServiceNavigator&folderName=%s' % quote_plus(getLS(40059)), 'alldebrid.png', 'alldebrid.png')
+		if getMenuEnabled('navi.easynews') and self.easynewsCredentials: self.addDirectoryItem(32327, 'en_ServiceNavigator&folderName=%s' % quote_plus(getLS(32327)), 'easynews.png', 'easynews.png')
+		if getMenuEnabled('navi.offcloud') and self.offcloudCredentials: self.addDirectoryItem(40540, 'oc_ServiceNavigator&folderName=%s' % quote_plus(getLS(40540)), 'offcloud.png', 'offcloud.png')
 		#if getMenuEnabled('navi.furk'): self.addDirectoryItem('Furk.net', 'furk_ServiceNavigator', 'furk.png', 'furk.png')
-		if getMenuEnabled('navi.premiumize'): self.addDirectoryItem(40057, 'pm_ServiceNavigator&folderName=%s' % quote_plus(getLS(40057)), 'premiumize.png', 'premiumize.png')
-		if getMenuEnabled('navi.realdebrid'): self.addDirectoryItem(40058, 'rd_ServiceNavigator&folderName=%s' % quote_plus(getLS(40058)), 'realdebrid.png', 'realdebrid.png')
-		if getMenuEnabled('navi.torbox'): self.addDirectoryItem(40529, 'tb_ServiceNavigator&folderName=%s' % quote_plus(getLS(35539)), 'torbox.png', 'torbox.png')
+		if getMenuEnabled('navi.premiumize') and self.premiumizeCredentials: self.addDirectoryItem(40057, 'pm_ServiceNavigator&folderName=%s' % quote_plus(getLS(40057)), 'premiumize.png', 'premiumize.png')
+		if getMenuEnabled('navi.realdebrid') and self.realdebridCredentials: self.addDirectoryItem(40058, 'rd_ServiceNavigator&folderName=%s' % quote_plus(getLS(40058)), 'realdebrid.png', 'realdebrid.png')
+		if getMenuEnabled('navi.torbox') and self.torboxCredentials: self.addDirectoryItem(40529, 'tb_ServiceNavigator&folderName=%s' % quote_plus(getLS(35539)), 'torbox.png', 'torbox.png')
 		self.endDirectory()
 
 	def alldebrid_service(self, folderName=''):
@@ -532,7 +539,7 @@ class Navigator:
 			self.addDirectoryItem('All-Debrid: Transfers', 'ad_Transfers', 'alldebrid.png', 'DefaultAddonService.png')
 			self.addDirectoryItem('All-Debrid: Account Info', 'ad_AccountInfo', 'alldebrid.png', 'DefaultAddonService.png', isFolder=False)
 		else:
-			self.addDirectoryItem('[I]Please setup in Settings.[/I]', 'tools_openSettings&query=9.0', 'alldebrid.png', 'DefaultAddonService.png', isFolder=False)
+			self.addDirectoryItem('[I]Please setup in Settings.[/I]', 'tools_openSettings&query=10.0', 'alldebrid.png', 'DefaultAddonService.png', isFolder=False)
 		self.endDirectory()
 
 	def easynews_service(self, folderName=''):
@@ -541,7 +548,7 @@ class Navigator:
 			self.addDirectoryItem('Easy News: Search', 'en_Search', 'search.png', 'DefaultAddonsSearch.png')
 			self.addDirectoryItem('Easy News: Account Info', 'en_AccountInfo', 'easynews.png', 'DefaultAddonService.png', isFolder=False)
 		else:
-			self.addDirectoryItem('[I]Please setup in Settings.[/I]', 'tools_openSettings&query=9.1', 'easynews.png', 'DefaultAddonService.png', isFolder=False)
+			self.addDirectoryItem('[I]Please setup in Settings.[/I]', 'tools_openSettings&query=10.1', 'easynews.png', 'DefaultAddonService.png', isFolder=False)
 		self.endDirectory()
 
 	def offcloud_service(self):
@@ -550,7 +557,7 @@ class Navigator:
 			self.addDirectoryItem('Offcloud: Account Info', 'oc_AccountInfo', 'offcloud.png', 'DefaultAddonService.png', isFolder=False)
 			self.addDirectoryItem('Offcloud: Clear Cloud Storage', 'oc_UserCloudClear', 'offcloud.png', 'DefaultAddonService.png', isFolder=False)
 		else:
-			self.addDirectoryItem('[I]Please setup in Accounts[/I]', 'tools_openSettings&query=9.2', 'offcloud.png', 'DefaultAddonService.png', isFolder=False)
+			self.addDirectoryItem('[I]Please setup in Accounts[/I]', 'tools_openSettings&query=10.2', 'offcloud.png', 'DefaultAddonService.png', isFolder=False)
 		self.endDirectory()
 
 	def torbox_service(self):
@@ -559,7 +566,7 @@ class Navigator:
 			self.addDirectoryItem('TorBox: Account Info', 'tb_AccountInfo', 'torbox.png', 'DefaultAddonService.png', isFolder=False)
 			self.addDirectoryItem('TorBox: Delete All Cloud Files', 'tb_DeleteCloud', 'torbox.png', 'DefaultAddonService.png', isFolder=False)
 		else:
-			self.addDirectoryItem('[I]Please setup in Accounts[/I]', 'tools_openSettings&query=9.6', 'torbox.png', 'DefaultAddonService.png', isFolder=False)
+			self.addDirectoryItem('[I]Please setup in Accounts[/I]', 'tools_openSettings&query=10.6', 'torbox.png', 'DefaultAddonService.png', isFolder=False)
 		self.endDirectory()
 
 	def premiumize_service(self, folderName=''):
@@ -569,7 +576,7 @@ class Navigator:
 			self.addDirectoryItem('Premiumize: Transfers', 'pm_Transfers', 'premiumize.png', 'DefaultAddonService.png')
 			self.addDirectoryItem('Premiumize: Account Info', 'pm_AccountInfo', 'premiumize.png', 'DefaultAddonService.png', isFolder=False)
 		else:
-			self.addDirectoryItem('[I]Please setup in Settings.[/I]', 'tools_openSettings&query=9.4', 'premiumize.png', 'DefaultAddonService.png', isFolder=False)
+			self.addDirectoryItem('[I]Please setup in Settings.[/I]', 'tools_openSettings&query=10.4', 'premiumize.png', 'DefaultAddonService.png', isFolder=False)
 		self.endDirectory()
 
 	def realdebrid_service(self, folderName=''):
@@ -579,7 +586,7 @@ class Navigator:
 			self.addDirectoryItem('Real-Debrid: My Downloads', 'rd_MyDownloads&query=1', 'realdebrid.png', 'DefaultAddonService.png')
 			self.addDirectoryItem('Real-Debrid: Account Info', 'rd_AccountInfo', 'realdebrid.png', 'DefaultAddonService.png', isFolder=False )
 		else:
-			self.addDirectoryItem('[I]Please setup in Settings.[/I]', 'tools_openSettings&query=9.5', 'realdebrid.png', 'DefaultAddonService.png', isFolder=False)
+			self.addDirectoryItem('[I]Please setup in Settings.[/I]', 'tools_openSettings&query=10.5', 'realdebrid.png', 'DefaultAddonService.png', isFolder=False)
 		self.endDirectory()
 
 	def search(self, folderName=''):

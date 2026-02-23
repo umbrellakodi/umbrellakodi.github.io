@@ -704,6 +704,64 @@ def delete_tables(tables):
 		dbcur.close() ; dbcon.close()
 	return cleared
 
+def upsert_items(items, table, service_key, table_type='plantowatch'):
+	"""Delete each item by ID from ALL status tables, then insert into target table.
+	Per Simkl dev recommendation for date_from delta syncing — avoids full table wipes."""
+	all_status_tables = [
+		'movies_plantowatch', 'shows_plantowatch', 'shows_watching',
+		'shows_hold', 'movies_dropped', 'shows_dropped',
+		'movies_completed', 'shows_completed'
+	]
+	try:
+		dbcon = get_connection()
+		dbcur = get_connection_cursor(dbcon)
+		dbcur.execute('''CREATE TABLE IF NOT EXISTS service (setting TEXT, value TEXT, UNIQUE(setting));''')
+		if table_type == 'watching':
+			dbcur.execute('''CREATE TABLE IF NOT EXISTS %s (title TEXT, year TEXT, premiered TEXT, imdb TEXT, tmdb TEXT, tvdb TEXT, simkl TEXT, rating FLOAT, votes INTEGER, listed_at TEXT, last_watched_at TEXT, UNIQUE(imdb, tmdb, tvdb, simkl));''' % table)
+		else:
+			dbcur.execute('''CREATE TABLE IF NOT EXISTS %s (title TEXT, year TEXT, premiered TEXT, imdb TEXT, tmdb TEXT, tvdb TEXT, simkl TEXT, rating FLOAT, votes INTEGER, listed_at TEXT, UNIQUE(imdb, tmdb, tvdb, simkl));''' % table)
+		for i in items:
+			item = i.get('show') or i.get('movie')
+			if not item: continue
+			ids = item.get('ids', {})
+			simkl_id = str(ids.get('simkl', ''))
+			imdb = ids.get('imdb', '')
+			for t in all_status_tables:
+				try:
+					if simkl_id:
+						dbcur.execute('DELETE FROM %s WHERE simkl=?' % t, (simkl_id,))
+					elif imdb:
+						dbcur.execute('DELETE FROM %s WHERE imdb=?' % t, (imdb,))
+				except: pass
+			title = item.get('title', '')
+			year = str(item.get('year', '') or '')
+			try: premiered = item.get('first_aired', '').split('T')[0] if 'show' in i else ''
+			except: premiered = ''
+			tmdb = str(ids.get('tmdb', ''))
+			tvdb = str(ids.get('tvdb', ''))
+			simkl = str(ids.get('simkl', ''))
+			rating = item.get('rating', '')
+			votes = item.get('votes', '')
+			dstr = i.get('added_to_watchlist_at') or datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%S.000Z")
+			listed_at = dstr
+			try:
+				if table_type == 'watching':
+					last_watched_at = i.get('last_watched_at', '')
+					dbcur.execute('''INSERT OR REPLACE INTO %s Values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''' % table,
+						(title, year, premiered, imdb, tmdb, tvdb, simkl, rating, votes, listed_at, last_watched_at))
+				else:
+					dbcur.execute('''INSERT OR REPLACE INTO %s Values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''' % table,
+						(title, year, premiered, imdb, tmdb, tvdb, simkl, rating, votes, listed_at))
+			except Exception as e:
+				log_utils.log("upsert_items error on item: %s. Exception: %s" % (str(i), str(e)), 1)
+		timestamp = datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%S.000Z")
+		dbcur.execute('''INSERT OR REPLACE INTO service Values (?, ?)''', (service_key, timestamp))
+		dbcur.connection.commit()
+	except:
+		log_utils.error()
+	finally:
+		dbcur.close(); dbcon.close()
+
 def get_connection(setRowFactory=False):
 	if not existsPath(dataPath): makeFile(dataPath)
 	dbcon = db.connect(simKLSyncFile, timeout=60)

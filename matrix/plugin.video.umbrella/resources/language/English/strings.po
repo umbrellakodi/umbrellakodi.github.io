@@ -5382,3 +5382,11 @@ msgstr ""
 msgctxt "#40609"
 msgid "TMDB v4"
 msgstr ""
+
+msgctxt "#40610"
+msgid "Simkl service sync interval (in minutes)"
+msgstr ""
+
+msgctxt "#40611"
+msgid "[B]SETTINGS[/B] : SIMKL"
+msgstr ""

@@ -111,7 +111,7 @@ def authenticate(fromSettings=0):
 		try:
 			if control.setting('dialogs.useumbrelladialog') == 'true':
 				from resources.lib.modules import tools
-				tmdb_qr = tools.make_qr(approval_url)
+				tmdb_qr = tools.make_qr(approval_url, 'tmdb_qr.png')
 				progressDialog = control.getProgressWindow('TMDB v4 Authentication', tmdb_qr, 1)
 				progressDialog.set_controls()
 				progressDialog.update(0, message)

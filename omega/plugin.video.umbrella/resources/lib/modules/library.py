@@ -308,7 +308,7 @@ class lib_tools:
 					control.setSetting('library.autoimportlists.number', str(total))
 				except: pass
 			if fromSettings == True:
-				control.openSettings('12.2', 'plugin.video.umbrella')
+				control.openSettings('13.2', 'plugin.video.umbrella')
 				
 		except:
 			from resources.lib.modules import log_utils
@@ -325,7 +325,7 @@ class lib_tools:
 			window.run()
 			del window
 			if fromSettings == True:
-				control.openSettings('12.2', 'plugin.video.umbrella')
+				control.openSettings('13.2', 'plugin.video.umbrella')
 				
 		except:
 			from resources.lib.modules import log_utils
@@ -337,7 +337,7 @@ class lib_tools:
 			if not allMDBItems:
 				control.notification(message='No MDBList lists found. Check your API key in settings.')
 				if fromSettings == True:
-					control.openSettings('12.2', 'plugin.video.umbrella')
+					control.openSettings('13.2', 'plugin.video.umbrella')
 				return
 			for z in allMDBItems:
 				z['selected'] = ''
@@ -346,7 +346,7 @@ class lib_tools:
 			window.run()
 			del window
 			if fromSettings == True:
-				control.openSettings('12.2', 'plugin.video.umbrella')
+				control.openSettings('13.2', 'plugin.video.umbrella')
 		except:
 			from resources.lib.modules import log_utils
 			log_utils.error()
@@ -394,7 +394,7 @@ class lib_tools:
 				select = control.selectDialog([i.get('name') for i in items], heading='Select Service to Import From')
 				if select == -1:
 					if fromSettings == True:
-						return control.openSettings('12.2', 'plugin.video.umbrella')
+						return control.openSettings('13.2', 'plugin.video.umbrella')
 					return
 				selected_url = items[select].get('url')
 			if selected_url == 'trakt':
@@ -416,7 +416,7 @@ class lib_tools:
 			control.setSetting('library.autoimportlists_last', str(last_service_setting))
 			lib_tools().updateSettings()
 			if fromSettings == True:
-				control.openSettings('12.2', 'plugin.video.umbrella')
+				control.openSettings('13.2', 'plugin.video.umbrella')
 				
 		except:
 			from resources.lib.modules import log_utils
@@ -836,7 +836,7 @@ class lib_tools:
 			if not allMDBItems:
 				control.notification(message='No MDBList lists found. Check your API key in settings.')
 				if fromSettings:
-					control.openSettings('12.2', 'plugin.video.umbrella')
+					control.openSettings('13.2', 'plugin.video.umbrella')
 				return
 			try:
 				dbcon = database.connect(control.libcacheFile)
@@ -862,7 +862,7 @@ class lib_tools:
 					control.setSetting('library.autoimportlists.number', str(total))
 				except: pass
 			if fromSettings:
-				control.openSettings('12.2', 'plugin.video.umbrella')
+				control.openSettings('13.2', 'plugin.video.umbrella')
 		except:
 			from resources.lib.modules import log_utils
 			log_utils.error()
@@ -927,7 +927,7 @@ class lib_tools:
 				select = control.selectDialog([i.get('name') for i in items], heading='Select Service to Manage')
 				if select == -1:
 					if fromSettings:
-						return control.openSettings('12.2', 'plugin.video.umbrella')
+						return control.openSettings('13.2', 'plugin.video.umbrella')
 					return
 				selected_url = items[select].get('url')
 			if selected_url == 'trakt':

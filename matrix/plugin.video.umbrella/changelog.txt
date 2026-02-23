@@ -1,2 +1,5 @@
-[B]Update - v6.7.464 - Feb 23rd, 2026[/B]
---[Fix] Changed episode artwork to use a try catch to prevent errors stopping episode lists from loading when artwork was not set.
+[B]Update - v6.7.465 - Feb 23rd, 2026[/B]
+--[Change] Re-added Simkl. Please remember whatever service is set in Settings:General for indicators will be the one used for in progress episodes and watched and unwatched indicators and counters.
+--[Change] Added pagination to Progress TV Shows and Progress Episodes.
+--[Change] Made list artwork set in tmdb v4 appear as list artwork for lists from tmdb v4.
+--[Change] Made premium services only show the services you have enabled.

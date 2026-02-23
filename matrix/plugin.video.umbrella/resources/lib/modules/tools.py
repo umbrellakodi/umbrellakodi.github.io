@@ -21,6 +21,7 @@ FormatDate = '%Y-%m-%d'
 FormatTime = '%H:%M:%S'
 FormatTimeShort = '%H:%M'
 service_syncInterval = int(getSetting('background.service.syncInterval')) if getSetting('background.service.syncInterval') else 15
+simkl_syncInterval = int(getSetting('simkl.service.syncInterval')) if getSetting('simkl.service.syncInterval') else 30
 
 # def datetime_from_string(self, string, format=FormatDateTime):
 	# try:
@@ -202,6 +203,7 @@ def setIndicatorService():
 		log_utils.error()
 
 def services_syncs():
+	last_simkl_sync = 0
 	while not control.monitor.abortRequested():
 		control.sleep(5000) # wait 5sec in case of device wake from sleep
 		try:
@@ -229,20 +231,23 @@ def services_syncs():
 			trakt.sync_popular_lists()
 			trakt.sync_trending_lists()
 		if internets and simkl.getSimKLCredentialsInfo():
-			activities = simkl.get_request('/sync/activities')
-			activities = json.dumps(activities)
-			from resources.lib.modules import log_utils
-			log_utils.log('SimKl Sync Service is running.', 1)
-			#if getSetting('bookmarks') == 'true' and getSetting('resume.source') == '2': simkl does not have playback progress currently
-			#	simkl.sync_playbackProgress(activities)
-			simkl.sync_watchedProgress(activities)
-			if getSetting('indicators.alt') == '2':
-				simkl.sync_watched(activities) #
-			simkl.sync_plantowatch(activities)
-			simkl.sync_watching(activities)
-			simkl.sync_completed(activities)
-			simkl.sync_dropped(activities)
-			simkl.sync_hold(activities)
+			current_time = time.time()
+			if (current_time - last_simkl_sync) >= (60 * simkl_syncInterval):
+				activities = simkl.get_request('/sync/activities')
+				activities = json.dumps(activities)
+				from resources.lib.modules import log_utils
+				log_utils.log('SimKl Sync Service is running.', 1)
+				#if getSetting('bookmarks') == 'true' and getSetting('resume.source') == '2': simkl does not have playback progress currently
+				#	simkl.sync_playbackProgress(activities)
+				simkl.sync_watchedProgress(activities)
+				if getSetting('indicators.alt') == '2':
+					simkl.sync_watched(activities) #
+				simkl.sync_plantowatch(activities)
+				simkl.sync_watching(activities)
+				simkl.sync_completed(activities)
+				simkl.sync_dropped(activities)
+				simkl.sync_hold(activities)
+				last_simkl_sync = current_time
 		if control.monitor.waitForAbort(60*service_syncInterval): break
 
 def originCountry_Select():
@@ -266,14 +271,14 @@ def originCountry_Select():
 		selected = [countryDict[list(countryDict.keys())[i]] for i in multiselected]
 		control.setSetting('originCountry', '|'.join(selected))
 
-def make_qr(url):
+def make_qr(url, filename='qr.png'):
     #import segno and make a qr code using the url passed in. save the image. return the path.
 	if url == None: return
 	try:
 		from resources.lib.externals import segno
 		qrcode = segno.make(url, micro=False)
-		qrcode.save(control.joinPath(control.artPath(), "qr.png"), scale=20)
-		image = control.joinPath(control.artPath(), 'qr.png')
+		qrcode.save(control.joinPath(control.artPath(), filename), scale=20)
+		image = control.joinPath(control.artPath(), filename)
 	except:
 		from resources.lib.modules import log_utils
 		log_utils.error()
