@@ -166,11 +166,12 @@ class Navigator:
 		if self.favoriteMovie:
 			self.addDirectoryItem(getLS(40465), 'getFavouritesMovies&url=favourites_movies&folderName=%s' % (quote_plus(getLS(40465))), 'movies.png', 'DefaultMovies.png')
 		if getMenuEnabled('navi.movie.mdblist.userList') and getSetting('mdblist.api') != '':
-			self.addDirectoryItem(40087, 'mdbUserListMovies&folderName=%s' % quote_plus(getLS(40087)), 'mdblist.png' if self.iconLogos else 'movies.png', 'DefaultMovies.png')
-			self.addDirectoryItem(40595,'mdbUserWatchListMovies&folderName=%s' % quote_plus(getLS(40595)), 'mdblist.png' if self.iconLogos else 'movies.png', 'DefaultMovies.png')
+			self.addDirectoryItem(40087, 'mdbUserListMovies&folderName=%s' % quote_plus(getLS(40087)), 'mdblist.png', 'DefaultMovies.png')
+			self.addDirectoryItem(40595,'mdbUserWatchListMovies&folderName=%s' % quote_plus(getLS(40595)), 'mdblist.png', 'DefaultMovies.png')
 		# TMDb User Lists
 		if getSetting('tmdb.v4.accesstoken') != '':
-			self.addDirectoryItem('TMDb User Lists','tmdbUserListsMovies&folderName=%s' % quote_plus('TMDb User Lists'),'tmdb.png' if self.iconLogos else 'movies.png','DefaultMovies.png')
+			self.addDirectoryItem('TMDb User Lists','tmdbUserListsMovies&folderName=%s' % quote_plus('TMDb User Lists'),'tmdb.png','DefaultMovies.png')
+			self.addDirectoryItem(40612, 'tmdbV4WatchlistMovies&folderName=%s' % quote_plus(getLS(40612)), 'tmdb.png', 'DefaultMovies.png')
 		if self.simkltoken:
 			if getMenuEnabled('navi.movie.simkl.completed'):
 				self.addDirectoryItem(40548, 'movies&url=simklhistory&folderName=%s' % quote_plus(getLS(40548)), 'simkl.png', 'simkl.png')
@@ -270,11 +271,12 @@ class Navigator:
 			self.addDirectoryItem(getLS(40466), 'getFavouritesTVShows&url=favourites_tvshows&folderName=%s' % (quote_plus(getLS(40466))), 'tvshows.png', 'DefaultTVShows.png')
 		if self.favoriteEpisodes: self.addDirectoryItem(getLS(40467), 'getFavouritesEpisodes&folderName=%s' % (quote_plus(getLS(40467))), 'tvshows.png', 'DefaultTVShows.png')
 		if getMenuEnabled('navi.tv.mdblist.userList') and getSetting('mdblist.api') != '':
-			self.addDirectoryItem(40087, 'mdbUserListTV&folderName=%s' % quote_plus(getLS(40087)), 'mdblist.png' if self.iconLogos else 'tvshows.png', 'DefaultMovies.png')
-			self.addDirectoryItem(40595,'mdbUserWatchListTVShows&folderName=%s' % quote_plus(getLS(40595)), 'mdblist.png' if self.iconLogos else 'movies.png', 'DefaultMovies.png')
+			self.addDirectoryItem(40087, 'mdbUserListTV&folderName=%s' % quote_plus(getLS(40087)), 'mdblist.png', 'DefaultMovies.png')
+			self.addDirectoryItem(40595,'mdbUserWatchListTVShows&folderName=%s' % quote_plus(getLS(40595)), 'mdblist.png', 'DefaultMovies.png')
 		# TMDb User Lists
 		if getSetting('tmdb.v4.accesstoken') != '':
-			self.addDirectoryItem('TMDb User Lists','tmdbUserListsTV&folderName=%s' % quote_plus('TMDb User Lists'),'tmdb.png' if self.iconLogos else 'tvshows.png','DefaultTVShows.png')
+			self.addDirectoryItem('TMDb User Lists','tmdbUserListsTV&folderName=%s' % quote_plus('TMDb User Lists'),'tmdb.png','DefaultTVShows.png')
+			self.addDirectoryItem(40612, 'tmdbV4WatchlistTV&folderName=%s' % quote_plus(getLS(40612)), 'tmdb.png', 'DefaultTVShows.png')
 		if self.simklCredentials:
 			if self.simklIndicators:
 				self.addDirectoryItem('Simkl Progress Episodes', 'simkl_calendar&url=/sync/all-items/shows/watching&folderName=%s' % quote_plus("Simkl Progress Episodes"), 'simkl.png', 'simkl.png', queue=True)

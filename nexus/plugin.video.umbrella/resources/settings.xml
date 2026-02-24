@@ -6321,6 +6321,16 @@
 					<default>true</default>
 					<control type="toggle"/>
 				</setting>
+				<setting id="context.umbrella.tmdbListManager" type="boolean" label="40606" help="">
+					<level>0</level>
+					<default>true</default>
+					<control type="toggle"/>
+				</setting>
+				<setting id="context.umbrella.tmdbWatchlist" type="boolean" label="40615" help="">
+					<level>0</level>
+					<default>true</default>
+					<control type="toggle"/>
+				</setting>
 				<setting id="context.umbrella.clearProviders" type="boolean" label="30004" help="">
 					<level>0</level>
 					<default>true</default>

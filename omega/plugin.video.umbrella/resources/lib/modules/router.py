@@ -836,6 +836,29 @@ def router(argv2):
 	elif action == 'tmdb_v4_createList':
 		from resources.lib.modules import tmdb4
 		tmdb4.create_list_dialog()
+	elif action == 'tmdbV4WatchlistMovies':
+		from resources.lib.menus import movies
+		import xbmcaddon
+		account_id = xbmcaddon.Addon('plugin.video.umbrella').getSetting('tmdb.v4.accountid')
+		movies.Movies().tmdb_v4_watchlist('https://api.themoviedb.org/4/account/%s/movie/watchlist?page=1' % account_id, folderName=folderName)
+	elif action == 'tmdbV4WatchlistTV':
+		from resources.lib.menus import tvshows
+		import xbmcaddon
+		account_id = xbmcaddon.Addon('plugin.video.umbrella').getSetting('tmdb.v4.accountid')
+		tvshows.TVshows().tmdb_v4_watchlist('https://api.themoviedb.org/4/account/%s/tv/watchlist?page=1' % account_id, folderName=folderName)
+	elif action == 'tmdb_v4_watchlist_add':
+		from resources.lib.modules import tmdb4
+		tmdb4.watchlist_add(tmdb, params.get('mediatype', 'movie'))
+	elif action == 'tmdb_v4_watchlist_remove':
+		from resources.lib.modules import tmdb4
+		tmdb4.watchlist_remove(tmdb, params.get('mediatype', 'movie'))
+	elif action == 'tmdb_v4_watchlist_toggle':
+		from resources.lib.modules import tmdb4
+		mediatype = params.get('mediatype', 'movie')
+		if str(tmdb) in tmdb4.get_watchlist_ids(mediatype):
+			tmdb4.watchlist_remove(tmdb, mediatype)
+		else:
+			tmdb4.watchlist_add(tmdb, mediatype)
 	####################################################
 	#---Color Picker
 	####################################################

@@ -6691,3 +6691,27 @@ msgstr ""
 msgctxt "#40609"
 msgid "TMDB v4"
 msgstr ""
+
+msgctxt "#40610"
+msgid "Simkl service sync interval (in minutes)"
+msgstr ""
+
+msgctxt "#40611"
+msgid "[B]SETTINGS[/B] : SIMKL"
+msgstr ""
+
+msgctxt "#40612"
+msgid "TMDb Watchlist"
+msgstr ""
+
+msgctxt "#40613"
+msgid "Add to TMDb Watchlist"
+msgstr ""
+
+msgctxt "#40614"
+msgid "Remove from TMDb Watchlist"
+msgstr ""
+
+msgctxt "#40615"
+msgid "TMDb Watchlist Add/Remove"
+msgstr ""

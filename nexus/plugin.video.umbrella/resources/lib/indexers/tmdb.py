@@ -236,7 +236,7 @@ class Movies(TMDb):
 
 	def tmdb_collections_list(self, url):
 		try:
-			if '/4/list/' in url:
+			if '/4/list/' in url or '/4/account/' in url:
 				result = self.get_v4_request(url)
 			else:
 				result = cache.get(self.get_request, self.tmdbcollection_hours, url)
@@ -670,7 +670,7 @@ class TVshows(TMDb):
 	def tmdb_collections_list(self, url):
 		if not url: return
 		try:
-			if '/4/list/' in url:
+			if '/4/list/' in url or '/4/account/' in url:
 				result = self.get_v4_request(url)
 			else:
 				result = self.get_request(url)

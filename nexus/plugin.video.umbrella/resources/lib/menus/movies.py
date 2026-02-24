@@ -274,7 +274,7 @@ class Movies:
 			except: pass
 			try: u = urlparse(url).netloc.lower()
 			except: pass
-			if u in self.tmdb_link and '/list/' in url:
+			if u in self.tmdb_link and ('/list/' in url or '/account/' in url):
 				self.list = tmdb_indexer().tmdb_collections_list(url) # caching handled in list indexer
 				self.sort()
 			elif u in self.tmdb_link and '/list/' not in url:
@@ -367,6 +367,17 @@ class Movies:
 				self.list.append({'name': lst.get('name', ''), 'url': url, 'image': image, 'icon': 'DefaultVideoPlaylists.png', 'action': 'tmdbmovies&folderName=%s' % quote_plus(lst.get('name', ''))})
 			if self.list is None: self.list = []
 			if create_directory: self.addDirectory(self.list, folderName=folderName)
+			return self.list
+		except:
+			from resources.lib.modules import log_utils
+			log_utils.error()
+
+	def tmdb_v4_watchlist(self, url, create_directory=True, folderName=''):
+		self.list = []
+		try:
+			self.list = tmdb_indexer().tmdb_collections_list(url)
+			if self.list is None: self.list = []
+			if create_directory: self.movieDirectory(self.list, folderName=folderName)
 			return self.list
 		except:
 			from resources.lib.modules import log_utils
@@ -2119,6 +2130,10 @@ class Movies:
 			else: page = int(url_params.get('page'))
 		except:
 			page = 1
+		tmdb_v4_watchlist_ids = set()
+		if self.tmdbv4Credentials:
+			from resources.lib.modules import tmdb4 as _tmdb4
+			tmdb_v4_watchlist_ids = _tmdb4.get_watchlist_ids('movie')
 		for i in items:
 			try:
 				imdb, tmdb, title, year = i.get('imdb', ''), i.get('tmdb', ''), i['title'], i.get('year', '')
@@ -2210,6 +2225,11 @@ class Movies:
 						cm.append(('MDBList Manager', 'RunPlugin(%s?action=tools_mdbWatchlist&name=%s&imdb=%s)' % (sysaddon, sysname, imdb)))
 					if self.tmdbv4Credentials:
 						cm.append((getLS(40606) if getLS(40606) else 'TMDB List Manager', 'RunPlugin(%s?action=tools_tmdbListManager&name=%s&tmdb=%s&mediatype=movie)' % (sysaddon, sysname, tmdb)))
+						if tmdb:
+							if str(tmdb) in tmdb_v4_watchlist_ids:
+								cm.append((getLS(40614), 'RunPlugin(%s?action=tmdb_v4_watchlist_remove&tmdb=%s&mediatype=movie)' % (sysaddon, tmdb)))
+							else:
+								cm.append((getLS(40613), 'RunPlugin(%s?action=tmdb_v4_watchlist_add&tmdb=%s&mediatype=movie)' % (sysaddon, tmdb)))
 					if self.simklCredentials:
 						cm.append((simklManagerMenu, 'RunPlugin(%s?action=tools_simklManager&name=%s&imdb=%s&watched=%s&unfinished=%s)' % (sysaddon, sysname, imdb, watched, unfinished)))
 					if watched:

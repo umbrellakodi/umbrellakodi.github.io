@@ -536,6 +536,8 @@ def refresh_contextProperties():
 		'context.umbrella.traktManager',
 		'context.umbrella.mdblistManager',
 		'context.umbrella.simklManager',
+		'context.umbrella.tmdbListManager',
+		'context.umbrella.tmdbWatchlist',
 		'context.umbrella.clearProviders',
 		'context.umbrella.clearBookmark',
 		'context.umbrella.rescrape',

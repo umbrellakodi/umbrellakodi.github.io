@@ -232,6 +232,82 @@ def get_user_lists():
 		return []
 
 
+def get_watchlist_ids(mediatype='movie'):
+	"""Fetch all pages of the watchlist and return a set of TMDb IDs (as strings).
+	Used by movieDirectory/tvDirectory to show only the relevant Add/Remove context item."""
+	try:
+		account_id = getSetting('tmdb.v4.accountid')
+		if not account_id: return set()
+		ids = set()
+		page, total = 1, 1
+		endpoint = 'movie/watchlist' if mediatype == 'movie' else 'tv/watchlist'
+		while page <= total:
+			result = getTMDbV4(TMDB_V4_BASE + '/account/%s/%s?page=%s' % (account_id, endpoint, page))
+			if not result: break
+			for item in result.get('results', []):
+				if item.get('id'): ids.add(str(item['id']))
+			total = result.get('total_pages', 1)
+			page += 1
+		return ids
+	except:
+		log_utils.error()
+		return set()
+
+
+def get_watchlist_movies(page=1):
+	"""Fetch one page of movies from the TMDb v4 account watchlist."""
+	try:
+		account_id = getSetting('tmdb.v4.accountid')
+		if not account_id: return None
+		return getTMDbV4(TMDB_V4_BASE + '/account/%s/movie/watchlist?page=%s' % (account_id, page))
+	except:
+		log_utils.error()
+		return None
+
+
+def get_watchlist_tv(page=1):
+	"""Fetch one page of TV shows from the TMDb v4 account watchlist."""
+	try:
+		account_id = getSetting('tmdb.v4.accountid')
+		if not account_id: return None
+		return getTMDbV4(TMDB_V4_BASE + '/account/%s/tv/watchlist?page=%s' % (account_id, page))
+	except:
+		log_utils.error()
+		return None
+
+
+def watchlist_add(tmdb_id, mediatype='movie'):
+	"""Add an item to the TMDb watchlist (v3 endpoint, accepts v4 Bearer token)."""
+	try:
+		account_id = getSetting('tmdb.v4.accountid')
+		if not account_id: return False
+		url = 'https://api.themoviedb.org/3/account/%s/watchlist' % account_id
+		result = getTMDbV4(url, post={'media_type': mediatype, 'media_id': int(tmdb_id), 'watchlist': True})
+		if result and result.get('success'):
+			control.notification(title='TMDB', message='Added to Watchlist.', icon=tmdb4_icon)
+			return True
+		return False
+	except:
+		log_utils.error()
+		return False
+
+
+def watchlist_remove(tmdb_id, mediatype='movie'):
+	"""Remove an item from the TMDb watchlist (v3 endpoint, accepts v4 Bearer token)."""
+	try:
+		account_id = getSetting('tmdb.v4.accountid')
+		if not account_id: return False
+		url = 'https://api.themoviedb.org/3/account/%s/watchlist' % account_id
+		result = getTMDbV4(url, post={'media_type': mediatype, 'media_id': int(tmdb_id), 'watchlist': False})
+		if result and result.get('success'):
+			control.notification(title='TMDB', message='Removed from Watchlist.', icon=tmdb4_icon)
+			return True
+		return False
+	except:
+		log_utils.error()
+		return False
+
+
 def add_to_list(list_id, tmdb_id, mediatype='movie'):
 	try:
 		url = TMDB_V4_BASE + '/list/%s/items' % list_id

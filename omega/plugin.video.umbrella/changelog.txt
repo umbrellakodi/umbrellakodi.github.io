@@ -1,4 +1,6 @@
-[B]Update - v6.7.468 - Feb 23rd, 2026[/B]
+[B]Update - v6.7.469 - Feb 23rd, 2026[/B]
+--[New] Added TMDb Watchlist.
+--[Change] Made multiple new context menu items. Settings are available to enable/ disable each.
 --[Change] Changed the SIMKL module to add appname and version to every url call so they would stop crying about analytics.
 --[Fix] Changed SIMKL code to only call individual api end points on forced sync or initial sync. All updates done through one sync function now.
 --[Fix] Changed tmdb to get artwork for fanart differently for custom artwork.

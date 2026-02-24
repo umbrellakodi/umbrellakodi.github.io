@@ -249,9 +249,9 @@ class TVshows:
 			except: pass
 			try: u = urlparse(url).netloc.lower()
 			except: pass
-			if u in self.tmdb_link and '/list/' in url:
+			if u in self.tmdb_link and ('/list/' in url or '/account/' in url):
 				self.list = cache.get(tmdb_indexer().tmdb_collections_list, 0, url)
-			elif u in self.tmdb_link and not '/list/' in url:
+			elif u in self.tmdb_link and not '/list/' in url and not '/account/' in url:
 				self.list = tmdb_indexer().tmdb_list(url) # caching handled in list indexer
 			if self.list is None: self.list = []
 			if create_directory: self.tvshowDirectory(self.list, folderName=folderName)
@@ -1523,6 +1523,16 @@ class TVshows:
 		except:
 			log_utils.error()
 
+	def tmdb_v4_watchlist(self, url, create_directory=True, folderName=''):
+		self.list = []
+		try:
+			self.list = tmdb_indexer().tmdb_collections_list(url)
+			if self.list is None: self.list = []
+			if create_directory: self.tvshowDirectory(self.list, folderName=folderName)
+			return self.list
+		except:
+			log_utils.error()
+
 	def get_mdbuser_watchlist(self, create_directory=True, folderName=''):
 		self.list = []
 		try:
@@ -1975,6 +1985,10 @@ class TVshows:
 			else: page = int(url_params.get('page'))
 		except:
 			page = 1
+		tmdb_v4_watchlist_ids = set()
+		if self.tmdbv4Credentials:
+			from resources.lib.modules import tmdb4 as _tmdb4
+			tmdb_v4_watchlist_ids = _tmdb4.get_watchlist_ids('tv')
 		for i in items:
 			try:
 				imdb, tmdb, tvdb, year, trailer = i.get('imdb', ''), i.get('tmdb', ''), i.get('tvdb', ''), i.get('year', ''), i.get('trailer', '')
@@ -2074,6 +2088,11 @@ class TVshows:
 					cm.append(('MDBList Manager', 'RunPlugin(%s?action=tools_mdbWatchlist&name=%s&tvdb=%s&tmdb=%s)' % (sysaddon,systitle, tvdb, tmdb)))
 				if self.tmdbv4Credentials:
 					cm.append((getLS(40606) if getLS(40606) else 'TMDB List Manager', 'RunPlugin(%s?action=tools_tmdbListManager&name=%s&tmdb=%s&mediatype=tv)' % (sysaddon, systitle, tmdb)))
+					if tmdb:
+						if str(tmdb) in tmdb_v4_watchlist_ids:
+							cm.append((getLS(40614), 'RunPlugin(%s?action=tmdb_v4_watchlist_remove&tmdb=%s&mediatype=tv)' % (sysaddon, tmdb)))
+						else:
+							cm.append((getLS(40613), 'RunPlugin(%s?action=tmdb_v4_watchlist_add&tmdb=%s&mediatype=tv)' % (sysaddon, tmdb)))
 				cm.append(('Customize Artwork', 'RunPlugin(%s?action=customizeArt&mediatype=%s&imdb=%s&tmdb=%s&tvdb=%s&poster=%s&fanart=%s&landscape=%s&banner=%s&clearart=%s&clearlogo=%s)' % (sysaddon, 'show', imdb, tmdb, tvdb, poster, fanart, landscape, banner, clearart, clearlogo)))
 				cm.append((findSimilarMenu, 'Container.Update(%s?action=tvshows&url=%s)' % (sysaddon, quote_plus('https://api.trakt.tv/shows/%s/related?limit=20&page=1,return' % imdb))))
 				cm.append((playRandom, 'RunPlugin(%s?action=play_Random&rtype=season&tvshowtitle=%s&year=%s&imdb=%s&tmdb=%s&tvdb=%s&art=%s)' % (sysaddon, systitle, year, imdb, tmdb, tvdb, sysart)))
