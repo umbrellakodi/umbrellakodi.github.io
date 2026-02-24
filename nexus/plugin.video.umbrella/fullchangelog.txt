@@ -1,3 +1,6 @@
+[B]Update - v6.7.472 - Feb 24th, 2026[/B]
+--[Fix] TMDb error fix for incorrect dialog call.
+
 [B]Update - v6.7.471 - Feb 24th, 2026[/B]
 --[Change] Changed NR ratings to show as 18 because it is never enough.
 

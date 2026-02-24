@@ -366,7 +366,7 @@ def create_list_dialog():
 		if not getTMDbV4CredentialsInfo():
 			control.notification(title='TMDB v4', message=getLS(40607) if _has_string(40607) else 'Not authenticated with TMDB v4. Check Settings.', icon='ERROR')
 			return
-		list_name = control.inputDialog(getLS(40608) if _has_string(40608) else 'New List Name')
+		list_name = control.dialog.input(getLS(40608) if _has_string(40608) else 'New List Name')
 		if not list_name:
 			return
 		create_list(list_name)
@@ -399,7 +399,7 @@ def manager(name, tmdb, mediatype='movie'):
 		action, list_id = items[select][1]
 
 		if action == 'create':
-			list_name = control.inputDialog(getLS(40608) if _has_string(40608) else 'New List Name')
+			list_name = control.dialog.input(getLS(40608) if _has_string(40608) else 'New List Name')
 			if list_name:
 				new_id = create_list(list_name)
 				if new_id and tmdb:
