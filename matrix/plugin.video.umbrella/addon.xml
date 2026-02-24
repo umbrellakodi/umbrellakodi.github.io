@@ -234,7 +234,8 @@
 			<screenshot>resources/screenshots/screenshot003.jpg</screenshot>
 		</assets>
 		<news>
-[B]Update - v6.7.469 - Feb 23rd, 2026[/B]
+[B]Update - v6.7.470 - Feb 24th, 2026[/B]
+--[New] Red-coat rating conversion system added.
 --[New] Added TMDb Watchlist.
 --[Change] Made multiple new context menu items. Settings are available to enable/ disable each.
 --[Change] Changed the SIMKL module to add appname and version to every url call so they would stop crying about analytics.

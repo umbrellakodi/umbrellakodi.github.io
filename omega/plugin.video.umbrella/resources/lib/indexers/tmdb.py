@@ -30,6 +30,32 @@ else:
 	session.mount('https://api.themoviedb.org', HTTPAdapter(max_retries=retries, pool_maxsize=100))
 
 
+def _convert_gb_movie_rating(rating):
+	uk_certs = {'U', 'PG', '12', '12A', '15', '18', 'R18'}
+	if rating in uk_certs:
+		return rating
+	us_to_uk = {'G': 'U', 'PG': 'PG', 'PG-13': '12A', 'R': '18', 'NC-17': '18'}
+	return us_to_uk.get(rating, rating)
+
+
+def _convert_gb_tv_rating(rating):
+	uk_certs = {'U', 'PG', '12', '12A', '15', '18'}
+	if rating in uk_certs:
+		return rating
+	us_tv_to_uk = {'TV-Y': 'U', 'TV-G': 'U', 'TV-Y7': 'PG', 'TV-PG': 'PG', 'TV-14': '12', 'TV-MA': '18'}
+	if rating in us_tv_to_uk:
+		return us_tv_to_uk[rating]
+	try:
+		val = int(rating.rstrip('+').rstrip('A'))
+		if val <= 7: return 'U'
+		if val <= 12: return '12'
+		if val <= 15: return '15'
+		return '18'
+	except (ValueError, AttributeError):
+		pass
+	return rating
+
+
 class TMDb:
 	def __init__(self):
 		self.API_key = getSetting('tmdb.apikey')
@@ -416,6 +442,8 @@ class Movies(TMDb):
 			if not meta['mpaa'] and self.mpa_country != 'US':
 				try: parse_mpaa([x for x in result['release_dates']['results'] if x['iso_3166_1'] == 'US'][0])
 				except: pass
+			if self.mpa_country == 'GB' and meta['mpaa']:
+				meta['mpaa'] = _convert_gb_movie_rating(meta['mpaa'])
 			if meta['mpaa']: meta['mpaa'] = getSetting('mpa.prefix') + meta['mpaa']
 			try:
 				trailer = [x for x in result['videos']['results'] if x['site'] == 'YouTube' and x['type'] in ('Trailer', 'Teaser')][0]['key']
@@ -821,9 +849,11 @@ class TVshows(TMDb):
 			mpaa += [x['rating'] for x in result['content_ratings']['results'] if x['iso_3166_1'] == self.mpa_country]
 			mpaa += [x['rating'] for x in result['content_ratings']['results'] if x['iso_3166_1'] == 'US']
 			try: meta['mpaa'] = mpaa[0]
-			except: 
+			except:
 				try: meta['mpaa'] = result['content_ratings'][0]['rating']
 				except: meta['mpaa'] = ''
+			if self.mpa_country == 'GB' and meta['mpaa']:
+				meta['mpaa'] = _convert_gb_tv_rating(meta['mpaa'])
 			if meta['mpaa']: meta['mpaa'] = getSetting('mpa.prefix') + meta['mpaa']
 			ids = result.get('external_ids', {})
 			meta['imdb'] = str(ids.get('imdb_id', '')) if ids.get('imdb_id') else ''
