@@ -662,7 +662,7 @@ def last_sync(type):
 		if ck_table:
 			match = dbcur.execute('''SELECT * FROM service WHERE setting=?;''', (type,)).fetchone()
 			if match: last_sync_at = int(cleandate.iso_2_utc(match[1]))
-			else: dbcur.execute('''INSERT OR REPLACE INTO service Values (?, ?)''', (type, '1970-01-01T20:00:00.000Z'))
+			else: dbcur.execute('''INSERT OR REPLACE INTO service Values (?, ?)''', (type, '1970-01-01T00:00:00.000Z'))
 		else: dbcur.execute('''CREATE TABLE IF NOT EXISTS service (setting TEXT, value TEXT, UNIQUE(setting));''')
 		dbcur.connection.commit()
 	except:
@@ -671,6 +671,18 @@ def last_sync(type):
 	finally:
 		dbcur.close() ; dbcon.close()
 	return last_sync_at
+
+def set_sync_time(service_key):
+	try:
+		dbcon = get_connection()
+		dbcur = get_connection_cursor(dbcon)
+		timestamp = datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%S.000Z")
+		dbcur.execute('''INSERT OR REPLACE INTO service Values (?, ?)''', (service_key, timestamp))
+		dbcur.connection.commit()
+	except:
+		log_utils.error()
+	finally:
+		dbcur.close() ; dbcon.close()
 
 def delete_tables(tables):
 	cleared = False
@@ -693,7 +705,7 @@ def delete_tables(tables):
 			if v is True:
 				dbcur.execute('''DROP TABLE IF EXISTS {}'''.format(table))
 				dbcur.execute('''VACUUM''')
-				dbcur.execute('''INSERT OR REPLACE INTO service Values (?, ?)''', (service_dict[table], '1970-01-01T20:00:00.000Z'))
+				dbcur.execute('''INSERT OR REPLACE INTO service Values (?, ?)''', (service_dict[table], '1970-01-01T00:00:00.000Z'))
 				dbcur.connection.commit()
 				cleared = True
 	except:

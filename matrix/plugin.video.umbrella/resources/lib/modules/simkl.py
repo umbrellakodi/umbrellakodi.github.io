@@ -1149,6 +1149,10 @@ def sync_all_watchlists(activities=None, forced=False):
 				table, ts_col = dispatch[key]
 				simklsync.upsert_items(items, table, ts_col, key[1])
 
+		# Advance every service timestamp so min() never regresses on next sync
+		for ts_col in last_syncs:
+			simklsync.set_sync_time(ts_col)
+
 	except Exception as e:
 		log_utils.error('Error in sync_all_watchlists: %s' % str(e))
 
