@@ -242,11 +242,7 @@ def services_syncs():
 				simkl.sync_watchedProgress(activities)
 				if getSetting('indicators.alt') == '2':
 					simkl.sync_watched(activities) #
-				simkl.sync_plantowatch(activities)
-				simkl.sync_watching(activities)
-				simkl.sync_completed(activities)
-				simkl.sync_dropped(activities)
-				simkl.sync_hold(activities)
+				simkl.sync_all_watchlists(activities)
 				last_simkl_sync = current_time
 		if control.monitor.waitForAbort(60*service_syncInterval): break
 

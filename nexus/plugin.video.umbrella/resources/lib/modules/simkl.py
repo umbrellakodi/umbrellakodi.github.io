@@ -202,13 +202,14 @@ def get_request(url):
 	_throttle()
 	try:
 		if not url.startswith(BASE_URL): url = urljoin(BASE_URL, url)
+		_version = control.addon('plugin.video.umbrella').getAddonInfo('version')
 		if '?' not in url:
-			url += '?client_id=%s' % simklclientid
+			url += '?client_id=%s&app-name=umbrella&app-version=%s' % (simklclientid, _version)
 		else:
-			url += '&client_id=%s' % simklclientid
+			url += '&client_id=%s&app-name=umbrella&app-version=%s' % (simklclientid, _version)
 		headers['Authorization'] = 'Bearer %s' % getSetting('simkltoken')
 		headers['simkl-api-key'] = simklclientid
-		headers['User-Agent'] = 'Umbrella/%s' % control.addon('plugin.video.umbrella').getAddonInfo('version')
+		headers['User-Agent'] = 'Umbrella/%s' % _version
 		try: response = session.get(url, headers=headers, timeout=20)
 		except requests.exceptions.SSLError:
 			response = session.get(url, headers=headers, verify=False)
@@ -390,13 +391,14 @@ def post_request(url, data=None):
 	_throttle()
 	if type(data) == dict or type(data) == list: data = json.dumps(data)
 	if not url.startswith(BASE_URL): url = urljoin(BASE_URL, url)
+	_version = control.addon('plugin.video.umbrella').getAddonInfo('version')
 	if '?' not in url:
-		url += '?client_id=%s' % simklclientid
+		url += '?client_id=%s&app-name=umbrella&app-version=%s' % (simklclientid, _version)
 	else:
-		url += '&client_id=%s' % simklclientid
+		url += '&client_id=%s&app-name=umbrella&app-version=%s' % (simklclientid, _version)
 	headers['Authorization'] = 'Bearer %s' % getSetting('simkltoken')
 	headers['simkl-api-key'] = simklclientid
-	headers['User-Agent'] = 'Umbrella/%s' % control.addon('plugin.video.umbrella').getAddonInfo('version')
+	headers['User-Agent'] = 'Umbrella/%s' % _version
 	try:
 		response = session.post(url, data=data, headers=headers, timeout=20)
 	except requests.exceptions.ConnectionError:
@@ -1053,6 +1055,103 @@ def sync_hold(activities=None, forced=False):
                     delta_sync(db_last)
     except Exception as e:
         log_utils.error('Error in sync_hold: %s' % str(e))
+
+def _get_all_watchlists_activity(activities=None):
+	"""Return the newest watchlist activity timestamp across all watchlist categories."""
+	try:
+		if activities: i = activities
+		else: i = post_request('/sync/activities')
+		if not i: return 0
+		if type(i) != dict: d = json.loads(i)
+		else: d = i
+		movies = d.get('movies', {})
+		shows = d.get('tv_shows', {})
+		timestamps = []
+		for ts_str in [
+			movies.get('plantowatch'), movies.get('completed'), movies.get('dropped'),
+			shows.get('plantowatch'), shows.get('completed'), shows.get('watching'),
+			shows.get('hold'), shows.get('dropped')
+		]:
+			if ts_str:
+				try:
+					timestamps.append(datetime.fromtimestamp(time.mktime(time.strptime(ts_str[:-1], "%Y-%m-%dT%H:%M:%S"))))
+				except: pass
+		return int(max(timestamps).timestamp()) if timestamps else 0
+	except:
+		log_utils.error()
+		return 0
+
+
+def sync_all_watchlists(activities=None, forced=False):
+	"""Unified watchlist sync. Delta path: 1 request to /sync/all-items/?date_from instead of 8.
+	Forced/full path delegates to individual sync functions unchanged."""
+	try:
+		if forced:
+			sync_plantowatch(forced=True)
+			sync_completed(forced=True)
+			sync_watching(forced=True)
+			sync_hold(forced=True)
+			sync_dropped(forced=True)
+			return
+
+		last_syncs = {
+			'last_plantowatch_at': simklsync.last_sync('last_plantowatch_at'),
+			'last_completed_at':   simklsync.last_sync('last_completed_at'),
+			'last_watching_at':    simklsync.last_sync('last_watching_at'),
+			'last_hold_at':        simklsync.last_sync('last_hold_at'),
+			'last_dropped_at':     simklsync.last_sync('last_dropped_at'),
+		}
+
+		# Any table that has never been synced needs a full sync first
+		needs_full = [k for k, v in last_syncs.items() if v == 0]
+		if needs_full:
+			if 'last_plantowatch_at' in needs_full: sync_plantowatch(forced=True)
+			if 'last_completed_at' in needs_full:   sync_completed(forced=True)
+			if 'last_watching_at' in needs_full:    sync_watching(forced=True)
+			if 'last_hold_at' in needs_full:        sync_hold(forced=True)
+			if 'last_dropped_at' in needs_full:     sync_dropped(forced=True)
+			return
+
+		# All tables have existing data; check if anything changed
+		api_latest = _get_all_watchlists_activity(activities)
+		date_from_ts = min(last_syncs.values())
+		if api_latest <= date_from_ts:
+			return  # Nothing changed since our oldest sync
+
+		date_from = _ts_to_iso(date_from_ts)
+		log_utils.log('Simkl watchlists delta sync (1 request from %s)' % date_from, __name__, log_utils.LOGINFO)
+		response = get_request('/sync/all-items/?date_from=%s' % date_from)
+		if not response: return
+
+		# Map (media_type, status) → (table, timestamp_col)
+		dispatch = {
+			('movies', 'plantowatch'): ('movies_plantowatch', 'last_plantowatch_at'),
+			('movies', 'completed'):   ('movies_completed',   'last_completed_at'),
+			('movies', 'dropped'):     ('movies_dropped',     'last_dropped_at'),
+			('shows',  'plantowatch'): ('shows_plantowatch',  'last_plantowatch_at'),
+			('shows',  'completed'):   ('shows_completed',    'last_completed_at'),
+			('shows',  'watching'):    ('shows_watching',     'last_watching_at'),
+			('shows',  'hold'):        ('shows_hold',         'last_hold_at'),
+			('shows',  'dropped'):     ('shows_dropped',      'last_dropped_at'),
+		}
+
+		from collections import defaultdict
+		buckets = defaultdict(list)
+		for item in response.get('movies', []):
+			status = item.get('status')
+			if ('movies', status) in dispatch: buckets[('movies', status)].append(item)
+		for item in response.get('shows', []):
+			status = item.get('status')
+			if ('shows', status) in dispatch: buckets[('shows', status)].append(item)
+
+		for key, items in buckets.items():
+			if items:
+				table, ts_col = dispatch[key]
+				simklsync.upsert_items(items, table, ts_col, key[1])
+
+	except Exception as e:
+		log_utils.error('Error in sync_all_watchlists: %s' % str(e))
+
 
 def sync_dropped(activities=None, forced=False):
     try:
