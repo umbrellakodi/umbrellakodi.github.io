@@ -439,6 +439,8 @@ class Movies(TMDb):
 						break
 			try: parse_mpaa([x for x in result['release_dates']['results'] if x['iso_3166_1'] == self.mpa_country][0])
 			except: pass
+			if self.mpa_country == 'GB' and meta['mpaa'] == 'NR':
+				meta['mpaa'] = ''
 			if not meta['mpaa'] and self.mpa_country != 'US':
 				try: parse_mpaa([x for x in result['release_dates']['results'] if x['iso_3166_1'] == 'US'][0])
 				except: pass
@@ -846,7 +848,7 @@ class TVshows(TMDb):
 				except: pass
 				if len(meta['castandart']) == 150: break
 			mpaa = []
-			mpaa += [x['rating'] for x in result['content_ratings']['results'] if x['iso_3166_1'] == self.mpa_country]
+			mpaa += [x['rating'] for x in result['content_ratings']['results'] if x['iso_3166_1'] == self.mpa_country and x['rating'] != 'NR']
 			mpaa += [x['rating'] for x in result['content_ratings']['results'] if x['iso_3166_1'] == 'US']
 			try: meta['mpaa'] = mpaa[0]
 			except:
