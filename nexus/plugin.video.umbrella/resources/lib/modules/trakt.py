@@ -36,7 +36,7 @@ trakt_token = getSetting('trakt.user.token')
 def getTrakt(url, post=None, extended=False, silent=False, reauth_attempts=0):
 	try:
 		if not url.startswith(BASE_URL): url = urljoin(BASE_URL, url)
-		headers['trakt-api-key'] = traktClientID()
+		if headers['trakt-api-key'] == '': headers['trakt-api-key']=traktClientID()
 		if post: post = jsdumps(post)
 		if getTraktCredentialsInfo(): 
 			current_token = getSetting('trakt.user.token')
@@ -1535,7 +1535,7 @@ def scrobbleReset(imdb, tmdb=None, tvdb=None, season=None, episode=None, refresh
 		resume_info = traktsync.fetch_bookmarks(imdb, tmdb, tvdb, season, episode, ret_type='resume_info')
 		if resume_info == '0': return control.hide() # returns string "0" if no data in db 
 		headers['Authorization'] = 'Bearer %s' % trakt_token
-		headers['trakt-api-key'] = traktClientID()
+		if headers['trakt-api-key'] == '': headers['trakt-api-key']=traktClientID()
 		success = session.delete('https://api.trakt.tv/sync/playback/%s' % resume_info[1], headers=headers).status_code == 204
 		if content_type == 'movie':
 			items = [{'type': 'movie', 'movie': {'ids': {'imdb': imdb}}}]

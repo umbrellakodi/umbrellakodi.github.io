@@ -1,10 +1,3 @@
-[B]Update - v6.7.475 - Feb 25th, 2026[/B]
---[Change] Made tmdb watchlist respect watchlist sorting from settings.
---[New] Added sorting options for tmdb lists in Settings: General for movies and TV Shows for shows.
---[Fix] Fixed custom trakt token not being saved correctly for reuse when using a custom trakt client id and secret.
---[Fix] Made changes to the way paths are made for artwork due to compatibility issues with icon packs and different operating systems.
---[Fix] Made changes to simkl code where a bug was causing updates not to be done due to not matching a schema change.
-
 [B]Update - v6.7.474 - Feb 24th, 2026[/B]
 --[Fix] More changes to qr code generation to use main datapath instead of artpath so they are not affected by icon pack selections.
 

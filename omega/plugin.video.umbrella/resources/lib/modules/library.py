@@ -286,7 +286,7 @@ class lib_tools:
 				dbcon = database.connect(control.libcacheFile)
 				dbcur = dbcon.cursor()
 				dbcur.execute('''CREATE TABLE IF NOT EXISTS lists (type TEXT, list_name TEXT, url TEXT, UNIQUE(type, list_name, url));''')
-				selected_urls = set(row[2] for row in dbcur.execute('''SELECT * FROM lists WHERE url LIKE '%api.trakt.tv%';''').fetchall())
+				selected_urls = set(row[2] for row in dbcur.execute('''SELECT * FROM lists WHERE url NOT LIKE '%api.mdblist.com%';''').fetchall())
 				dbcur.close() ; dbcon.close()
 			except:
 				selected_urls = set()
@@ -757,7 +757,7 @@ class lib_tools:
 			dbcon = database.connect(control.libcacheFile)
 			dbcur = dbcon.cursor()
 			dbcur.execute('''CREATE TABLE IF NOT EXISTS lists (type TEXT, list_name TEXT, url TEXT, UNIQUE(type, list_name, url));''')
-			dbcur.execute('''DELETE FROM lists WHERE url LIKE '%api.trakt.tv%';''')
+			dbcur.execute('''DELETE FROM lists WHERE url NOT LIKE '%api.mdblist.com%';''')
 			lengthItm = len(items)
 			for l in range(lengthItm):
 				dbcur.execute('''INSERT OR REPLACE INTO lists Values (?, ?, ?)''', (items[l]['type'], items[l]['list_name'], items[l]['url']))
@@ -871,13 +871,6 @@ class lib_tools:
 		try:
 			allV4Items = self.getAllTMDbV4Lists()
 			if not allV4Items:
-				try:
-					dbcon = database.connect(control.libcacheFile)
-					dbcur = dbcon.cursor()
-					dbcur.execute('''DELETE FROM lists WHERE url LIKE '%api.themoviedb.org/4/list%';''')
-					dbcur.connection.commit()
-					dbcur.close() ; dbcon.close()
-				except: pass
 				control.notification(message='No TMDb v4 lists found. Check your authentication in settings.')
 				if fromSettings:
 					control.openSettings(id='plugin.video.umbrella')
