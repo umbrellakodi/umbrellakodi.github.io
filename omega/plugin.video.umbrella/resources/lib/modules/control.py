@@ -222,21 +222,21 @@ def addonInstalled(addon_id):
 def artPath():
 	theme = appearance()
 	user_path = joinPath(userIconFolders(), theme)
-	if existsPath(user_path):
+	if os.path.isdir(user_path):
 		return user_path
 	return joinPath(xbmcaddon.Addon('plugin.video.umbrella').getAddonInfo('path'), 'resources', 'artwork', theme)
 
 def genreIconPath():
 	theme = appearance()
 	user_path = joinPath(userIconFolders(), theme, 'genre_media', 'icons')
-	if existsPath(user_path):
+	if os.path.isdir(user_path):
 		return user_path
 	return joinPath(xbmcaddon.Addon('plugin.video.umbrella').getAddonInfo('path'), 'resources', 'artwork', theme, 'genre_media', 'icons')
 
 def genrePosterPath():
 	theme = appearance()
 	user_path = joinPath(userIconFolders(), theme, 'genre_media', 'posters')
-	if existsPath(user_path):
+	if os.path.isdir(user_path):
 		return user_path
 	return joinPath(xbmcaddon.Addon('plugin.video.umbrella').getAddonInfo('path'), 'resources', 'artwork', theme, 'genre_media', 'posters')
 

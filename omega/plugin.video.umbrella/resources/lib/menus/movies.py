@@ -276,7 +276,7 @@ class Movies:
 			except: pass
 			if u in self.tmdb_link and ('/list/' in url or '/account/' in url):
 				self.list = tmdb_indexer().tmdb_collections_list(url) # caching handled in list indexer
-				self.sort()
+				self.sort(type='movies.tmdblist')
 			elif u in self.tmdb_link and '/list/' not in url:
 				self.list = tmdb_indexer().tmdb_list(url) # caching handled in list indexer
 			if self.list is None: self.list = []
@@ -377,6 +377,7 @@ class Movies:
 		try:
 			self.list = tmdb_indexer().tmdb_collections_list(url)
 			if self.list is None: self.list = []
+			if create_directory: self.sort(type='movies.watchlist')
 			if create_directory: self.movieDirectory(self.list, folderName=folderName)
 			return self.list
 		except:

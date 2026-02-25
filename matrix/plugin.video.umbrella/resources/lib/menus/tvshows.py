@@ -254,6 +254,7 @@ class TVshows:
 			elif u in self.tmdb_link and not '/list/' in url and not '/account/' in url:
 				self.list = tmdb_indexer().tmdb_list(url) # caching handled in list indexer
 			if self.list is None: self.list = []
+			if create_directory: self.sort(type='shows.tmdblist')
 			if create_directory: self.tvshowDirectory(self.list, folderName=folderName)
 			return self.list
 		except:
@@ -1528,6 +1529,7 @@ class TVshows:
 		try:
 			self.list = tmdb_indexer().tmdb_collections_list(url)
 			if self.list is None: self.list = []
+			if create_directory: self.sort(type='shows.watchlist')
 			if create_directory: self.tvshowDirectory(self.list, folderName=folderName)
 			return self.list
 		except:
