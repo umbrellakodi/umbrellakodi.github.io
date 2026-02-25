@@ -1,3 +1,6 @@
+[B]Update - v6.7.474 - Feb 24th, 2026[/B]
+--[Fix] More changes to qr code generation to use main datapath instead of artpath so they are not affected by icon pack selections.
+
 [B]Update - v6.7.473 - Feb 24th, 2026[/B]
 --[Changes] More changes for simkl yet again. More requests and this shit is getting removed again.
 

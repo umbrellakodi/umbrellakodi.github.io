@@ -126,6 +126,8 @@ def authenticate(fromSettings=0):
 		try:
 			from resources.lib.modules import tools
 			tmdb_qr = tools.make_qr(approval_url, 'tmdb_qr.png')
+			if not tmdb_qr:
+				raise ValueError('QR generation failed')
 			progressDialog = control.getProgressWindow('TMDB v4 Authentication', tmdb_qr, 1)
 			progressDialog.set_controls()
 			progressDialog.update(0, message)

@@ -273,8 +273,9 @@ def make_qr(url, filename='qr.png'):
 	try:
 		from resources.lib.externals import segno
 		qrcode = segno.make(url, micro=False)
-		qrcode.save(control.joinPath(control.artPath(), filename), scale=20)
-		image = control.joinPath(control.artPath(), filename)
+		dest = control.joinPath(control.dataPath, filename)
+		qrcode.save(dest, scale=20)
+		image = dest
 	except:
 		from resources.lib.modules import log_utils
 		log_utils.error()
