@@ -5605,3 +5605,7 @@ msgstr ""
 msgctxt "#40615"
 msgid "TMDb Watchlist Add/Remove"
 msgstr ""
+
+msgctxt "#40616"
+msgid "TMDb List Sort"
+msgstr ""

@@ -254,6 +254,7 @@ class TVshows:
 			elif u in self.tmdb_link and not '/list/' in url and not '/account/' in url:
 				self.list = tmdb_indexer().tmdb_list(url) # caching handled in list indexer
 			if self.list is None: self.list = []
+			if create_directory: self.sort(type='shows.tmdblist')
 			if create_directory: self.tvshowDirectory(self.list, folderName=folderName)
 			return self.list
 		except:
@@ -529,14 +530,14 @@ class TVshows:
 			log_utils.error()
 
 	def imdb_sort(self, type='shows'):
-		sort = int(getSetting('sort.%s.type' % type))
+		sort = int(getSetting('sort.%s.type' % type) or '0')
 		imdb_sort = 'list_order' if type == 'shows.watchlist' else 'moviemeter'
 		if sort == 1: imdb_sort = 'alpha'
 		elif sort == 2: imdb_sort = 'user_rating'
 		elif sort == 3: imdb_sort = 'num_votes'
 		elif sort == 4: imdb_sort = 'release_date'
 		elif sort in (5, 6): imdb_sort = 'date_added'
-		imdb_sort_order = ',asc' if (int(getSetting('sort.%s.order' % type)) == 0 or sort == 0) else ',desc'
+		imdb_sort_order = ',asc' if (int(getSetting('sort.%s.order' % type) or '0') == 0 or sort == 0) else ',desc'
 		sort_string = imdb_sort + imdb_sort_order
 		return sort_string
 
@@ -1528,6 +1529,7 @@ class TVshows:
 		try:
 			self.list = tmdb_indexer().tmdb_collections_list(url)
 			if self.list is None: self.list = []
+			if create_directory: self.sort(type='shows.watchlist')
 			if create_directory: self.tvshowDirectory(self.list, folderName=folderName)
 			return self.list
 		except:
