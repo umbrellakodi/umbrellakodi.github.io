@@ -17,6 +17,7 @@ from resources.lib.modules import cleandate
 import json
 from itertools import islice
 import time
+import calendar
 
 getLS = control.lang
 getSetting = control.setting
@@ -1074,9 +1075,9 @@ def _get_all_watchlists_activity(activities=None):
 		]:
 			if ts_str:
 				try:
-					timestamps.append(datetime.fromtimestamp(time.mktime(time.strptime(ts_str[:-1], "%Y-%m-%dT%H:%M:%S"))))
+					timestamps.append(int(calendar.timegm(time.strptime(ts_str[:-1], "%Y-%m-%dT%H:%M:%S"))))
 				except: pass
-		return int(max(timestamps).timestamp()) if timestamps else 0
+		return max(timestamps) if timestamps else 0
 	except:
 		log_utils.error()
 		return 0
@@ -1121,7 +1122,7 @@ def sync_all_watchlists(activities=None, forced=False):
 		date_from = _ts_to_iso(date_from_ts)
 		log_utils.log('Simkl watchlists delta sync (1 request from %s)' % date_from, __name__, log_utils.LOGINFO)
 		response = get_request('/sync/all-items/?date_from=%s' % date_from)
-		if not response: return
+		if response is None: return
 
 		# Map (media_type, status) → (table, timestamp_col)
 		dispatch = {

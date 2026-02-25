@@ -1,3 +1,6 @@
+[B]Update - v6.7.477 - Feb 25th, 2026[/B]
+--[Fix] Fix error with simkl timestamp not being updated correctly on delta sync.
+
 [B]Update - v6.7.476 - Feb 25th, 2026[/B]
 --[Fix] Fixed error resulting from imdb setting removal.
 

@@ -1,4 +1,4 @@
-<addon id="plugin.video.umbrella" name="Umbrella" provider-name="Umbrella" version="6.7.476">
+<addon id="plugin.video.umbrella" name="Umbrella" provider-name="Umbrella" version="6.7.477">
 	<requires>
 		<import addon="xbmc.python" version="3.0.0" />
 		<import addon="script.module.requests" />
@@ -234,7 +234,8 @@
 			<screenshot>resources/screenshots/screenshot003.jpg</screenshot>
 		</assets>
 		<news>
-[B]Update - v6.7.476 - Feb 25th, 2026[/B]
+[B]Update - v6.7.477 - Feb 25th, 2026[/B]
+--[Fix] Fix error with simkl timestamp not being updated correctly on delta sync.
 --[Change] Made tmdb watchlist respect watchlist sorting from settings.
 --[New] Added sorting options for tmdb lists in Settings: General for movies and TV Shows for shows.
 --[Fix] Fixed custom trakt token not being saved correctly for reuse when using a custom trakt client id and secret.
