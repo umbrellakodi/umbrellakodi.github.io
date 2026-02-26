@@ -6719,3 +6719,7 @@ msgstr ""
 msgctxt "#40616"
 msgid "TMDb List Sort"
 msgstr ""
+
+msgctxt "#40617"
+msgid "Trakt: Re-authorize required. Your token was issued with different client credentials. Please re-authorize Trakt in settings."
+msgstr ""

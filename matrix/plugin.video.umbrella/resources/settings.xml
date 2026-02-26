@@ -3432,6 +3432,21 @@
 						<heading/>
 					</control>
 				</setting>
+				<setting id="trakt.authed.clientid" type="string" label="" help="">
+					<level>0</level>
+					<default/>
+					<constraints>
+						<allowempty>true</allowempty>
+					</constraints>
+					<dependencies>
+						<dependency type="visible">
+							<condition on="property" name="InfoBool">false</condition>
+						</dependency>
+					</dependencies>
+					<control type="edit" format="string">
+						<heading/>
+					</control>
+				</setting>
 				<setting id="trakt.user.name" type="string" label="40062" help="">
 					<level>0</level>
 					<default/>

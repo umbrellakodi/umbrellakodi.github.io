@@ -268,6 +268,13 @@ class Episodes:
 			except: url = url_param
 			isTraktHistory = (url.split('&page=')[0] in self.trakthistory_link) if url else False
 			isProgressView = (base_url == 'progress')
+			try:
+				q = dict(parse_qsl(urlsplit(url_param).query)) if '?' in url_param else {}
+				index = int(q.get('page', 1)) - 1
+				page_limit = max(1, int(q['limit'])) if q.get('limit') else max(1, int(self.count) if self.count else 20)
+			except:
+				index = 0
+				page_limit = max(1, int(self.count) if self.count else 20)
 			if isProgressView or (self.trakt_link in str(url) and url == self.progress_link):
 				api_url = self.progress_link
 				if trakt.getProgressActivity() > cache.timeout(self.trakt_progress_list, api_url, self.trakt_user, self.lang, self.trakt_directProgressScrape):
@@ -319,25 +326,21 @@ class Episodes:
 			elif self.tvmaze_link in url:
 				self.list = cache.get(self.tvmaze_list, 1, url, False)
 			if self.list is None: self.list = []
+			if isProgressView and not self.progress_showunaired:
+				self.list = [i for i in self.list if i.get('unaired', '') != 'true']
 			hasNext = True if isTraktHistory else False
 			next_url = ''
-			if isProgressView and getSetting('trakt.paginate.lists') == 'true' and self.list and len(self.list) > max(1, int(self.count) if self.count else 20):
-				page_limit = max(1, int(self.count) if self.count else 20)
-				try:
-					q = dict(parse_qsl(urlsplit(url_param).query)) if '?' in url_param else {}
-					index = int(q.get('page', 1)) - 1
-				except:
-					index = 0
+			if isProgressView and getSetting('trakt.paginate.lists') == 'true' and self.list:
 				paginated_ids = [self.list[x:x + page_limit] for x in range(0, len(self.list), page_limit)]
 				total_pages = len(paginated_ids)
-				self.list = paginated_ids[index] if index < total_pages else (paginated_ids[0] if paginated_ids else [])
+				self.list = paginated_ids[index] if index < total_pages else []
 				try:
-					if index + 1 < total_pages:
-						next_page = index + 2
-						next_url = 'plugin://plugin.video.umbrella/?action=calendar&url=%s&page=%s&folderName=%s' % (
-							quote_plus('progress?limit=%s&page=%s' % (page_limit, next_page)),
-							str(next_page), quote_plus(folderName))
-						hasNext = True
+					if index + 1 >= total_pages: raise Exception()
+					next_page = index + 2
+					next_url = 'plugin://plugin.video.umbrella/?action=calendar&url=%s&page=%s&folderName=%s' % (
+						quote_plus('progress?limit=%s&page=%s' % (page_limit, next_page)),
+						str(next_page), quote_plus(folderName))
+					hasNext = True
 				except: pass
 			for i in range(len(self.list)): self.list[i]['next'] = next_url
 			self.episodeDirectory(self.list, unfinished=False, next=hasNext, folderName=folderName)

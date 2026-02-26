@@ -256,6 +256,32 @@ def get_watchlist_ids(mediatype='movie'):
 		return set()
 
 
+def get_watchlist_sort_by(mediatype='movie'):
+	"""Return sort_by query param value for TMDb v4 watchlist based on user settings.
+	Returns None if sort type is Default (0), otherwise returns e.g. 'created_at.desc'."""
+	try:
+		import xbmcaddon
+		_addon = xbmcaddon.Addon('plugin.video.umbrella')
+		setting_key = 'sort.movies.watchlist' if mediatype == 'movie' else 'sort.shows.watchlist'
+		sort_type = int(_addon.getSetting('%s.type' % setting_key) or '5')
+		sort_order = int(_addon.getSetting('%s.order' % setting_key) or '1')
+		if sort_type == 0:
+			return None
+		suffix = '.asc' if sort_order == 0 else '.desc'
+		sort_map = {
+			1: 'title',
+			2: 'vote_average',
+			3: 'vote_count',
+			4: 'primary_release_date' if mediatype == 'movie' else 'first_air_date',
+			5: 'created_at',
+		}
+		sort_field = sort_map.get(sort_type, 'created_at')
+		return sort_field + suffix
+	except:
+		log_utils.error()
+		return None
+
+
 def get_watchlist_movies(page=1):
 	"""Fetch one page of movies from the TMDb v4 account watchlist."""
 	try:

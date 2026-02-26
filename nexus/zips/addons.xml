@@ -1,5 +1,5 @@
 <?xml version='1.0' encoding='utf-8'?>
-<addons><addon id="plugin.video.umbrella" name="Umbrella" provider-name="Umbrella" version="6.7.477">
+<addons><addon id="plugin.video.umbrella" name="Umbrella" provider-name="Umbrella" version="6.7.478">
 	<requires>
 		<import addon="xbmc.python" version="3.0.0" />
 		<import addon="script.module.requests" />
@@ -235,22 +235,18 @@
 			<screenshot>resources/screenshots/screenshot003.jpg</screenshot>
 		</assets>
 		<news>
-[B]Update - v6.7.477 - Feb 25th, 2026[/B]
---[Fix] Fix error with simkl timestamp not being updated correctly on delta sync.
+[B]Update - v6.7.478 - Feb 26th, 2026[/B]
+--[Fix] Trakt client id mismatch for token fix.
+--[Fix] Changed Trakt Episodes Progress to respect pagination setting and page limit correctly.
+--[Fix] Multiple changes made for Simkl compatibility.
 --[Change] Made tmdb watchlist respect watchlist sorting from settings.
 --[New] Added sorting options for tmdb lists in Settings: General for movies and TV Shows for shows.
 --[Fix] Fixed custom trakt token not being saved correctly for reuse when using a custom trakt client id and secret.
 --[Fix] Made changes to the way paths are made for artwork due to compatibility issues with icon packs and different operating systems.
---[Fix] Made changes to simkl code where a bug was causing updates not to be done due to not matching a schema change.
 --[Fix] More changes to qr code generation to use main datapath instead of artpath so they are not affected by icon pack selections.
---[Changes] More changes for simkl yet again. More requests and this shit is getting removed again.
 --[Fix] TMDb error fix for incorrect dialog call.
---[Change] Changed NR ratings to show as 18 because it is never enough.
---[New] Red-coat rating conversion system added.
 --[New] Added TMDb Watchlist.
 --[Change] Made multiple new context menu items. Settings are available to enable/ disable each.
---[Change] Changed the SIMKL module to add appname and version to every url call so they would stop crying about analytics.
---[Fix] Changed SIMKL code to only call individual api end points on forced sync or initial sync. All updates done through one sync function now.
 --[Fix] Changed tmdb to get artwork for fanart differently for custom artwork.
 --[Change] Changed art locations so icons would not need to be reloaded on each update.
 --[Change] Added tinyurl as a fallback for long tmdb v4 authorization urls.

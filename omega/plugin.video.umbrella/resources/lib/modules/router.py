@@ -838,14 +838,20 @@ def router(argv2):
 		tmdb4.create_list_dialog()
 	elif action == 'tmdbV4WatchlistMovies':
 		from resources.lib.menus import movies
+		from resources.lib.modules import tmdb4
 		import xbmcaddon
 		account_id = xbmcaddon.Addon('plugin.video.umbrella').getSetting('tmdb.v4.accountid')
-		movies.Movies().tmdb_v4_watchlist('https://api.themoviedb.org/4/account/%s/movie/watchlist?page=1' % account_id, folderName=folderName)
+		sort_by = tmdb4.get_watchlist_sort_by('movie')
+		sort_param = ('&sort_by=%s' % sort_by) if sort_by else ''
+		movies.Movies().tmdb_v4_watchlist('https://api.themoviedb.org/4/account/%s/movie/watchlist?page=1%s' % (account_id, sort_param), folderName=folderName)
 	elif action == 'tmdbV4WatchlistTV':
 		from resources.lib.menus import tvshows
+		from resources.lib.modules import tmdb4
 		import xbmcaddon
 		account_id = xbmcaddon.Addon('plugin.video.umbrella').getSetting('tmdb.v4.accountid')
-		tvshows.TVshows().tmdb_v4_watchlist('https://api.themoviedb.org/4/account/%s/tv/watchlist?page=1' % account_id, folderName=folderName)
+		sort_by = tmdb4.get_watchlist_sort_by('tv')
+		sort_param = ('&sort_by=%s' % sort_by) if sort_by else ''
+		tvshows.TVshows().tmdb_v4_watchlist('https://api.themoviedb.org/4/account/%s/tv/watchlist?page=1%s' % (account_id, sort_param), folderName=folderName)
 	elif action == 'tmdb_v4_watchlist_add':
 		from resources.lib.modules import tmdb4
 		tmdb4.watchlist_add(tmdb, params.get('mediatype', 'movie'))

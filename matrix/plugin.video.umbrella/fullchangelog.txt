@@ -1,3 +1,9 @@
+[B]Update - v6.7.478 - Feb 26th, 2026[/B]
+--[Fix] Trakt client id mismatch for token fix.
+--[Fix] Changed Trakt Episodes Progress to respect pagination setting and page limit correctly.
+--[Fix] Multiple changes made for Simkl compatibility.
+--[Change] Made tmdb watchlist respect watchlist sorting from settings.
+
 [B]Update - v6.7.477 - Feb 25th, 2026[/B]
 --[Fix] Fix error with simkl timestamp not being updated correctly on delta sync.
 

@@ -212,7 +212,7 @@ def fetch_watching(table):
 		dbcur = get_connection_cursor(dbcon)
 		ck_table = dbcur.execute('''SELECT * FROM sqlite_master WHERE type='table' AND name=?;''', (table,)).fetchone()
 		if not ck_table:
-			dbcur.execute('''CREATE TABLE IF NOT EXISTS %s (title TEXT, year TEXT, premiered TEXT, imdb TEXT, tmdb TEXT, tvdb TEXT, simkl TEXT, rating FLOAT, votes INTEGER, listed_at TEXT, last_watch_at TEXT, UNIQUE(imdb, tmdb, tvdb, simkl));''' % table)
+			dbcur.execute('''CREATE TABLE IF NOT EXISTS %s (title TEXT, year TEXT, premiered TEXT, imdb TEXT, tmdb TEXT, tvdb TEXT, simkl TEXT, rating FLOAT, votes INTEGER, listed_at TEXT, last_watched_at TEXT, UNIQUE(imdb, tmdb, tvdb, simkl));''' % table)
 			dbcur.connection.commit()
 			return list
 		try:
@@ -728,8 +728,8 @@ def upsert_items(items, table, service_key, table_type='plantowatch'):
 		dbcon = get_connection()
 		dbcur = get_connection_cursor(dbcon)
 		dbcur.execute('''CREATE TABLE IF NOT EXISTS service (setting TEXT, value TEXT, UNIQUE(setting));''')
-		is_shows_table = table.startswith('shows_')
-		if is_shows_table:
+		needs_last_watched = table.startswith('shows_') or table == 'movies_completed'
+		if needs_last_watched:
 			dbcur.execute('''CREATE TABLE IF NOT EXISTS %s (title TEXT, year TEXT, premiered TEXT, imdb TEXT, tmdb TEXT, tvdb TEXT, simkl TEXT, rating FLOAT, votes INTEGER, listed_at TEXT, last_watched_at TEXT, UNIQUE(imdb, tmdb, tvdb, simkl));''' % table)
 			try:
 				dbcur.execute('ALTER TABLE %s ADD COLUMN last_watched_at TEXT' % table)
@@ -762,7 +762,7 @@ def upsert_items(items, table, service_key, table_type='plantowatch'):
 			dstr = i.get('added_to_watchlist_at') or datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%S.000Z")
 			listed_at = dstr
 			try:
-				if is_shows_table:
+				if needs_last_watched:
 					last_watched_at = i.get('last_watched_at', '')
 					dbcur.execute('''INSERT OR REPLACE INTO %s Values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''' % table,
 						(title, year, premiered, imdb, tmdb, tvdb, simkl, rating, votes, listed_at, last_watched_at))

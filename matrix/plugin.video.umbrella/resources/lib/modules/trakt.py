@@ -183,6 +183,18 @@ def get_all_pages(url, silent=False):
 
 def re_auth(headers):
 	try:
+		authed_clientid = getSetting('trakt.authed.clientid')
+		current_clientid = traktClientID()
+		if authed_clientid and authed_clientid != current_clientid:
+			log_utils.log('TRAKT: Client ID mismatch detected in re_auth. Token was issued by a different client app. Re-authentication required.', level=log_utils.LOGWARNING)
+			control.notification(title=32315, message=40617)
+			control.homeWindow.setProperty('umbrella.updateSettings', 'false')
+			setSetting('trakt.isauthed', 'false')
+			setSetting('trakt.user.token', '')
+			setSetting('trakt.refreshtoken', '')
+			setSetting('trakt.token.expires', '')
+			control.homeWindow.setProperty('umbrella.updateSettings', 'true')
+			return False
 		oauth = urljoin(BASE_URL, '/oauth/token')
 		opost = {'client_id': traktClientID(), 'client_secret': traktClientSecret(), 'redirect_uri': REDIRECT_URI, 'grant_type': 'refresh_token', 'refresh_token': getSetting('trakt.refreshtoken')}
 		log_utils.log('TRAKT: Re-Authenticating Refresh Token: %s Trakt Token: %s' % (getSetting('trakt.refreshtoken'),getSetting('trakt.user.token')), level=log_utils.LOGINFO)
@@ -257,6 +269,7 @@ def traktAuth(fromSettings=0):
 			control.setSetting('trakt.scrobble', 'true')
 			control.setSetting('resume.source', '1')
 			control.setSetting('trakt.isauthed', 'true')
+			control.setSetting('trakt.authed.clientid', traktClientID())
 			control.homeWindow.setProperty('umbrella.updateSettings', 'true')
 			control.setSetting('trakt.refreshtoken', deviceCode["refresh_token"])
 			control.sleep(1000)
@@ -291,6 +304,7 @@ def traktRevoke(fromSettings=0):
 		control.setSetting('trakt.user.name', '')
 		control.setSetting('trakt.token.expires', '')
 		control.setSetting('trakt.user.token', '')
+		control.setSetting('trakt.authed.clientid', '')
 		control.setSetting('trakt.scrobble', 'false')
 		control.setSetting('resume.source', '0')
 		control.setSetting('trakt.isauthed','')
