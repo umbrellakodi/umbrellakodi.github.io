@@ -1230,8 +1230,8 @@ class libmovies:
 				length = len(items)
 				for i in range(length):
 					dateImported = datetime.now()
-					query = '''INSERT OR REPLACE INTO %s Values ("%s", "%s", "%s", "%s")''' % (listId, items[i].get('title'), items[i].get('tmdb'), items[i].get('imdb'), dateImported)
-					dbcur.execute(query)
+					query = '''INSERT OR REPLACE INTO %s Values (?, ?, ?, ?)''' % listId
+					dbcur.execute(query, (items[i].get('title'), items[i].get('tmdb'), items[i].get('imdb'), dateImported))
 				dbcur.connection.commit()
 				return items
 			else:
@@ -1253,8 +1253,8 @@ class libmovies:
 					query4 = '''CREATE TABLE IF NOT EXISTS %s (item_title TEXT, tmdb TEXT, imdb TEXT, last_import DATE, UNIQUE(imdb));''' % listId
 					dbcur.execute(query4)
 					for i in range(length):
-						query = '''INSERT OR REPLACE INTO %s Values ("%s", "%s", "%s", "%s")''' % (listId, items[i].get('title'), items[i].get('tmdb'), items[i].get('imdb'), dateImported)
-						dbcur.execute(query)
+						query = '''INSERT OR REPLACE INTO %s Values (?, ?, ?, ?)''' % listId
+						dbcur.execute(query, (items[i].get('title'), items[i].get('tmdb'), items[i].get('imdb'), dateImported))
 				else:
 					dateImported = datetime.now()
 					query5 = '''UPDATE %s SET last_import = "%s"''' % (listId, dateImported)

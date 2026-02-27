@@ -1,3 +1,6 @@
+[B]Update - v6.7.480 - Feb 27th, 2026[/B]
+--[Fix] Change for automatic import to clean titles before importing.
+
 [B]Update - v6.7.479 - Feb 26th, 2026[/B]
 --[New] Added Simkl scrobble ability. (Stop and Resume Points from Simkl)
 --[New] Added start watching call if Simkl is enabled at request of Simkl developer.
