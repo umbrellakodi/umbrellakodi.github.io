@@ -5414,3 +5414,15 @@ msgstr ""
 msgctxt "#40617"
 msgid "Trakt: Re-authorize required. Your token was issued with different client credentials. Please re-authorize Trakt in settings."
 msgstr ""
+
+msgctxt "#40618"
+msgid "Enable scrobbling"
+msgstr ""
+
+msgctxt "#40619"
+msgid "Show notification on scrobble"
+msgstr ""
+
+msgctxt "#40620"
+msgid "Simkl scrobbles"
+msgstr ""

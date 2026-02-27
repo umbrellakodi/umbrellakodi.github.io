@@ -3259,6 +3259,33 @@
 					</dependencies>
 					<control type="toggle"/>
 				</setting>
+				<setting id="simkl.scrobble" type="boolean" label="40618" help="">
+					<level>0</level>
+					<default>false</default>
+					<dependencies>
+						<dependency type="visible">
+							<and>
+								<condition operator="!is" setting="simkltoken"/>
+								<condition operator="is" setting="indicators.alt">2</condition>
+							</and>
+						</dependency>
+					</dependencies>
+					<control type="toggle"/>
+				</setting>
+				<setting id="simkl.scrobble.notify" type="boolean" label="40619" help="">
+					<level>0</level>
+					<default>false</default>
+					<dependencies>
+						<dependency type="visible">
+							<and>
+								<condition operator="!is" setting="simkltoken"/>
+								<condition operator="is" setting="indicators.alt">2</condition>
+								<condition operator="is" setting="simkl.scrobble">true</condition>
+							</and>
+						</dependency>
+					</dependencies>
+					<control type="toggle"/>
+				</setting>
 				<setting id="simkl.directProgress.scrape" type="boolean" label="35492" help="">
 					<level>0</level>
 					<default>false</default>
@@ -3665,7 +3692,10 @@
 					<default>false</default>
 					<dependencies>
 						<dependency type="visible">
-							<condition operator="!is" setting="trakt.user.token"/>
+							<and>
+								<condition operator="!is" setting="trakt.user.token"/>
+								<condition operator="is" setting="indicators.alt">1</condition>
+							</and>
 						</dependency>
 					</dependencies>
 					<control type="toggle"/>
@@ -3703,11 +3733,23 @@
 						<options>
 							<option label="32314">0</option>
 							<option label="32096">1</option>
+							<option label="40620">2</option>
 						</options>
 					</constraints>
 					<dependencies>
 						<dependency type="visible">
-								<condition operator="!is" setting="trakt.user.token"/>
+							<or>
+								<and>
+									<condition operator="!is" setting="trakt.user.token"/>
+									<condition operator="is" setting="trakt.scrobble">true</condition>
+									<condition operator="is" setting="indicators.alt">1</condition>
+								</and>
+								<and>
+									<condition operator="!is" setting="simkltoken"/>
+									<condition operator="is" setting="simkl.scrobble">true</condition>
+									<condition operator="is" setting="indicators.alt">2</condition>
+								</and>
+							</or>
 						</dependency>
 					</dependencies>
 					<control type="spinner" format="string"/>

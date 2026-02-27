@@ -1,4 +1,6 @@
-[B]Update - v6.7.478 - Feb 26th, 2026[/B]
+[B]Update - v6.7.479 - Feb 26th, 2026[/B]
+--[New] Added Simkl scrobble ability. (Stop and Resume Points from Simkl)
+--[New] Added start watching call if Simkl is enabled at request of Simkl developer.
 --[Fix] Trakt client id mismatch for token fix.
 --[Fix] Changed Trakt Episodes Progress to respect pagination setting and page limit correctly.
 --[Fix] Multiple changes made for Simkl compatibility.

@@ -1420,6 +1420,92 @@ def add_to_list(**kwargs):
 	except:
 		log_utils.error()
 
+def scrobbleMovie(title, year, imdb, tmdb, watched_percent):
+	log_utils.log('Simkl Scrobble Movie Called. title: %s imdb: %s tmdb: %s watched_percent: %s' % (title, imdb, tmdb, watched_percent), level=log_utils.LOGDEBUG)
+	try:
+		data = {'progress': watched_percent, 'movie': {'title': title, 'year': int(year) if year else 0, 'ids': {'imdb': imdb, 'tmdb': int(tmdb) if tmdb else None}}}
+		success = post_request('/scrobble/pause', data)
+		if success:
+			log_utils.log('Simkl Scrobble Movie Success: imdb: %s' % imdb, level=log_utils.LOGDEBUG)
+			if getSetting('simkl.scrobble.notify') == 'true': control.notification(message=32088)
+			control.sleep(1000)
+			sync_playbackProgress(forced=True)
+			control.trigger_widget_refresh()
+		else: control.notification(message=32130)
+	except: log_utils.error()
+
+def scrobbleEpisode(tvshowtitle, year, imdb, tmdb, tvdb, season, episode, watched_percent):
+	log_utils.log('Simkl Scrobble Episode Called. tvshowtitle: %s imdb: %s season: %s episode: %s watched_percent: %s' % (tvshowtitle, imdb, season, episode, watched_percent), level=log_utils.LOGDEBUG)
+	try:
+		season, episode = int('%01d' % int(season)), int('%01d' % int(episode))
+		data = {'progress': watched_percent, 'show': {'title': tvshowtitle, 'year': int(year) if year else 0, 'ids': {'imdb': imdb}}, 'episode': {'season': season, 'number': episode}}
+		success = post_request('/scrobble/pause', data)
+		if success:
+			log_utils.log('Simkl Scrobble Episode Success: imdb: %s S%02dE%02d' % (imdb, season, episode), level=log_utils.LOGDEBUG)
+			if getSetting('simkl.scrobble.notify') == 'true': control.notification(message=32088)
+			control.sleep(1000)
+			sync_playbackProgress(forced=True)
+			control.trigger_widget_refresh()
+		else: control.notification(message=32130)
+	except: log_utils.error()
+
+def scrobbleStart(media_type, title='', tvshowtitle='', year='0', imdb='', tmdb='', tvdb='', season='', episode='', watched_percent=0):
+	log_utils.log('Simkl Scrobble Start Called. media_type: %s imdb: %s' % (media_type, imdb), level=log_utils.LOGDEBUG)
+	try:
+		if media_type == 'movie':
+			data = {'progress': watched_percent, 'movie': {'title': title, 'year': int(year) if year else 0, 'ids': {'imdb': imdb, 'tmdb': int(tmdb) if tmdb else None}}}
+		else:
+			data = {'progress': watched_percent, 'show': {'title': tvshowtitle, 'year': int(year) if year else 0, 'ids': {'imdb': imdb}}, 'episode': {'season': int('%01d' % int(season)) if season else 0, 'number': int('%01d' % int(episode)) if episode else 0}}
+		success = post_request('/scrobble/start', data)
+		if success:
+			log_utils.log('Simkl Scrobble Start Success: imdb: %s' % imdb, level=log_utils.LOGDEBUG)
+		else:
+			log_utils.log('Simkl Scrobble Start Failed: imdb: %s' % imdb, level=log_utils.LOGDEBUG)
+	except: log_utils.error()
+
+def scrobbleReset(imdb, tmdb='', tvdb='', season=None, episode=None, refresh=False):
+	if not getSimKLCredentialsInfo(): return
+	if not control.player.isPlaying(): control.busy()
+	try:
+		resume_info = simklsync.fetch_bookmarks(imdb, tmdb, tvdb, season, episode, ret_type='resume_info')
+		if resume_info == '0':
+			control.hide()
+			return
+		label_string, resume_id = resume_info[0], resume_info[1]
+		if episode: label_string = label_string + ' - ' + 'S%02dE%02d' % (int(season), int(episode))
+		_version = control.addon('plugin.video.umbrella').getAddonInfo('version')
+		delete_headers = {
+			'Authorization': 'Bearer %s' % getSetting('simkltoken'),
+			'simkl-api-key': simklclientid,
+			'User-Agent': 'Umbrella/%s' % _version
+		}
+		url = '%s/sync/playback/%s?client_id=%s' % (BASE_URL, resume_id, simklclientid)
+		success = session.delete(url, headers=delete_headers, timeout=20).status_code == 204
+		control.hide()
+		if success:
+			simklsync.delete_bookmark(resume_id)
+			if refresh: control.refresh()
+			if getSetting('simkl.scrobble.notify') == 'true':
+				control.notification(title=32315, message='Successfully Removed Simkl playback progress: [COLOR %s]%s[/COLOR]' % (highlightColor, label_string))
+			log_utils.log('Successfully Removed Simkl Playback Progress: %s with resume_id=%s' % (label_string, str(resume_id)), __name__, level=log_utils.LOGDEBUG)
+		else:
+			log_utils.log('Failed to Remove Simkl Playback Progress: %s with resume_id=%s' % (label_string, str(resume_id)), __name__, level=log_utils.LOGDEBUG)
+	except: log_utils.error()
+
+def sync_playbackProgress(activities=None, forced=False):
+	try:
+		link = '/sync/playback'
+		if forced:
+			items = get_request(link)
+			if items: simklsync.insert_bookmarks(items)
+		else:
+			db_last_paused = simklsync.last_sync('last_paused_at')
+			sync_interval = int(getSetting('simkl.service.syncInterval')) if getSetting('simkl.service.syncInterval') else 30
+			if db_last_paused == 0 or (int(time.time()) - db_last_paused) >= (60 * sync_interval):
+				items = get_request(link)
+				if items: simklsync.insert_bookmarks(items)
+	except: log_utils.error()
+
 def force_simklSync(silent=False):
 	if not silent:
 		if not control.yesnoDialog(getLS(32056), '', ''): return

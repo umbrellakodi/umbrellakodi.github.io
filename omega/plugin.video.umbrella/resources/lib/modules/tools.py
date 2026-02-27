@@ -237,8 +237,8 @@ def services_syncs():
 				activities = json.dumps(activities)
 				from resources.lib.modules import log_utils
 				log_utils.log('SimKl Sync Service is running.', 1)
-				#if getSetting('bookmarks') == 'true' and getSetting('resume.source') == '2': simkl does not have playback progress currently
-				#	simkl.sync_playbackProgress(activities)
+				if getSetting('bookmarks') == 'true' and getSetting('resume.source') == '2':
+					simkl.sync_playbackProgress()
 				simkl.sync_watchedProgress(activities)
 				if getSetting('indicators.alt') == '2':
 					simkl.sync_watched(activities) #
