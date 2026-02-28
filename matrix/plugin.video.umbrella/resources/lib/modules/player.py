@@ -557,13 +557,18 @@ class Player(xbmc.Player):
 		homeWindow.clearProperty('umbrella.window_keep_alive')
 		if self.offset != '0' and self.playback_resumed is False:
 			control.sleep(200)
-			if self.traktCredentials and getSetting('resume.source') == '1': # re-adjust the resume point since dialog is based on meta runtime vs. getTotalTime() and inaccurate
+			_resume_source = getSetting('resume.source')
+			if _resume_source == '0':
+				_indicators_alt = getSetting('indicators.alt')
+				if _indicators_alt == '2' and self.simklCredentials: _resume_source = '2'
+				elif _indicators_alt == '1' and self.traktCredentials: _resume_source = '1'
+			if self.traktCredentials and _resume_source == '1': # re-adjust the resume point since dialog is based on meta runtime vs. getTotalTime() and inaccurate
 				try:
 					total_time = self.getTotalTime()
 					progress = float(fetch_bookmarks(self.imdb, self.tmdb, self.tvdb, self.season, self.episode))
 					self.offset = (progress / 100) * total_time
 				except: pass
-			elif self.simklCredentials and getSetting('resume.source') == '2':
+			elif self.simklCredentials and _resume_source == '2':
 				try:
 					total_time = self.getTotalTime()
 					progress = float(simklsync.fetch_bookmarks(self.imdb, self.tmdb, self.tvdb, self.season, self.episode))
@@ -1167,8 +1172,17 @@ class Bookmarks:
 		offset = '0'
 		scrobbble = 'Local Bookmark'
 		if getSetting('bookmarks') != 'true': return offset
-		if self.traktCredentials and getSetting('resume.source') == '1':
-			scrobbble = 'Trakt Scrobble'
+		resume_source = getSetting('resume.source')
+		# If resume source is Local/default (0), derive from indicators service so users who switch
+		# to Simkl indicators don't need to also manually update the resume source setting.
+		if resume_source == '0':
+			indicators_alt = getSetting('indicators.alt')
+			if indicators_alt == '2' and self.simklCredentials:
+				resume_source = '2'
+			elif indicators_alt == '1' and self.traktCredentials:
+				resume_source = '1'
+		if self.traktCredentials and resume_source == '1':
+			scrobbble = 'Trakt Resume Point'
 			try:
 				if not runtime or runtime == 'None': return offset # TMDB sometimes return None as string. duration pulled from kodi library if missing from meta
 				progress = float(fetch_bookmarks(imdb, tmdb, tvdb, season, episode))
@@ -1178,8 +1192,8 @@ class Bookmarks:
 			except:
 				log_utils.error()
 				return '0'
-		elif self.simklCredentials and getSetting('resume.source') == '2':
-			scrobbble = 'Simkl Scrobble'
+		elif self.simklCredentials and resume_source == '2':
+			scrobbble = 'Simkl Resume Point'
 			try:
 				if not runtime or runtime == 'None': return offset
 				progress = float(simklsync.fetch_bookmarks(imdb, tmdb, tvdb, season, episode))

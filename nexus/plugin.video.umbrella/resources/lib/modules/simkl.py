@@ -520,7 +520,7 @@ def markEpisodeAsNotWatched(imdb, tvdb, season, episode):
 		from resources.lib.modules import simkl
 		result = simkl.post_request('/sync/history/remove', {"shows": [{"seasons": [{"episodes": [{"number": episode}], "number": season}], "ids": {"imdb": imdb, "tvdb": tvdb}}]})
 		if not result: return False
-		if (result['not_found']['episodes'] == 0 or result['not_found']['shows'] == 0) and tvdb:
+		if result['deleted']['episodes'] == 0 and tvdb:
 			control.sleep(1000)
 			result = simkl.post_request('/sync/history/remove', {"shows": [{"seasons": [{"episodes": [{"number": episode}], "number": season}], "ids": {"tvdb": tvdb}}]})
 			if not result: return False
