@@ -1,5 +1,5 @@
 <?xml version='1.0' encoding='utf-8'?>
-<addons><addon id="plugin.video.umbrella" name="Umbrella" provider-name="Umbrella" version="6.7.481">
+<addons><addon id="plugin.video.umbrella" name="Umbrella" provider-name="Umbrella" version="6.7.482">
 	<requires>
 		<import addon="xbmc.python" version="3.0.0" />
 		<import addon="script.module.requests" />
@@ -235,7 +235,8 @@
 			<screenshot>resources/screenshots/screenshot003.jpg</screenshot>
 		</assets>
 		<news>
-[B]Update - v6.7.481 - Feb 27th, 2026[/B]
+[B]Update - v6.7.482 - Mar 1st, 2026[/B]
+--[Change] Changed way artwork is called from tmdb. English will always be a fallback.
 --[Fix] Change for simkl episode marking and unmarking. Also changed label for resume point popup to clearly indicate which service is being used.
 --[Fix] Change for automatic import to clean titles before importing.
 --[New] Added Simkl scrobble ability. (Stop and Resume Points from Simkl)

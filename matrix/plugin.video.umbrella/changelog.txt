@@ -1,4 +1,5 @@
-[B]Update - v6.7.481 - Feb 27th, 2026[/B]
+[B]Update - v6.7.482 - Mar 1st, 2026[/B]
+--[Change] Changed way artwork is called from tmdb. English will always be a fallback.
 --[Fix] Change for simkl episode marking and unmarking. Also changed label for resume point popup to clearly indicate which service is being used.
 --[Fix] Change for automatic import to clean titles before importing.
 --[New] Added Simkl scrobble ability. (Stop and Resume Points from Simkl)
