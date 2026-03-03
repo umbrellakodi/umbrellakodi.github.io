@@ -1,4 +1,7 @@
-[B]Update - v6.7.482 - Mar 1st, 2026[/B]
+[B]Update - v6.7.483 - Mar 2nd, 2026[/B]
+--[Change] YOU WILL NEED TO SET YOUR WATCH COUNT INDICATORS SETTING in the online services tab.
+--[Change] Modified settings to combine all services to one online-services tab. This is a very early beta and I expect issues.
+--[New] Added MDBList watch history and scrobble.
 --[Change] Changed way artwork is called from tmdb. English will always be a fallback.
 --[Fix] Change for simkl episode marking and unmarking. Also changed label for resume point popup to clearly indicate which service is being used.
 --[Fix] Change for automatic import to clean titles before importing.

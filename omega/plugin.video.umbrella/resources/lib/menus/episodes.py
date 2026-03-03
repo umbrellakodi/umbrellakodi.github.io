@@ -18,6 +18,7 @@ from resources.lib.modules import control
 from resources.lib.modules import tools
 from resources.lib.modules import trakt
 from resources.lib.modules import simkl
+from resources.lib.modules import mdblist
 from resources.lib.modules import views
 from resources.lib.modules.playcount import getTVShowIndicators, getEpisodeOverlay, getShowCount, getSeasonIndicators
 from resources.lib.modules.player import Bookmarks
@@ -66,6 +67,7 @@ class Episodes:
 		self.trakt_progress_hours = int(getSetting('cache.traktprogress'))
 		self.trakt_history_hours = int(getSetting('cache.trakthistory'))
 		self.simkl_hours = int(getSetting('cache.simkl'))
+		self.mdblist_hours = int(getSetting('cache.mdblist'))
 		self.hide_watched_in_widget = getSetting('enable.umbrellahidewatched') == 'true'
 		self.useFullContext = getSetting('enable.umbrellawidgetcontext') == 'true'
 		self.useContainerTitles = getSetting('enable.containerTitles') == 'true'
@@ -355,12 +357,21 @@ class Episodes:
 	def simkl_calendar(self, url, folderName=''):
 		self.list = []
 		try:
-			try: url = getattr(self, url + '_link')
-			except: pass
-			if '/sync/all-items/shows/watching' in url:
-				if simkl.getProgressActivity() > cache.timeout(self.simkl_progress_list, url, self.simkl_directProgressScrape):
-					self.list = cache.get(self.simkl_progress_list, 0, url,  self.simkl_directProgressScrape)
-				else: self.list = cache.get(self.simkl_progress_list, self.simkl_hours, url, self.simkl_directProgressScrape)
+			url_param = url or '/sync/all-items/shows/watching'
+			try:
+				q = dict(parse_qsl(urlsplit(url_param).query)) if '?' in url_param else {}
+				index = int(q.get('page', 1)) - 1
+				page_limit = max(1, int(q['limit'])) if q.get('limit') else max(1, int(self.count) if self.count else 20)
+			except:
+				index = 0
+				page_limit = max(1, int(self.count) if self.count else 20)
+			base_api_url = url_param.split('?')[0]
+			try: api_url = getattr(self, base_api_url + '_link')
+			except: api_url = base_api_url
+			if '/sync/all-items/shows/watching' in api_url:
+				if simkl.getProgressActivity() > cache.timeout(self.simkl_progress_list, api_url, self.simkl_directProgressScrape):
+					self.list = cache.get(self.simkl_progress_list, 0, api_url, self.simkl_directProgressScrape)
+				else: self.list = cache.get(self.simkl_progress_list, self.simkl_hours, api_url, self.simkl_directProgressScrape)
 				self.sort(type='progress')
 				if self.list is None: self.list = []
 				# place new season ep1's at top of list for 1 week
@@ -371,7 +382,23 @@ class Episodes:
 				sorted_list.extend([i for i in self.list if i not in top_items])
 				self.list = sorted_list
 			if self.list is None: self.list = []
+			if not self.progress_showunairedSimkl:
+				self.list = [i for i in self.list if i.get('unaired', '') != 'true']
 			hasNext = False
+			next_url = ''
+			if getSetting('simkl.paginate.lists') == 'true' and self.list:
+				paginated_ids = [self.list[x:x + page_limit] for x in range(0, len(self.list), page_limit)]
+				total_pages = len(paginated_ids)
+				self.list = paginated_ids[index] if index < total_pages else []
+				try:
+					if index + 1 >= total_pages: raise Exception()
+					next_page = index + 2
+					next_url = 'plugin://plugin.video.umbrella/?action=simkl_calendar&url=%s&page=%s&folderName=%s' % (
+						quote_plus('/sync/all-items/shows/watching?page=%s' % next_page),
+						str(next_page), quote_plus(folderName))
+					hasNext = True
+				except: pass
+			for i in range(len(self.list)): self.list[i]['next'] = next_url
 			self.episodeDirectory(self.list, unfinished=False, next=hasNext, folderName=folderName)
 			return self.list
 		except:
@@ -380,6 +407,133 @@ class Episodes:
 			if not self.list:
 				control.hide()
 				if self.notifications: control.notification(title=32326, message=33049)
+
+	def mdblist_calendar(self, url, folderName=''):
+		self.list = []
+		try:
+			if mdblist.getWatchedActivity() > cache.timeout(self.mdblist_progress_list, url):
+				self.list = cache.get(self.mdblist_progress_list, 0, url)
+			else:
+				self.list = cache.get(self.mdblist_progress_list, self.mdblist_hours, url)
+			self.sort(type='progress')
+			if self.list is None: self.list = []
+			# place new season ep1's at top of list for 1 week
+			prior_week = int(re.sub(r'[^0-9]', '', (self.date_time - timedelta(days=7)).strftime('%Y-%m-%d')))
+			sorted_list = []
+			top_items = [i for i in self.list if i.get('episode') == 1 and i.get('premiered') and (int(re.sub(r'[^0-9]', '', str(i['premiered']))) >= prior_week)]
+			sorted_list.extend(top_items)
+			sorted_list.extend([i for i in self.list if i not in top_items])
+			self.list = sorted_list
+			if self.list is None: self.list = []
+			hasNext = False
+			next_url = ''
+			if getSetting('mdblist.paginate.lists') == 'true' and self.list:
+				try:
+					q = dict(parse_qsl(urlsplit(url).query)) if '?' in url else {}
+					index = int(q.get('page', 1)) - 1
+					page_limit = max(1, int(q['limit'])) if q.get('limit') else max(1, int(self.count) if self.count else 20)
+				except:
+					index = 0
+					page_limit = max(1, int(self.count) if self.count else 20)
+				paginated_ids = [self.list[x:x + page_limit] for x in range(0, len(self.list), page_limit)]
+				total_pages = len(paginated_ids)
+				self.list = paginated_ids[index] if index < total_pages else []
+				try:
+					if index + 1 >= total_pages: raise Exception()
+					next_page = index + 2
+					next_url = 'plugin://plugin.video.umbrella/?action=mdblist_calendar&url=%s&page=%s&folderName=%s' % (
+						quote_plus('mdbprogress?limit=%s&page=%s' % (page_limit, next_page)),
+						str(next_page), quote_plus(folderName))
+					hasNext = True
+				except: pass
+			for i in range(len(self.list)): self.list[i]['next'] = next_url
+			self.episodeDirectory(self.list, unfinished=False, next=hasNext, folderName=folderName)
+			return self.list
+		except:
+			from resources.lib.modules import log_utils
+			log_utils.error()
+			if not self.list:
+				control.hide()
+				if self.notifications: control.notification(title=32326, message=33049)
+
+	def mdblist_progress_list(self, url='/upnext'):
+		try:
+			result = mdblist.get_up_next()
+		except: return
+		if not result: return
+		items = []
+		for item in result:
+			try:
+				values = {}
+				next_ep = item.get('next_episode', {})
+				if not next_ep: continue
+				values['snum'] = next_ep.get('season')
+				values['enum'] = next_ep.get('episode')
+				last_watched = item.get('last_watched_at', '')
+				if last_watched:
+					try:
+						date_part = last_watched.split('T')[0]
+						time_part = last_watched.split('T')[1].split('+')[0].rstrip('Z')
+						values['lastplayed'] = '%sT%s.000Z' % (date_part, time_part)
+					except: values['lastplayed'] = ''
+				else: values['lastplayed'] = ''
+				show = item.get('show', {})
+				values['tvshowtitle'] = show.get('title', '')
+				if not values['tvshowtitle']: continue
+				ids = show.get('ids', {})
+				values['tmdb'] = str(ids.get('tmdb', '')) if ids.get('tmdb') else ''
+				values['imdb'] = ''
+				values['tvdb'] = ''
+				values['duration'] = str(next_ep.get('runtime', ''))
+				items.append(values)
+			except: pass
+
+		def items_list(i):
+			values = i
+			tmdb = i.get('tmdb')
+			if not tmdb: return
+			try:
+				showSeasons = cache.get(tmdb_indexer().get_showSeasons_meta, 96, tmdb)
+				if not showSeasons: return
+				next_season_num = i['snum']
+				next_episode_num = i['enum']
+				if next_season_num > showSeasons['total_seasons']: return
+				if not self.showspecials and next_season_num == 0: return
+				seasonEpisodes = cache.get(tmdb_indexer().get_seasonEpisodes_meta, 96, tmdb, next_season_num)
+				if not seasonEpisodes: return
+				seasonEpisodes = dict((k, v) for k, v in iter(seasonEpisodes.items()) if v is not None and v != '')
+				try: episode_meta = [x for x in seasonEpisodes.get('episodes') if x.get('episode') == next_episode_num][0]
+				except: return
+				if not episode_meta.get('plot'): episode_meta['plot'] = showSeasons.get('plot', '')
+				values.update(showSeasons)
+				values.update(seasonEpisodes)
+				values.update(episode_meta)
+				for k in ('episodes', 'snum', 'enum'): values.pop(k, None)
+				air_date = values.get('premiered', '')
+				values['unaired'] = ''
+				try:
+					if values.get('status', '').lower() == 'ended': pass
+					elif not air_date: values['unaired'] = 'true'
+					elif int(re.sub(r'[^0-9]', '', air_date)) > int(re.sub(r'[^0-9]', '', str(self.today_date))):
+						values['unaired'] = 'true'
+				except: pass
+				if self.enable_fanarttv:
+					tvdb = values.get('tvdb', '')
+					extended_art = fanarttv_cache.get(FanartTv().get_tvshow_art, 336, tvdb)
+					if extended_art: values.update(extended_art)
+				values['mdblistProgress'] = True
+				values['extended'] = True
+				self.list.append(values)
+			except:
+				from resources.lib.modules import log_utils
+				log_utils.error()
+
+		threads = []
+		for i in items:
+			threads.append(Thread(target=items_list, args=(i,)))
+		[i.start() for i in threads]
+		[i.join() for i in threads]
+		return self.list
 
 	def sort(self, type='shows'):
 		try:
@@ -1088,7 +1242,7 @@ class Episodes:
 			watchedMenu, unwatchedMenu = getLS(40554), getLS(40555)
 		else:
 			watchedMenu, unwatchedMenu = getLS(32066), getLS(32067)
-		traktManagerMenu, playlistManagerMenu, queueMenu = getLS(32070), getLS(35522), getLS(32065)
+		traktManagerMenu, playlistManagerMenu, queueMenu = '[COLOR %s]Trakt Manager[/COLOR]' % self.highlight_color, getLS(35522), getLS(32065)
 		tvshowBrowserMenu, addToLibrary, addToFavourites, removeFromFavourites = getLS(32071), getLS(32551), getLS(40463), getLS(40468)
 		clearSourcesMenu, rescrapeMenu, progressRefreshMenu = getLS(32611), getLS(32185), getLS(32194)
 		trailerMenu = getLS(40431)

@@ -18,6 +18,7 @@ from resources.lib.modules import log_utils
 from resources.lib.modules import playcount
 from resources.lib.modules import trakt
 from resources.lib.modules import simkl
+from resources.lib.modules import mdblist
 from resources.lib.modules import opensubs
 from difflib import SequenceMatcher
 from resources.lib.modules.source_utils import seas_ep_filter
@@ -52,6 +53,7 @@ class Player(xbmc.Player):
 		self.markwatched_percentage = int(getSetting('markwatched.percent')) or 85
 		self.traktCredentials = trakt.getTraktCredentialsInfo()
 		self.simklCredentials = simkl.getSimKLCredentialsInfo()
+		self.mdblistCredentials = mdblist.getMDBListCredentialsInfo()
 		self.prefer_tmdbArt = getSetting('prefer.tmdbArt') == 'true'
 		self.subtitletime = None
 		self.debuglog = getSetting('debug.level') == '1'
@@ -557,11 +559,12 @@ class Player(xbmc.Player):
 		homeWindow.clearProperty('umbrella.window_keep_alive')
 		if self.offset != '0' and self.playback_resumed is False:
 			control.sleep(200)
-			_resume_source = getSetting('resume.source')
+			_resume_source = getSetting('scrobble.source')
 			if _resume_source == '0':
 				_indicators_alt = getSetting('indicators.alt')
 				if _indicators_alt == '2' and self.simklCredentials: _resume_source = '2'
 				elif _indicators_alt == '1' and self.traktCredentials: _resume_source = '1'
+				elif _indicators_alt == '3' and self.mdblistCredentials: _resume_source = '3'
 			if self.traktCredentials and _resume_source == '1': # re-adjust the resume point since dialog is based on meta runtime vs. getTotalTime() and inaccurate
 				try:
 					total_time = self.getTotalTime()
@@ -574,18 +577,28 @@ class Player(xbmc.Player):
 					progress = float(simklsync.fetch_bookmarks(self.imdb, self.tmdb, self.tvdb, self.season, self.episode))
 					self.offset = (progress / 100) * total_time
 				except: pass
+			elif self.mdblistCredentials and _resume_source == '3':
+				try:
+					from resources.lib.database import mdbsync
+					total_time = self.getTotalTime()
+					progress = float(mdbsync.fetch_bookmarks(self.imdb, self.tmdb, self.tvdb, self.season, self.episode))
+					self.offset = (progress / 100) * total_time
+				except: pass
 			try:
 				self.seekTime(self.offset)
 			except:
 				log_utils.log('Exception trying to seekTime() offset: %s'% self.offset, level=log_utils.LOGDEBUG)
 			self.playback_resumed = True
 		if getSetting('subtitles') == 'true': Subtitles().get(self.title, self.year, self.imdb, self.season, self.episode)
-		if self.traktCredentials:
+		scrobble_source = getSetting('scrobble.source')
+		if scrobble_source == '1' and self.traktCredentials:
 			trakt.scrobbleReset(imdb=self.imdb, tmdb=self.tmdb, tvdb=self.tvdb, season=self.season, episode=self.episode, refresh=False) # refresh issues container.refresh()
-		if self.simklCredentials and getSetting('simkl.scrobble') == 'true':
+		elif scrobble_source == '2' and self.simklCredentials:
 			simkl.scrobbleReset(imdb=self.imdb, tmdb=self.tmdb, tvdb=self.tvdb, season=self.season, episode=self.episode, refresh=False)
-		if self.simklCredentials:
 			simkl.scrobbleStart(media_type=self.media_type, title=self.title, tvshowtitle=self.title, year=self.year, imdb=self.imdb, tmdb=self.tmdb, tvdb=self.tvdb, season=self.season, episode=self.episode, watched_percent=0)
+		elif scrobble_source == '3' and self.mdblistCredentials:
+			mdblist.scrobbleReset(imdb=self.imdb, tmdb=self.tmdb, tvdb=self.tvdb, season=self.season, episode=self.episode, refresh=False)
+			mdblist.scrobbleStart(media_type=self.media_type, title=self.title, tvshowtitle=self.title, year=self.year, imdb=self.imdb, tmdb=self.tmdb, tvdb=self.tvdb, season=self.season, episode=self.episode, watched_percent=0)
 		log_utils.log('onAVStarted callback', level=log_utils.LOGDEBUG)
 
 	def onPlayBackStarted(self):
@@ -611,10 +624,13 @@ class Player(xbmc.Player):
 				self.onPlayBackStopped_ran = True
 				self.playbackStopped_triggered = False
 				Bookmarks().reset(self.current_time, self.media_length, self.name, self.year)
-				if self.traktCredentials and (getSetting('trakt.scrobble') == 'true'):
+				_scrobble_source = getSetting('scrobble.source')
+				if _scrobble_source == '1' and self.traktCredentials:
 					Bookmarks().set_scrobble(self.current_time, self.media_length, self.media_type, self.imdb, self.tmdb, self.tvdb, self.season, self.episode)
-				if self.simklCredentials and (getSetting('simkl.scrobble') == 'true'):
+				elif _scrobble_source == '2' and self.simklCredentials:
 					Bookmarks().set_scrobble(self.current_time, self.media_length, self.media_type, self.imdb, self.tmdb, self.tvdb, self.season, self.episode, service='simkl', title=self.title, year=self.year)
+				elif _scrobble_source == '3' and self.mdblistCredentials:
+					Bookmarks().set_scrobble(self.current_time, self.media_length, self.media_type, self.imdb, self.tmdb, self.tvdb, self.season, self.episode, service='mdblist', title=self.title, tvshowtitle=self.title, year=self.year)
 				watcher = self.getWatchedPercent()
 				seekable = (int(self.current_time) > 180 and (watcher < int(self.markwatched_percentage)))
 				if watcher >= int(self.markwatched_percentage): self.libForPlayback() # only write playcount to local lib
@@ -1167,20 +1183,23 @@ class Bookmarks:
 		self.debuglog = control.setting('debug.level') == '1'
 		self.traktCredentials = trakt.getTraktCredentialsInfo()
 		self.simklCredentials = simkl.getSimKLCredentialsInfo()
+		self.mdblistCredentials = mdblist.getMDBListCredentialsInfo()
 	def get(self, name, imdb=None, tmdb=None, tvdb=None, season=None, episode=None, year='0', runtime=None, ck=False):
 		markwatched_percentage = int(getSetting('markwatched.percent')) or 85
 		offset = '0'
 		scrobbble = 'Local Bookmark'
 		if getSetting('bookmarks') != 'true': return offset
-		resume_source = getSetting('resume.source')
+		resume_source = getSetting('scrobble.source')
 		# If resume source is Local/default (0), derive from indicators service so users who switch
-		# to Simkl indicators don't need to also manually update the resume source setting.
+		# indicators don't need to also manually update the scrobble source setting.
 		if resume_source == '0':
 			indicators_alt = getSetting('indicators.alt')
 			if indicators_alt == '2' and self.simklCredentials:
 				resume_source = '2'
 			elif indicators_alt == '1' and self.traktCredentials:
 				resume_source = '1'
+			elif indicators_alt == '3' and self.mdblistCredentials:
+				resume_source = '3'
 		if self.traktCredentials and resume_source == '1':
 			scrobbble = 'Trakt Resume Point'
 			try:
@@ -1203,6 +1222,18 @@ class Bookmarks:
 			except:
 				log_utils.error()
 				return '0'
+		elif self.mdblistCredentials and resume_source == '3':
+			scrobbble = 'MDBList Resume Point'
+			try:
+				if not runtime or runtime == 'None': return offset
+				from resources.lib.database import mdbsync
+				progress = float(mdbsync.fetch_bookmarks(imdb, tmdb, tvdb, season, episode))
+				offset = (progress / 100) * runtime
+				seekable = (2 <= progress <= int(markwatched_percentage))
+				if not seekable: return '0'
+			except:
+				log_utils.error()
+				return '0'
 		else:
 			try:
 				dbcon = database.connect(control.bookmarksFile)
@@ -1210,7 +1241,8 @@ class Bookmarks:
 				dbcur.execute('''CREATE TABLE IF NOT EXISTS bookmark (idFile TEXT, timeInSeconds TEXT, Name TEXT, year TEXT, UNIQUE(idFile));''')
 				if not year or year == 'None': return offset
 				years = [str(year), str(int(year)+1), str(int(year)-1)]
-				match = dbcur.execute('''SELECT * FROM bookmark WHERE Name="%s" AND year IN (%s)''' % (name, ','.join(i for i in years))).fetchone() # helps fix random cases where trakt and imdb, or tvdb, differ by a year for eps
+				_ph = ','.join('?' * len(years))
+				match = dbcur.execute('SELECT * FROM bookmark WHERE Name=? AND year IN (%s)' % _ph, [name] + years).fetchone() # helps fix random cases where trakt and imdb, or tvdb, differ by a year for eps
 			except:
 				log_utils.error()
 				return offset
@@ -1249,7 +1281,8 @@ class Bookmarks:
 			dbcur = dbcon.cursor()
 			dbcur.execute('''CREATE TABLE IF NOT EXISTS bookmark (idFile TEXT, timeInSeconds TEXT, Name TEXT, year TEXT, UNIQUE(idFile));''')
 			years = [str(year), str(int(year) + 1), str(int(year) - 1)]
-			dbcur.execute('''DELETE FROM bookmark WHERE Name="%s" AND year IN (%s)''' % (name, ','.join(i for i in years))) #helps fix random cases where trakt and imdb, or tvdb, differ by a year for eps
+			_ph = ','.join('?' * len(years))
+			dbcur.execute('DELETE FROM bookmark WHERE Name=? AND year IN (%s)' % _ph, [name] + years) #helps fix random cases where trakt and imdb, or tvdb, differ by a year for eps
 			if seekable:
 				dbcur.execute('''INSERT INTO bookmark Values (?, ?, ?, ?)''', (idFile, timeInSeconds, name, year))
 				minutes, seconds = divmod(float(timeInSeconds), 60)
@@ -1276,6 +1309,9 @@ class Bookmarks:
 			if service == 'simkl':
 				if seekable: simkl.scrobbleMovie(title, year, imdb, tmdb, percent) if media_type == 'movie' else simkl.scrobbleEpisode(tvshowtitle or title, year, imdb, tmdb, tvdb, season, episode, percent)
 				if percent >= int(markwatched_percentage): simkl.scrobbleReset(imdb, tmdb, tvdb, season, episode, refresh=False)
+			elif service == 'mdblist':
+				if seekable: mdblist.scrobbleMovie(title, year, imdb, tmdb, percent) if media_type == 'movie' else mdblist.scrobbleEpisode(tvshowtitle or title, year, imdb, tmdb, tvdb, season, episode, percent)
+				if percent >= int(markwatched_percentage): mdblist.scrobbleReset(imdb, tmdb, tvdb, season, episode, refresh=False)
 			else:
 				if seekable: trakt.scrobbleMovie(imdb, tmdb, percent) if media_type == 'movie' else trakt.scrobbleEpisode(imdb, tmdb, tvdb, season, episode, percent)
 				if percent >= int(markwatched_percentage): trakt.scrobbleReset(imdb, tmdb, tvdb, season, episode, refresh=False)

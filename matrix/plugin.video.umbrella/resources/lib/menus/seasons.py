@@ -151,7 +151,7 @@ class Seasons:
 			watchedMenu, unwatchedMenu = getLS(40554), getLS(40555)
 		else:
 			watchedMenu, unwatchedMenu = getLS(32066), getLS(32067)
-		traktManagerMenu, queueMenu = getLS(32070), getLS(32065)
+		traktManagerMenu, queueMenu = '[COLOR %s]Trakt Manager[/COLOR]' % self.highlight_color, getLS(32065)
 		showPlaylistMenu, clearPlaylistMenu = getLS(35517), getLS(35516)
 		labelMenu, playRandom = getLS(32055), getLS(32535)
 		addToLibrary = getLS(32551)

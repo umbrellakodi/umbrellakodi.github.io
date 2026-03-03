@@ -89,29 +89,17 @@
 						<heading/>
 					</control>
 				</setting>
-				<setting id="indicators.alt" type="integer" label="32313" help="">
-					<level>0</level>
-					<default>1</default>
-					<constraints>
-						<options>
-							<option label="32314">0</option>
-							<option label="32315">1</option>
-							<option label="40342">2</option>
-						</options>
-					</constraints>
-					<dependencies>
-						<dependency type="visible">
-							<condition on="property" name="InfoBool">false</condition>
-						</dependency>
-					</dependencies>
-					<control type="spinner" format="string"/>
-				</setting>
 				<setting id="indicators" type="string" label="32313" help="">
 					<level>0</level>
 					<default>Local</default>
 					<constraints>
 						<allowempty>true</allowempty>
 					</constraints>
+					<dependencies>
+						<dependency type="visible">
+							<condition on="property" name="InfoBool">false</condition>
+						</dependency>
+					</dependencies>
 					<control type="button" format="action">
 						<data>RunPlugin(plugin://plugin.video.umbrella/?action=tools_indicators)</data>
 						<close>true</close>
@@ -3174,8 +3162,94 @@
 				</setting>
 			</group>
 		</category>
-		<category id="simkl" label="40342" help="40344">
-			<group id="1" label="40343">
+		<category id="online_services" label="40622">
+			<group id="1" label="40633">
+				<setting id="indicators.alt" type="integer" label="40634" help="">
+					<level>0</level>
+					<default>1</default>
+					<constraints>
+						<options>
+							<option label="32314">0</option>
+							<option label="32315">1</option>
+							<option label="40342">2</option>
+							<option label="40621">3</option>
+						</options>
+					</constraints>
+					<control type="spinner" format="string"/>
+				</setting>
+				<setting id="scrobble.source" type="integer" label="40623" help="">
+					<level>0</level>
+					<default>0</default>
+					<constraints>
+						<options>
+							<option label="40624">0</option>
+							<option label="32315">1</option>
+							<option label="40342">2</option>
+							<option label="40621">3</option>
+						</options>
+					</constraints>
+					<dependencies>
+						<dependency type="visible">
+							<or>
+								<condition operator="!is" setting="trakt.user.token"/>
+								<condition operator="!is" setting="simkltoken"/>
+								<condition operator="!is" setting="mdblist.api"/>
+							</or>
+						</dependency>
+					</dependencies>
+					<control type="spinner" format="string"/>
+				</setting>
+				<setting id="scrobble.notify" type="boolean" label="40628" help="">
+					<level>0</level>
+					<default>false</default>
+					<dependencies>
+						<dependency type="visible">
+							<condition operator="!is" setting="scrobble.source">0</condition>
+						</dependency>
+					</dependencies>
+					<control type="toggle"/>
+				</setting>
+				<setting id="trakt.markwatched" type="boolean" label="40625" help="">
+					<level>0</level>
+					<default>false</default>
+					<dependencies>
+						<dependency type="visible">
+							<and>
+								<condition operator="!is" setting="trakt.user.token"/>
+								<condition operator="!is" setting="indicators.alt">1</condition>
+							</and>
+						</dependency>
+					</dependencies>
+					<control type="toggle"/>
+				</setting>
+				<setting id="simkl.markwatched" type="boolean" label="40626" help="">
+					<level>0</level>
+					<default>false</default>
+					<dependencies>
+						<dependency type="visible">
+							<and>
+								<condition operator="!is" setting="simkltoken"/>
+								<condition operator="!is" setting="indicators.alt">2</condition>
+							</and>
+						</dependency>
+					</dependencies>
+					<control type="toggle"/>
+				</setting>
+				<setting id="mdblist.markwatched" type="boolean" label="40627" help="">
+					<level>0</level>
+					<default>false</default>
+					<dependencies>
+						<dependency type="visible">
+							<and>
+								<condition operator="!is" setting="mdblist.api"/>
+								<condition operator="!is" setting="indicators.alt">3</condition>
+							</and>
+						</dependency>
+					</dependencies>
+					<control type="toggle"/>
+				</setting>
+			</group>
+			<group id="2" label="40342">
 				<setting id="authorizeSIMKLbutton" type="action" label="40121" help="">
 					<level>0</level>
 					<data>RunPlugin(plugin://plugin.video.umbrella/?action=simkl_Authorize)</data>
@@ -3249,39 +3323,12 @@
 						<heading>40006</heading>
 					</control>
 				</setting>
-				<setting id="simkl.general.notifications" type="boolean" label="33052" help="">
+				<setting id="simkl.general.notifications" type="boolean" label="40644" help="">
 					<level>0</level>
 					<default>false</default>
 					<dependencies>
 						<dependency type="visible">
 							<condition operator="!is" setting="simkltoken"/>
-						</dependency>
-					</dependencies>
-					<control type="toggle"/>
-				</setting>
-				<setting id="simkl.scrobble" type="boolean" label="40618" help="">
-					<level>0</level>
-					<default>false</default>
-					<dependencies>
-						<dependency type="visible">
-							<and>
-								<condition operator="!is" setting="simkltoken"/>
-								<condition operator="is" setting="indicators.alt">2</condition>
-							</and>
-						</dependency>
-					</dependencies>
-					<control type="toggle"/>
-				</setting>
-				<setting id="simkl.scrobble.notify" type="boolean" label="40619" help="">
-					<level>0</level>
-					<default>false</default>
-					<dependencies>
-						<dependency type="visible">
-							<and>
-								<condition operator="!is" setting="simkltoken"/>
-								<condition operator="is" setting="indicators.alt">2</condition>
-								<condition operator="is" setting="simkl.scrobble">true</condition>
-							</and>
 						</dependency>
 					</dependencies>
 					<control type="toggle"/>
@@ -3394,9 +3441,7 @@
 					</control>
 				</setting>
 			</group>
-		</category>
-		<category id="trakt" label="32315" help="40189">
-			<group id="1" label="32315">
+			<group id="3" label="32315">
 				<setting id="traktuserkey.customenabled" type="boolean" label="40106" help="">
 					<level>0</level>
 					<default>false</default>
@@ -3602,7 +3647,7 @@
 					</dependencies>
 					<control type="toggle"/>
 				</setting>
-				<setting id="trakt.general.notifications" type="boolean" label="33052" help="">
+				<setting id="trakt.general.notifications" type="boolean" label="40644" help="">
 					<level>0</level>
 					<default>true</default>
 					<dependencies>
@@ -3683,73 +3728,6 @@
 					<dependencies>
 						<dependency type="visible">
 							<condition operator="!is" setting="trakt.user.token"/>
-						</dependency>
-					</dependencies>
-					<control type="spinner" format="string"/>
-				</setting>
-				<setting id="trakt.scrobble" type="boolean" label="32097" help="">
-					<level>0</level>
-					<default>false</default>
-					<dependencies>
-						<dependency type="visible">
-							<and>
-								<condition operator="!is" setting="trakt.user.token"/>
-								<condition operator="is" setting="indicators.alt">1</condition>
-							</and>
-						</dependency>
-					</dependencies>
-					<control type="toggle"/>
-				</setting>
-				<setting id="showHelpTraktScrobble" type="action" label="32137" help="">
-					<level>0</level>
-					<data>RunPlugin(plugin://plugin.video.umbrella/?action=tools_ShowHelp&amp;name=Trakt_Scrobble)</data>
-					<constraints>
-						<allowempty>true</allowempty>
-					</constraints>
-					<dependencies>
-						<dependency type="visible">
-							<condition operator="!is" setting="trakt.user.token"/>
-						</dependency>
-					</dependencies>
-					<control type="button" format="action"/>
-				</setting>
-				<setting id="trakt.scrobble.notify" type="boolean" label="32099" help="" parent="">
-					<level>0</level>
-					<default>false</default>
-					<dependencies>
-						<dependency type="visible">
-							<and>
-								<condition operator="!is" setting="trakt.user.token"/>
-								<condition operator="is" setting="trakt.scrobble">true</condition>
-							</and>
-						</dependency>
-					</dependencies>
-					<control type="toggle"/>
-				</setting>
-				<setting id="resume.source" type="integer" label="32095" help="">
-					<level>0</level>
-					<default>0</default>
-					<constraints>
-						<options>
-							<option label="32314">0</option>
-							<option label="32096">1</option>
-							<option label="40620">2</option>
-						</options>
-					</constraints>
-					<dependencies>
-						<dependency type="visible">
-							<or>
-								<and>
-									<condition operator="!is" setting="trakt.user.token"/>
-									<condition operator="is" setting="trakt.scrobble">true</condition>
-									<condition operator="is" setting="indicators.alt">1</condition>
-								</and>
-								<and>
-									<condition operator="!is" setting="simkltoken"/>
-									<condition operator="is" setting="simkl.scrobble">true</condition>
-									<condition operator="is" setting="indicators.alt">2</condition>
-								</and>
-							</or>
 						</dependency>
 					</dependencies>
 					<control type="spinner" format="string"/>
@@ -3857,6 +3835,54 @@
 					<control type="edit" format="string">
 						<heading>32648</heading>
 					</control>
+				</setting>
+			</group>
+			<group id="4" label="40172">
+				<setting id="mdblist.api" type="string" label="40085" help="">
+					<level>0</level>
+					<default/>
+					<constraints>
+						<allowempty>true</allowempty>
+					</constraints>
+					<control type="edit" format="string">
+						<heading>40085</heading>
+					</control>
+				</setting>
+				<setting id="mdblist.general.notifications" type="boolean" label="40644" help="">
+					<level>0</level>
+					<default>false</default>
+					<dependencies>
+						<dependency type="visible">
+							<condition operator="!is" setting="mdblist.api"/>
+						</dependency>
+					</dependencies>
+					<control type="toggle"/>
+				</setting>
+				<setting id="mdblist.service.syncInterval" type="integer" label="40630" help="">
+					<level>0</level>
+					<default>30</default>
+					<constraints>
+						<minimum>5</minimum>
+						<maximum>120</maximum>
+					</constraints>
+					<dependencies>
+						<dependency type="visible">
+							<condition operator="!is" setting="mdblist.api"/>
+						</dependency>
+					</dependencies>
+					<control type="slider" format="integer">
+						<popup>false</popup>
+					</control>
+				</setting>
+				<setting id="mdblist.paginate.lists" type="boolean" label="32188" help="">
+					<level>0</level>
+					<default>true</default>
+					<dependencies>
+						<dependency type="visible">
+							<condition operator="!is" setting="mdblist.api"/>
+						</dependency>
+					</dependencies>
+					<control type="toggle"/>
 				</setting>
 			</group>
 		</category>
@@ -5453,23 +5479,6 @@
 					</dependencies>
 					<control type="button" format="action">
 						<close>true</close>
-					</control>
-				</setting>
-			</group>
-			<group id="4" label="40172">
-				<setting id="mdblist.api" type="string" label="40085" help="">
-					<level>0</level>
-					<default/>
-					<constraints>
-						<allowempty>true</allowempty>
-					</constraints>
-					<dependencies>
-						<dependency type="enable">
-							<condition on="property" name="InfoBool">true</condition>
-						</dependency>
-					</dependencies>
-					<control type="edit" format="string">
-						<heading>40085</heading>
 					</control>
 				</setting>
 			</group>

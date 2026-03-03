@@ -423,7 +423,8 @@ def markMovieAsWatched(imdb):
 		data = {"movies": [{"watched_at": timestamp,"ids": {"imdb": imdb}}]}
 		from resources.lib.modules import simkl
 		result = simkl.post_request('/sync/history', data)
-		result = result['added']['movies'] != 0
+		if not result: return False
+		result = len(result.get('not_found', {}).get('movies', [])) == 0
 		if result: simklsync.remove_plan_to_watch(imdb, 'movies_plantowatch')
 		if getSetting('debug.level') == '1':
 			log_utils.log('SimKL markMovieAsWatched IMDB: %s Result: %s' % (imdb, result), level=log_utils.LOGDEBUG)
@@ -442,14 +443,16 @@ def markTVShowAsWatched(imdb, tvdb):
 		from resources.lib.modules import simkl
 		#result = simkl.post_request('/sync/history', {"shows": [{"ids": {"imdb": imdb, "tvdb": tvdb}}]})
 		result = simkl.post_request('/sync/add-to-list', {"shows": [{"to": "completed", "ids": {"imdb": imdb, "tvdb": tvdb}}]})
-		if result['not_found']['shows'] == 0 and tvdb: # fail, trying again with tvdb as fallback
+		if not result: return False
+		if result.get('not_found', {}).get('shows') and tvdb: # show not found, retry with tvdb only
 			control.sleep(1000) # POST 1 call per sec rate-limit
 			result = simkl.post_request('/sync/history', {"shows": [{"ids": {"tvdb": tvdb}}]})
 			if not result: return False
-		if len(result.get('added').get('shows', 0)) != 0: 
+		success = len(result.get('not_found', {}).get('shows', [])) == 0
+		if success:
 			simklsync.remove_hold_item(imdb)
 			simklsync.remove_plan_to_watch(imdb, 'shows_plantowatch')
-		return len(result.get('added').get('shows', 0)) != 0
+		return success
 	except: log_utils.error()
 
 def markTVShowAsNotWatched(imdb, tvdb):
@@ -457,11 +460,11 @@ def markTVShowAsNotWatched(imdb, tvdb):
 		from resources.lib.modules import simkl
 		result = simkl.post_request('/sync/history/remove', {"shows": [{"ids": {"imdb": imdb, "tvdb": tvdb}}]})
 		if not result: return False
-		if result['not_found']['shows'] == 0 and tvdb: # fail, trying again with tvdb as fallback
+		if result.get('not_found', {}).get('shows') and tvdb: # show not found, retry with tvdb only
 			control.sleep(1000) # POST 1 call per sec rate-limit
 			result = simkl.post_request('/sync/history/remove', {"shows": [{"ids": {"tvdb": tvdb}}]})
 			if not result: return False
-		return result['deleted']['shows'] != 0
+		return len(result.get('not_found', {}).get('shows', [])) == 0
 	except: log_utils.error()
 
 def markSeasonAsWatched(imdb, tvdb, season):
@@ -470,14 +473,15 @@ def markSeasonAsWatched(imdb, tvdb, season):
 		season = int('%01d' % int(season))
 		result = simkl.post_request('/sync/history', {"shows": [{"seasons": [{"number": season}], "ids": {"imdb": imdb, "tvdb": tvdb}}]})
 		if not result: return False
-		if  result['not_found']['shows'] == 0 and tvdb: # # fail, trying again with tvdb as fallback
+		if result.get('not_found', {}).get('shows') and tvdb: # show not found, retry with tvdb only
 			control.sleep(1000) # POST 1 call per sec rate-limit
 			result = simkl.post_request('/sync/history', {"shows": [{"seasons": [{"number": season}], "ids": {"tvdb": tvdb}}]})
 			if not result: return False
-		if result['not_found']['shows'] == []:
+		success = len(result.get('not_found', {}).get('shows', [])) == 0
+		if success:
 			simklsync.remove_hold_item(imdb)
 			simklsync.remove_plan_to_watch(imdb, 'shows_plantowatch')
-		return result['added']['episodes'] != 0
+		return success
 	except: log_utils.error()
 
 def markSeasonAsNotWatched(imdb, tvdb, season):
@@ -493,20 +497,112 @@ def markSeasonAsNotWatched(imdb, tvdb, season):
 		return result['deleted']['episodes'] != 0
 	except: log_utils.error()
 
+def _simkl_resolve_episode(simkl_mod, tvdb, imdb, tmdb_season, tmdb_episode):
+	"""Translate TMDB season/episode to TVDB via:
+	   1. TVDB episode ID from TMDB external_ids (fastest, most accurate)
+	   2. Airdate matching against Simkl episode list (fallback)
+	   Returns Simkl post_request result dict, or None if all lookups fail."""
+	try:
+		from resources.lib.database import cache as _cache
+		from resources.lib.indexers import tmdb as _tmdb
+		# Get TMDB show ID (cached from browsing)
+		tmdb_result = _cache.get(_tmdb.TVshows().IdLookup, 96, imdb, tvdb)
+		if not tmdb_result:
+			return None
+		tmdb_id = str(tmdb_result.get('id', ''))
+		if not tmdb_id:
+			return None
+		tmdb_obj = _tmdb.TVshows()
+
+		# Method 1: TVDB episode ID from TMDB external_ids
+		ext_ids = tmdb_obj.get_request('%stv/%s/season/%s/episode/%s/external_ids?api_key=%s' % (_tmdb.base_link, tmdb_id, tmdb_season, tmdb_episode, tmdb_obj.API_key))
+		tvdb_ep_id = ext_ids.get('tvdb_id') if ext_ids else None
+		if tvdb_ep_id:
+			# M1a: episode-level TVDB ID only (developer-confirmed format)
+			control.sleep(1000)
+			result = simkl_mod.post_request('/sync/history', {"episodes": [{"ids": {"tvdb": tvdb_ep_id}}]})
+			if result and result.get('added', {}).get('episodes', 0):
+				return result
+			# M1b: episode-level TVDB ID nested inside show IDs (no season/episode numbers)
+			control.sleep(1000)
+			show_ids = {}
+			if imdb: show_ids['imdb'] = imdb
+			if tvdb: show_ids['tvdb'] = tvdb
+			result = simkl_mod.post_request('/sync/history', {"shows": [{"ids": show_ids, "episodes": [{"ids": {"tvdb": tvdb_ep_id}}]}]})
+			if result and result.get('added', {}).get('episodes', 0):
+				return result
+
+		# Method 2: Airdate-based matching against Simkl episode list
+		raw = _cache.get(tmdb_obj.get_season_request, 96, tmdb_id, tmdb_season)
+		tmdb_airdate = ''
+		tmdb_ep_title = ''
+		for ep in (raw or {}).get('episodes', []):
+			if int(ep.get('episode_number', -1)) == tmdb_episode:
+				tmdb_airdate = ep.get('air_date', '')[:10]
+				tmdb_ep_title = (ep.get('name') or '').strip().lower()
+				break
+		if not tmdb_airdate:
+			return None
+		# Find Simkl show ID — try tvdb first (reliable for TV), fall back to imdb
+		simkl_info = None
+		if tvdb:
+			simkl_info = simkl_mod.get_request('/search/id?source=tvdb&id=%s&extended=full' % tvdb)
+		if not simkl_info and imdb:
+			simkl_info = simkl_mod.get_request('/search/id?source=imdb&id=%s&extended=full' % imdb)
+		if not simkl_info:
+			return None
+		simkl_id = simkl_info[0].get('ids', {}).get('simkl') if isinstance(simkl_info, list) else None
+		if not simkl_id:
+			return None
+		# Search nearby seasons for matching airdate
+		for try_season in [tmdb_season, tmdb_season - 1, tmdb_season + 1, tmdb_season + 2]:
+			if try_season < 0: continue
+			control.sleep(500)
+			eps = simkl_mod.get_request('/tv/%s/episodes/%s?extended=full' % (simkl_id, try_season))
+			if not eps: continue
+			date_matches = [e for e in eps if str(e.get('date', ''))[:10] == tmdb_airdate]
+			if not date_matches: continue
+			# Disambiguate when multiple episodes share the same airdate
+			if len(date_matches) == 1:
+				chosen = date_matches[0]
+			else:
+				# Tiebreaker 1: exact title match (case-insensitive)
+				chosen = None
+				if tmdb_ep_title:
+					title_hits = [e for e in date_matches if (e.get('title') or '').strip().lower() == tmdb_ep_title]
+					if len(title_hits) == 1:
+						chosen = title_hits[0]
+				# Tiebreaker 2: closest episode number to TMDB episode number
+				if not chosen:
+					chosen = min(date_matches, key=lambda e: abs(int(e.get('episode', tmdb_episode)) - tmdb_episode))
+			tvdb_s = int(chosen.get('season', try_season))
+			tvdb_e = int(chosen.get('episode', tmdb_episode))
+			corrected_body = {"seasons": [{"episodes": [{"number": tvdb_e}], "number": tvdb_s}]}
+			control.sleep(1000)
+			return simkl_mod.post_request('/sync/history', {"shows": [{**corrected_body, "ids": {"tvdb": tvdb}}]})
+	except: log_utils.error()
+	return None
+
 def markEpisodeAsWatched(imdb, tvdb, season, episode):
 	try:
-		season, episode = int('%01d' % int(season)), int('%01d' % int(episode)) #same
+		season, episode = int('%01d' % int(season)), int('%01d' % int(episode))
 		from resources.lib.modules import simkl
-		result = simkl.post_request('/sync/history', {"shows": [{"seasons": [{"episodes": [{"number": episode}], "number": season}], "ids": {"imdb": imdb, "tvdb": tvdb}}]})
-		if not result: result = False
-		if (result['not_found']['episodes'] == 0 or result['not_found']['shows'] == 0) and tvdb:
-			control.sleep(1000)
-			result = simkl.post_request('/sync/history', {"shows": [{"seasons": [{"episodes": [{"number": episode}], "number": season}], "ids": {"tvdb": tvdb}}]})
-			if not result: result = False
-			result = result['added']['episodes'] !=0
-		else:
-			result = result['added']['episodes'] !=0
-		if result: 
+		ep_body = {"seasons": [{"episodes": [{"number": episode}], "number": season}]}
+		# Attempt 1: imdb + tvdb (TMDB episode numbers)
+		result = simkl.post_request('/sync/history', {"shows": [{**ep_body, "ids": {"imdb": imdb, "tvdb": tvdb}}]})
+		if not result: result = {}
+		if result.get('added', {}).get('episodes', 0) == 0:
+			# Attempt 2: tvdb only
+			if tvdb:
+				control.sleep(1000)
+				result = simkl.post_request('/sync/history', {"shows": [{**ep_body, "ids": {"tvdb": tvdb}}]})
+				if not result: result = {}
+			if result.get('added', {}).get('episodes', 0) == 0:
+				# Attempt 3: TVDB episode ID (bypasses numbering mismatch) then airdate fallback
+				resolved = _simkl_resolve_episode(simkl, tvdb, imdb, season, episode)
+				if resolved: result = resolved
+		result = bool(result.get('added', {}).get('episodes', 0))
+		if result:
 			simklsync.remove_hold_item(imdb)
 			simklsync.remove_plan_to_watch(imdb, 'shows_plantowatch')
 		if getSetting('debug.level') == '1':

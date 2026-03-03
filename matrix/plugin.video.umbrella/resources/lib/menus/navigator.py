@@ -8,6 +8,7 @@ from urllib.parse import quote_plus
 from resources.lib.modules import control
 from resources.lib.modules.trakt import getTraktCredentialsInfo, getTraktIndicatorsInfo
 from resources.lib.modules import simkl
+from resources.lib.modules import mdblist
 from resources.lib.modules.tmdb4 import getTMDbV4CredentialsInfo
 from resources.lib.modules import favourites
 from json import loads as jsloads
@@ -25,8 +26,10 @@ class Navigator:
 		self.indexLabels = getSetting('index.labels') == 'true'
 		self.traktCredentials = getTraktCredentialsInfo()
 		self.simklCredentials = simkl.getSimKLCredentialsInfo()
+		self.mdblistCredentials = mdblist.getMDBListCredentialsInfo()
 		self.traktIndicators = getTraktIndicatorsInfo()
 		self.simklIndicators = simkl.getSimKLIndicatorsInfo()
+		self.mdblistIndicators = mdblist.getMDBListIndicatorsInfo()
 		self.tmdbCredentials = getTMDbV4CredentialsInfo()
 		self.simkltoken = getSetting('simkltoken') != ''
 		self.alldebridCredentials = getSetting('alldebridtoken') != ''
@@ -273,21 +276,24 @@ class Navigator:
 		if getMenuEnabled('navi.tv.mdblist.userList') and getSetting('mdblist.api') != '':
 			self.addDirectoryItem(40087, 'mdbUserListTV&folderName=%s' % quote_plus(getLS(40087)), 'mdblist.png', 'DefaultMovies.png')
 			self.addDirectoryItem(40595,'mdbUserWatchListTVShows&folderName=%s' % quote_plus(getLS(40595)), 'mdblist.png', 'DefaultMovies.png')
+		if self.mdblistCredentials and (self.mdblistIndicators or getSetting('mdblist.markwatched') == 'true'):
+			self.addDirectoryItem(40645, 'mdblist_shows_progress&url=mdbprogress&folderName=%s' % quote_plus(getLS(40645)), 'mdblist.png', 'mdblist.png', queue=True)
+			self.addDirectoryItem(40646, 'mdblist_calendar&url=mdbprogress&folderName=%s' % quote_plus(getLS(40646)), 'mdblist.png', 'mdblist.png', queue=True)
 		# TMDb User Lists
 		if getSetting('tmdb.v4.accesstoken') != '':
 			self.addDirectoryItem('TMDb User Lists','tmdbUserListsTV&folderName=%s' % quote_plus('TMDb User Lists'),'tmdb.png','DefaultTVShows.png')
 			self.addDirectoryItem(40612, 'tmdbV4WatchlistTV&folderName=%s' % quote_plus(getLS(40612)), 'tmdb.png', 'DefaultTVShows.png')
 		if self.simklCredentials:
-			if self.simklIndicators:
+			if self.simklIndicators or getSetting('simkl.markwatched') == 'true':
 				self.addDirectoryItem('Simkl Progress Episodes', 'simkl_calendar&url=/sync/all-items/shows/watching&folderName=%s' % quote_plus("Simkl Progress Episodes"), 'simkl.png', 'simkl.png', queue=True)
 			self.addDirectoryItem('Simkl Watching', 'tvshows&url=simklwatching&folderName=%s' % quote_plus("Simkl Watching"), 'simkl.png', 'simkl.png', queue=True)
 			self.addDirectoryItem('Simkl Plan to Watch', 'tvshows&url=simklwatchlist&folderName=%s' % quote_plus('Simkl Plan to Watch'), 'simkl.png', 'simkl.png')
 			self.addDirectoryItem('Simkl On Hold', 'tvshows&url=simklonhold&folderName=%s' % quote_plus('Simkl On Hold'), 'simkl.png', 'simkl.png')
 			self.addDirectoryItem('Simkl Completed', 'tvshows&url=simklhistory&folderName=%s' % quote_plus('Simkl Completed'), 'simkl.png', 'simkl.png')
 			self.addDirectoryItem('Simkl Dropped', 'tvshows&url=simkldropped&folderName=%s' % quote_plus('Simkl Dropped'), 'simkl.png', 'simkl.png')
-			
+
 		if self.traktCredentials:
-			if self.traktIndicators:
+			if self.traktIndicators or getSetting('trakt.markwatched') == 'true':
 				self.addDirectoryItem(35308, 'episodesUnfinished&url=traktunfinished&folderName=%s' % quote_plus(getLS(35308)), 'trakt.png', 'trakt.png', queue=True)
 				self.addDirectoryItem(32037, 'calendar&url=progress&folderName=%s' % quote_plus(getLS(32037)), 'trakt.png', 'trakt.png', queue=True)
 				self.addDirectoryItem(40401, 'shows_progress&url=progresstv&folderName=%s' % quote_plus(getLS(40401)), 'trakt.png', 'trakt.png', queue=True)
@@ -406,9 +412,10 @@ class Navigator:
 		self.addDirectoryItem(40124, 'tools_openSettings&query=12.0', 'tools.png', 'DefaultAddonService.png', isFolder=False)
 		self.addDirectoryItem(40611, 'tools_openSettings&query=8.0', 'tools.png', 'DefaultAddonService.png', isFolder=False)
 		#self.addDirectoryItem(40559, 'tools_openSettings&query=9.0', 'tools.png', 'DefaultAddonService.png', isFolder=False)
-		self.addDirectoryItem(40123, 'tools_openSettings&query=9.0', 'tools.png', 'DefaultAddonService.png', isFolder=False)
+		#self.addDirectoryItem(40123, 'tools_openSettings&query=9.0', 'tools.png', 'DefaultAddonService.png', isFolder=False)
 		if self.simklCredentials: self.addDirectoryItem(40551, 'tools_simklToolsNavigator&folderName=%s' % quote_plus(getLS(40552)), 'tools.png', 'DefaultAddonService.png', isFolder=True)
 		if self.traktCredentials: self.addDirectoryItem(35057, 'tools_traktToolsNavigator&folderName=%s' % quote_plus(getLS(40461)), 'tools.png', 'DefaultAddonService.png', isFolder=True)
+		if self.mdblistCredentials: self.addDirectoryItem(40635, 'tools_mdblistToolsNavigator&folderName=%s' % quote_plus(getLS(40636)), 'tools.png', 'DefaultAddonService.png', isFolder=True)
 		#-- Navigation - 1
 		self.addDirectoryItem(32362, 'tools_openSettings&query=1.0', 'tools.png', 'DefaultAddonService.png', isFolder=False)
 		#-- Playback - 3
@@ -455,6 +462,13 @@ class Navigator:
 	def simklTools(self, folderName=''):
 		if self.useContainerTitles: control.setContainerName(folderName)
 		self.addDirectoryItem(40553, 'tools_forceSimklSync', 'tools.png', 'DefaultAddonService.png', isFolder=False)
+		self.endDirectory()
+
+	def mdblistTools(self, folderName=''):
+		if self.useContainerTitles: control.setContainerName(folderName)
+		self.addDirectoryItem(40638, 'movies_mdblistWatchlistManager', 'mdblist.png', 'DefaultAddonService.png', isFolder=False)
+		self.addDirectoryItem(40639, 'shows_mdblistWatchlistManager', 'mdblist.png', 'DefaultAddonService.png', isFolder=False)
+		self.addDirectoryItem(40637, 'tools_forceMDBListSync', 'mdblist.png', 'DefaultAddonService.png', isFolder=False)
 		self.endDirectory()
 
 	def loggingNavigator(self, folderName=''):

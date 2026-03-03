@@ -7,6 +7,7 @@ from time import time
 from sqlite3 import dbapi2 as db
 from resources.lib.modules.control import existsPath, dataPath, makeFile, metacacheFile
 from resources.lib.modules import trakt, simkl
+from resources.lib.modules.control import setting as getSetting
 
 
 def fetch(items, lang='en', user=''):
@@ -62,6 +63,11 @@ def fetch(items, lang='en', user=''):
 								elif simkl.getSimKLIndicatorsInfo():
 									from resources.lib.database.simklsync import cache_existing
 									from resources.lib.modules.simkl import syncTVShows
+								elif getSetting('indicators.alt') == '3':
+									from resources.lib.database.mdbsync import cache_existing
+									from resources.lib.modules.mdblist import syncTVShows
+								else:
+									continue
 								imdb = item.get('imdb', '')
 								indicators = cache_existing(syncTVShows)
 								watching = [i[0] for i in indicators if i[0] == imdb]
@@ -70,6 +76,8 @@ def fetch(items, lang='en', user=''):
 										from resources.lib.modules.trakt import cachesyncSeasons
 									elif simkl.getSimKLIndicatorsInfo():
 										from resources.lib.modules.simkl import cachesyncSeasons
+									elif getSetting('indicators.alt') == '3':
+										from resources.lib.modules.mdblist import cachesyncSeasons
 
 									cachesyncSeasons(imdb) # refreshes only shows you are "watching"
 								continue
