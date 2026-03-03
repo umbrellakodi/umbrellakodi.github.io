@@ -101,10 +101,8 @@ def getSeasonIndicators(imdb, tvdb, refresh=False):
 			indicators = simkl.cachesyncSeasons(imdb, tvdb, timeout=timeout)
 			return indicators
 		elif mdblistIndicators:
-			# syncSeasons is a pure local-DB read — no API calls — so skip the timeout guard
-			if not refresh: timeout = 720
-			else: timeout = 0
-			indicators = mdblist.cachesyncSeasons(imdb, tvdb, timeout=timeout)
+			# syncSeasons is a pure local-DB read — no API calls — always fetch fresh
+			indicators = mdblist.cachesyncSeasons(imdb, tvdb, timeout=0)
 			return indicators
 		else:
 #			from metahandler import metahandlers

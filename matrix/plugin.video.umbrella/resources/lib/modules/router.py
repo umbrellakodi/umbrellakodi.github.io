@@ -1293,9 +1293,9 @@ def router(argv2):
 		items = [
 			control.lang(32207),
 			control.lang(32208),
-			control.lang(32209) % highlight_color, 
-			control.lang(32210) % highlight_color, 
-			control.lang(32216) % highlight_color, 
+			control.lang(32209) % highlight_color,
+			control.lang(32210) % highlight_color,
+			control.lang(32216) % highlight_color,
 			control.lang(32217) % highlight_color,
 			control.lang(32232) % (highlight_color, highlight_color)]
 		select = control.selectDialog(items, heading=control.addonInfo('name') + ' - ' + 'Rescrape Options Menu')

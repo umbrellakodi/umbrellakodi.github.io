@@ -5827,6 +5827,13 @@
 					</control>
 				</setting>
 			</group>
+			<group id="4">
+				<setting id="torrent.cacheprogress.dialog" type="boolean" label="40650" help="">
+					<level>0</level>
+					<default>true</default>
+					<control type="toggle"/>
+				</setting>
+			</group>
 		</category>
 		<category id="subtitles" label="32353" help="40194">
 			<group id="1">

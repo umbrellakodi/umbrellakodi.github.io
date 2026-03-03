@@ -5639,7 +5639,7 @@ msgid "Scrobble & Resume Points"
 msgstr ""
 
 msgctxt "#40624"
-msgid "Off"
+msgid "Local"
 msgstr ""
 
 msgctxt "#40625"
@@ -5732,4 +5732,8 @@ msgstr ""
 
 msgctxt "#40649"
 msgid "MDBList Manager"
+msgstr ""
+
+msgctxt "#40650"
+msgid "Caching Progress Dialog"
 msgstr ""

@@ -1,3 +1,6 @@
+[B]Update - v6.7.484 - Mar 3rd, 2026[/B]
+--[Fix] Changes for the way mdblist counts were being calculated on show level and season level.
+
 [B]Update - v6.7.483 - Mar 2nd, 2026[/B]
 --[Change] YOU WILL NEED TO SET YOUR WATCH COUNT INDICATORS SETTING in the online services tab.
 --[Change] Modified settings to combine all services to one online-services tab. This is a very early beta and I expect issues.

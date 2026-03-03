@@ -529,9 +529,20 @@ def syncSeasons(imdb, tvdb):
 			try:
 				meta = _cache.get(_tmdb.TVshows().get_showSeasons_meta, 96, tmdb_id)
 				if meta:
+					status = (meta.get('status') or '').lower()
+					ended = status in ('ended', 'canceled', 'cancelled')
+					last_ep = meta.get('last_episode_to_air') or {}
+					last_aired_sn = int(last_ep.get('season_number', 0)) if last_ep else 0
+					last_aired_ep = int(last_ep.get('episode_number', 0)) if last_ep else 0
 					for s_item in meta.get('seasons', []):
 						sn = int(s_item.get('season_number', 0))
-						if sn > 0: season_totals[sn] = int(s_item.get('episode_count', 0))
+						if sn <= 0: continue
+						ep_count = int(s_item.get('episode_count', 0))
+						if ended or sn < last_aired_sn:
+							season_totals[sn] = ep_count
+						elif sn == last_aired_sn:
+							season_totals[sn] = last_aired_ep if last_aired_ep > 0 else ep_count
+						# sn > last_aired_sn: future/unaired season — omit so fallback uses watched count only
 			except: pass
 		counts = {}
 		completed_seasons = []
