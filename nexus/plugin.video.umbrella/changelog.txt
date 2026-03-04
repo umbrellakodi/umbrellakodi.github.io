@@ -1,4 +1,5 @@
-[B]Update - v6.7.486 - Mar 4th, 2026[/B]
+[B]Update - v6.7.487 - Mar 4th, 2026[/B]
+--[Fix] Changes made for counts when using mdblist.
 --[Fix] Added a widget refresh when a change of information is detected on a sync for users with multiple devices.
 --[Fix] Changes made to check more window properties when playing a pre-scraped item to resolve issue where previously pre-scraped shows were playing when selecting an entirely different show.
 --[Fix] Made changes to when mark as watched is called during playback.

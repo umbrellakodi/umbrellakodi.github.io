@@ -1496,6 +1496,10 @@ class Episodes:
 							try: count = getShowCount(getSeasonIndicators(imdb, tvdb)[1], imdb, tvdb) # if indicators and no matching imdb_id in watched items then it returns None and we use TMDb meta to avoid Trakt request
 							except: count = None
 							if count:
+								total_aired = int(meta.get('total_aired_episodes') or 0)
+								if total_aired > count['total']:
+									count['total'] = total_aired
+									count['unwatched'] = max(0, total_aired - count['watched'])
 								if int(count['watched']) > 0:
 									item.setProperties({'WatchedEpisodes': str(count['watched']), 'UnWatchedEpisodes': str(count['unwatched'])})
 								else:

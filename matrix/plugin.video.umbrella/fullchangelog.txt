@@ -1,3 +1,6 @@
+[B]Update - v6.7.487 - Mar 4th, 2026[/B]
+--[Fix] Changes made for counts when using mdblist.
+
 [B]Update - v6.7.486 - Mar 4th, 2026[/B]
 --[Fix] Added a widget refresh when a change of information is detected on a sync for users with multiple devices.
 

@@ -69,7 +69,7 @@ def fetch(items, lang='en', user=''):
 								else:
 									continue
 								imdb = item.get('imdb', '')
-								indicators = cache_existing(syncTVShows)
+								indicators = cache_existing(syncTVShows) or []
 								watching = [i[0] for i in indicators if i[0] == imdb]
 								if watching:
 									if trakt.getTraktIndicatorsInfo():

@@ -1524,7 +1524,7 @@ def scrobbleMovie(title, year, imdb, tmdb, watched_percent):
 		success = post_request('/scrobble/pause', data)
 		if success:
 			log_utils.log('Simkl Scrobble Movie Success: imdb: %s' % imdb, level=log_utils.LOGDEBUG)
-			if getSetting('simkl.scrobble.notify') == 'true': control.notification(message=32088)
+			if getSetting('scrobble.notify') == 'true': control.notification(message=32088)
 			control.sleep(1000)
 			sync_playbackProgress(forced=True)
 			control.trigger_widget_refresh()
@@ -1539,7 +1539,7 @@ def scrobbleEpisode(tvshowtitle, year, imdb, tmdb, tvdb, season, episode, watche
 		success = post_request('/scrobble/pause', data)
 		if success:
 			log_utils.log('Simkl Scrobble Episode Success: imdb: %s S%02dE%02d' % (imdb, season, episode), level=log_utils.LOGDEBUG)
-			if getSetting('simkl.scrobble.notify') == 'true': control.notification(message=32088)
+			if getSetting('scrobble.notify') == 'true': control.notification(message=32088)
 			control.sleep(1000)
 			sync_playbackProgress(forced=True)
 			control.trigger_widget_refresh()
@@ -1582,7 +1582,7 @@ def scrobbleReset(imdb, tmdb='', tvdb='', season=None, episode=None, refresh=Fal
 		if success:
 			simklsync.delete_bookmark(resume_id)
 			if refresh: control.refresh()
-			if getSetting('simkl.scrobble.notify') == 'true':
+			if getSetting('scrobble.notify') == 'true':
 				control.notification(title=32315, message='Successfully Removed Simkl playback progress: [COLOR %s]%s[/COLOR]' % (highlightColor, label_string))
 			log_utils.log('Successfully Removed Simkl Playback Progress: %s with resume_id=%s' % (label_string, str(resume_id)), __name__, level=log_utils.LOGDEBUG)
 		else:
