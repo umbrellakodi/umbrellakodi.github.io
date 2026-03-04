@@ -1,4 +1,7 @@
-[B]Update - v6.7.484 - Mar 3rd, 2026[/B]
+[B]Update - v6.7.485 - Mar 3rd, 2026[/B]
+--[Fix] Changes made to check more window properties when playing a pre-scraped item to resolve issue where previously pre-scraped shows were playing when selecting an entirely different show.
+--[Fix] Made changes to when mark as watched is called during playback.
+--[Change] Added options for Direct Progress Scrape for MDBList.
 --[Fix] Changes for the way mdblist counts were being calculated on show level and season level.
 --[Change] YOU WILL NEED TO SET YOUR WATCH COUNT INDICATORS SETTING in the online services tab.
 --[Change] Modified settings to combine all services to one online-services tab. This is a very early beta and I expect issues.

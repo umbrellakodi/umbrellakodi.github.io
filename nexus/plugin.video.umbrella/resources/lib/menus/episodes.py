@@ -40,6 +40,7 @@ class Episodes:
 		self.prefer_tmdbArt = getSetting('prefer.tmdbArt') == 'true'
 		self.progress_showunaired = getSetting('trakt.progress.showunaired') == 'true'
 		self.progress_showunairedSimkl = getSetting('simkl.progress.showunaired') == 'true'
+		self.progress_showunairedMDBList = getSetting('mdblist.progress.showunaired') == 'true'
 		self.showunaired = getSetting('showunaired') == 'true'
 		self.unairedcolor = getSetting('unaired.identify')
 		self.showspecials = getSetting('tv.specials') == 'true'
@@ -51,8 +52,10 @@ class Episodes:
 		self.traktCredentials = trakt.getTraktCredentialsInfo()
 		self.trakt_directProgressScrape = getSetting('trakt.directProgress.scrape') == 'true'
 		self.simkl_directProgressScrape = getSetting('simkl.directProgress.scrape') == 'true'
+		self.mdblist_directProgressScrape = getSetting('mdblist.directProgress.scrape') == 'true'
 		self.trakt_progressFlatten = getSetting('trakt.progressFlatten') == 'true'
 		self.simkl_progressFlatten = getSetting('simkl.progressFlatten') == 'true'
+		self.mdblist_progressFlatten = getSetting('mdblist.progressFlatten') == 'true'
 		self.trakt_link = 'https://api.trakt.tv'
 		self.trakthistory_link = 'https://api.trakt.tv/users/me/history/shows?limit=%s&page=1' % self.count
 		self.progress_link = 'https://api.trakt.tv/users/me/watched/shows'
@@ -119,7 +122,7 @@ class Episodes:
 						self.list = cache.get(self.tmdb_list, 3, tvshowtitle, imdb, tmdb, tvdb, meta, season)
 				num = [x for x, y in enumerate(self.list) if y['season'] == int(season) and y['episode'] == int(episode)][-1]
 				self.list = [y for x, y in enumerate(self.list) if x >= num]
-				if self.trakt_progressFlatten:
+				if self.trakt_progressFlatten or self.mdblist_progressFlatten:
 					all_episodes = []
 
 					if not isinstance(meta, dict):
@@ -254,6 +257,11 @@ class Episodes:
 				if self.notifications: control.notification(title=32326, message=33049)
 
 	def clr_progress_cache(self, url):
+		if url == 'mdbprogress':
+			cache.remove(self.mdblist_progress_list, '/upnext', self.mdblist_directProgressScrape)
+			cache.remove(self.mdblist_progress_list, url, self.mdblist_directProgressScrape)
+			control.sleep(200)
+			return control.refresh()
 		try: url = getattr(self, url + '_link')
 		except: pass
 		cache.remove(self.trakt_progress_list, url, self.trakt_user, self.lang, self.trakt_directProgressScrape)
@@ -411,10 +419,10 @@ class Episodes:
 	def mdblist_calendar(self, url, folderName=''):
 		self.list = []
 		try:
-			if mdblist.getWatchedActivity() > cache.timeout(self.mdblist_progress_list, url):
-				self.list = cache.get(self.mdblist_progress_list, 0, url)
+			if mdblist.getWatchedActivity() > cache.timeout(self.mdblist_progress_list, url, self.mdblist_directProgressScrape):
+				self.list = cache.get(self.mdblist_progress_list, 0, url, self.mdblist_directProgressScrape)
 			else:
-				self.list = cache.get(self.mdblist_progress_list, self.mdblist_hours, url)
+				self.list = cache.get(self.mdblist_progress_list, self.mdblist_hours, url, self.mdblist_directProgressScrape)
 			self.sort(type='progress')
 			if self.list is None: self.list = []
 			# place new season ep1's at top of list for 1 week
@@ -425,6 +433,8 @@ class Episodes:
 			sorted_list.extend([i for i in self.list if i not in top_items])
 			self.list = sorted_list
 			if self.list is None: self.list = []
+			if not self.progress_showunairedMDBList:
+				self.list = [i for i in self.list if i.get('unaired', '') != 'true']
 			hasNext = False
 			next_url = ''
 			if getSetting('mdblist.paginate.lists') == 'true' and self.list:
@@ -456,7 +466,7 @@ class Episodes:
 				control.hide()
 				if self.notifications: control.notification(title=32326, message=33049)
 
-	def mdblist_progress_list(self, url='/upnext'):
+	def mdblist_progress_list(self, url='/upnext', direct=False):
 		try:
 			result = mdblist.get_up_next()
 		except: return
@@ -521,6 +531,7 @@ class Episodes:
 					tvdb = values.get('tvdb', '')
 					extended_art = fanarttv_cache.get(FanartTv().get_tvshow_art, 336, tvdb)
 					if extended_art: values.update(extended_art)
+				if not direct: values['action'] = 'episodes'
 				values['mdblistProgress'] = True
 				values['extended'] = True
 				self.list.append(values)
@@ -1195,6 +1206,8 @@ class Episodes:
 		except: traktUpcomingProgress = False
 		try: simklUpcomingProgress = False if 'simklUpcomingProgress' not in items[0] else True
 		except: simklUpcomingProgress = False
+		try: mdblistUpcomingProgress = False if 'mdblistUpcomingProgress' not in items[0] else True
+		except: mdblistUpcomingProgress = False
 
 
 
@@ -1202,11 +1215,15 @@ class Episodes:
 		except: traktProgress = False
 		try: simklProgress = False if 'simklProgress' not in items[0] else True
 		except: simklProgress = False
+		try: mdblistProgress = False if 'mdblistProgress' not in items[0] else True
+		except: mdblistProgress = False
 		if simklProgress and self.simkl_directProgressScrape: progressMenu = getLS(32016)
 		if traktProgress and self.trakt_directProgressScrape: progressMenu = getLS(32016)
+		elif mdblistProgress and self.mdblist_directProgressScrape: progressMenu = getLS(32016)
 		else: progressMenu = getLS(32015)
 		if traktProgress: isMultiList = True
 		elif simklProgress: isMultiList = True
+		elif mdblistProgress: isMultiList = True
 		else:
 			try: multi = [i['tvshowtitle'] for i in items]
 			except: multi = []
@@ -1216,6 +1233,7 @@ class Episodes:
 			except: pass
 		upcoming_prependDate = getSetting('trakt.UpcomingProgress.prependDate') == 'true'
 		upcoming_prependDate2 = getSetting('simkl.UpcomingProgress.prependDate') == 'true'
+		upcoming_prependDate3 = getSetting('mdblist.UpcomingProgress.prependDate') == 'true'
 		try: sysaction = items[0]['action']
 		except: sysaction = ''
 		multi_unwatchedEnabled = getSetting('multi.unwatched.enabled') == 'true'
@@ -1256,10 +1274,13 @@ class Episodes:
 
 				if traktUpcomingProgress: pass
 				elif simklUpcomingProgress: pass
+				elif mdblistUpcomingProgress: pass
 				elif traktProgress:
 					if not self.progress_showunaired and i.get('unaired', '') == 'true': continue
 				elif simklProgress:
 					if not self.progress_showunairedSimkl and i.get('unaired', '') == 'true': continue
+				elif mdblistProgress:
+					if not self.progress_showunairedMDBList and i.get('unaired', '') == 'true': continue
 				else:
 					if not self.showunaired and i.get('unaired', '') == 'true': continue
 				
@@ -1296,7 +1317,7 @@ class Episodes:
 					except: pass
 
 
-				if (upcoming_prependDate and traktUpcomingProgress is True) or (upcoming_prependDate2 and simklUpcomingProgress): # uses TMDb premiered
+				if (upcoming_prependDate and traktUpcomingProgress is True) or (upcoming_prependDate2 and simklUpcomingProgress) or (upcoming_prependDate3 and mdblistUpcomingProgress): # uses TMDb premiered
 
 
 					try:
@@ -1420,8 +1441,10 @@ class Episodes:
 					cm.append((progressRefreshMenu, 'RunPlugin(%s?action=episodes_clrProgressCache&url=progress)' % sysaddon))
 				if simklProgress and is_widget == False:
 					cm.append((progressRefreshMenu, 'RunPlugin(%s?action=episodes_clrProgressCache&url=progress)' % sysaddon))	
+				if mdblistProgress and is_widget == False:
+					cm.append((progressRefreshMenu, 'RunPlugin(%s?action=episodes_clrProgressCache&url=mdbprogress)' % sysaddon))
 				if isFolder:
-					if (traktProgress or simklProgress) and is_widget == False:
+					if (traktProgress or simklProgress or mdblistProgress) and is_widget == False:
 						cm.append((progressMenu, 'PlayMedia(%s)' % url))
 					url = '%s?action=episodes&tvshowtitle=%s&year=%s&imdb=%s&tmdb=%s&tvdb=%s&meta=%s&season=%s&episode=%s&art=%s' % (sysaddon, systvshowtitle, year, imdb, tmdb, tvdb, sysmeta, season, episode, sysart)
 				cm.append((playlistManagerMenu, 'RunPlugin(%s?action=playlist_Manager&name=%s&url=%s&meta=%s&art=%s)' % (sysaddon, syslabelProgress, sysurl, sysmeta, sysart)))
@@ -1439,7 +1462,7 @@ class Episodes:
 					# cm.append((tvshowBrowserMenu, 'Container.Update(%s?action=episodes&tvshowtitle=%s&year=%s&imdb=%s&tmdb=%s&tvdb=%s&meta=%s,return)' % (sysaddon, systvshowtitle, year, imdb, tmdb, tvdb, sysmeta)))
 
 				if not isFolder:
-					if (traktProgress or simklProgress) and is_widget == False: cm.append((progressMenu, 'Container.Update(%s)' % Folderurl))
+					if (traktProgress or simklProgress or mdblistProgress) and is_widget == False: cm.append((progressMenu, 'Container.Update(%s)' % Folderurl))
 					#cm.append((playbackMenu, 'RunPlugin(%s?action=alterSources&url=%s&meta=%s)' % (sysaddon, sysurl, sysmeta)))
 					if not rescrape_useDefault:
 						cm.append(('Rescrape Options ------>', 'PlayMedia(%s?action=rescrapeMenu&title=%s&year=%s&imdb=%s&tmdb=%s&tvdb=%s&season=%s&episode=%s&tvshowtitle=%s&premiered=%s&meta=%s)' % (
@@ -1509,7 +1532,7 @@ class Episodes:
 				except: pass
 				setUniqueIDs={'imdb': imdb, 'tmdb': tmdb, 'tvdb': tvdb}
 
-				if (upcoming_prependDate and traktUpcomingProgress is True) or (upcoming_prependDate2 and simklUpcomingProgress):
+				if (upcoming_prependDate and traktUpcomingProgress is True) or (upcoming_prependDate2 and simklUpcomingProgress) or (upcoming_prependDate3 and mdblistUpcomingProgress):
 					try:
 						if premiered and meta.get('airtime'): combined='%sT%s' % (premiered, meta.get('airtime', ''))
 						else: raise Exception()

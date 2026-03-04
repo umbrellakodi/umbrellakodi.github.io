@@ -597,7 +597,6 @@ class Player(xbmc.Player):
 			simkl.scrobbleReset(imdb=self.imdb, tmdb=self.tmdb, tvdb=self.tvdb, season=self.season, episode=self.episode, refresh=False)
 			simkl.scrobbleStart(media_type=self.media_type, title=self.title, tvshowtitle=self.title, year=self.year, imdb=self.imdb, tmdb=self.tmdb, tvdb=self.tvdb, season=self.season, episode=self.episode, watched_percent=0)
 		elif scrobble_source == '3' and self.mdblistCredentials:
-			mdblist.scrobbleReset(imdb=self.imdb, tmdb=self.tmdb, tvdb=self.tvdb, season=self.season, episode=self.episode, refresh=False)
 			mdblist.scrobbleStart(media_type=self.media_type, title=self.title, tvshowtitle=self.title, year=self.year, imdb=self.imdb, tmdb=self.tmdb, tvdb=self.tvdb, season=self.season, episode=self.episode, watched_percent=0)
 		log_utils.log('onAVStarted callback', level=log_utils.LOGDEBUG)
 
@@ -616,6 +615,9 @@ class Player(xbmc.Player):
 	def onPlayBackStopped(self):
 		try:
 			playerWindow.clearProperty('umbrella.preResolved_nextUrl')
+			playerWindow.clearProperty('umbrella.preResolved_season')
+			playerWindow.clearProperty('umbrella.preResolved_episode')
+			playerWindow.clearProperty('umbrella.preResolved_imdb')
 			playerWindow.clearProperty('umbrella.playlistStart_position')
 			homeWindow.clearProperty('umbrella.window_keep_alive')
 			clear_local_bookmarks() # clear all umbrella bookmarks from kodi database
@@ -650,6 +652,13 @@ class Player(xbmc.Player):
 	def onPlayBackEnded(self):
 		Bookmarks().reset(self.current_time, self.media_length, self.name, self.year)
 		self.libForPlayback()
+		_scrobble_source = getSetting('scrobble.source')
+		if _scrobble_source == '1' and self.traktCredentials:
+			Bookmarks().set_scrobble(self.current_time, self.media_length, self.media_type, self.imdb, self.tmdb, self.tvdb, self.season, self.episode)
+		elif _scrobble_source == '2' and self.simklCredentials:
+			Bookmarks().set_scrobble(self.current_time, self.media_length, self.media_type, self.imdb, self.tmdb, self.tvdb, self.season, self.episode, service='simkl', title=self.title, year=self.year)
+		elif _scrobble_source == '3' and self.mdblistCredentials:
+			Bookmarks().set_scrobble(self.current_time, self.media_length, self.media_type, self.imdb, self.tmdb, self.tvdb, self.season, self.episode, service='mdblist', title=self.title, tvshowtitle=self.title, year=self.year)
 		try:
 			playingfile = Player.isPlaying()
 		except:

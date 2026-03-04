@@ -6847,3 +6847,11 @@ msgstr ""
 msgctxt "#40650"
 msgid "Caching Progress Dialog"
 msgstr ""
+
+msgctxt "#40651"
+msgid "MDBList Progress Show unaired episodes"
+msgstr ""
+
+msgctxt "#40652"
+msgid "MDBList Upcoming Progress prepend date"
+msgstr ""
