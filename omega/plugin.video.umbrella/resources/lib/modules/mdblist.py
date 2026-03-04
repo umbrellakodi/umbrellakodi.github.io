@@ -478,6 +478,7 @@ def sync_watchedProgress(activities=None, forced=False):
 		# invalidate indicator caches so next access fetches fresh data
 		mdbsync.cache_delete(mdbsync._hash_function(syncMovies, ()))
 		mdbsync.cache_delete(mdbsync._hash_function(syncTVShows, ()))
+		control.trigger_widget_refresh()
 	except: log_utils.error()
 
 

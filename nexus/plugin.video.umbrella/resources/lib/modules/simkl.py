@@ -1007,6 +1007,7 @@ def sync_watchedProgress(activities=None, forced=False):
 			else:
 				log_utils.log('SimKl Progress List Sync Update...(local db latest "list_cached_at" = %s, simkl api latest "progress_activity" = %s)' % \
 									(str(local_listCache), str(progressActivity)), __name__, log_utils.LOGDEBUG)
+			control.trigger_widget_refresh()
 	except: log_utils.error()
 
 def sync_plantowatch(activities=None, forced=False):
