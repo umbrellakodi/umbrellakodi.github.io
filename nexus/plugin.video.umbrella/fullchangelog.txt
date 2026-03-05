@@ -1,3 +1,6 @@
+[B]Update - v6.7.491 - Mar 5th, 2026[/B]
+--[Fix] Check for negative values on watched or total before storing now.
+
 [B]Update - v6.7.490 - Mar 5th, 2026[/B]
 --[Fix] More fixes for watched vs unwatched indicators.
 

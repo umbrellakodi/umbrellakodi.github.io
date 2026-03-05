@@ -1204,7 +1204,7 @@ def syncSeasons(imdb, tvdb, trakt=None): # season indicators and counts for watc
 		indicators = [(i['number'], [x['completed'] for x in i['episodes']]) for i in seasons]
 		indicators = ['%01d' % int(i[0]) for i in indicators if False not in i[1]]
 		indicators_and_counts.append(indicators)
-		counts = {season['number']: {'total': season['aired'], 'watched': season['completed'], 'unwatched': season['aired'] - season['completed']} for season in seasons}
+		counts = {season['number']: {'total': season['aired'], 'watched': season['completed'], 'unwatched': max(0, season['aired'] - season['completed'])} for season in seasons}
 		indicators_and_counts.append(counts)
 		return indicators_and_counts
 	except:

@@ -787,7 +787,7 @@ def syncSeasons(imdb, tvdb, simkl_id=None, data=None): # season indicators and c
 				season['number']: {
 					'total': season['episodes_aired'],
 					'watched': season['episodes_watched'],
-					'unwatched': season['episodes_aired'] - season['episodes_watched']
+					'unwatched': max(0, season['episodes_aired'] - season['episodes_watched'])
 				}
 				for season in seasons
 			}

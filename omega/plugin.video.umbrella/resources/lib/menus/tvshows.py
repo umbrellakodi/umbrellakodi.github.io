@@ -2256,6 +2256,8 @@ class TVshows:
 						if tmdb_total > count['total']:
 							count['total'] = tmdb_total
 							count['unwatched'] = max(0, tmdb_total - count['watched'])
+					if count:
+						count['unwatched'] = max(0, count['unwatched'])
 					if self.showCounts:
 						if count:
 							if int(count['watched']) > 0 and (str(count['watched']) != str(count['total'])): #watched but not 100%
