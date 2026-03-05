@@ -678,11 +678,11 @@ class Episodes:
 		# progress_showunaired = getSetting('trakt.progress.showunaired') == 'true'
 		for item in result:
 			try:
-				values = {} ; num_1 = 0
+				values = {}
+				num_1 = sum(len(item['seasons'][i]['episodes']) for i in range(len(item['seasons'])) if item['seasons'][i]['number'] > 0)
+				num_2 = int(item['show'].get('aired_episodes', 0)) # trakt slow to update "aired_episodes" count on day item airs
+				values['has_next_episode'] = num_1 < num_2
 				if not upcoming and item['show']['status'].lower() == 'ended': # only chk ended cases for all watched otherwise airing today cases get dropped.
-					for i in range(0, len(item['seasons'])):
-						if item['seasons'][i]['number'] > 0: num_1 += len(item['seasons'][i]['episodes'])
-					num_2 = int(item['show']['aired_episodes']) # trakt slow to update "aired_episodes" count on day item airs
 					if num_1 >= num_2: continue
 				season_sort = sorted(item['seasons'][:], key=lambda k: k['number'], reverse=False) # trakt sometimes places season0 at end and episodes out of order. So we sort it to be sure.
 				values['snum'] = season_sort[-1]['number']

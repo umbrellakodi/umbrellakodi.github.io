@@ -1224,6 +1224,11 @@ class TVshows:
 				values['tmdb'] = str(ids.get('tmdb', '')) if ids.get('tmdb') else ''
 				values['tvdb'] = str(ids.get('tvdb', '')) if ids.get('tvdb') else ''
 				values['mediatype'] = 'tvshows'
+				seasons = item.get('seasons', [])
+				if seasons:
+					num_1 = sum(len(s['episodes']) for s in seasons if s.get('number', 0) > 0)
+					num_2 = int(show.get('aired_episodes', 0))
+					values['has_next_episode'] = num_1 < num_2
 				self.list.append(values)
 			except:
 				
@@ -1734,6 +1739,9 @@ class TVshows:
 					try:
 						indicators = getSeasonIndicators(i.get('imdb', ''), i.get('tvdb', ''))
 						watched = (getTVShowOverlay(indicators[1] if indicators else None, i.get('imdb', ''), i.get('tvdb', '')) == '5') if indicators else False
+						if watched and i.get('has_next_episode'):
+							watched = False
+							trakt.syncSeasons(i.get('imdb', ''), i.get('tvdb', '')) # refresh stale local DB so counts reflect new episodes
 						if not self.watched_progress and watched: continue
 						if is_widget and getSetting('enable.umbrellahidewatched') == 'true' and str(xbmc.getInfoLabel("Window.Property(xmlfile)")) != 'Custom_1114_Search.xml' and watched: continue
 						filtered.append(i)
@@ -1766,7 +1774,7 @@ class TVshows:
 	def trakt_tvshow_progress(self, create_directory=True, folderName=''):
 		self.list = []
 		try:
-			historyurl = 'https://api.trakt.tv/users/me/watched/shows'
+			historyurl = 'https://api.trakt.tv/users/me/watched/shows?extended=full'
 			self.list = self.trakt_list(historyurl, self.trakt_user, folderName)
 			next = ''
 			for i in range(len(self.list)): self.list[i]['next'] = next
@@ -1886,6 +1894,7 @@ class TVshows:
 					values['tmdb'] = str(ids.get('tmdb', '')) if ids.get('tmdb') else ''
 					values['tvdb'] = ''
 					values['mediatype'] = 'tvshows'
+					values['has_next_episode'] = True
 					if not values['title']: continue
 					self.list.append(values)
 				except: log_utils.error()
@@ -2241,6 +2250,11 @@ class TVshows:
 				item.setArt(art)
 				try: 
 					count = getShowCount(indicators[1], imdb, tvdb) if indicators else None # if indicators and no matching imdb_id in watched items then it returns None and we use TMDb meta to avoid Trakt request
+					if count and meta.get('has_next_episode'):
+						tmdb_total = int(meta.get('total_aired_episodes') or 0)
+						if tmdb_total > count['total']:
+							count['total'] = tmdb_total
+							count['unwatched'] = max(0, tmdb_total - count['watched'])
 					if self.showCounts:
 						if count:
 							if int(count['watched']) > 0 and (str(count['watched']) != str(count['total'])): #watched but not 100%
@@ -2272,14 +2286,14 @@ class TVshows:
 				if is_widget: 
 					item.setProperty('isUmbrella_widget', 'true')
 					if self.hide_watched_in_widget and str(xbmc.getInfoLabel("Window.Property(xmlfile)")) != 'Custom_1114_Search.xml':
-						if str(meta.get('playcount')) == '1':
+						if str(meta.get('playcount')) == '1' and not meta.get('has_next_episode'):
 							continue
 				if isProgress:
 					#check for watched removal in progress for shows here.
 					if self.watched_progress:
 						pass
 					else:
-						if str(meta.get('playcount')) == '1':
+						if str(meta.get('playcount')) == '1' and not meta.get('has_next_episode'):
 							continue
 				if isWatched:
 					if str(meta.get('playcount')) != '1':
