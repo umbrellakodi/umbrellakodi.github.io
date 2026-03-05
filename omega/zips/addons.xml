@@ -1,5 +1,5 @@
 <?xml version='1.0' encoding='utf-8'?>
-<addons><addon id="plugin.video.umbrella" name="Umbrella" provider-name="Umbrella" version="6.7.490">
+<addons><addon id="plugin.video.umbrella" name="Umbrella" provider-name="Umbrella" version="6.7.491">
 	<requires>
 		<import addon="xbmc.python" version="3.0.0" />
 		<import addon="script.module.requests" />
@@ -235,7 +235,8 @@
 			<screenshot>resources/screenshots/screenshot003.jpg</screenshot>
 		</assets>
 		<news>
-[B]Update - v6.7.490 - Mar 5th, 2026[/B]
+[B]Update - v6.7.491 - Mar 5th, 2026[/B]
+--[Fix] Check for negative values on watched or total before storing now.
 --[Fix] More fixes for watched vs unwatched indicators.
 --[Change] Change the way in progress is working for TV Shows with new shows released. Now checks is_ended on the trakt api and updates the in progress lists accordingly. This should update the in progress lists when new shows are released in a series you are watching.
 --[Change] Made changes for refresing TV Show Progress when a change is detected or over a time interval.

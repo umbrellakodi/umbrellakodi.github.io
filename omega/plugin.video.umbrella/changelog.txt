@@ -1,4 +1,5 @@
-[B]Update - v6.7.490 - Mar 5th, 2026[/B]
+[B]Update - v6.7.491 - Mar 5th, 2026[/B]
+--[Fix] Check for negative values on watched or total before storing now.
 --[Fix] More fixes for watched vs unwatched indicators.
 --[Change] Change the way in progress is working for TV Shows with new shows released. Now checks is_ended on the trakt api and updates the in progress lists accordingly. This should update the in progress lists when new shows are released in a series you are watching.
 --[Change] Made changes for refresing TV Show Progress when a change is detected or over a time interval.
