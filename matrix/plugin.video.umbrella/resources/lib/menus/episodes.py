@@ -50,6 +50,8 @@ class Episodes:
 		self.today_date = (self.date_time).strftime('%Y-%m-%d')
 		self.trakt_user = getSetting('trakt.user.name').strip()
 		self.traktCredentials = trakt.getTraktCredentialsInfo()
+		self.simklCredentials = simkl.getSimKLCredentialsInfo()
+		self.mdblist_authed = getSetting('mdblist.api') != ''
 		self.trakt_directProgressScrape = getSetting('trakt.directProgress.scrape') == 'true'
 		self.simkl_directProgressScrape = getSetting('simkl.directProgress.scrape') == 'true'
 		self.mdblist_directProgressScrape = getSetting('mdblist.directProgress.scrape') == 'true'
@@ -1252,15 +1254,23 @@ class Episodes:
 			airLabel = getLS(35032)
 		if play_mode == '1' or enable_playnext: playbackMenu = getLS(32063)
 		else: playbackMenu = getLS(32064)
-		if trakt.getTraktCredentialsInfo() and simkl.getSimKLCredentialsInfo():
+		_indicators_alt = getSetting('indicators.alt')
+		_trakt_marks = self.traktCredentials and (_indicators_alt == '1' or getSetting('trakt.markwatched') == 'true')
+		_simkl_marks = self.simklCredentials and (_indicators_alt == '2' or getSetting('simkl.markwatched') == 'true')
+		_mdblist_marks = self.mdblist_authed and (_indicators_alt == '3' or getSetting('mdblist.markwatched') == 'true')
+		if sum([bool(_trakt_marks), bool(_simkl_marks), bool(_mdblist_marks)]) > 1:
 			watchedMenu, unwatchedMenu = getLS(40564), getLS(40565)
-		elif trakt.getTraktCredentialsInfo():
+		elif _trakt_marks:
 			watchedMenu, unwatchedMenu = getLS(32068), getLS(32069)
-		elif simkl.getSimKLCredentialsInfo():
+		elif _simkl_marks:
 			watchedMenu, unwatchedMenu = getLS(40554), getLS(40555)
+		elif _mdblist_marks:
+			watchedMenu, unwatchedMenu = getLS(40631), getLS(40632)
 		else:
 			watchedMenu, unwatchedMenu = getLS(32066), getLS(32067)
 		traktManagerMenu, playlistManagerMenu, queueMenu = '[COLOR %s]Trakt Manager[/COLOR]' % self.highlight_color, getLS(35522), getLS(32065)
+		simklManagerMenu = '[COLOR %s]Simkl Manager[/COLOR]' % self.highlight_color
+		mdblistManagerMenu = '[COLOR %s]MDBList Manager[/COLOR]' % self.highlight_color
 		tvshowBrowserMenu, addToLibrary, addToFavourites, removeFromFavourites = getLS(32071), getLS(32551), getLS(40463), getLS(40468)
 		clearSourcesMenu, rescrapeMenu, progressRefreshMenu = getLS(32611), getLS(32185), getLS(32194)
 		trailerMenu = getLS(40431)
@@ -1429,6 +1439,10 @@ class Episodes:
 					watched = getEpisodeOverlay(indicators, imdb, tvdb, season, episode) == '5'
 					if self.traktCredentials:
 						cm.append((traktManagerMenu, 'RunPlugin(%s?action=tools_traktManager&name=%s&imdb=%s&tvdb=%s&season=%s&episode=%s&watched=%s&unfinished=%s)' % (sysaddon, systvshowtitle, imdb, tvdb, season, episode, watched, unfinished)))
+					if self.simklCredentials:
+						cm.append((simklManagerMenu, 'RunPlugin(%s?action=tools_simklManager&name=%s&imdb=%s&tvdb=%s&season=%s&episode=%s&watched=%s)' % (sysaddon, systvshowtitle, imdb, tvdb, season, episode, watched)))
+					if self.mdblist_authed:
+						cm.append((mdblistManagerMenu, 'RunPlugin(%s?action=tools_mdbWatchlist&name=%s&imdb=%s&tvdb=%s&tmdb=%s&watched=%s)' % (sysaddon, systvshowtitle, imdb, tvdb, tmdb, watched)))
 					if watched:
 						meta.update({'playcount': 1, 'overlay': 5})
 						cm.append((unwatchedMenu, 'RunPlugin(%s?action=playcount_Episode&name=%s&imdb=%s&tvdb=%s&season=%s&episode=%s&query=4)' % (sysaddon, systvshowtitle, imdb, tvdb, season, episode)))

@@ -1703,7 +1703,7 @@ def sync_watchedProgress(activities=None, forced=False):
 		url = 'https://api.trakt.tv/users/me/watched/shows'
 		progressActivity = getProgressActivity(activities)
 		local_listCache = cache.timeout(episodes.Episodes().trakt_progress_list, url, trakt_user, lang, direct)
-		if forced or (progressActivity > local_listCache):
+		if forced or (progressActivity > local_listCache) or (int(time.time()) - local_listCache > 21600):
 			cache.get(episodes.Episodes().trakt_progress_list, 0, url, trakt_user, lang, direct)
 			if forced: log_utils.log('Forced - Trakt Progress List Sync Complete', __name__, log_utils.LOGDEBUG)
 			else:

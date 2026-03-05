@@ -2077,11 +2077,16 @@ class TVshows:
 		addonPoster, addonFanart, addonBanner = control.addonPoster(), control.addonFanart(), control.addonBanner()
 		flatten = int(getSetting('flatten.tvshows'))
 		_indicators_alt = getSetting('indicators.alt')
-		if _indicators_alt == '1' and trakt.getTraktCredentialsInfo():
+		_trakt_marks = self.traktCredentials and (_indicators_alt == '1' or getSetting('trakt.markwatched') == 'true')
+		_simkl_marks = self.simklCredentials and (_indicators_alt == '2' or getSetting('simkl.markwatched') == 'true')
+		_mdblist_marks = self.mdblist_authed and (_indicators_alt == '3' or getSetting('mdblist.markwatched') == 'true')
+		if sum([bool(_trakt_marks), bool(_simkl_marks), bool(_mdblist_marks)]) > 1:
+			watchedMenu, unwatchedMenu = getLS(40564), getLS(40565)
+		elif _trakt_marks:
 			watchedMenu, unwatchedMenu = getLS(32068), getLS(32069)
-		elif _indicators_alt == '2' and simkl.getSimKLCredentialsInfo():
+		elif _simkl_marks:
 			watchedMenu, unwatchedMenu = getLS(40554), getLS(40555)
-		elif _indicators_alt == '3' and mdblist.getMDBListCredentialsInfo():
+		elif _mdblist_marks:
 			watchedMenu, unwatchedMenu = getLS(40631), getLS(40632)
 		else:
 			watchedMenu, unwatchedMenu = getLS(32066), getLS(32067)

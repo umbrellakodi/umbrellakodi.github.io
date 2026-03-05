@@ -1,4 +1,4 @@
-<addon id="plugin.video.umbrella" name="Umbrella" provider-name="Umbrella" version="6.7.487">
+<addon id="plugin.video.umbrella" name="Umbrella" provider-name="Umbrella" version="6.7.488">
 	<requires>
 		<import addon="xbmc.python" version="3.0.0" />
 		<import addon="script.module.requests" />
@@ -234,7 +234,10 @@
 			<screenshot>resources/screenshots/screenshot003.jpg</screenshot>
 		</assets>
 		<news>
-[B]Update - v6.7.487 - Mar 4th, 2026[/B]
+[B]Update - v6.7.488 - Mar 5th, 2026[/B]
+--[Change] Made changes for refresing TV Show Progress when a change is detected or over a time interval.
+--[Fix] Made context menus more consistent across different types media.
+--[Change] Added options to hide "In-Progress" lists in TV Shows for services not being used for watch history/ scrobbling.
 --[Fix] Changes made for counts when using mdblist.
 --[Fix] Added a widget refresh when a change of information is detected on a sync for users with multiple devices.
 --[Fix] Changes made to check more window properties when playing a pre-scraped item to resolve issue where previously pre-scraped shows were playing when selecting an entirely different show.

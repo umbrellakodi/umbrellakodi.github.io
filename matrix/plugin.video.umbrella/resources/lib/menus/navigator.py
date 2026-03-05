@@ -277,16 +277,20 @@ class Navigator:
 			self.addDirectoryItem(40087, 'mdbUserListTV&folderName=%s' % quote_plus(getLS(40087)), 'mdblist.png', 'DefaultMovies.png')
 			self.addDirectoryItem(40595,'mdbUserWatchListTVShows&folderName=%s' % quote_plus(getLS(40595)), 'mdblist.png', 'DefaultMovies.png')
 		if self.mdblistCredentials and (self.mdblistIndicators or getSetting('mdblist.markwatched') == 'true'):
-			self.addDirectoryItem(40645, 'mdblist_shows_progress&url=mdbprogress&folderName=%s' % quote_plus(getLS(40645)), 'mdblist.png', 'mdblist.png', queue=True)
-			self.addDirectoryItem(40646, 'mdblist_calendar&url=mdbprogress&folderName=%s' % quote_plus(getLS(40646)), 'mdblist.png', 'mdblist.png', queue=True)
+			if getSetting('mdblist.progress.shows') != 'false':
+				self.addDirectoryItem(40645, 'mdblist_shows_progress&url=mdbprogress&folderName=%s' % quote_plus(getLS(40645)), 'mdblist.png', 'mdblist.png', queue=True)
+			if getSetting('mdblist.progress.episodes') != 'false':
+				self.addDirectoryItem(40646, 'mdblist_calendar&url=mdbprogress&folderName=%s' % quote_plus(getLS(40646)), 'mdblist.png', 'mdblist.png', queue=True)
 		# TMDb User Lists
 		if getSetting('tmdb.v4.accesstoken') != '':
 			self.addDirectoryItem('TMDb User Lists','tmdbUserListsTV&folderName=%s' % quote_plus('TMDb User Lists'),'tmdb.png','DefaultTVShows.png')
 			self.addDirectoryItem(40612, 'tmdbV4WatchlistTV&folderName=%s' % quote_plus(getLS(40612)), 'tmdb.png', 'DefaultTVShows.png')
 		if self.simklCredentials:
 			if self.simklIndicators or getSetting('simkl.markwatched') == 'true':
-				self.addDirectoryItem('Simkl Progress Episodes', 'simkl_calendar&url=/sync/all-items/shows/watching&folderName=%s' % quote_plus("Simkl Progress Episodes"), 'simkl.png', 'simkl.png', queue=True)
-			self.addDirectoryItem('Simkl Watching', 'tvshows&url=simklwatching&folderName=%s' % quote_plus("Simkl Watching"), 'simkl.png', 'simkl.png', queue=True)
+				if getSetting('simkl.progress.episodes') != 'false':
+					self.addDirectoryItem('Simkl Progress Episodes', 'simkl_calendar&url=/sync/all-items/shows/watching&folderName=%s' % quote_plus("Simkl Progress Episodes"), 'simkl.png', 'simkl.png', queue=True)
+				if getSetting('simkl.progress.shows') != 'false':
+					self.addDirectoryItem('Simkl Watching', 'tvshows&url=simklwatching&folderName=%s' % quote_plus("Simkl Watching"), 'simkl.png', 'simkl.png', queue=True)
 			self.addDirectoryItem('Simkl Plan to Watch', 'tvshows&url=simklwatchlist&folderName=%s' % quote_plus('Simkl Plan to Watch'), 'simkl.png', 'simkl.png')
 			self.addDirectoryItem('Simkl On Hold', 'tvshows&url=simklonhold&folderName=%s' % quote_plus('Simkl On Hold'), 'simkl.png', 'simkl.png')
 			self.addDirectoryItem('Simkl Completed', 'tvshows&url=simklhistory&folderName=%s' % quote_plus('Simkl Completed'), 'simkl.png', 'simkl.png')
@@ -295,8 +299,10 @@ class Navigator:
 		if self.traktCredentials:
 			if self.traktIndicators or getSetting('trakt.markwatched') == 'true':
 				self.addDirectoryItem(35308, 'episodesUnfinished&url=traktunfinished&folderName=%s' % quote_plus(getLS(35308)), 'trakt.png', 'trakt.png', queue=True)
-				self.addDirectoryItem(32037, 'calendar&url=progress&folderName=%s' % quote_plus(getLS(32037)), 'trakt.png', 'trakt.png', queue=True)
-				self.addDirectoryItem(40401, 'shows_progress&url=progresstv&folderName=%s' % quote_plus(getLS(40401)), 'trakt.png', 'trakt.png', queue=True)
+				if getSetting('trakt.progress.episodes') != 'false':
+					self.addDirectoryItem(32037, 'calendar&url=progress&folderName=%s' % quote_plus(getLS(32037)), 'trakt.png', 'trakt.png', queue=True)
+				if getSetting('trakt.progress.shows') != 'false':
+					self.addDirectoryItem(40401, 'shows_progress&url=progresstv&folderName=%s' % quote_plus(getLS(40401)), 'trakt.png', 'trakt.png', queue=True)
 				self.addDirectoryItem(40433, 'shows_watched&url=watchedtv&folderName=%s' % quote_plus(getLS(40433)), 'trakt.png', 'trakt.png', queue=True)
 				self.addDirectoryItem(32019, 'upcomingProgress&url=progress&folderName=%s' % quote_plus(getLS(32019)), 'trakt.png', 'trakt.png', queue=True)
 				self.addDirectoryItem(32202, 'calendar&url=mycalendarRecent&folderName=%s' % quote_plus(getLS(32202)), 'trakt.png', 'trakt.png', queue=True)

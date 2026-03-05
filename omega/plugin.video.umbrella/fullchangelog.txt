@@ -1,3 +1,8 @@
+[B]Update - v6.7.488 - Mar 5th, 2026[/B]
+--[Change] Made changes for refresing TV Show Progress when a change is detected or over a time interval.
+--[Fix] Made context menus more consistent across different types media.
+--[Change] Added options to hide "In-Progress" lists in TV Shows for services not being used for watch history/ scrobbling.
+
 [B]Update - v6.7.487 - Mar 4th, 2026[/B]
 --[Fix] Changes made for counts when using mdblist.
 

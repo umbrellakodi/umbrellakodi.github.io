@@ -5546,3 +5546,11 @@ msgstr ""
 msgctxt "#40652"
 msgid "MDBList Upcoming Progress prepend date"
 msgstr ""
+
+msgctxt "#40653"
+msgid "Show In-Progress Episodes"
+msgstr ""
+
+msgctxt "#40654"
+msgid "Show In-Progress Shows"
+msgstr ""
