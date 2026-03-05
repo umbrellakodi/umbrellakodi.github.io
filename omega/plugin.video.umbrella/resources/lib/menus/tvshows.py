@@ -2204,6 +2204,7 @@ class TVshows:
 				cm.append(('Play Trailer (Select)', 'RunPlugin(%s?action=play_Trailer_Select&type=%s&name=%s&year=%s&windowedtrailer=0)' % (sysaddon, 'show', systitle, year)))
 				try:
 					watched = (getTVShowOverlay(indicators[1], imdb, tvdb) == '5') if indicators else False
+					if watched and meta.get('has_next_episode'): watched = False
 					if self.traktCredentials:
 						cm.append((traktManagerMenu, 'RunPlugin(%s?action=tools_traktManager&name=%s&imdb=%s&tvdb=%s&watched=%s&tvshow=tvshow)' % (sysaddon, systitle, imdb, tvdb, watched)))
 					if self.simklCredentials:
