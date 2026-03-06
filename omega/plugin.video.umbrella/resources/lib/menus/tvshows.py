@@ -1742,6 +1742,17 @@ class TVshows:
 						if watched and i.get('has_next_episode'):
 							watched = False
 							trakt.syncSeasons(i.get('imdb', ''), i.get('tvdb', '')) # refresh stale local DB so counts reflect new episodes
+							# Re-check local count (no augmentation): if 0 unwatched, has_next_episode is stale; restore watched=True
+							try:
+								re_indicators = getSeasonIndicators(i.get('imdb', ''), i.get('tvdb', ''))
+								if re_indicators:
+									re_count = getShowCount(re_indicators[1], i.get('imdb', ''), i.get('tvdb', ''))
+									if re_count is not None and int(re_count.get('unwatched', 0)) == 0:
+										watched = True
+							except: pass
+						elif not i.get('has_next_episode'):
+							# Trakt API confirms user watched all aired episodes; treat as watched for filtering
+							watched = True
 						if not self.watched_progress and watched: continue
 						if is_widget and getSetting('enable.umbrellahidewatched') == 'true' and str(xbmc.getInfoLabel("Window.Property(xmlfile)")) != 'Custom_1114_Search.xml' and watched: continue
 						filtered.append(i)
