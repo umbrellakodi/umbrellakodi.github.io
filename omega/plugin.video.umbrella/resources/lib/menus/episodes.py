@@ -1514,6 +1514,12 @@ class Episodes:
 								if total_aired > count['total']:
 									count['total'] = total_aired
 									count['unwatched'] = max(0, total_aired - count['watched'])
+								# Fallback: Trakt live API confirmed a new episode (has_next_episode) but both
+								# local syncSeasons cache and TMDb meta are stale (user fully caught up, no new
+								# watched activity to trigger a cache refresh)
+								if i.get('has_next_episode') and int(count.get('unwatched', 0)) == 0:
+									count['total'] += 1
+									count['unwatched'] = 1
 								if int(count['watched']) > 0:
 									item.setProperties({'WatchedEpisodes': str(count['watched']), 'UnWatchedEpisodes': str(count['unwatched'])})
 								else:
