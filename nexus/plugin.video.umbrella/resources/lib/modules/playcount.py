@@ -82,15 +82,21 @@ def getTVShowIndicators(refresh=False):
 		from resources.lib.modules import log_utils
 		log_utils.error()
 
-def getSeasonIndicators(imdb, tvdb, refresh=False):
+def getSeasonIndicators(imdb, tvdb, refresh=False, has_next_episode=False):
 	try:
 		if traktIndicators:
 			timeoutsyncSeasons = trakt.timeoutsyncSeasons(imdb, tvdb)
-			if timeoutsyncSeasons is None: return # if no entry means no completed season watched so do not make needless requests 
+			if timeoutsyncSeasons is None: return # if no entry means no completed season watched so do not make needless requests
 			if not refresh: timeout = 720
 			elif trakt.getEpisodesWatchedActivity() < timeoutsyncSeasons: timeout = 720
 			else: timeout = 0
 			indicators = trakt.cachesyncSeasons(imdb, tvdb, timeout=timeout)
+			# Trakt live API confirmed a new episode (has_next_episode) but cache shows all watched.
+			# Force a refresh so this read and all subsequent reads across all views see the correct count.
+			if has_next_episode and timeout != 0 and indicators:
+				counts = indicators[1] if len(indicators) > 1 else {}
+				if counts and sum(v.get('total', 0) for v in counts.values()) == sum(v.get('watched', 0) for v in counts.values()):
+					indicators = trakt.cachesyncSeasons(imdb, tvdb, timeout=0)
 			return indicators
 		elif simklIndicators:
 			timeoutsyncSeasons = simkl.timeoutsyncSeasons(imdb, tvdb)

@@ -1,3 +1,9 @@
+[B]Update - v6.7.495 - Mar 6th, 2026[/B]
+--[Change] Made changes for counts to freshly load when conditions are met.
+
+[B]Update - v6.7.494 - Mar 6th, 2026[/B]
+--[New] Added code to handle some mystery count skins are adding to episodes.
+
 [B]Update - v6.7.493 - Mar 6th, 2026[/B]
 --[Fix] Made changes to count logic yet again.
 

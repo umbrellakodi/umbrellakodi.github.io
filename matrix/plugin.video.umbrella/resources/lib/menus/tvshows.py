@@ -1737,7 +1737,7 @@ class TVshows:
 				filtered = []
 				for i in self.list:
 					try:
-						indicators = getSeasonIndicators(i.get('imdb', ''), i.get('tvdb', ''))
+						indicators = getSeasonIndicators(i.get('imdb', ''), i.get('tvdb', ''), has_next_episode=i.get('has_next_episode', False))
 						watched = (getTVShowOverlay(indicators[1] if indicators else None, i.get('imdb', ''), i.get('tvdb', '')) == '5') if indicators else False
 						if watched and i.get('has_next_episode'):
 							watched = False
@@ -2146,7 +2146,7 @@ class TVshows:
 							else: continue
 					except: pass
 				
-				try: indicators = getSeasonIndicators(imdb, tvdb)
+				try: indicators = getSeasonIndicators(imdb, tvdb, has_next_episode=i.get('has_next_episode', False))
 				except: indicators = None
 				meta = dict((k, v) for k, v in iter(i.items()) if v is not None and v != '')
 				meta.update({'code': imdb, 'imdbnumber': imdb, 'mediatype': 'tvshow', 'tag': [imdb, tmdb]}) # "tag" and "tagline" for movies only, but works in my skin mod so leave

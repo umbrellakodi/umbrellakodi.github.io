@@ -1,5 +1,6 @@
-[B]Update - v6.7.494 - Mar 6th, 2026[/B]
---[New] Added code to handle come mystery count skins are adding to episodes.
+[B]Update - v6.7.495 - Mar 6th, 2026[/B]
+--[Change] Made changes for counts to freshly load when conditions are met.
+--[New] Added code to handle some mystery count skins are adding to episodes.
 --[Fix] More changes to counts logic to try to account for different scenarios.
 --[Fix] Check for negative values on watched or total before storing now.
 --[Fix] More fixes for watched vs unwatched indicators.
