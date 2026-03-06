@@ -2289,14 +2289,20 @@ class TVshows:
 				if is_widget: 
 					item.setProperty('isUmbrella_widget', 'true')
 					if self.hide_watched_in_widget and str(xbmc.getInfoLabel("Window.Property(xmlfile)")) != 'Custom_1114_Search.xml':
-						if str(meta.get('playcount')) == '1' and not meta.get('has_next_episode'):
+						if meta.get('has_next_episode'):
+							if count is not None and int(count.get('unwatched', 0)) == 0:
+								continue
+						elif str(meta.get('playcount')) == '1':
 							continue
 				if isProgress:
 					#check for watched removal in progress for shows here.
 					if self.watched_progress:
 						pass
 					else:
-						if str(meta.get('playcount')) == '1' and not meta.get('has_next_episode'):
+						if meta.get('has_next_episode'):
+							if count is not None and int(count.get('unwatched', 0)) == 0:
+								continue
+						elif str(meta.get('playcount')) == '1':
 							continue
 				if isWatched:
 					if str(meta.get('playcount')) != '1':
