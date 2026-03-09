@@ -5554,3 +5554,7 @@ msgstr ""
 msgctxt "#40654"
 msgid "Show In-Progress Shows"
 msgstr ""
+
+msgctxt "#40655"
+msgid "Hide Watched in Collection"
+msgstr ""

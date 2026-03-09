@@ -240,7 +240,7 @@ def get_request(url):
 def getSimklAsJson(url, post=None, silent=False):
 	try:
 		from resources.lib.modules import simkl
-		if post or 'sync/activities' in url: r = simkl.post_request(url, data=post)
+		if post: r = simkl.post_request(url, data=post)
 		else: r = get_request(url)
 		if not r: return
 		if '/sync/all-items/shows/watching' in url: return r['shows']
@@ -811,7 +811,7 @@ def timeoutsyncTVShows():
 def getProgressActivity(activities=None):
 	try:
 		if activities: i = activities
-		else: i = post_request('/sync/activities')
+		else: i = get_request('/sync/activities')
 		if not i: return 0
 		if type(i) != dict: activities_dict = json.loads(i)
 		else: activities_dict = i
@@ -1158,7 +1158,7 @@ def _get_all_watchlists_activity(activities=None):
 	"""Return the newest watchlist activity timestamp across all watchlist categories."""
 	try:
 		if activities: i = activities
-		else: i = post_request('/sync/activities')
+		else: i = get_request('/sync/activities')
 		if not i: return 0
 		if type(i) != dict: d = json.loads(i)
 		else: d = i

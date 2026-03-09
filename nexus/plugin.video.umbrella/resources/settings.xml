@@ -3807,6 +3807,16 @@
 					</dependencies>
 					<control type="toggle"/>
 				</setting>
+				<setting id="trakt.collection.hideWatched" type="boolean" label="40655" help="">
+					<level>0</level>
+					<default>false</default>
+					<dependencies>
+						<dependency type="visible">
+							<condition operator="!is" setting="trakt.user.token"/>
+						</dependency>
+					</dependencies>
+					<control type="toggle"/>
+				</setting>
 				<setting id="trakt.lists.showowner" type="boolean" label="40083" help="">
 					<level>0</level>
 					<default>true</default>

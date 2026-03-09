@@ -503,13 +503,37 @@ def getMenuEnabled(menu_title):
 	if (is_enabled == '' or is_enabled == 'false'): return False
 	return True
 
+_skin_uses_widgetreload = None  # None = not yet detected; True/False cached after first call
+
+def _detect_skin_widgetreload():
+	try:
+		import os
+		skin_path = xbmc.translatePath('special://skin/')
+		for root, _dirs, files in os.walk(skin_path):
+			for fname in files:
+				if not fname.endswith('.xml'):
+					continue
+				try:
+					with open(os.path.join(root, fname), 'r', encoding='utf-8', errors='ignore') as f:
+						if 'widgetreload' in f.read():
+							return True
+				except Exception:
+					pass
+		return False
+	except Exception:
+		return False
+
 def trigger_widget_refresh():
-	# import time
-	# timestr = time.strftime("%Y%m%d%H%M%S", time.gmtime())
-	# homeWindow.setProperty("widgetreload", timestr)
-	# homeWindow.setProperty('widgetreload-episodes', timestr)
-	# homeWindow.setProperty('widgetreload-movies', timestr)
-	execute('UpdateLibrary(video,/fake/path/to/force/refresh/on/home)') # make sure this is ok coupled with above
+	global _skin_uses_widgetreload
+	import time
+	timestr = time.strftime("%Y%m%d%H%M%S", time.gmtime())
+	homeWindow.setProperty('widgetreload', timestr)
+	homeWindow.setProperty('widgetreload-episodes', timestr)
+	homeWindow.setProperty('widgetreload-movies', timestr)
+	if _skin_uses_widgetreload is None:
+		_skin_uses_widgetreload = _detect_skin_widgetreload()
+	if not _skin_uses_widgetreload:
+		execute('UpdateLibrary(video,/fake/path/to/force/refresh/on/home)')
 
 def refresh_playAction(): # for umbrella global CM play actions
 	autoPlayTV = 'true' if setting('play.mode.tv') == '1' else '0'

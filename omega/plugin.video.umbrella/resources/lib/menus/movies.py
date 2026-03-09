@@ -181,6 +181,7 @@ class Movies:
 		self.mdblist_hours = int(getSetting('cache.mdblist'))
 		self.showwatchedlib = getSetting('showwatchedlib')
 		self.hide_watched_in_widget = getSetting('enable.umbrellahidewatched') == 'true'
+		self.collection_hideWatched = getSetting('trakt.collection.hideWatched') == 'true'
 		self.useFullContext = getSetting('enable.umbrellawidgetcontext') == 'true'
 		self.useContainerTitles = getSetting('enable.containerTitles') == 'true'
 		self.useReleaseYear = getSetting('movies.showyear') == 'true'
@@ -280,7 +281,7 @@ class Movies:
 			elif u in self.tmdb_link and '/list/' not in url:
 				self.list = tmdb_indexer().tmdb_list(url) # caching handled in list indexer
 			if self.list is None: self.list = []
-			if create_directory: self.movieDirectory(self.list, folderName=folderName)
+			if create_directory: self.movieDirectory(self.list, isCollection=True, folderName=folderName)
 			return self.list
 		except:
 			from resources.lib.modules import log_utils
@@ -2112,7 +2113,7 @@ class Movies:
 			from resources.lib.modules import log_utils
 			log_utils.error(f"Error in super_info for index {i}: {e}")
 
-	def movieDirectory(self, items, unfinished=False, next=True, folderName=''):
+	def movieDirectory(self, items, unfinished=False, next=True, isCollection=False, folderName=''):
 		from sys import argv # some functions like ActivateWindow() throw invalid handle less this is imported here.
 		is_widget = 'plugin' not in control.infoLabel('Container.PluginName')
 		if not items: # with reuselanguageinvoker on an empty directory must be loaded, do not use sys.exit()
@@ -2168,6 +2169,7 @@ class Movies:
 		for i in items:
 			try:
 				imdb, tmdb, title, year = i.get('imdb', ''), i.get('tmdb', ''), i['title'], i.get('year', '')
+				if isCollection and self.collection_hideWatched and getMovieOverlay(indicators, imdb) == '5': continue
 				trailer, runtime = i.get('trailer'), i.get('duration')
 				if self.useReleaseYear:
 					label = '%s (%s)' % (title, year)

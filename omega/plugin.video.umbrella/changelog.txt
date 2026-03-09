@@ -1,4 +1,7 @@
-[B]Update - v6.7.495 - Mar 6th, 2026[/B]
+[B]Update - v6.7.496 - Mar 9th, 2026[/B]
+--[Change] No more changes will be made until the existing changes have been tested.
+--[Change] Added ability to filter trakt collection by watched.
+--[Change] Made control detect and store what skin is being used. All calls made to refresh widget now check the skin first to determine refresh method.
 --[Change] Made changes for counts to freshly load when conditions are met.
 --[New] Added code to handle some mystery count skins are adding to episodes.
 --[Fix] More changes to counts logic to try to account for different scenarios.

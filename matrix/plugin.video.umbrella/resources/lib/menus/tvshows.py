@@ -157,6 +157,7 @@ class TVshows:
 		# Ticket is in to add this feature but currently not available
 		# self.tmdb_certification_link = 'https://api.themoviedb.org/3/discover/tv?api_key=%s&language=en-US&certification_country=US&certification=%s&sort_by=%s&page=1' % ('%s', '%s', self.tmdb_DiscoverSort())
 		self.hide_watched_in_widget = getSetting('enable.umbrellahidewatched') == 'true'
+		self.collection_hideWatched = getSetting('trakt.collection.hideWatched') == 'true'
 		self.useFullContext = getSetting('enable.umbrellawidgetcontext') == 'true'
 		self.showCounts = getSetting('tvshows.episodecount') == 'true'
 		self.useContainerTitles = getSetting('enable.containerTitles') == 'true'
@@ -255,7 +256,7 @@ class TVshows:
 				self.list = tmdb_indexer().tmdb_list(url) # caching handled in list indexer
 			if self.list is None: self.list = []
 			if create_directory: self.sort(type='shows.tmdblist')
-			if create_directory: self.tvshowDirectory(self.list, folderName=folderName)
+			if create_directory: self.tvshowDirectory(self.list, folderName=folderName, isCollection=True)
 			return self.list
 		except:
 			
@@ -2078,7 +2079,7 @@ class TVshows:
 			
 			log_utils.error()
 
-	def tvshowDirectory(self, items, next=True, isProgress=False, isWatched=False, folderName='Umbrella'):
+	def tvshowDirectory(self, items, next=True, isProgress=False, isWatched=False, isCollection=False, folderName='Umbrella'):
 		from sys import argv # some functions like ActivateWindow() throw invalid handle less this is imported here.
 		if self.useContainerTitles: control.setContainerName(folderName)
 		returnHome = control.folderPath()
@@ -2317,6 +2318,12 @@ class TVshows:
 							continue
 				if isWatched:
 					if str(meta.get('playcount')) != '1':
+						continue
+				if isCollection and self.collection_hideWatched:
+					if meta.get('has_next_episode'):
+						if count is not None and int(count.get('unwatched', 0)) == 0:
+							continue
+					elif str(meta.get('playcount')) == '1':
 						continue
 				setUniqueIDs = {'imdb': imdb, 'tmdb': tmdb, 'tvdb': tvdb} #k20setinfo
 				#item.setInfo(type='video', infoLabels=control.metadataClean(meta))

@@ -1,5 +1,5 @@
 <?xml version='1.0' encoding='utf-8'?>
-<addons><addon id="plugin.video.umbrella" name="Umbrella" provider-name="Umbrella" version="6.7.495">
+<addons><addon id="plugin.video.umbrella" name="Umbrella" provider-name="Umbrella" version="6.7.496">
 	<requires>
 		<import addon="xbmc.python" version="3.0.0" />
 		<import addon="script.module.requests" />
@@ -235,7 +235,10 @@
 			<screenshot>resources/screenshots/screenshot003.jpg</screenshot>
 		</assets>
 		<news>
-[B]Update - v6.7.495 - Mar 6th, 2026[/B]
+[B]Update - v6.7.496 - Mar 9th, 2026[/B]
+--[Change] No more changes will be made until the existing changes have been tested.
+--[Change] Added ability to filter trakt collection by watched.
+--[Change] Made control detect and store what skin is being used. All calls made to refresh widget now check the skin first to determine refresh method.
 --[Change] Made changes for counts to freshly load when conditions are met.
 --[Change] Change the way in progress is working for TV Shows with new shows released. Now checks is_ended on the trakt api and updates the in progress lists accordingly. This should update the in progress lists when new shows are released in a series you are watching.
 --[Change] Made changes for refresing TV Show Progress when a change is detected or over a time interval.
