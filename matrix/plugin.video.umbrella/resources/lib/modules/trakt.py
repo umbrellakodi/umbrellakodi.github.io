@@ -1540,6 +1540,21 @@ def scrobbleEpisode(imdb, tmdb, tvdb, season, episode, watched_percent):
 		else: control.notification(message=32130)
 	except: log_utils.error()
 
+def scrobbleStart(media_type, title='', tvshowtitle='', year='0', imdb='', tmdb='', tvdb='', season='', episode='', watched_percent=0):
+	try:
+		if media_type == 'movie':
+			post = {'movie': {'title': title, 'year': int(year) if year else 0,
+			                  'ids': {'imdb': imdb, 'tmdb': int(tmdb) if tmdb else None}},
+			        'progress': float(watched_percent)}
+		else:
+			post = {'show': {'title': tvshowtitle or title, 'year': int(year) if year else 0,
+			                 'ids': {'tvdb': int(tvdb) if tvdb else None, 'imdb': imdb}},
+			        'episode': {'season': int(season) if season else 1,
+			                    'number': int(episode) if episode else 1},
+			        'progress': float(watched_percent)}
+		getTrakt('/scrobble/start', post)
+	except: log_utils.error()
+
 def scrobbleReset(imdb, tmdb=None, tvdb=None, season=None, episode=None, refresh=True, widgetRefresh=False):
 	if not getTraktCredentialsInfo(): return
 	if not control.player.isPlaying(): control.busy()

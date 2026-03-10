@@ -1,4 +1,6 @@
-[B]Update - v6.7.499 - Mar 10th, 2026[/B]
+[B]Update - v6.7.500 - Mar 10th, 2026[/B]
+--[Change] Any service set to mark as watched will now also simulataneously scrobble.
+--[Change] Added Trakt scrobble start for "Now Watching" on dashboard.
 --[Fix] Fix for scrobble resume points with mdblist.
 --[Fix] Fix for scrobble resume points with simkl.
 --[Change] Added logging for simkl and changes for syncing playback between devices.

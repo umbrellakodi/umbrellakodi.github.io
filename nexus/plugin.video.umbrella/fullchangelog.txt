@@ -1,3 +1,7 @@
+[B]Update - v6.7.500 - Mar 10th, 2026[/B]
+--[Change] Any service set to mark as watched will now also simulataneously scrobble.
+--[Change] Added Trakt scrobble start for "Now Watching" on dashboard.
+
 [B]Update - v6.7.499 - Mar 10th, 2026[/B]
 --[Fix] Fix for scrobble resume points with mdblist.
 
@@ -1014,6 +1018,7 @@
 
 [B]Update - v6.5.13 - June 15, 2022[/B]
 -- Modifed Umbrella to use trakt information provided by my accounts module instead of hard coded client id and secret.
+
 
 [B]Update - v6.5.12 - June 7, 2022[/B]
 -- Requires Umbrella Scrapers now. You can delete fenomscrapers.

@@ -620,7 +620,6 @@ def scrobbleStart(media_type, title='', tvshowtitle='', year='0', imdb='', tmdb=
 def scrobbleMovie(title, year, imdb, tmdb, watched_percent):
 	try:
 		result = _scrobble('/scrobble/pause', 'movie', imdb, tmdb, '', '', '', watched_percent)
-		log_utils.log('MDBList scrobbleMovie result: %r' % (result,), level=log_utils.LOGDEBUG)
 		if result is not None and getSetting('scrobble.notify') == 'true':
 			control.notification(message=40657)
 		if result is not None:
@@ -634,7 +633,6 @@ def scrobbleMovie(title, year, imdb, tmdb, watched_percent):
 def scrobbleEpisode(tvshowtitle, year, imdb, tmdb, tvdb, season, episode, watched_percent):
 	try:
 		result = _scrobble('/scrobble/pause', 'episode', imdb, tmdb, tvdb, season, episode, watched_percent)
-		log_utils.log('MDBList scrobbleEpisode result: %r' % (result,), level=log_utils.LOGDEBUG)
 		if result is not None and getSetting('scrobble.notify') == 'true':
 			control.notification(message=40657)
 		if result is not None:

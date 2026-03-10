@@ -1602,17 +1602,13 @@ def sync_playbackProgress(activities=None, forced=False):
 	try:
 		link = '/sync/playback'
 		if forced:
-			log_utils.log('Simkl sync_playbackProgress: forced fetch from /sync/playback', __name__, log_utils.LOGDEBUG)
 			items = get_request(link)
-			log_utils.log('Simkl sync_playbackProgress: /sync/playback returned %s items' % (len(items) if items else 0), __name__, log_utils.LOGDEBUG)
 			if items: simklsync.insert_bookmarks(items)
 		else:
 			db_last_paused = simklsync.last_sync('last_paused_at')
 			sync_interval = int(getSetting('simkl.service.syncInterval')) if getSetting('simkl.service.syncInterval') else 30
 			if db_last_paused == 0 or (int(time.time()) - db_last_paused) >= (60 * sync_interval):
-				log_utils.log('Simkl sync_playbackProgress: interval fetch from /sync/playback', __name__, log_utils.LOGDEBUG)
 				items = get_request(link)
-				log_utils.log('Simkl sync_playbackProgress: /sync/playback returned %s items' % (len(items) if items else 0), __name__, log_utils.LOGDEBUG)
 				if items: simklsync.insert_bookmarks(items)
 	except: log_utils.error()
 

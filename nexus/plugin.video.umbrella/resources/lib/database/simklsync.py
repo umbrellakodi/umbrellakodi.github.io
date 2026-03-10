@@ -127,7 +127,6 @@ def insert_bookmarks(items):
 				tmdb = str(show_ids.get('tmdb', ''))
 				season = str(ep.get('season', ''))
 				episode = str(ep.get('number', ep.get('episode', '')))  # Simkl GET /sync/playback uses "number" key
-				log_utils.log('Simkl insert_bookmarks episode: show=%s imdb=%r tmdb=%r season=%r episode=%r percent=%r ids=%s' % (tvshowtitle, imdb, tmdb, season, episode, percent_played, str(show_ids)), level=log_utils.LOGDEBUG)
 			else:
 				movie_ids = i.get('movie', {}).get('ids', {})
 				title = i.get('movie', {}).get('title', '')
