@@ -240,6 +240,7 @@ def services_syncs():
 				activities = json.dumps(activities)
 				from resources.lib.modules import log_utils
 				log_utils.log('SimKl Sync Service is running.', 1)
+				log_utils.log('SimKl service: bookmarks=%r scrobble.source=%r' % (getSetting('bookmarks'), getSetting('scrobble.source')), 1)
 				if getSetting('bookmarks') == 'true' and getSetting('scrobble.source') == '2':
 					simkl.sync_playbackProgress(forced=True)
 				simkl.sync_watchedProgress(activities)

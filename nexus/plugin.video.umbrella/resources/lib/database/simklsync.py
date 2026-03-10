@@ -48,33 +48,40 @@ def fetch_bookmarks(imdb, tmdb='', tvdb='', season=None, episode=None, ret_all=N
 					except: pass
 			else:
 				try: # Lookup both IMDb and TVDb first for more accurate episode match.
-					match = dbcur.execute('''SELECT * FROM bookmarks WHERE (imdb=? AND tvdb=? AND season=? AND episode=? AND NOT imdb='' AND NOT tvdb='')''', (imdb, tvdb, season, episode)).fetchone()
+					match = dbcur.execute('''SELECT * FROM bookmarks WHERE (imdb=? AND tvdb=? AND season=? AND episode=? AND NOT imdb='' AND NOT tvdb='')''', (imdb, tvdb, str(season or ''), str(episode or ''))).fetchone()
 					if ret_type == 'resume_info':
 						progress = (match[0], match[2])
 						log_utils.log('Getting resume from database imdb. Match: %s' % (str(match)),1)
 					else: progress = match[12]
 				except:
 					try:
-						match = dbcur.execute('''SELECT * FROM bookmarks WHERE (tvdb=? AND season=? AND episode=? AND NOT tvdb='')''', (tvdb, season, episode)).fetchone()
+						match = dbcur.execute('''SELECT * FROM bookmarks WHERE (tvdb=? AND season=? AND episode=? AND NOT tvdb='')''', (tvdb, str(season or ''), str(episode or ''))).fetchone()
 						if ret_type == 'resume_info':
 							progress = (match[0], match[2])
 							log_utils.log('Getting resume from database tvdb. Match: %s' % (str(match)),1)
 						else: progress = match[12]
 					except:
 						try: # Simkl does not store tvdb — fall back to imdb+tmdb+season+episode
-							match = dbcur.execute('''SELECT * FROM bookmarks WHERE (imdb=? AND tmdb=? AND season=? AND episode=? AND NOT imdb='' AND NOT tmdb='')''', (imdb, tmdb, season, episode)).fetchone()
+							match = dbcur.execute('''SELECT * FROM bookmarks WHERE (imdb=? AND tmdb=? AND season=? AND episode=? AND NOT imdb='' AND NOT tmdb='')''', (imdb, tmdb, str(season or ''), str(episode or ''))).fetchone()
 							if ret_type == 'resume_info':
 								progress = (match[0], match[2])
 								log_utils.log('Getting resume from database imdb+tmdb. Match: %s' % (str(match)), 1)
 							else: progress = match[12]
 						except:
-							try: # Last resort — imdb+season+episode only (tmdb may not be in Simkl response)
-								match = dbcur.execute('''SELECT * FROM bookmarks WHERE (imdb=? AND season=? AND episode=? AND NOT imdb='')''', (imdb, season, episode)).fetchone()
+							try: # imdb+season+episode only (tmdb may not be in Simkl response)
+								match = dbcur.execute('''SELECT * FROM bookmarks WHERE (imdb=? AND season=? AND episode=? AND NOT imdb='')''', (imdb, str(season or ''), str(episode or ''))).fetchone()
 								if ret_type == 'resume_info':
 									progress = (match[0], match[2])
 									log_utils.log('Getting resume from database imdb+season+episode. Match: %s' % (str(match)), 1)
 								else: progress = match[12]
-							except: pass
+							except:
+								try: # Last resort — tmdb+season+episode (imdb may be absent from Simkl /sync/playback response)
+									match = dbcur.execute('''SELECT * FROM bookmarks WHERE (tmdb=? AND season=? AND episode=? AND NOT tmdb='')''', (tmdb, str(season or ''), str(episode or ''))).fetchone()
+									if ret_type == 'resume_info':
+										progress = (match[0], match[2])
+										log_utils.log('Getting resume from database tmdb+season+episode. Match: %s' % (str(match)), 1)
+									else: progress = match[12]
+								except: pass
 	except:
 		
 		log_utils.error()

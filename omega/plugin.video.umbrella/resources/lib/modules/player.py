@@ -1227,6 +1227,7 @@ class Bookmarks:
 				progress = float(simklsync.fetch_bookmarks(imdb, tmdb, tvdb, season, episode))
 				offset = (progress / 100) * runtime
 				seekable = (2 <= progress <= int(markwatched_percentage))
+				log_utils.log('Simkl Bookmarks.get: imdb=%s tmdb=%s tvdb=%s S%sE%s progress=%s offset=%s seekable=%s' % (imdb, tmdb, tvdb, season, episode, progress, offset, seekable), level=log_utils.LOGDEBUG)
 				if not seekable: return '0'
 			except:
 				log_utils.error()

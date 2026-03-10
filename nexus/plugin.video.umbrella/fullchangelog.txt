@@ -1,3 +1,6 @@
+[B]Update - v6.7.497 - Mar 10th, 2026[/B]
+--[Change] Added logging for simkl and changes for syncing playback between devices.
+
 [B]Update - v6.7.496 - Mar 9th, 2026[/B]
 --[Change] No more changes will be made until the existing changes have been tested.
 --[Change] Added ability to filter trakt collection by watched.

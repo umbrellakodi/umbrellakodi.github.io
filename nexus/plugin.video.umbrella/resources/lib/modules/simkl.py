@@ -336,7 +336,7 @@ def watch(content_type, name, imdb=None, tvdb=None, season=None, episode=None, r
 		if success: cachesyncTV(imdb, tvdb)
 	elif content_type == 'episode':
 		success = markEpisodeAsWatched(imdb, tvdb, season, episode)
-		if success: cachesyncTV(imdb, tvdb)
+		cachesyncTV(imdb, tvdb)  # refresh regardless — episode may already be in history
 	else: success = False
 	control.hide()
 	if refresh: control.refresh()
@@ -601,7 +601,12 @@ def markEpisodeAsWatched(imdb, tvdb, season, episode):
 				# Attempt 3: TVDB episode ID (bypasses numbering mismatch) then airdate fallback
 				resolved = _simkl_resolve_episode(simkl, tvdb, imdb, season, episode)
 				if resolved: result = resolved
-		result = bool(result.get('added', {}).get('episodes', 0))
+		if result.get('added', {}).get('episodes', 0) > 0:
+			result = True
+		elif not result.get('not_found', {}).get('shows') and not result.get('not_found', {}).get('episodes'):
+			result = True  # episode already in Simkl history — Simkl deduplicates
+		else:
+			result = False
 		if result:
 			simklsync.remove_hold_item(imdb)
 			simklsync.remove_plan_to_watch(imdb, 'shows_plantowatch')
@@ -740,7 +745,7 @@ def cachesyncSeasons(imdb, tvdb, simkl_id=None, timeout=0, data=None):
 	try:
 		imdb = imdb or ''
 		tvdb = tvdb or ''
-		indicators = simklsync.get(syncSeasons, timeout, imdb, tvdb, simkl_id, data) # named var and data not included in function md5_hash
+		indicators = simklsync.get(syncSeasons, timeout, imdb, tvdb, simkl_id=simkl_id, data=data) # named var and data not included in function md5_hash
 		return indicators
 	except: log_utils.error()
 
@@ -775,23 +780,27 @@ def syncSeasons(imdb, tvdb, simkl_id=None, data=None): # season indicators and c
 			results = data
 		show_data = results
 		for show in show_data:
-			if show.get('imdb') != imdb:
+			show_imdb = show.get('imdb')
+			show_tvdb = str(show.get('tvdb', ''))
+			if show_imdb != imdb and show_tvdb != str(tvdb or ''):
 				continue
 			seasons = show.get('seasons', [])
-        
-			indicators = [(season['number'], [ep['watched'] for ep in season['episodes']]) for season in seasons]
+
+			indicators = [(season['number'], [ep['watched'] for ep in season.get('episodes', [])]) for season in seasons]
 			indicators = ['%01d' % int(season[0]) for season in indicators if all(season[1])]
 			indicators_and_counts.append(indicators)
 
-			counts = {
-				season['number']: {
-					'total': season['episodes_aired'],
-					'watched': season['episodes_watched'],
-					'unwatched': max(0, season['episodes_aired'] - season['episodes_watched'])
+			counts = {}
+			for season in seasons:
+				s_num = season['number']
+				eps = season.get('episodes', [])
+				total = season.get('episodes_aired', len(eps))
+				watched_ct = season.get('episodes_watched', sum(1 for ep in eps if ep.get('watched')))
+				counts[s_num] = {
+					'total': total,
+					'watched': watched_ct,
+					'unwatched': max(0, total - watched_ct)
 				}
-				for season in seasons
-			}
-
 			indicators_and_counts.append(counts)
 		
 		# indicators = [(i['number'], [x['completed'] for x in i['episodes']]) for i in seasons]
@@ -1593,13 +1602,17 @@ def sync_playbackProgress(activities=None, forced=False):
 	try:
 		link = '/sync/playback'
 		if forced:
+			log_utils.log('Simkl sync_playbackProgress: forced fetch from /sync/playback', __name__, log_utils.LOGDEBUG)
 			items = get_request(link)
+			log_utils.log('Simkl sync_playbackProgress: /sync/playback returned %s items' % (len(items) if items else 0), __name__, log_utils.LOGDEBUG)
 			if items: simklsync.insert_bookmarks(items)
 		else:
 			db_last_paused = simklsync.last_sync('last_paused_at')
 			sync_interval = int(getSetting('simkl.service.syncInterval')) if getSetting('simkl.service.syncInterval') else 30
 			if db_last_paused == 0 or (int(time.time()) - db_last_paused) >= (60 * sync_interval):
+				log_utils.log('Simkl sync_playbackProgress: interval fetch from /sync/playback', __name__, log_utils.LOGDEBUG)
 				items = get_request(link)
+				log_utils.log('Simkl sync_playbackProgress: /sync/playback returned %s items' % (len(items) if items else 0), __name__, log_utils.LOGDEBUG)
 				if items: simklsync.insert_bookmarks(items)
 	except: log_utils.error()
 
