@@ -378,7 +378,10 @@ def get_request(url, post=None, method='GET'):
 			response = session.post(full_url, data=_json.dumps(post), headers=headers, timeout=20)
 		else:
 			response = session.get(full_url, timeout=20)
-		if response.status_code in (200, 201): return response.json()
+		if response.status_code in (200, 201, 204):
+			try: return response.json()
+			except: return {}
+		log_utils.log('MDBList get_request non-2xx: url=%s status=%s body=%r' % (url, response.status_code, response.text[:200]), level=log_utils.LOGDEBUG)
 		return None
 	except: log_utils.error()
 	return None
@@ -594,15 +597,16 @@ def cachesyncTV(imdb, tvdb):
 
 def _scrobble(endpoint, media_type, imdb, tmdb, tvdb, season, episode, percent):
 	try:
+		percent = round(float(percent), 2)
 		if media_type == 'movie':
-			post = {'movie': {'ids': {'imdb': imdb, 'tmdb': int(tmdb) if tmdb else None}}, 'progress': float(percent)}
+			post = {'movie': {'ids': {'imdb': imdb, 'tmdb': int(tmdb) if tmdb else None}}, 'progress': percent}
 		else:
 			season = int('%01d' % int(season)) if season else 1
 			episode = int('%01d' % int(episode)) if episode else 1
 			post = {
 				'show': {'ids': {'imdb': imdb, 'tmdb': int(tmdb) if tmdb else None, 'tvdb': int(tvdb) if tvdb else None},
 						 'season': {'number': season, 'episode': {'number': episode}}},
-				'progress': float(percent)
+				'progress': percent
 			}
 		return get_request(endpoint, post=post)
 	except: log_utils.error()
@@ -616,24 +620,28 @@ def scrobbleStart(media_type, title='', tvshowtitle='', year='0', imdb='', tmdb=
 def scrobbleMovie(title, year, imdb, tmdb, watched_percent):
 	try:
 		result = _scrobble('/scrobble/pause', 'movie', imdb, tmdb, '', '', '', watched_percent)
-		if result and getSetting('scrobble.notify') == 'true':
-			control.notification(message=32088)
-		if result:
+		log_utils.log('MDBList scrobbleMovie result: %r' % (result,), level=log_utils.LOGDEBUG)
+		if result is not None and getSetting('scrobble.notify') == 'true':
+			control.notification(message=40657)
+		if result is not None:
 			from datetime import datetime as _dt
 			paused_at = _dt.utcnow().strftime('%Y-%m-%dT%H:%M:%S.000Z')
 			mdbsync.upsert_bookmark(title=title or '', imdb=str(imdb) if imdb else '', tmdb=str(tmdb) if tmdb else '', percent_played=str(watched_percent), paused_at=paused_at)
+			control.trigger_widget_refresh()
 		log_utils.log('MDBList Scrobble Movie. imdb: %s percent: %s' % (imdb, watched_percent), level=log_utils.LOGDEBUG)
 	except: log_utils.error()
 
 def scrobbleEpisode(tvshowtitle, year, imdb, tmdb, tvdb, season, episode, watched_percent):
 	try:
 		result = _scrobble('/scrobble/pause', 'episode', imdb, tmdb, tvdb, season, episode, watched_percent)
-		if result and getSetting('scrobble.notify') == 'true':
-			control.notification(message=32088)
-		if result:
+		log_utils.log('MDBList scrobbleEpisode result: %r' % (result,), level=log_utils.LOGDEBUG)
+		if result is not None and getSetting('scrobble.notify') == 'true':
+			control.notification(message=40657)
+		if result is not None:
 			from datetime import datetime as _dt
 			paused_at = _dt.utcnow().strftime('%Y-%m-%dT%H:%M:%S.000Z')
 			mdbsync.upsert_bookmark(tvshowtitle=tvshowtitle or '', imdb=str(imdb) if imdb else '', tmdb=str(tmdb) if tmdb else '', tvdb=str(tvdb) if tvdb else '', season=str(season) if season else '', episode=str(episode) if episode else '', percent_played=str(watched_percent), paused_at=paused_at)
+			control.trigger_widget_refresh()
 		log_utils.log('MDBList Scrobble Episode. imdb: %s S%sE%s percent: %s' % (imdb, season, episode, watched_percent), level=log_utils.LOGDEBUG)
 	except: log_utils.error()
 
@@ -663,17 +671,17 @@ def sync_playbackProgress(forced=False):
 				ep = i.get('episode') or {}
 				tvshowtitle = (i.get('show') or {}).get('title', '')
 				title = ep.get('title', '')
-				imdb = str(show_ids.get('imdbid', '') or '')
-				tmdb = str(show_ids.get('tmdbid', '') or '')
-				tvdb = str(show_ids.get('tvdbid', '') or '')
+				imdb = str(show_ids.get('imdb', '') or '')
+				tmdb = str(show_ids.get('tmdb', '') or '')
+				tvdb = str(show_ids.get('tvdb', '') or '')
 				season = str(ep.get('season', ''))
 				episode = str(ep.get('number', ''))
 				mdbsync.upsert_bookmark(tvshowtitle=tvshowtitle, title=title, resume_id=resume_id, imdb=imdb, tmdb=tmdb, tvdb=tvdb, season=season, episode=episode, percent_played=percent_played, paused_at=paused_at)
 			else:
 				movie_ids = (i.get('movie') or {}).get('ids', {})
 				title = (i.get('movie') or {}).get('title', '')
-				imdb = str(movie_ids.get('imdbid', '') or '')
-				tmdb = str(movie_ids.get('tmdbid', '') or '')
+				imdb = str(movie_ids.get('imdb', '') or '')
+				tmdb = str(movie_ids.get('tmdb', '') or '')
 				mdbsync.upsert_bookmark(title=title, resume_id=resume_id, imdb=imdb, tmdb=tmdb, percent_played=percent_played, paused_at=paused_at)
 	except: log_utils.error()
 

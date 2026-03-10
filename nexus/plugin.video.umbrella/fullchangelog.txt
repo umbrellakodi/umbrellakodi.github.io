@@ -1,3 +1,6 @@
+[B]Update - v6.7.499 - Mar 10th, 2026[/B]
+--[Fix] Fix for scrobble resume points with mdblist.
+
 [B]Update - v6.7.498 - Mar 10th, 2026[/B]
 --[Fix] Fix for scrobble resume points with simkl.
 

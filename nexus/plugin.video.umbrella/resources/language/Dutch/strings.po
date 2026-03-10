@@ -5753,3 +5753,15 @@ msgstr ""
 msgctxt "#40654"
 msgid "Show In-Progress Shows"
 msgstr ""
+
+msgctxt "#40655"
+msgid "Hide Watched in Collection"
+msgstr ""
+
+msgctxt "#40656"
+msgid "Simkl: Scrobbled"
+msgstr ""
+
+msgctxt "#40657"
+msgid "MDBList: Scrobbled"
+msgstr ""

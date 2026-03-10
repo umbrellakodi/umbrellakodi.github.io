@@ -1533,7 +1533,7 @@ def scrobbleMovie(title, year, imdb, tmdb, watched_percent):
 		success = post_request('/scrobble/pause', data)
 		if success:
 			log_utils.log('Simkl Scrobble Movie Success: imdb: %s' % imdb, level=log_utils.LOGDEBUG)
-			if getSetting('scrobble.notify') == 'true': control.notification(message=32088)
+			if getSetting('scrobble.notify') == 'true': control.notification(message=40656)
 			control.sleep(1000)
 			sync_playbackProgress(forced=True)
 			control.trigger_widget_refresh()
@@ -1548,7 +1548,7 @@ def scrobbleEpisode(tvshowtitle, year, imdb, tmdb, tvdb, season, episode, watche
 		success = post_request('/scrobble/pause', data)
 		if success:
 			log_utils.log('Simkl Scrobble Episode Success: imdb: %s S%02dE%02d' % (imdb, season, episode), level=log_utils.LOGDEBUG)
-			if getSetting('scrobble.notify') == 'true': control.notification(message=32088)
+			if getSetting('scrobble.notify') == 'true': control.notification(message=40656)
 			control.sleep(1000)
 			sync_playbackProgress(forced=True)
 			control.trigger_widget_refresh()
