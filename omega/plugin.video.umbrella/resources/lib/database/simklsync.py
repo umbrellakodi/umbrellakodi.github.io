@@ -47,43 +47,56 @@ def fetch_bookmarks(imdb, tmdb='', tvdb='', season=None, episode=None, ret_all=N
 						else: progress = match[12]
 					except: pass
 			else:
-				try: # Lookup both IMDb and TVDb first for more accurate episode match.
-					match = dbcur.execute('''SELECT * FROM bookmarks WHERE (imdb=? AND tvdb=? AND season=? AND episode=? AND NOT imdb='' AND NOT tvdb='')''', (imdb, tvdb, str(season or ''), str(episode or ''))).fetchone()
+				# Normalize all IDs to strings — insert_bookmarks stores TEXT, but meta may pass integers
+				_imdb = str(imdb or '')
+				_tmdb = str(tmdb or '')
+				_tvdb = str(tvdb or '')
+				_season = str(season or '')
+				_episode = str(episode or '')
+				try: # Priority 1 — imdb + tvdb
+					match = dbcur.execute('''SELECT * FROM bookmarks WHERE (imdb=? AND tvdb=? AND season=? AND episode=? AND NOT imdb='' AND NOT tvdb='')''', (_imdb, _tvdb, _season, _episode)).fetchone()
 					if ret_type == 'resume_info':
 						progress = (match[0], match[2])
-						log_utils.log('Getting resume from database imdb. Match: %s' % (str(match)),1)
+						log_utils.log('Getting resume from database imdb+tvdb. Match: %s' % (str(match)),1)
 					else: progress = match[12]
 				except:
-					try:
-						match = dbcur.execute('''SELECT * FROM bookmarks WHERE (tvdb=? AND season=? AND episode=? AND NOT tvdb='')''', (tvdb, str(season or ''), str(episode or ''))).fetchone()
+					try: # Priority 2 — tvdb only
+						match = dbcur.execute('''SELECT * FROM bookmarks WHERE (tvdb=? AND season=? AND episode=? AND NOT tvdb='')''', (_tvdb, _season, _episode)).fetchone()
 						if ret_type == 'resume_info':
 							progress = (match[0], match[2])
 							log_utils.log('Getting resume from database tvdb. Match: %s' % (str(match)),1)
 						else: progress = match[12]
 					except:
-						try: # Simkl does not store tvdb — fall back to imdb+tmdb+season+episode
-							match = dbcur.execute('''SELECT * FROM bookmarks WHERE (imdb=? AND tmdb=? AND season=? AND episode=? AND NOT imdb='' AND NOT tmdb='')''', (imdb, tmdb, str(season or ''), str(episode or ''))).fetchone()
+						try: # Priority 3 — imdb + tmdb (Simkl does not store tvdb)
+							match = dbcur.execute('''SELECT * FROM bookmarks WHERE (imdb=? AND tmdb=? AND season=? AND episode=? AND NOT imdb='' AND NOT tmdb='')''', (_imdb, _tmdb, _season, _episode)).fetchone()
 							if ret_type == 'resume_info':
 								progress = (match[0], match[2])
 								log_utils.log('Getting resume from database imdb+tmdb. Match: %s' % (str(match)), 1)
 							else: progress = match[12]
 						except:
-							try: # imdb+season+episode only (tmdb may not be in Simkl response)
-								match = dbcur.execute('''SELECT * FROM bookmarks WHERE (imdb=? AND season=? AND episode=? AND NOT imdb='')''', (imdb, str(season or ''), str(episode or ''))).fetchone()
+							try: # Priority 4 — imdb only
+								match = dbcur.execute('''SELECT * FROM bookmarks WHERE (imdb=? AND season=? AND episode=? AND NOT imdb='')''', (_imdb, _season, _episode)).fetchone()
 								if ret_type == 'resume_info':
 									progress = (match[0], match[2])
 									log_utils.log('Getting resume from database imdb+season+episode. Match: %s' % (str(match)), 1)
 								else: progress = match[12]
 							except:
-								try: # Last resort — tmdb+season+episode (imdb may be absent from Simkl /sync/playback response)
-									match = dbcur.execute('''SELECT * FROM bookmarks WHERE (tmdb=? AND season=? AND episode=? AND NOT tmdb='')''', (tmdb, str(season or ''), str(episode or ''))).fetchone()
+								try: # Priority 5 — tmdb only (imdb may be absent from Simkl /sync/playback response)
+									match = dbcur.execute('''SELECT * FROM bookmarks WHERE (tmdb=? AND season=? AND episode=? AND NOT tmdb='')''', (_tmdb, _season, _episode)).fetchone()
 									if ret_type == 'resume_info':
 										progress = (match[0], match[2])
 										log_utils.log('Getting resume from database tmdb+season+episode. Match: %s' % (str(match)), 1)
 									else: progress = match[12]
-								except: pass
+								except:
+									try: # Priority 6 — season+episode only, no ID guard (all IDs may be absent from Simkl /sync/playback; table has at most 1 active episode)
+										match = dbcur.execute('''SELECT * FROM bookmarks WHERE (season=? AND episode=? AND NOT percent_played='0' AND NOT percent_played='')''', (_season, _episode)).fetchone()
+										if ret_type == 'resume_info':
+											progress = (match[0], match[2])
+											log_utils.log('Getting resume from database season+episode only. Match: %s' % (str(match)), 1)
+										else: progress = match[12]
+									except: pass
 	except:
-		
+
 		log_utils.error()
 	finally:
 		dbcur.close() ; dbcon.close()
@@ -113,7 +126,8 @@ def insert_bookmarks(items):
 				imdb = str(show_ids.get('imdb', ''))
 				tmdb = str(show_ids.get('tmdb', ''))
 				season = str(ep.get('season', ''))
-				episode = str(ep.get('episode', ''))  # Simkl GET response uses "episode" key (not "number")
+				episode = str(ep.get('number', ep.get('episode', '')))  # Simkl GET /sync/playback uses "number" key
+				log_utils.log('Simkl insert_bookmarks episode: show=%s imdb=%r tmdb=%r season=%r episode=%r percent=%r ids=%s' % (tvshowtitle, imdb, tmdb, season, episode, percent_played, str(show_ids)), level=log_utils.LOGDEBUG)
 			else:
 				movie_ids = i.get('movie', {}).get('ids', {})
 				title = i.get('movie', {}).get('title', '')

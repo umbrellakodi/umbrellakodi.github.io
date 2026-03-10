@@ -1,4 +1,5 @@
-[B]Update - v6.7.497 - Mar 10th, 2026[/B]
+[B]Update - v6.7.498 - Mar 10th, 2026[/B]
+--[Fix] Fix for scrobble resume points with simkl.
 --[Change] Added logging for simkl and changes for syncing playback between devices.
 --[Change] No more changes will be made until the existing changes have been tested.
 --[Change] Added ability to filter trakt collection by watched.

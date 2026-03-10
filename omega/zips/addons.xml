@@ -1,5 +1,5 @@
 <?xml version='1.0' encoding='utf-8'?>
-<addons><addon id="plugin.video.umbrella" name="Umbrella" provider-name="Umbrella" version="6.7.497">
+<addons><addon id="plugin.video.umbrella" name="Umbrella" provider-name="Umbrella" version="6.7.498">
 	<requires>
 		<import addon="xbmc.python" version="3.0.0" />
 		<import addon="script.module.requests" />
@@ -235,7 +235,8 @@
 			<screenshot>resources/screenshots/screenshot003.jpg</screenshot>
 		</assets>
 		<news>
-[B]Update - v6.7.497 - Mar 10th, 2026[/B]
+[B]Update - v6.7.498 - Mar 10th, 2026[/B]
+--[Fix] Fix for scrobble resume points with simkl.
 --[Change] Added logging for simkl and changes for syncing playback between devices.
 --[Change] No more changes will be made until the existing changes have been tested.
 --[Change] Added ability to filter trakt collection by watched.

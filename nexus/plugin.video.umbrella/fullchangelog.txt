@@ -1,3 +1,6 @@
+[B]Update - v6.7.498 - Mar 10th, 2026[/B]
+--[Fix] Fix for scrobble resume points with simkl.
+
 [B]Update - v6.7.497 - Mar 10th, 2026[/B]
 --[Change] Added logging for simkl and changes for syncing playback between devices.
 
