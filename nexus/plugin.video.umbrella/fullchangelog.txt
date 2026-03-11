@@ -1,3 +1,6 @@
+[B]Update - v6.7.502 - Mar 11th, 2026[/B]
+--[Change] Made change to how cache was handled for simkl to avoid multiple calls to /sync/watched/
+
 [B]Update - v6.7.501 - Mar 10th, 2026[/B]
 --[New] Enabled source select with continuous playback. No longer overwrites setting and auto-plays when set to source select.
 

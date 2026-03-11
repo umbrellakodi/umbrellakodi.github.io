@@ -74,12 +74,13 @@ def fetch(items, lang='en', user=''):
 								if watching:
 									if trakt.getTraktIndicatorsInfo():
 										from resources.lib.modules.trakt import cachesyncSeasons
+										cachesyncSeasons(imdb, timeout=int(getSetting('background.service.syncInterval') or 15) / 60)
 									elif simkl.getSimKLIndicatorsInfo():
 										from resources.lib.modules.simkl import cachesyncSeasons
+										cachesyncSeasons(imdb, timeout=int(getSetting('simkl.service.syncInterval') or 30) / 60)
 									elif getSetting('indicators.alt') == '3':
 										from resources.lib.modules.mdblist import cachesyncSeasons
-
-									cachesyncSeasons(imdb) # refreshes only shows you are "watching"
+										cachesyncSeasons(imdb, timeout=int(getSetting('mdblist.service.syncInterval') or 30) / 60)
 								continue
 				item = dict((k, v) for k, v in iter(item.items()) if v is not None and v != '')
 				items[i].update(item)
