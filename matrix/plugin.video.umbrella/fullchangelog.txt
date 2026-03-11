@@ -1,3 +1,6 @@
+[B]Update - v6.7.501 - Mar 10th, 2026[/B]
+--[New] Enabled source select with continuous playback. No longer overwrites setting and auto-plays when set to source select.
+
 [B]Update - v6.7.500 - Mar 10th, 2026[/B]
 --[Change] Any service set to mark as watched will now also simulataneously scrobble.
 --[Change] Added Trakt scrobble start for "Now Watching" on dashboard.

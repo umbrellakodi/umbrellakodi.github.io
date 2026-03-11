@@ -74,7 +74,7 @@ class Sources:
 				playerWindow.clearProperty('umbrella.preResolved_episode')
 				playerWindow.clearProperty('umbrella.preResolved_imdb')
 			preResolved_nextUrl = playerWindow.getProperty('umbrella.preResolved_nextUrl')
-			if preResolved_nextUrl != '':
+			if preResolved_nextUrl != '' and (episode is None or getSetting('play.mode.tv') != '0'):
 				preResolved_season = playerWindow.getProperty('umbrella.preResolved_season')
 				preResolved_episode = playerWindow.getProperty('umbrella.preResolved_episode')
 				preResolved_imdb = playerWindow.getProperty('umbrella.preResolved_imdb')
@@ -243,7 +243,7 @@ class Sources:
 					return self.errorForSources(title, year, imdb, tmdb, tvdb, season, episode, tvshowtitle, premiered)
 			else: uncached_items += [i for i in items if re.match(r'^uncached.*torrent', i['source'])]
 			if select is None:
-				if episode is not None and self.enable_playnext: select = '1'
+				if episode is not None and self.enable_playnext and getSetting('play.mode.tv') != '0': select = '1'
 				elif episode == None:
 					select = getSetting('play.mode.movie')
 				else: select = getSetting('play.mode.tv')
@@ -281,7 +281,8 @@ class Sources:
 	def sourceSelect(self, title, items, uncached_items, meta):
 		try:
 			control.hide()
-			control.playlist.clear()
+			if not self.enable_playnext:
+				control.playlist.clear()
 			if not items:
 				control.sleep(200) ; control.hide() ; sysexit()
 ## - compare meta received to database and use largest(eventually switch to a request to fetch missing db meta for item)

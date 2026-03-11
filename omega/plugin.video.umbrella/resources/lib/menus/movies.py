@@ -1218,7 +1218,7 @@ class Movies:
 			for i in range(len(self.list)): self.list[i]['next'] = next
 			self.worker()
 			if self.list is None: self.list = []
-			if create_directory: self.movieDirectory(self.list, folderName=folderName)
+			if create_directory: self.movieDirectory(self.list, isCollection=True, folderName=folderName)
 			return self.list
 		except:
 			from resources.lib.modules import log_utils

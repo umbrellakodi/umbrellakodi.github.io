@@ -918,10 +918,10 @@ class TVshows:
 			for i in range(len(self.list)): self.list[i]['next'] = next
 			self.worker()
 			if self.list is None: self.list = []
-			if create_directory: self.tvshowDirectory(self.list, folderName=folderName)
+			if create_directory: self.tvshowDirectory(self.list, folderName=folderName, isCollection=True)
 			return self.list
 		except:
-			
+
 			log_utils.error()
 
 	def traktWatchlist(self, url, create_directory=True, folderName=''):

@@ -346,6 +346,19 @@ class Player(xbmc.Player):
 			if control.playlist.getposition() == -1 and self.media_type == 'episode':
 				control.player.stop()
 				control.playlist.clear()
+				if getSetting('play.mode.tv') == '0' and self.enable_playnext:
+					# Source select + playnext: add directly without cancelPlayback() to avoid
+					# resolve(False) on a stale handle triggering onPlayBackStopped and clearing the playlist
+					try:
+						episodelabel = '%sx%02d %s' % (int(self.season), int(self.episode), self.meta.get('title', ''))
+						if self.meta.get('title'):
+							item.setLabel(episodelabel)
+						newurl = item.getVideoInfoTag().getFilenameAndPath()
+						if newurl:
+							control.playlist.add(url=newurl, listitem=item)
+							return True
+					except: pass
+					return False
 				return self.singleItemPlaylist(item)
 			else:
 				return False
@@ -827,6 +840,7 @@ class PlayNext(xbmc.Player):
 
 	def prescrapeNext(self):
 		try:
+			if getSetting('play.mode.tv') == '0': return
 			if control.playlist.size() > 0 and control.playlist.getposition() != (control.playlist.size() - 1):
 				from resources.lib.modules import sources
 				from resources.lib.database import providerscache
