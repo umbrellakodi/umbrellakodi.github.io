@@ -105,10 +105,32 @@ def getSeasonIndicators(imdb, tvdb, refresh=False, has_next_episode=False):
 			elif simkl.getEpisodesWatchedActivity() < timeoutsyncSeasons: timeout = 720
 			else: timeout = 0
 			indicators = simkl.cachesyncSeasons(imdb, tvdb, timeout=timeout)
+			# Simkl progress confirmed a new episode (has_next_episode) but cache shows all watched.
+			# Force a refresh so this read and all subsequent reads across all views see the correct count.
+			if has_next_episode and timeout != 0 and indicators:
+				counts = indicators[1] if len(indicators) > 1 else {}
+				if counts and sum(v.get('total', 0) for v in counts.values()) == sum(v.get('watched', 0) for v in counts.values()):
+					indicators = simkl.cachesyncSeasons(imdb, tvdb, timeout=0)
 			return indicators
 		elif mdblistIndicators:
-			# syncSeasons is a pure local-DB read — no API calls — always fetch fresh
+			# syncSeasons derives totals from TMDb season meta (96h cache) — always fetch fresh from local DB
 			indicators = mdblist.cachesyncSeasons(imdb, tvdb, timeout=0)
+			# MDBList progress confirmed a new episode (has_next_episode) but counts show all watched.
+			# TMDb season meta may be stale — force-refresh it so syncSeasons picks up the new episode total.
+			if has_next_episode and indicators:
+				counts = indicators[1] if len(indicators) > 1 else {}
+				if counts and sum(v.get('total', 0) for v in counts.values()) == sum(v.get('watched', 0) for v in counts.values()):
+					try:
+						from resources.lib.database import cache as _cache
+						from resources.lib.indexers import tmdb as _tmdb
+						tmdb_result = _cache.get(_tmdb.TVshows().IdLookup, 96, imdb, tvdb)
+						tmdb_id = str(tmdb_result.get('id', '')) if tmdb_result else ''
+						if tmdb_id:
+							_cache.get(_tmdb.TVshows().get_showSeasons_meta, 0, tmdb_id)  # force fresh, updates cache
+							indicators = mdblist.cachesyncSeasons(imdb, tvdb, timeout=0)  # re-run with fresh totals
+					except:
+						from resources.lib.modules import log_utils
+						log_utils.error()
 			return indicators
 		else:
 			from resources.lib.database import watchedcache

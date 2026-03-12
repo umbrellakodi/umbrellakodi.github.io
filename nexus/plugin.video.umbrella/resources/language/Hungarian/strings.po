@@ -5770,3 +5770,6 @@ msgctxt "#40659"
 msgid "Local: In-Progress Episodes"
 msgstr ""
 
+msgctxt "#40660"
+msgid "[COLOR %s][B]Force MDBList Sync to local database[/B][/COLOR]"
+msgstr ""

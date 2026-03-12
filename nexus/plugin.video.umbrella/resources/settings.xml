@@ -6839,6 +6839,19 @@
 					</dependencies>
 					<control type="button" format="action"/>
 				</setting>
+				<setting id="forceMDBListSyncButton" type="action" label="40660" help="">
+					<level>0</level>
+					<data>RunPlugin(plugin://plugin.video.umbrella/?action=tools_forceMDBListSync)</data>
+					<constraints>
+						<allowempty>true</allowempty>
+					</constraints>
+					<dependencies>
+						<dependency type="visible">
+							<condition operator="!is" setting="mdblist.api"/>
+						</dependency>
+					</dependencies>
+					<control type="button" format="action"/>
+				</setting>
 				<setting id="cacheClearAllButton" type="action" label="32610" help="">
 					<level>0</level>
 					<data>RunPlugin(plugin://plugin.video.umbrella/?action=cache_clearAll)</data>

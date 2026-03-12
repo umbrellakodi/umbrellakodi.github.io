@@ -1,3 +1,6 @@
+[B]Update - v6.7.504 - Mar 12th, 2026[/B]
+--[Fixes] Bug fixes.
+
 [B]Update - v6.7.503 - Mar 11th, 2026[/B]
 --[Change] Made changes to the way tmdb years worked to pull most popular shows and movies for each year.
 --[Fix] Changed local tracking for for tv shows to work. Added option for progress episode and progress shows from local tracking.

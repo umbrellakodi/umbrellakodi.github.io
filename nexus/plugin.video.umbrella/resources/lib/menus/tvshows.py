@@ -1231,6 +1231,8 @@ class TVshows:
 					num_1 = sum(len(s['episodes']) for s in seasons if s.get('number', 0) > 0)
 					num_2 = int(show.get('aired_episodes', 0))
 					values['has_next_episode'] = num_1 < num_2
+					values['trakt_watched_episodes'] = num_1
+					values['trakt_aired_episodes'] = num_2
 				self.list.append(values)
 			except:
 				
@@ -1743,10 +1745,10 @@ class TVshows:
 						watched = (getTVShowOverlay(indicators[1] if indicators else None, i.get('imdb', ''), i.get('tvdb', '')) == '5') if indicators else False
 						if watched and i.get('has_next_episode'):
 							watched = False
-							trakt.syncSeasons(i.get('imdb', ''), i.get('tvdb', '')) # refresh stale local DB so counts reflect new episodes
+							trakt.cachesyncSeasons(i.get('imdb', ''), i.get('tvdb', ''), timeout=0) # refresh cache so counts reflect new episodes
 							# Re-check local count (no augmentation): if 0 unwatched, has_next_episode is stale; restore watched=True
 							try:
-								re_indicators = getSeasonIndicators(i.get('imdb', ''), i.get('tvdb', ''))
+								re_indicators = getSeasonIndicators(i.get('imdb', ''), i.get('tvdb', ''), has_next_episode=True)
 								if re_indicators:
 									re_count = getShowCount(re_indicators[1], i.get('imdb', ''), i.get('tvdb', ''))
 									if re_count is not None and int(re_count.get('unwatched', 0)) == 0:
@@ -2326,6 +2328,15 @@ class TVshows:
 						if tmdb_total > count['total']:
 							count['total'] = tmdb_total
 							count['unwatched'] = max(0, tmdb_total - count['watched'])
+						# Fallback: use Trakt watched/shows endpoint counts (more up-to-date than progress/watched endpoint)
+						trakt_aired = int(meta.get('trakt_aired_episodes') or 0)
+						trakt_watched = int(meta.get('trakt_watched_episodes') or 0)
+						if trakt_aired > count['total']:
+							count['total'] = trakt_aired
+							count['unwatched'] = max(0, trakt_aired - count['watched'])
+						# Safety net: has_next_episode guarantees ≥1 unwatched episode
+						if int(count.get('unwatched', 0)) == 0:
+							count['unwatched'] = max(1, trakt_aired - trakt_watched) if trakt_aired > trakt_watched else 1
 					if count:
 						count['unwatched'] = max(0, count['unwatched'])
 					if self.showCounts:
