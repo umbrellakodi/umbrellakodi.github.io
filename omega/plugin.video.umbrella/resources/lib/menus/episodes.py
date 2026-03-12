@@ -548,6 +548,122 @@ class Episodes:
 		[i.join() for i in threads]
 		return self.list
 
+	def local_calendar(self, url, folderName=''):
+		self.list = []
+		try:
+			self.list = cache.get(self.local_progress_list, 0, url)
+			self.sort(type='progress')
+			if self.list is None: self.list = []
+			prior_week = int(re.sub(r'[^0-9]', '', (self.date_time - timedelta(days=7)).strftime('%Y-%m-%d')))
+			sorted_list = []
+			top_items = [i for i in self.list if i.get('episode') == 1 and i.get('premiered') and (int(re.sub(r'[^0-9]', '', str(i['premiered']))) >= prior_week)]
+			sorted_list.extend(top_items)
+			sorted_list.extend([i for i in self.list if i not in top_items])
+			self.list = sorted_list
+			if self.list is None: self.list = []
+			if not getSetting('local.progress.showunaired') == 'true':
+				self.list = [i for i in self.list if i.get('unaired', '') != 'true']
+			for i in range(len(self.list)): self.list[i]['next'] = ''
+			self.episodeDirectory(self.list, unfinished=False, next=False, folderName=folderName)
+			return self.list
+		except:
+			from resources.lib.modules import log_utils
+			log_utils.error()
+			if not self.list:
+				control.hide()
+				if self.notifications: control.notification(title=32326, message=33049)
+
+	def local_progress_list(self, url='', direct=False):
+		self.list = []
+		try:
+			from resources.lib.database import watchedcache as wc
+			show_ids = wc.get_in_progress_show_imdb_ids()
+			if not show_ids: return self.list
+			items = []
+			for imdb_id, last_played in show_ids:
+				try:
+					watched_eps = wc.get_watched_episode_ids(imdb_id)
+					if not watched_eps: continue
+					try:
+						import datetime as _dt
+						ts = int(last_played)
+						dt = _dt.datetime.utcfromtimestamp(ts)
+						lp = dt.strftime('%Y-%m-%dT%H:%M:%S.000Z')
+					except: lp = ''
+					watched_set = {(ep[0], ep[1]) for ep in watched_eps}
+					items.append({'imdb': imdb_id, 'watched_set': watched_set, 'lastplayed': lp})
+				except: pass
+			if not items: return self.list
+
+			def items_list(i):
+				imdb_id = i.get('imdb', '')
+				watched_set = i.get('watched_set', set())
+				try:
+					tmdb_result = cache.get(tmdb_indexer().IdLookup, 96, imdb_id, '')
+					tmdb_id = str(tmdb_result.get('id')) if tmdb_result else ''
+					if not tmdb_id: return
+					showSeasons = cache.get(tmdb_indexer().get_showSeasons_meta, 96, tmdb_id)
+					if not showSeasons: return
+					# Find the first unwatched episode in chronological order
+					next_season = None
+					next_episode = None
+					for s in sorted(showSeasons.get('seasons', []), key=lambda x: x.get('season_number', 0)):
+						snum = s.get('season_number', 0)
+						if snum == 0 and not self.showspecials: continue
+						for enum in range(1, s.get('episode_count', 0) + 1):
+							if (snum, enum) not in watched_set:
+								next_season = snum
+								next_episode = enum
+								break
+						if next_season is not None: break
+					if next_season is None: return  # fully watched
+					seasonEpisodes = cache.get(tmdb_indexer().get_seasonEpisodes_meta, 96, tmdb_id, next_season)
+					if not seasonEpisodes: return
+					episode_list = seasonEpisodes.get('episodes', [])
+					try: episode_meta = [x for x in episode_list if x.get('episode') == next_episode][0]
+					except: return
+					values = {}
+					values['imdb'] = imdb_id
+					values['tmdb'] = tmdb_id
+					values['tvdb'] = tmdb_result.get('tvdb', '') if tmdb_result else ''
+					values['lastplayed'] = i.get('lastplayed', '')
+					values['snum'] = next_season
+					values['enum'] = next_episode
+					if not episode_meta.get('plot'): episode_meta['plot'] = showSeasons.get('plot', '')
+					values.update(showSeasons)
+					values.update(seasonEpisodes)
+					values.update(episode_meta)
+					for k in ('episodes', 'snum', 'enum'): values.pop(k, None)
+					air_date = values.get('premiered', '')
+					values['unaired'] = ''
+					try:
+						if values.get('status', '').lower() == 'ended': pass
+						elif not air_date: values['unaired'] = 'true'
+						elif int(re.sub(r'[^0-9]', '', air_date)) > int(re.sub(r'[^0-9]', '', str(self.today_date))):
+							values['unaired'] = 'true'
+					except: pass
+					if self.enable_fanarttv:
+						tvdb = values.get('tvdb', '')
+						extended_art = fanarttv_cache.get(FanartTv().get_tvshow_art, 336, tvdb)
+						if extended_art: values.update(extended_art)
+					if not direct: values['action'] = 'episodes'
+					values['localProgress'] = True
+					values['extended'] = True
+					self.list.append(values)
+				except:
+					from resources.lib.modules import log_utils
+					log_utils.error()
+
+			threads = []
+			for i in items:
+				threads.append(Thread(target=items_list, args=(i,)))
+			[t.start() for t in threads]
+			[t.join() for t in threads]
+		except:
+			from resources.lib.modules import log_utils
+			log_utils.error()
+		return self.list
+
 	def sort(self, type='shows'):
 		try:
 			if not self.list: return
@@ -1258,7 +1374,9 @@ class Episodes:
 		_trakt_marks = self.traktCredentials and (_indicators_alt == '1' or getSetting('trakt.markwatched') == 'true')
 		_simkl_marks = self.simklCredentials and (_indicators_alt == '2' or getSetting('simkl.markwatched') == 'true')
 		_mdblist_marks = self.mdblist_authed and (_indicators_alt == '3' or getSetting('mdblist.markwatched') == 'true')
-		if sum([bool(_trakt_marks), bool(_simkl_marks), bool(_mdblist_marks)]) > 1:
+		if _indicators_alt == '0':
+			watchedMenu, unwatchedMenu = getLS(32066), getLS(32067)
+		elif sum([bool(_trakt_marks), bool(_simkl_marks), bool(_mdblist_marks)]) > 1:
 			watchedMenu, unwatchedMenu = getLS(40564), getLS(40565)
 		elif _trakt_marks:
 			watchedMenu, unwatchedMenu = getLS(32068), getLS(32069)

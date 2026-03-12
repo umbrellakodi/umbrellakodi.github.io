@@ -281,6 +281,9 @@ class Navigator:
 				self.addDirectoryItem(40645, 'mdblist_shows_progress&url=mdbprogress&folderName=%s' % quote_plus(getLS(40645)), 'mdblist.png', 'mdblist.png', queue=True)
 			if getSetting('mdblist.progress.episodes') != 'false':
 				self.addDirectoryItem(40646, 'mdblist_calendar&url=mdbprogress&folderName=%s' % quote_plus(getLS(40646)), 'mdblist.png', 'mdblist.png', queue=True)
+		if getSetting('indicators.alt') == '0' and getSetting('scrobble.source') == '0':
+			self.addDirectoryItem(40658, 'local_shows_progress&url=localprogress&folderName=%s' % quote_plus(getLS(40658)), 'icon.png', 'DefaultTVShows.png', queue=True)
+			self.addDirectoryItem(40659, 'local_calendar&url=localprogress&folderName=%s' % quote_plus(getLS(40659)), 'icon.png', 'DefaultTVShows.png', queue=True)
 		# TMDb User Lists
 		if getSetting('tmdb.v4.accesstoken') != '':
 			self.addDirectoryItem('TMDb User Lists','tmdbUserListsTV&folderName=%s' % quote_plus('TMDb User Lists'),'tmdb.png','DefaultTVShows.png')

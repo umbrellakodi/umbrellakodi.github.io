@@ -182,9 +182,11 @@ def _map_user_watchlist_items(response, listType):
         items_append(item)
     return items
 
-def manager(name, imdb=None, tvdb=None, tmdb=None, watched=None):
+def manager(name, imdb=None, tvdb=None, tmdb=None, watched=None, season=None, episode=None):
     lists = []
     try:
+        if season: season = int(season)
+        if episode: episode = int(episode)
         content_type = 'tvshow' if tvdb and tvdb != 'None' else 'movie'
         items = []
         if watched is not None:
@@ -195,6 +197,9 @@ def manager(name, imdb=None, tvdb=None, tmdb=None, watched=None):
         else:
             items += [(getLS(33651) % highlight_color, 'watch')]
             items += [(getLS(33652) % highlight_color, 'unwatch')]
+        if getSetting('scrobble.source') == '3' or getSetting('mdblist.markwatched') == 'true':
+            if content_type == 'movie' or episode:
+                items += [(getLS(40076) % highlight_color, 'scrobbleReset')]
         items += [(getLS(40596) % highlight_color, 'add')]
         items += [(getLS(40597) % highlight_color, 'remove')]
         if not tvdb or tvdb == 'None':
@@ -221,6 +226,9 @@ def manager(name, imdb=None, tvdb=None, tmdb=None, watched=None):
                     return
                 if items[select][1] == 'unwatch':
                     unwatch(content_type, name, imdb=imdb, tvdb=tvdb, tmdb=tmdb)
+                    return
+                if items[select][1] == 'scrobbleReset':
+                    scrobbleReset(imdb=imdb, tmdb=tmdb, tvdb=tvdb, season=season, episode=episode, refresh=True, clear_local=getSetting('indicators.alt') == '3')
                     return
                 if not tvdb or tvdb == 'None': post = {"movies": [{"imdb": imdb}]}
                 else:
@@ -643,15 +651,18 @@ def scrobbleEpisode(tvshowtitle, year, imdb, tmdb, tvdb, season, episode, watche
 		log_utils.log('MDBList Scrobble Episode. imdb: %s S%sE%s percent: %s' % (imdb, season, episode, watched_percent), level=log_utils.LOGDEBUG)
 	except: log_utils.error()
 
-def scrobbleReset(imdb, tmdb='', tvdb='', season=None, episode=None, refresh=False):
+def scrobbleReset(imdb, tmdb='', tvdb='', season=None, episode=None, refresh=False, clear_local=True):
 	if not getMDBListCredentialsInfo(): return
 	try:
 		media_type = 'episode' if episode else 'movie'
 		_scrobble('/scrobble/stop', media_type, imdb, tmdb, tvdb, season, episode, 100)
-		mdbsync.delete_bookmark(imdb, tvdb or '', season or '', episode or '')
-		sync_watchedProgress(forced=True)
-		control.trigger_widget_refresh()
+		if clear_local:
+			mdbsync.delete_bookmark(imdb, tvdb or '', season or '', episode or '')
+			sync_watchedProgress(forced=True)
+			control.trigger_widget_refresh()
 		if refresh: control.refresh()
+		if getSetting('scrobble.notify') == 'true':
+			control.notification(title='MDBList', message='Successfully Removed MDBList playback progress')
 		log_utils.log('MDBList scrobble reset. imdb: %s' % imdb, level=log_utils.LOGDEBUG)
 	except: log_utils.error()
 

@@ -4775,9 +4775,6 @@ msgctxt "#40457"
 msgid "Trakt List"
 msgstr ""
 
-msgctxt "#40458"
-msgid "IMDb List"
-msgstr ""
 
 msgctxt "#40459"
 msgid "Viewtypes"
@@ -4911,9 +4908,6 @@ msgctxt "#40491"
 msgid "Title Check Results"
 msgstr ""
 
-msgctxt "#40492"
-msgid "IMDb list amount"
-msgstr ""
 
 msgctxt "#40493"
 msgid "Genres (Trakt)"
@@ -5565,5 +5559,13 @@ msgstr ""
 
 msgctxt "#40657"
 msgid "MDBList: Scrobbled"
+msgstr ""
+
+msgctxt "#40658"
+msgid "Local: In-Progress Shows"
+msgstr ""
+
+msgctxt "#40659"
+msgid "Local: In-Progress Episodes"
 msgstr ""
 

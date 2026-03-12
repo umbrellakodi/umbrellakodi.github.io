@@ -1,5 +1,5 @@
 <?xml version='1.0' encoding='utf-8'?>
-<addons><addon id="plugin.video.umbrella" name="Umbrella" provider-name="Umbrella" version="6.7.502">
+<addons><addon id="plugin.video.umbrella" name="Umbrella" provider-name="Umbrella" version="6.7.503">
 	<requires>
 		<import addon="xbmc.python" version="3.0.0" />
 		<import addon="script.module.requests" />
@@ -235,51 +235,28 @@
 			<screenshot>resources/screenshots/screenshot003.jpg</screenshot>
 		</assets>
 		<news>
-[B]Update - v6.7.502 - Mar 11th, 2026[/B]
+[[B]Update - v6.7.503 - Mar 11th, 2026[/B]
+--[Change] Made changes to the way tmdb years worked to pull most popular shows and movies for each year.
+--[Fix] Changed local tracking for for tv shows to work. Added option for progress episode and progress shows from local tracking.
+--[Change] Added scrobble reset options to mdblist manager, simkl manager, and modified scrobble reset to only affect the interface if being done from service set as primary.
 --[Change] Made change to how cache was handled for simkl to avoid multiple calls to /sync/watched/
 --[New] Enabled source select with continuous playback. No longer overwrites setting and auto-plays when set to source select.
 --[Change] Any service set to mark as watched will now also simulataneously scrobble.
---[Change] Added Trakt scrobble start for "Now Watching" on dashboard.
---[Fix] Fix for scrobble resume points with mdblist.
---[Fix] Fix for scrobble resume points with simkl.
---[Change] Added logging for simkl and changes for syncing playback between devices.
---[Change] No more changes will be made until the existing changes have been tested.
---[Change] Added ability to filter trakt collection by watched.
+--[Change] Added scrobble start for "Now Watching" on dashboard.
 --[Change] Made control detect and store what skin is being used. All calls made to refresh widget now check the skin first to determine refresh method.
---[Change] Made changes for counts to freshly load when conditions are met.
---[Change] Change the way in progress is working for TV Shows with new shows released. Now checks is_ended on the trakt api and updates the in progress lists accordingly. This should update the in progress lists when new shows are released in a series you are watching.
---[Change] Made changes for refresing TV Show Progress when a change is detected or over a time interval.
---[Fix] Made context menus more consistent across different types media.
 --[Change] Added options to hide "In-Progress" lists in TV Shows for services not being used for watch history/ scrobbling.
---[Fix] Changes made for counts when using mdblist.
---[Fix] Added a widget refresh when a change of information is detected on a sync for users with multiple devices.
 --[Fix] Changes made to check more window properties when playing a pre-scraped item to resolve issue where previously pre-scraped shows were playing when selecting an entirely different show.
---[Fix] Made changes to when mark as watched is called during playback.
---[Change] Added options for Direct Progress Scrape for MDBList.
---[Fix] Changes for the way mdblist counts were being calculated on show level and season level.
 --[Change] YOU WILL NEED TO SET YOUR WATCH COUNT INDICATORS SETTING in the online services tab.
 --[Change] Modified settings to combine all services to one online-services tab. This is a very early beta and I expect issues.
 --[New] Added MDBList watch history and scrobble.
---[Change] Changed way artwork is called from tmdb. English will always be a fallback.
---[Fix] Change for simkl episode marking and unmarking. Also changed label for resume point popup to clearly indicate which service is being used.
---[Fix] Change for automatic import to clean titles before importing.
 --[New] Added Simkl scrobble ability. (Stop and Resume Points from Simkl)
---[New] Added start watching call if Simkl is enabled at request of Simkl developer.
---[Fix] Trakt client id mismatch for token fix.
 --[Fix] Changed Trakt Episodes Progress to respect pagination setting and page limit correctly.
---[Fix] Multiple changes made for Simkl compatibility.
 --[Change] Made tmdb watchlist respect watchlist sorting from settings.
 --[New] Added sorting options for tmdb lists in Settings: General for movies and TV Shows for shows.
 --[Fix] Fixed custom trakt token not being saved correctly for reuse when using a custom trakt client id and secret.
---[Fix] Made changes to the way paths are made for artwork due to compatibility issues with icon packs and different operating systems.
---[Fix] More changes to qr code generation to use main datapath instead of artpath so they are not affected by icon pack selections.
---[Fix] TMDb error fix for incorrect dialog call.
 --[New] Added TMDb Watchlist.
---[Change] Made multiple new context menu items. Settings are available to enable/ disable each.
---[Fix] Changed tmdb to get artwork for fanart differently for custom artwork.
 --[Change] Changed art locations so icons would not need to be reloaded on each update.
 --[Change] Added tinyurl as a fallback for long tmdb v4 authorization urls.
---[Change] Modified TMDB artwork retrieval to include None as a valid language option for artwork.
  		</news>
 	</extension>
 

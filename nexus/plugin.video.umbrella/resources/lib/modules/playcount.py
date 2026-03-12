@@ -100,7 +100,7 @@ def getSeasonIndicators(imdb, tvdb, refresh=False, has_next_episode=False):
 			return indicators
 		elif simklIndicators:
 			timeoutsyncSeasons = simkl.timeoutsyncSeasons(imdb, tvdb)
-			if timeoutsyncSeasons is None: return # if no entry means no completed season watched so do not make needless requests 
+			if timeoutsyncSeasons is None: return # if no entry means no completed season watched so do not make needless requests
 			if not refresh: timeout = 720
 			elif simkl.getEpisodesWatchedActivity() < timeoutsyncSeasons: timeout = 720
 			else: timeout = 0
@@ -111,11 +111,8 @@ def getSeasonIndicators(imdb, tvdb, refresh=False, has_next_episode=False):
 			indicators = mdblist.cachesyncSeasons(imdb, tvdb, timeout=0)
 			return indicators
 		else:
-#			from metahandler import metahandlers
-#			indicators = metahandlers.MetaData(tmdb_api_key, omdb_api_key, tvdb_api_key)
 			from resources.lib.database import watchedcache
-			indicators = watchedcache
-			return indicators
+			return [watchedcache, watchedcache]
 	except:
 		from resources.lib.modules import log_utils
 		log_utils.error()
@@ -167,8 +164,8 @@ def getTVShowOverlay(indicators, imdb, tvdb): # tvdb no longer used
 				playcount['watched'] += value['watched']
 			playcount = '5' if playcount['total'] == playcount['watched'] else '4'
 			return playcount
-		else: # indicators will be metahandler object
-			playcount = indicators._get_watched('tvshow', imdb, '', '')
+		else:
+			playcount = indicators._get_watched('tvshow', imdb, '')
 			return str(playcount)
 	except:
 		from resources.lib.modules import log_utils
@@ -190,7 +187,7 @@ def getSeasonOverlay(indicators, imdb, tvdb, season): # tvdb no longer used
 			playcount = [i for i in indicators if int(season) == int(i)]
 			playcount = '5' if len(playcount) > 0 else '4'
 			return playcount
-		else: # indicators will be metahandler object
+		else:
 			playcount = indicators._get_watched('season', imdb, '', season)
 			return str(playcount)
 	except:
@@ -253,7 +250,23 @@ def getShowCount(indicators, imdb, tvdb): # ID's currently not used. totals from
 				result['watched'] += value['watched']
 				result['unwatched'] += value['unwatched']
 			return result
-		else: return None # metahandler does not currently provide counts
+		else:
+			try:
+				from resources.lib.database import watchedcache as wc
+				from resources.lib.indexers import tmdb as tmdb_indexer
+				from resources.lib.database import cache
+				watched_count = wc.get_watched_count_for_show(imdb)
+				if not watched_count: return None
+				tmdb_result = cache.get(tmdb_indexer.TVshows().IdLookup, 96, imdb, tvdb)
+				tmdb_id = str(tmdb_result.get('id')) if tmdb_result else ''
+				if not tmdb_id: return None
+				seasons_meta = cache.get(tmdb_indexer.TVshows().get_showSeasons_meta, 96, tmdb_id)
+				total = sum(s.get('episode_count', 0) for s in (seasons_meta or {}).get('seasons', []) if s.get('season_number', 0) > 0)
+				return {'total': total, 'watched': watched_count, 'unwatched': max(0, total - watched_count)}
+			except:
+				from resources.lib.modules import log_utils
+				log_utils.error()
+				return None
 	except:
 		from resources.lib.modules import log_utils
 		log_utils.error()
@@ -266,7 +279,30 @@ def getSeasonCount(imdb, tvdb, season=None):
 		if traktIndicators: result = trakt.seasonCount(imdb, tvdb)
 		elif simklIndicators: result = simkl.seasonCount(imdb, tvdb)
 		elif mdblistIndicators: result = mdblist.seasonCount(imdb, tvdb)
-		else: return None
+		else:
+			try:
+				from resources.lib.database import watchedcache as wc
+				from resources.lib.indexers import tmdb as tmdb_indexer
+				from resources.lib.database import cache
+				tmdb_result = cache.get(tmdb_indexer.TVshows().IdLookup, 96, imdb, tvdb)
+				tmdb_id = str(tmdb_result.get('id')) if tmdb_result else ''
+				if not tmdb_id: return None
+				seasons_meta = cache.get(tmdb_indexer.TVshows().get_showSeasons_meta, 96, tmdb_id)
+				watched_eps = wc.get_watched_episode_ids(imdb)
+				result = {}
+				for s in (seasons_meta or {}).get('seasons', []):
+					snum = s.get('season_number', 0)
+					if snum == 0: continue
+					total = s.get('episode_count', 0)
+					watched = sum(1 for ep in watched_eps if int(ep[0]) == snum)
+					result[snum] = {'total': total, 'watched': watched, 'unwatched': max(0, total - watched)}
+				if not result: return None
+				if not season: return result
+				else: return result.get(int(season))
+			except:
+				from resources.lib.modules import log_utils
+				log_utils.error()
+				return None
 		if not result: return None
 		if not season: return result
 		else: return result.get(int(season))
@@ -379,6 +415,27 @@ def tvshows(tvshowtitle, imdb, tvdb, season, watched):
 		elif watch_history_service == '3' and mdblistCredentials:
 			if int(watched) == 5: mdblist.watch(content_type=content_type, name=tvshowtitle, imdb=imdb, tvdb=tvdb, season=season, refresh=True)
 			else: mdblist.unwatch(content_type=content_type, name=tvshowtitle, imdb=imdb, tvdb=tvdb, season=season, refresh=True)
+		else:
+			from resources.lib.database import watchedcache as wc
+			from resources.lib.indexers import tmdb as tmdb_indexer
+			from resources.lib.database import cache
+			try:
+				tmdb_result = cache.get(tmdb_indexer.TVshows().IdLookup, 96, imdb, tvdb)
+				tmdb_id = str(tmdb_result.get('id')) if tmdb_result else ''
+				seasons_meta = cache.get(tmdb_indexer.TVshows().get_showSeasons_meta, 96, tmdb_id) if tmdb_id else {}
+				for s in (seasons_meta or {}).get('seasons', []):
+					snum = s.get('season_number', 0)
+					if snum == 0: continue
+					if season and str(snum) != str(season): continue
+					for ep_num in range(1, s.get('episode_count', 0) + 1):
+						wc.change_watched('episode', imdb, '', season=snum, episode=ep_num, title=tvshowtitle, watched=int(watched))
+					wc.change_watched('season', imdb, '', season=snum, title=tvshowtitle, watched=int(watched))
+				if not season:
+					wc.change_watched('tvshow', imdb, '', title=tvshowtitle, watched=int(watched))
+				containerRefresh()
+			except:
+				from resources.lib.modules import log_utils
+				log_utils.error()
 		if watch_history_service != '1' and getSetting('trakt.markwatched') == 'true' and traktCredentials:
 			if int(watched) == 5: trakt.watch(content_type=content_type, name=tvshowtitle, imdb=imdb, tvdb=tvdb, season=season, refresh=False)
 			else: trakt.unwatch(content_type=content_type, name=tvshowtitle, imdb=imdb, tvdb=tvdb, season=season, refresh=False)
@@ -388,7 +445,7 @@ def tvshows(tvshowtitle, imdb, tvdb, season, watched):
 		if watch_history_service != '3' and getSetting('mdblist.markwatched') == 'true' and mdblistCredentials:
 			if int(watched) == 5: mdblist.watch(content_type=content_type, name=tvshowtitle, imdb=imdb, tvdb=tvdb, season=season, refresh=False)
 			else: mdblist.unwatch(content_type=content_type, name=tvshowtitle, imdb=imdb, tvdb=tvdb, season=season, refresh=False)
-		if not (traktCredentials or simklCredentials or mdblistCredentials):
+		if watch_history_service != '0' and not (traktCredentials or simklCredentials or mdblistCredentials):
 			from metahandler import metahandlers
 			from resources.lib.menus import episodes
 			from sys import exit as sysexit

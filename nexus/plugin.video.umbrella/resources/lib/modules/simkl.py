@@ -1412,6 +1412,9 @@ def manager(name, imdb=None, tvdb=None, season=None, episode=None, refresh=True,
 		else:
 			items = [(getLS(33651) % highlightColor, 'watch')]
 			items += [(getLS(33652) % highlightColor, 'unwatch')]
+		if getSetting('scrobble.source') == '2' or getSetting('simkl.markwatched') == 'true':
+			if media_type == 'Movie' or episode:
+				items += [(getLS(40076) % highlightColor, 'scrobbleReset')]
 		if media_type == 'Show':
 			items += [(getLS(40570) % highlightColor, '/sync/plantowatch')] #add to show plan to watch
 			items += [(getLS(40571) % highlightColor, '/sync/plantowatch/remove')] #remove show from plan to watch
@@ -1435,6 +1438,8 @@ def manager(name, imdb=None, tvdb=None, season=None, episode=None, refresh=True,
 				watch(control.infoLabel('Container.ListItem.DBTYPE'), name, imdb=imdb, tvdb=tvdb, season=season, episode=episode, refresh=refresh)
 			elif items[select][1] == 'unwatch':
 				unwatch(control.infoLabel('Container.ListItem.DBTYPE'), name, imdb=imdb, tvdb=tvdb, season=season, episode=episode, refresh=refresh)
+			elif items[select][1] == 'scrobbleReset':
+				scrobbleReset(imdb=imdb, tvdb=tvdb, season=season, episode=episode, refresh=True, clear_local=getSetting('indicators.alt') == '2')
 			else:
 				if items[select][1] == '/sync/plantowatch':
 					listname = "Plan to Watch"
@@ -1569,7 +1574,7 @@ def scrobbleStart(media_type, title='', tvshowtitle='', year='0', imdb='', tmdb=
 			log_utils.log('Simkl Scrobble Start Failed: imdb: %s' % imdb, level=log_utils.LOGDEBUG)
 	except: log_utils.error()
 
-def scrobbleReset(imdb, tmdb='', tvdb='', season=None, episode=None, refresh=False):
+def scrobbleReset(imdb, tmdb='', tvdb='', season=None, episode=None, refresh=False, clear_local=True):
 	if not getSimKLCredentialsInfo(): return
 	if not control.player.isPlaying(): control.busy()
 	try:
@@ -1589,7 +1594,7 @@ def scrobbleReset(imdb, tmdb='', tvdb='', season=None, episode=None, refresh=Fal
 		success = session.delete(url, headers=delete_headers, timeout=20).status_code == 204
 		control.hide()
 		if success:
-			simklsync.delete_bookmark(resume_id)
+			if clear_local: simklsync.delete_bookmark(resume_id)
 			if refresh: control.refresh()
 			if getSetting('scrobble.notify') == 'true':
 				control.notification(title=32315, message='Successfully Removed Simkl playback progress: [COLOR %s]%s[/COLOR]' % (highlightColor, label_string))

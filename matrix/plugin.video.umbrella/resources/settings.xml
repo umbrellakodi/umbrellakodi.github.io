@@ -454,18 +454,7 @@
 					<default>true</default>
 					<control type="toggle"/>
 				</setting>
-				<setting id="limit.imdb.genres" type="integer" label="40492" help="">
-					<level>0</level>
-					<default>100</default>
-					<constraints>
-						<minimum>20</minimum>
-						<maximum>250</maximum>
-						<step>10</step>
-					</constraints>
-					<control type="slider" format="integer">
-						<popup>false</popup>
-					</control>
-				</setting>
+	
 				<setting id="localnotify" type="integer" label="40513" help="">
 					<level>0</level>
 					<default>true</default>
@@ -3204,7 +3193,12 @@
 					<default>false</default>
 					<dependencies>
 						<dependency type="visible">
-							<condition operator="!is" setting="scrobble.source">0</condition>
+							<or>
+								<condition operator="!is" setting="scrobble.source">0</condition>
+								<condition operator="is" setting="trakt.markwatched">true</condition>
+								<condition operator="is" setting="simkl.markwatched">true</condition>
+								<condition operator="is" setting="mdblist.markwatched">true</condition>
+							</or>
 						</dependency>
 					</dependencies>
 					<control type="toggle"/>
@@ -5587,7 +5581,7 @@
 						<allowempty>true</allowempty>
 					</constraints>
 					<dependencies>
-						<dependency type="enable">
+						<dependency type="visible">
 							<condition on="property" name="InfoBool">false</condition>
 						</dependency>
 					</dependencies>
@@ -5602,7 +5596,7 @@
 						<allowempty>true</allowempty>
 					</constraints>
 					<dependencies>
-						<dependency type="enable">
+						<dependency type="visible">
 							<condition on="property" name="InfoBool">false</condition>
 						</dependency>
 					</dependencies>

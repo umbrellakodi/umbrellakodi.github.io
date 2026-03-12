@@ -6663,3 +6663,12 @@ msgstr ""
 msgctxt "#40657"
 msgid "MDBList: Scrobbled"
 msgstr ""
+
+msgctxt "#40658"
+msgid "Local: In-Progress Shows"
+msgstr ""
+
+msgctxt "#40659"
+msgid "Local: In-Progress Episodes"
+msgstr ""
+

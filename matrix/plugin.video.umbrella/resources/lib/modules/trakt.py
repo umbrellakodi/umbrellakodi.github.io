@@ -720,7 +720,7 @@ def manager(name, imdb=None, tvdb=None, season=None, episode=None, refresh=True,
 		if unfinished is True:
 			if media_type == 'Movie': items += [(getLS(35059) % highlight_color, 'unfinishedMovieManager')]
 			elif episode: items += [(getLS(35060) % highlight_color, 'unfinishedEpisodeManager')]
-		if getSetting('trakt.scrobble') == 'true' and getSetting('resume.source') == '1':
+		if getSetting('scrobble.source') == '1' or getSetting('trakt.markwatched') == 'true':
 			if media_type == 'Movie' or episode:
 				items += [(getLS(40076) % highlight_color, 'scrobbleReset')]
 		if season or episode:
@@ -764,7 +764,7 @@ def manager(name, imdb=None, tvdb=None, season=None, episode=None, refresh=True,
 			elif items[select][1] == 'unfinishedMovieManager':
 				control.execute('RunPlugin(plugin://plugin.video.umbrella/?action=movies_traktUnfinishedManager)')
 			elif items[select][1] == 'scrobbleReset':
-				scrobbleReset(imdb=imdb, tmdb='', tvdb=tvdb, season=season, episode=episode, widgetRefresh=True)
+				scrobbleReset(imdb=imdb, tmdb='', tvdb=tvdb, season=season, episode=episode, widgetRefresh=True, clear_local=getSetting('indicators.alt') == '1')
 			else:
 				if not tvdb: post = {"movies": [{"ids": {"imdb": imdb}}]}
 				else:
@@ -1555,14 +1555,14 @@ def scrobbleStart(media_type, title='', tvshowtitle='', year='0', imdb='', tmdb=
 		getTrakt('/scrobble/start', post)
 	except: log_utils.error()
 
-def scrobbleReset(imdb, tmdb=None, tvdb=None, season=None, episode=None, refresh=True, widgetRefresh=False):
+def scrobbleReset(imdb, tmdb=None, tvdb=None, season=None, episode=None, refresh=True, widgetRefresh=False, clear_local=True):
 	if not getTraktCredentialsInfo(): return
 	if not control.player.isPlaying(): control.busy()
 	success = False
 	try:
 		content_type = 'movie' if not episode else 'episode'
 		resume_info = traktsync.fetch_bookmarks(imdb, tmdb, tvdb, season, episode, ret_type='resume_info')
-		if resume_info == '0': return control.hide() # returns string "0" if no data in db 
+		if resume_info == '0': return control.hide() # returns string "0" if no data in db
 		headers['Authorization'] = 'Bearer %s' % trakt_token
 		headers['trakt-api-key'] = traktClientID()
 		success = session.delete('https://api.trakt.tv/sync/playback/%s' % resume_info[1], headers=headers).status_code == 204
@@ -1576,7 +1576,7 @@ def scrobbleReset(imdb, tmdb=None, tvdb=None, season=None, episode=None, refresh
 		if success:
 			timestamp = datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%S.000Z")
 			items[0].update({'paused_at': timestamp})
-			traktsync.delete_bookmark(items)
+			if clear_local: traktsync.delete_bookmark(items)
 			if refresh: control.refresh()
 			if widgetRefresh: control.trigger_widget_refresh() # skinshortcuts handles the widget_refresh when plyback ends, but not a manual clear from Trakt Manager
 			if getSetting('scrobble.notify') == 'true': control.notification(title=32315, message='Successfuly Removed playback progress:  [COLOR %s]%s[/COLOR]' % (highlight_color, label_string))

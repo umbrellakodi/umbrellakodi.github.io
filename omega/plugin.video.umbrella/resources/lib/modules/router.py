@@ -384,6 +384,9 @@ def router(argv2):
 	elif action == 'mdblist_shows_progress':
 		from resources.lib.menus import tvshows
 		tvshows.TVshows().mdblist_progress(url, folderName=folderName)
+	elif action == 'local_shows_progress':
+		from resources.lib.menus import tvshows
+		tvshows.TVshows().local_progress(url, folderName=folderName)
 
 	####################################################
 	#---Plex
@@ -465,6 +468,9 @@ def router(argv2):
 	elif action == 'mdblist_calendar':
 		from resources.lib.menus import episodes
 		episodes.Episodes().mdblist_calendar(url, folderName=folderName)
+	elif action == 'local_calendar':
+		from resources.lib.menus import episodes
+		episodes.Episodes().local_calendar(url, folderName=folderName)
 
 	####################################################
 	#---Premium Services
@@ -978,7 +984,7 @@ def router(argv2):
 		elif action == 'tools_mdbWatchlist':
 			watched = (params.get('watched') == 'True') if params.get('watched') else None
 			from resources.lib.modules import mdblist
-			mdblist.manager(name, imdb, tvdb, tmdb, watched=watched)
+			mdblist.manager(name, imdb, tvdb, tmdb, watched=watched, season=season, episode=episode)
 		elif action == 'tools_simklManager':
 			watched = (params.get('watched') == 'True') if params.get('watched') else None
 			unfinished = (params.get('unfinished') == 'True') if params.get('unfinished') else False

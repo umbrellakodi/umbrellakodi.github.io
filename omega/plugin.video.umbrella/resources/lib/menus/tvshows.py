@@ -138,7 +138,7 @@ class TVshows:
 		if useLanguage: link_addon = '&with_original_language=%s' % self.lang
 		if useorigincountries: link_addon + '&with_origin_country=%s' % (getSetting('originCountry', 'US'))
 		self.tmdb_genre_link = tmdb_base+'/3/discover/tv?api_key=%s&with_genres=%s&include_null_first_air_dates=false&sort_by=%s&page=1' % ('%s', '%s', self.tmdb_DiscoverSort()) + link_addon
-		self.tmdb_year_link = tmdb_base+'/3/discover/tv?api_key=%s&language=en-US&include_null_first_air_dates=false&first_air_date_year=%s&sort_by=%s&page=1' % ('%s', '%s', self.tmdb_DiscoverSort()) + link_addon
+		self.tmdb_year_link = tmdb_base+'/3/discover/tv?api_key=%s&language=en-US&include_null_first_air_dates=false&first_air_date_year=%s&sort_by=popularity.desc&vote_count.gte=20&page=1' % ('%s', '%s') + link_addon
 		self.tmdb_recommendations = tmdb_base+'/3/tv/%s/recommendations?api_key=%s&language=en-US&region=US&page=1'
 		self.tmdb_person_search = tmdb_base+'/3/search/person?api_key=%s&query=%s&language=en-US&page=1&include_adult=true' % ('%s','%s')
 		self.mbdlist_list_items = 'https://api.mdblist.com/lists/%s/items?apikey=%s&page=1' % ('%s', mdblist.mdblist_api)
@@ -250,13 +250,14 @@ class TVshows:
 			except: pass
 			try: u = urlparse(url).netloc.lower()
 			except: pass
-			if u in self.tmdb_link and ('/list/' in url or '/account/' in url):
+			is_collection_url = '/list/' in url or '/account/' in url
+			if u in self.tmdb_link and is_collection_url:
 				self.list = cache.get(tmdb_indexer().tmdb_collections_list, 0, url)
-			elif u in self.tmdb_link and not '/list/' in url and not '/account/' in url:
+			elif u in self.tmdb_link and not is_collection_url:
 				self.list = tmdb_indexer().tmdb_list(url) # caching handled in list indexer
 			if self.list is None: self.list = []
 			if create_directory: self.sort(type='shows.tmdblist')
-			if create_directory: self.tvshowDirectory(self.list, folderName=folderName, isCollection=True)
+			if create_directory: self.tvshowDirectory(self.list, folderName=folderName, isCollection=is_collection_url)
 			return self.list
 		except:
 			
@@ -1916,6 +1917,61 @@ class TVshows:
 			log_utils.error()
 		return self.list
 
+	def local_progress(self, url, folderName=''):
+		self.list = []
+		try:
+			cache.get(self.local_tvshow_progress, 0, folderName)
+			self.sort(type='progress')
+			if self.list is None: self.list = []
+			self.tvshowDirectory(self.list, next=False, isProgress=True, folderName=folderName)
+			return self.list
+		except:
+			log_utils.error()
+			if not self.list:
+				control.hide()
+				if self.notifications and self.is_widget != True: control.notification(title=32326, message=33049)
+
+	def local_tvshow_progress(self, create_directory=True, folderName=''):
+		self.list = []
+		try:
+			from resources.lib.database import watchedcache as wc
+			show_ids = wc.get_in_progress_show_imdb_ids()
+			if not show_ids: return self.list
+			for imdb_id, last_played in show_ids:
+				try:
+					values = {}
+					values['next'] = ''
+					values['progress'] = ''
+					values['imdb'] = imdb_id
+					values['tmdb'] = ''
+					values['tvdb'] = ''
+					values['mediatype'] = 'tvshows'
+					values['has_next_episode'] = True
+					try:
+						import datetime as _dt
+						ts = int(last_played)
+						dt = _dt.datetime.utcfromtimestamp(ts)
+						values['lastplayed'] = dt.strftime('%Y-%m-%dT%H:%M:%S.000Z')
+					except: values['lastplayed'] = ''
+					# Skip shows that are fully watched
+					watched_count = wc.get_watched_count_for_show(imdb_id)
+					try:
+						tmdb_result = cache.get(tmdb_indexer().IdLookup, 96, imdb_id, '')
+						tmdb_id = str(tmdb_result.get('id')) if tmdb_result else ''
+						if tmdb_id:
+							values['tmdb'] = tmdb_id
+							seasons_meta = cache.get(tmdb_indexer().get_showSeasons_meta, 96, tmdb_id)
+							total = sum(s.get('episode_count', 0) for s in (seasons_meta or {}).get('seasons', []) if s.get('season_number', 0) > 0)
+							if total and watched_count >= total: continue
+					except: pass
+					self.list.append(values)
+				except: log_utils.error()
+			self.worker()
+			if self.list is None: self.list = []
+		except:
+			log_utils.error()
+		return self.list
+
 	def simkl_list(self, url, folderName):
 		self.list = []
 		if ',return' in url: url = url.split(',return')[0]
@@ -2101,7 +2157,9 @@ class TVshows:
 		_trakt_marks = self.traktCredentials and (_indicators_alt == '1' or getSetting('trakt.markwatched') == 'true')
 		_simkl_marks = self.simklCredentials and (_indicators_alt == '2' or getSetting('simkl.markwatched') == 'true')
 		_mdblist_marks = self.mdblist_authed and (_indicators_alt == '3' or getSetting('mdblist.markwatched') == 'true')
-		if sum([bool(_trakt_marks), bool(_simkl_marks), bool(_mdblist_marks)]) > 1:
+		if _indicators_alt == '0':
+			watchedMenu, unwatchedMenu = getLS(32066), getLS(32067)
+		elif sum([bool(_trakt_marks), bool(_simkl_marks), bool(_mdblist_marks)]) > 1:
 			watchedMenu, unwatchedMenu = getLS(40564), getLS(40565)
 		elif _trakt_marks:
 			watchedMenu, unwatchedMenu = getLS(32068), getLS(32069)
