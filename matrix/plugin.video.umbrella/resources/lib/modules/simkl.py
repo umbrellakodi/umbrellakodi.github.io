@@ -31,8 +31,8 @@ session.mount('https://api.simkl.com', HTTPAdapter(max_retries=retries, pool_max
 #sim_qr = control.joinPath(control.artPath(), 'simklqr.png')
 highlightColor = control.setting('highlight.color')
 headers = {}
-_last_request_time = 0.0
-_request_lock = Lock()
+last_request_time = 0.0
+request_lock = Lock()
 
 class SIMKL:
 	name = "Simkl"
@@ -64,7 +64,7 @@ class SIMKL:
 					log_utils.error()
 					control.okDialog(title='default', message=40347)
 					if fromSettings == 1:
-						control.openSettings('8.0', 'plugin.video.umbrella')
+						control.openSettings('8.2', 'plugin.video.umbrella')
 				return
 		else:
 			log_utils.error()
@@ -108,7 +108,7 @@ class SIMKL:
 			control.notification(message="Simkl Authorized", icon=simkl_icon)
 			if not control.yesnoDialog('Do you want to set Simkl as your service for your watched and unwatched indicators?','','','Indicators', 'No', 'Yes'):
 				if fromSettings == 1:
-					control.openSettings('8.0', 'plugin.video.umbrella')
+					control.openSettings('8.2', 'plugin.video.umbrella')
 				force_simklSync(silent=True)
 				return True, None
 			force_simklSync(silent=True)
@@ -117,12 +117,12 @@ class SIMKL:
 			control.homeWindow.setProperty('umbrella.updateSettings', 'true')
 			control.setSetting('indicators', 'Simkl')
 			if fromSettings == 1:
-				control.openSettings('8.0', 'plugin.video.umbrella')
+				control.openSettings('8.2', 'plugin.video.umbrella')
 			return True, None
 		except:
 			log_utils.error('Simkl Authorization Failed : ')
 			if fromSettings == 1:
-				control.openSettings('8.0', 'plugin.video.umbrella')
+				control.openSettings('8.2', 'plugin.video.umbrella')
 			return False, None
 
 	def reset_authorization(self, fromSettings=0):
@@ -147,7 +147,7 @@ class SIMKL:
 				control.setSetting('indicators.alt', '0')
 				control.setSetting('indicators', 'Local')
 			if fromSettings == 1:
-				control.openSettings('8.0', 'plugin.video.umbrella')
+				control.openSettings('8.2', 'plugin.video.umbrella')
 			control.dialog.ok(getLS(40342), getLS(32320))
 		except: log_utils.error()
 
@@ -189,18 +189,18 @@ class SIMKL:
 			return control.selectDialog(items, heading=heading)
 		except: log_utils.error()
 
-def _throttle():
+def throttle():
 	"""Ensure at most 1 Simkl API request per second to avoid rate limiting."""
-	global _last_request_time
-	with _request_lock:
+	global last_request_time
+	with request_lock:
 		now = time.time()
-		wait = 1.0 - (now - _last_request_time)
+		wait = 1.0 - (now - last_request_time)
 		if wait > 0:
 			time.sleep(wait)
-		_last_request_time = time.time()
+		last_request_time = time.time()
 
 def get_request(url):
-	_throttle()
+	throttle()
 	try:
 		if not url.startswith(BASE_URL): url = urljoin(BASE_URL, url)
 		_version = control.addon('plugin.video.umbrella').getAddonInfo('version')
@@ -389,7 +389,7 @@ def getSimKLIndicatorsInfo():
 	return indicators
 
 def post_request(url, data=None):
-	_throttle()
+	throttle()
 	if type(data) == dict or type(data) == list: data = json.dumps(data)
 	if not url.startswith(BASE_URL): url = urljoin(BASE_URL, url)
 	_version = control.addon('plugin.video.umbrella').getAddonInfo('version')

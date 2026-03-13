@@ -114,9 +114,7 @@ def delete_watchList_items(items, table, col_name='mdblist'):
 		dbcur.close() ; dbcon.close()
 
 def delete_mdb_tables(tables):
-	"""Delete and vacuum the specified MDBList tables, and reset their service timestamps.
-	tables: dict of table_name -> True, e.g. {'mdb_watched_movies': True, 'movies_watchlist': True}
-	"""
+	#Delete and vacuum the specified MDBList tables, and reset their service timestamps.
 	try:
 		dbcon = get_connection()
 		dbcur = get_connection_cursor(dbcon)
@@ -179,7 +177,7 @@ def _dict_factory(cursor, row):
 	for idx, col in enumerate(cursor.description): d[col[0]] = row[idx]
 	return d
 
-# ── Watched movies table ──────────────────────────────────────────────────────
+#Watched movies table
 
 def _ensure_watched_tables(dbcur):
 	dbcur.execute('''CREATE TABLE IF NOT EXISTS mdb_watched_movies (imdb TEXT, tmdb TEXT, title TEXT, year TEXT, last_watched_at TEXT, UNIQUE(imdb));''')
@@ -282,7 +280,7 @@ def update_last_watched_at(key='last_watched_at'):
 	finally:
 		dbcur.close() ; dbcon.close()
 
-# ── Cache table (watched indicators cache) ────────────────────────────────────
+#Cache table (watched indicators cache)
 
 def _hash_function(function_instance, args=()):
 	name = re.sub(r'.+\smethod\s|.+function\s|\sat\s.+|\sof\s.+', '', repr(function_instance))
@@ -342,7 +340,7 @@ def cache_existing(function, *args):
 		return None
 
 def get(function, duration, *args):
-	"""Returns cached value if still valid (within duration minutes), else calls function fresh."""
+	#Returns cached value if still valid (within duration minutes), else calls function fresh.
 	try:
 		key = _hash_function(function, args)
 		cache_result = cache_get(key)
@@ -359,7 +357,7 @@ def get(function, duration, *args):
 		return None
 
 def timeout(function, *args, returnNone=False):
-	"""Returns the Unix timestamp when the function's cache was last written, or 0/None if not cached."""
+	#Returns the Unix timestamp when the function cache was last written, or 0/None if not cached.
 	try:
 		key = _hash_function(function, args)
 		cache_result = cache_get(key)
@@ -371,7 +369,7 @@ def timeout(function, *args, returnNone=False):
 		log_utils.error()
 		return 0
 
-# ── Bookmarks table (local resume points) ─────────────────────────────────────
+#Bookmarks table (local resume points)
 
 def _ensure_bookmarks_table(dbcur):
 	dbcur.execute('''CREATE TABLE IF NOT EXISTS bookmarks (tvshowtitle TEXT, title TEXT, resume_id TEXT, imdb TEXT, tmdb TEXT, tvdb TEXT, season TEXT, episode TEXT, genre TEXT, mpaa TEXT, studio TEXT, duration TEXT, percent_played TEXT, paused_at TEXT, UNIQUE(resume_id, imdb, tmdb, tvdb, season, episode));''')

@@ -811,14 +811,14 @@ def get_connection(setRowFactory=False):
 	dbcon.execute('''PRAGMA synchronous = OFF''')
 	dbcon.execute('''PRAGMA temp_store = memory''')
 	dbcon.execute('''PRAGMA mmap_size = 30000000000''')
-	if setRowFactory: dbcon.row_factory = _dict_factory
+	if setRowFactory: dbcon.row_factory = dict_factory
 	return dbcon
 
 def get_connection_cursor(dbcon):
 	dbcur = dbcon.cursor()
 	return dbcur
 
-def _dict_factory(cursor, row):
+def dict_factory(cursor, row):
 	d = {}
 	for idx, col in enumerate(cursor.description): d[col[0]] = row[idx]
 	return d
@@ -834,12 +834,12 @@ def get(function, duration, *args, simkl_id=None, data=None):
 	:named var data: needs to be ignored for cache
 	"""
 	try:
-		key = _hash_function(function, args)
+		key = hash_function(function, args)
 		cache_result = cache_get(key)
 		if cache_result:
 			try: result = literal_eval(cache_result['value'])
 			except: result = None
-			if _is_cache_valid(cache_result['date'], duration): return result
+			if is_cache_valid(cache_result['date'], duration): return result
 		if simkl_id: fresh_result = repr(function(*args, simkl_id=simkl_id)) # may need a try-except block for server timeouts
 		else: fresh_result = repr(function(*args))
 
@@ -869,14 +869,14 @@ def get(function, duration, *args, simkl_id=None, data=None):
 		log_utils.error()
 		return None
 
-def _is_cache_valid(cached_time, cache_timeout):
+def is_cache_valid(cached_time, cache_timeout):
 	now = int(time())
 	diff = now - cached_time
 	return (cache_timeout * 3600) > diff
 
 def timeout(function, *args, returnNone=False):
 	try:
-		key = _hash_function(function, args)
+		key = hash_function(function, args)
 		result = cache_get(key)
 		if not result and returnNone: return None
 		else: return int(result['date']) if result else 0
@@ -887,7 +887,7 @@ def timeout(function, *args, returnNone=False):
 
 def cache_existing(function, *args):
 	try:
-		cache_result = cache_get(_hash_function(function, args))
+		cache_result = cache_get(hash_function(function, args))
 		if cache_result: return literal_eval(cache_result['value'])
 		else: return None
 	except:
@@ -926,7 +926,7 @@ def cache_insert(key, value):
 
 def remove(function, *args):
 	try:
-		key = _hash_function(function, args)
+		key = hash_function(function, args)
 		key_exists = cache_get(key)
 		if key_exists:
 			dbcon = get_connection(setRowFactory=True)
@@ -939,13 +939,13 @@ def remove(function, *args):
 	try: dbcur.close() ; dbcon.close()
 	except: pass
 
-def _hash_function(function_instance, *args):
-	return _get_function_name(function_instance) + _generate_md5(args)
+def hash_function(function_instance, *args):
+	return get_function_name(function_instance) + generate_md5(args)
 
-def _get_function_name(function_instance):
+def get_function_name(function_instance):
 	return re_sub(r'.+\smethod\s|.+function\s|\sat\s.+|\sof\s.+', '', repr(function_instance))
 
-def _generate_md5(*args):
+def generate_md5(*args):
 	try:
 		md5_hash = md5()
 		if len(args[0][0]) > 2: args = ((args[0][0][:2],),) #change made to make sure the hash matches when only two arguments are passed on getCache

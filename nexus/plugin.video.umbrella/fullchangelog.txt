@@ -1,3 +1,6 @@
+[B]Update - v6.7.505 - Mar 13th, 2026[/B]
+--[Changes] Changes made to logging to make sure no keys or tokens are logged.
+
 [B]Update - v6.7.504 - Mar 12th, 2026[/B]
 --[Fixes] Bug fixes.
 

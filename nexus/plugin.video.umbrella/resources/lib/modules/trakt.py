@@ -58,7 +58,7 @@ def getTrakt(url, post=None, extended=False, silent=False, reauth_attempts=0):
 			if reauth_attempts >= 2:
 				log_utils.log('TRAKT: Too many re-auth attempts, stopping to prevent infinite loop', level=log_utils.LOGWARNING)
 				return None
-			log_utils.log('TRAKT: %s Status Code Returned on call to url: %s. Token Used: %s (attempt %d)' % (status_code, url, current_token, reauth_attempts + 1), level=log_utils.LOGINFO)
+			log_utils.log('TRAKT: %s Status Code Returned on call to url: %s (attempt %d)' % (status_code, url, reauth_attempts + 1), level=log_utils.LOGINFO)
 			success = re_auth(headers)
 			if success: return getTrakt(url, extended=extended, silent=silent, reauth_attempts=reauth_attempts + 1)
 		elif status_code == '429':
@@ -197,7 +197,7 @@ def re_auth(headers):
 			return False
 		oauth = urljoin(BASE_URL, '/oauth/token')
 		opost = {'client_id': traktClientID(), 'client_secret': traktClientSecret(), 'redirect_uri': REDIRECT_URI, 'grant_type': 'refresh_token', 'refresh_token': getSetting('trakt.refreshtoken')}
-		log_utils.log('TRAKT: Re-Authenticating Refresh Token: %s Trakt Token: %s' % (getSetting('trakt.refreshtoken'),getSetting('trakt.user.token')), level=log_utils.LOGINFO)
+		log_utils.log('TRAKT: Re-Authenticating with refresh token', level=log_utils.LOGINFO)
 		response = session.post(url=oauth, data=jsdumps(opost), headers=headers, timeout=20)
 		status_code = str(response.status_code)
 
@@ -222,7 +222,7 @@ def re_auth(headers):
 				return False
 			
 			token, refresh = response_json['access_token'], response_json['refresh_token']
-			log_utils.log('TRAKT: Response Token: %s Response Refresh Token: %s ' % (token, refresh), level=log_utils.LOGINFO)
+			log_utils.log('TRAKT: Re-authentication successful, new tokens received', level=log_utils.LOGINFO)
 			# Use Trakt's provided expiration time instead of hardcoded 24 hours
 			expires_from_trakt = response_json['expires_in']
 			expires = str(time.time() + expires_from_trakt)
@@ -281,7 +281,7 @@ def traktAuth(fromSettings=0):
 			except: pass
 			control.notification(message=40107, icon=trakt_icon)
 			if fromSettings == 1:
-				control.openSettings('9.0', 'plugin.video.umbrella')
+				control.openSettings('8.3', 'plugin.video.umbrella')
 			if not control.yesnoDialog('Do you want to set Trakt as your service for your watched and unwatched indicators?','','','Indicators', 'No', 'Yes'): return True
 			control.homeWindow.setProperty('umbrella.updateSettings', 'false')
 			control.setSetting('indicators.alt', '1')
@@ -289,7 +289,7 @@ def traktAuth(fromSettings=0):
 			control.setSetting('indicators', 'Trakt')
 			return True
 		if fromSettings == 1:
-				control.openSettings('9.0', 'plugin.video.umbrella')
+				control.openSettings('8.3', 'plugin.video.umbrella')
 		control.notification(message=40108, icon=trakt_icon)
 		return False
 	except:
@@ -321,7 +321,7 @@ def traktRevoke(fromSettings=0):
 				control.setSetting('indicators.alt', '0')
 				control.setSetting('indicators', 'Local')
 			if fromSettings == 1:
-				control.openSettings('9.0', 'plugin.video.umbrella')
+				control.openSettings('8.3', 'plugin.video.umbrella')
 				control.dialog.ok(control.lang(32315), control.lang(40109))
 		except:
 			log_utils.error()

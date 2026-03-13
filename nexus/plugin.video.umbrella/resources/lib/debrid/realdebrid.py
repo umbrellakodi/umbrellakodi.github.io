@@ -149,7 +149,7 @@ class RealDebrid:
 				log_utils.error()
 				control.okDialog(title='default', message=40019)
 				if fromSettings == 1:
-					control.openSettings('10.5', 'plugin.video.umbrella')
+					control.openSettings('9.5', 'plugin.video.umbrella')
 			return
 
 	def auth(self, fromSettings=0):
@@ -793,7 +793,7 @@ class RealDebrid:
 				if self.server_notifications: control.notification(message='Real-Debrid Temporarily Down For Maintenance', icon=rd_icon)
 				log_utils.log('Real-Debrid Temporarily Down For Maintenance', level=log_utils.LOGWARNING)
 				if fromSettings == 1:
-					control.openSettings('10.5', 'plugin.video.umbrella')
+					control.openSettings('9.5', 'plugin.video.umbrella')
 				return False, response.text
 			else: response = response.json()
 
@@ -802,7 +802,7 @@ class RealDebrid:
 				if self.server_notifications: control.notification(message=message, icon=rd_icon)
 				log_utils.log('Real-Debrid Error:  %s' % message, level=log_utils.LOGWARNING)
 				if fromSettings == 1:
-					control.openSettings('10.5', 'plugin.video.umbrella')
+					control.openSettings('9.5', 'plugin.video.umbrella')
 				return False, response
 
 			self.token = response['access_token']
@@ -818,13 +818,13 @@ class RealDebrid:
 			control.homeWindow.setProperty('umbrella.updateSettings', 'true')
 			control.setSetting('realdebridrefresh', response['refresh_token'])
 			if fromSettings == 1:
-				control.openSettings('10.5', 'plugin.video.umbrella')
+				control.openSettings('9.5', 'plugin.video.umbrella')
 				control.notification(message="Real Debrid Authorized", icon=rd_icon)
 			return True, None
 		except:
 			log_utils.error('Real Debrid Authorization Failed : ')
 			if fromSettings == 1:
-				control.openSettings('10.5', 'plugin.video.umbrella')
+				control.openSettings('9.5', 'plugin.video.umbrella')
 			return False, None
 
 	def reset_authorization(self, fromSettings=0):
@@ -837,7 +837,7 @@ class RealDebrid:
 			control.homeWindow.setProperty('umbrella.updateSettings', 'true')
 			control.setSetting('realdebridusername', '')
 			if fromSettings == 1:
-				control.openSettings('10.5', 'plugin.video.umbrella')
+				control.openSettings('9.5', 'plugin.video.umbrella')
 			control.dialog.ok(getLS(40058), getLS(32320))
 
 		except: log_utils.error()
