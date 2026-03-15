@@ -1801,18 +1801,18 @@ def sync_user_lists(activities=None, forced=False):
 
 def sync_liked_lists(activities=None, forced=False):
 	try:
-		link = '/users/likes/lists?limit=1000000'
+		link = '/users/likes/lists'
 		list_link = '/users/%s/lists/%s/items/%s?page=1&limit=1'
 		db_last_liked = traktsync.last_sync('last_liked_at')
 		listActivity = getListActivity(activities)
 		if (listActivity > db_last_liked) or forced:
-			if not forced: 
+			if not forced:
 					log_utils.log('Trakt Liked Lists Sync Update...(local db latest "liked_at" = %s, trakt api latest "liked_at" = %s)' % \
 								(str(db_last_liked), str(listActivity)), __name__, log_utils.LOGDEBUG)
 			clr_traktSync = {'bookmarks': False, 'hiddenProgress': False, 'liked_lists': True, 'movies_collection': False, 'movies_watchlist': False,
 							'public_lists': False, 'shows_collection': False, 'shows_watchlist': False, 'user_lists': False, 'watched': False}
 			traktsync.delete_tables(clr_traktSync)
-			items = getTraktAsJson(link, silent=True)
+			items = get_all_pages(link, silent=True)
 			if not items: return
 			thrd_items = []
 			def items_list(i):

@@ -1,3 +1,6 @@
+[B]Update - v6.7.507 - Mar 13th, 2026[/B]
+--[Fix] Trakt api changes for users with a large number of lists.
+
 [B]Update - v6.7.506 - Mar 13th, 2026[/B]
 --[Fix] Changes for Trakt API updates limiting to 10.
 --[Change] Setting for Watched and Indicators changed to only show available serrvices.
