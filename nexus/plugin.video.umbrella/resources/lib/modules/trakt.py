@@ -732,7 +732,7 @@ def manager(name, imdb=None, tvdb=None, season=None, episode=None, refresh=True,
 		items += [(getLS(33576) % highlight_color, '/sync/collection/remove')]
 		items += [(getLS(33579), '/users/me/lists/%s/items')]
 
-		result = getTraktAsJson('/users/me/lists')
+		result = get_all_pages('/users/me/lists')
 		lists = [(i['name'], i['ids']['slug']) for i in result]
 		lists = [lists[i//2] for i in range(len(lists)*2)]
 
@@ -1698,14 +1698,14 @@ def sync_playbackProgress(activities=None, forced=False):
 	try:
 		link = '/sync/playback/?extended=full'
 		if forced:
-			items = getTraktAsJson(link, silent=True)
+			items = get_all_pages(link, silent=True)
 			if items: traktsync.insert_bookmarks(items)
 		else:
 			db_last_paused = traktsync.last_sync('last_paused_at')
 			activity = getPausedActivity(activities)
 			#log_utils.log('Trakt Sync Playback db_last_paused: %s  activity: %s difference: %s' % (db_last_paused, activity,(activity - db_last_paused)),log_utils.LOGDEBUG)
 			if activity - db_last_paused >= 120: # do not sync unless 2 min difference or more
-				items = getTraktAsJson(link, silent=True)
+				items = get_all_pages(link, silent=True)
 				if items: traktsync.insert_bookmarks(items)
 	except: log_utils.error()
 
@@ -1761,7 +1761,7 @@ def sync_user_lists(activities=None, forced=False):
 		link = '/users/me/lists'
 		list_link = '/users/me/lists/%s/items/%s?page=1&limit=1'
 		if forced:
-			items = getTraktAsJson(link, silent=True)
+			items = get_all_pages(link, silent=True)
 			if not items: return
 			for i in items:
 				i['content_type'] = ''
@@ -1784,7 +1784,7 @@ def sync_user_lists(activities=None, forced=False):
 				clr_traktSync = {'bookmarks': False, 'hiddenProgress': False, 'liked_lists': False, 'movies_collection': False, 'movies_watchlist': False,
 							'public_lists': False, 'shows_collection': False, 'shows_watchlist': False, 'user_lists': True, 'watched': False}
 				traktsync.delete_tables(clr_traktSync)
-				items = getTraktAsJson(link, silent=True)
+				items = get_all_pages(link, silent=True)
 				if not items: return
 				for i in items:
 					i['content_type'] = ''

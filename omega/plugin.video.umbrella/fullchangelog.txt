@@ -1,3 +1,6 @@
+[B]Update - v6.7.508 - Mar 15th, 2026[/B]
+--[Fix] More changes for Trakt api updated.
+
 [B]Update - v6.7.507 - Mar 13th, 2026[/B]
 --[Fix] Trakt api changes for users with a large number of lists.
 
