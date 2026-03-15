@@ -1001,7 +1001,7 @@ def cachesyncMovies(timeout=0):
 def syncMovies():
 	try:
 		if not getTraktCredentialsInfo(): return
-		indicators = getTraktAsJson('/users/me/watched/movies')
+		indicators = get_all_pages('/users/me/watched/movies')
 		if not indicators: return None
 		indicators = [i['movie']['ids'] for i in indicators]
 		indicators = [str(i['imdb']) for i in indicators if 'imdb' in i]
@@ -1041,7 +1041,7 @@ def syncMoviesLibrary(indicators):
 def watchedMovies():
 	try:
 		if not getTraktCredentialsInfo(): return
-		return getTraktAsJson('/users/me/watched/movies?extended=full')
+		return get_all_pages('/users/me/watched/movies?extended=full')
 	except: log_utils.error()
 
 def watchedMoviesTime(imdb):
@@ -1055,7 +1055,7 @@ def watchedMoviesTime(imdb):
 def watchedShows():
 	try:
 		if not getTraktCredentialsInfo(): return
-		return getTraktAsJson('/users/me/watched/shows?extended=full')
+		return get_all_pages('/users/me/watched/shows?extended=full')
 	except: log_utils.error()
 
 def watchedShowsTime(tvdb, season, episode):
@@ -1096,7 +1096,7 @@ def cachesyncTVShows(timeout=0):
 def syncTVShows(): # sync all watched shows ex. [({'imdb': 'tt12571834', 'tvdb': '384435', 'tmdb': '105161', 'trakt': '163639'}, 16, [(1, 16)]), ({'imdb': 'tt11761194', 'tvdb': '377593', 'tmdb': '119845', 'trakt': '158621'}, 2, [(1, 1), (1, 2)])]
 	try:
 		if not getTraktCredentialsInfo(): return
-		indicators = getTraktAsJson('/users/me/watched/shows?extended=full')
+		indicators = get_all_pages('/users/me/watched/shows?extended=full')
 		if not indicators: return None
 # /shows/ID/progress/watched  endpoint only accepts imdb or trakt ID so write all ID's
 		indicators = [({'imdb': i['show']['ids']['imdb'], 'tvdb': str(i['show']['ids']['tvdb']), 'tmdb': str(i['show']['ids']['tmdb']), 'trakt': str(i['show']['ids']['trakt'])}, \

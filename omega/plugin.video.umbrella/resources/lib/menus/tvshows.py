@@ -88,7 +88,7 @@ class TVshows:
 		self.simklprogress_link = 'https://api.simkl.com/progress/shows?limit=%s&page=1' % self.page_limit
 		self.traktcollection_link = 'https://api.trakt.tv/users/me/collection/shows?limit=%s&page=1' % self.page_limit # this is now a dummy link for pagination to work
 		self.traktlist_link = 'https://api.trakt.tv/users/%s/lists/%s/items/shows?limit=%s&page=1' % ('%s', '%s', self.page_limit) # local pagination, limit and page used to advance, pulled from request
-		self.progress_link = 'https://api.trakt.tv/sync/watched/shows?extended=noseasons'
+		self.progress_link = 'https://api.trakt.tv/sync/watched/shows?extended=noseasons&limit=1000&page=1'
 		self.progresstv_link = 'https://api.trakt.tv/users/me/watched/shows'
 		self.trakt_genres = 'https://api.trakt.tv/genres/shows/'
 		self.traktanticipated_link = 'https://api.trakt.tv/shows/anticipated?limit=%s&page=1' % self.page_limit 
@@ -1314,7 +1314,7 @@ class TVshows:
 					
 					log_utils.error()
 			return self.list
-		self.list = cache.get(userList_totalItems, self.traktuserlist_hours, url.split('limit')[0] + 'extended=full')
+		self.list = cache.get(userList_totalItems, self.traktuserlist_hours, url.split('limit')[0] + 'limit=1000&extended=full')
 		if not self.list: return
 		self.sort() # sort before local pagination
 		total_pages = 1
@@ -1456,23 +1456,25 @@ class TVshows:
 		self.list = userList_totalItems(url)
 		if not self.list: return
 		self.sort() # sort before local pagination
-		total_pages = 1
-		if len(self.list) == int(self.page_limit):
-			useNext = False
-		else:
-			useNext = True
-		paginated_ids = [self.list[x:x + int(self.page_limit)] for x in range(0, len(self.list), int(self.page_limit))]
-		total_pages = len(paginated_ids)
-		self.list = paginated_ids[index]
-		try:
-			if useNext == False: raise Exception()
-			if int(self.page_limit) != len(self.list): raise Exception()
-			if int(q['page']) == total_pages: raise Exception()
-			q.update({'page': str(int(q['page']) + 1)})
-			q = (urlencode(q)).replace('%2C', ',')
-			next = url.replace('?' + urlparse(url).query, '') + '?' + q
-			next = next + '&folderName=%s' % quote_plus(folderName)
-		except: next = ''
+		next = ''
+		if getSetting('mdblist.paginate.lists') == 'true':
+			total_pages = 1
+			if len(self.list) == int(self.page_limit):
+				useNext = False
+			else:
+				useNext = True
+			paginated_ids = [self.list[x:x + int(self.page_limit)] for x in range(0, len(self.list), int(self.page_limit))]
+			total_pages = len(paginated_ids)
+			self.list = paginated_ids[index]
+			try:
+				if useNext == False: raise Exception()
+				if int(self.page_limit) != len(self.list): raise Exception()
+				if int(q['page']) == total_pages: raise Exception()
+				q.update({'page': str(int(q['page']) + 1)})
+				q = (urlencode(q)).replace('%2C', ',')
+				next = url.replace('?' + urlparse(url).query, '') + '?' + q
+				next = next + '&folderName=%s' % quote_plus(folderName)
+			except: next = ''
 		for i in range(len(self.list)): self.list[i]['next'] = next
 		self.worker()
 		if self.list is None: self.list = []
@@ -1789,7 +1791,7 @@ class TVshows:
 	def trakt_tvshow_progress(self, create_directory=True, folderName=''):
 		self.list = []
 		try:
-			historyurl = 'https://api.trakt.tv/users/me/watched/shows?extended=full'
+			historyurl = 'https://api.trakt.tv/users/me/watched/shows?extended=full&limit=1000&page=1'
 			self.list = self.trakt_list(historyurl, self.trakt_user, folderName)
 			next = ''
 			for i in range(len(self.list)): self.list[i]['next'] = next
@@ -2036,7 +2038,7 @@ class TVshows:
 	def trakt_tvshow_watched(self, create_directory=True, folderName=''):
 		self.list = []
 		try:
-			historyurl = 'https://api.trakt.tv/users/me/watched/shows'
+			historyurl = 'https://api.trakt.tv/users/me/watched/shows?limit=1000&page=1'
 			self.list = self.trakt_list(historyurl, self.trakt_user, folderName)
 			next = ''
 			for i in range(len(self.list)): self.list[i]['next'] = next
