@@ -1,10 +1,2 @@
-[B]Update - v6.7.510 - Mar 15th, 2026[/B]
---[Fix] Threading change for Trakt sync to stop crashes.
---[Fix] Changes for skin detection to avoid heavy processing when checking for skin.
---[Fix] Threading change for Trakt sync to stop crashes.
---[Change] Added Academy Award Winners movies and New TV Shows (TMDb).
---[Fix] More changes for Trakt api updated.
---[Fix] Trakt api changes for users with a large number of lists.
---[Fix] Changes for Trakt API updates limiting to 10.
---[Change] Setting for Watched and Indicators changed to only show available serrvices.
---[Fix] MDBList pagination settings corrected.
+[[B]Update - v6.7.511 - Mar 16th, 2026[/B]
+--[Fix] Changed Trakt to do batch calls in groups of 10 to control the amount of threads spawned.

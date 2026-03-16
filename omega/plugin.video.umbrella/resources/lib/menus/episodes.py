@@ -927,8 +927,10 @@ class Episodes:
 		append = threads.append
 		for i in items:
 			append(Thread(target=items_list, args=(i,)))
-		[i.start() for i in threads]
-		[i.join() for i in threads]
+		for i in range(0, len(threads), 10):
+			batch = threads[i:i + 10]
+			[t.start() for t in batch]
+			[t.join() for t in batch]
 		return self.list
 
 	def trakt_list(self, url, user, folderName):
