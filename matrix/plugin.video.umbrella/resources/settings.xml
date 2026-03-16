@@ -1127,6 +1127,11 @@
 					<default>true</default>
 					<control type="toggle"/>
 				</setting>
+				<setting id="navi.movie.imdb.oscarnominees" type="boolean" label="32451" help="">
+					<level>0</level>
+					<default>true</default>
+					<control type="toggle"/>
+				</setting>
 				<setting id="navi.movie.tmdb.genres" type="boolean" label="32486" help="">
 					<level>0</level>
 					<default>true</default>
@@ -1277,6 +1282,11 @@
 					<control type="toggle"/>
 				</setting>
 				<setting id="navi.tv.tmdb.ontv" type="boolean" label="32472" help="">
+					<level>0</level>
+					<default>true</default>
+					<control type="toggle"/>
+				</setting>
+				<setting id="navi.tv.tmdb.newtvshows" type="boolean" label="40661" help="">
 					<level>0</level>
 					<default>true</default>
 					<control type="toggle"/>

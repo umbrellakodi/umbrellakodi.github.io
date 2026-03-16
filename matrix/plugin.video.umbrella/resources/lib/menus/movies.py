@@ -99,8 +99,7 @@ class Movies:
 		self.personlist_link = 'https://www.imdb.com/search/name/?count=100&gender=male,female'
 		self.person_link = 'https://www.imdb.com/search/title/?title_type=feature,tv_movie&production_status=released&role=%s&sort=year,desc&count=%s&start=1' % ('%s', self.genre_limit)
 		self.keyword_link = 'https://www.imdb.com/search/title/?title_type=feature,tv_movie,documentary&num_votes=100,&keywords=%s&sort=%s&count=%s&start=1' % ('%s', self.imdb_sort(), self.genre_limit)
-		self.oscars_link = 'https://www.imdb.com/search/title/?title_type=feature,tv_movie&production_status=released&groups=oscar_best_picture_winners&sort=year,desc&count=%s&start=1' % self.genre_limit
-		self.oscarsnominees_link = 'https://www.imdb.com/search/title/?title_type=feature,tv_movie&production_status=released&groups=oscar_best_picture_nominees&sort=year,desc&count=%s&start=1' % self.genre_limit
+		self.oscars_link = 'https://api.trakt.tv/users/thefork/lists/academy-awards-best-picture-winners/items/movies?limit=%s&page=1' % self.page_limit
 		self.theaters_link = 'https://www.imdb.com/search/title/?title_type=feature&num_votes=500,&release_date=date[90],date[0]&languages=en&sort=release_date,desc&count=%s&start=1' % self.genre_limit
 		self.imdb_comingsoon_link = 'https://www.imdb.com/calendar/?ref_=rlm&region=US&type=MOVIE'
 		self.year_link = 'https://www.imdb.com/search/title/?title_type=feature,tv_movie&num_votes=100,&production_status=released&year=%s,%s&sort=moviemeter,asc&count=%s&start=1' % ('%s', '%s', self.genre_limit)
@@ -278,7 +277,11 @@ class Movies:
 			is_collection_url = '/list/' in url or '/account/' in url
 			if u in self.tmdb_link and is_collection_url:
 				self.list = tmdb_indexer().tmdb_collections_list(url) # caching handled in list indexer
-				self.sort(type='movies.tmdblist')
+				if '/3/list/' in url and self.list:
+					try: self.list = sorted(self.list, key=lambda k: k.get('premiered', ''), reverse=True)
+					except: pass
+				else:
+					self.sort(type='movies.tmdblist')
 			elif u in self.tmdb_link and '/list/' not in url:
 				self.list = tmdb_indexer().tmdb_list(url) # caching handled in list indexer
 			if self.list is None: self.list = []

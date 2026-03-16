@@ -131,6 +131,7 @@ class TVshows:
 		self.tmdb_toprated_link = tmdb_base+'/3/tv/top_rated?api_key=%s&language=en-US&region=US&page=1'
 		self.tmdb_ontheair_link = tmdb_base+'/3/tv/on_the_air?api_key=%s&language=en-US&region=US&page=1'
 		self.tmdb_airingtoday_link = tmdb_base+'/3/tv/airing_today?api_key=%s&language=en-US&region=US&page=1'
+		self.tmdb_newshows = tmdb_base+'/3/discover/tv?api_key=%s&with_original_language=en&language=en-US&region=US&sort_by=popularity.desc&first_air_date.gte=%s&first_air_date.lte=%s&page=1' % ('%s', (self.date_time-timedelta(days=31)).strftime('%Y-%m-%d'), self.date_time.strftime('%Y-%m-%d'))
 		self.tmdb_networks_link = tmdb_base+'/3/discover/tv?api_key=%s&with_networks=%s&sort_by=%s&page=1' % ('%s', '%s', self.tmdb_DiscoverSort())
 		useLanguage = getSetting('useLanguageforOriginal') == 'true'
 		useorigincountries = getSetting('useOriginCountries') == 'true'
@@ -185,7 +186,9 @@ class TVshows:
 				return self.tmdb_trending_recentday(folderName=folderName)
 			elif url == 'tmdbrecentweek':
 				return self.tmdb_trending_recentweek(folderName=folderName)
-			elif u in self.search_tmdb_link and url != 'tmdbrecentday' and url != 'tmdbrecentweek' and url != 'favourites_tvshows':
+			elif url == 'tmdb_newshows':
+				return self.tmdb_new_shows(folderName=folderName)
+			elif u in self.search_tmdb_link and url != 'tmdbrecentday' and url != 'tmdbrecentweek' and url != 'tmdb_newshows' and url != 'favourites_tvshows':
 				return self.getTMDb(url, folderName=folderName)
 			elif u in (self.simkltrendingweek_link or u in self.simkltrendingmonth_link or u in self.simkltrendingtoday_link) and url != 'favourites_tvshows':
 				if 'watchlist' in url: return self.simklPlantowatch(url, folderName=folderName)
@@ -409,6 +412,21 @@ class TVshows:
 			return self.list
 		except:
 			
+			log_utils.error()
+			return
+
+	def tmdb_new_shows(self, create_directory=True, folderName=''):
+		self.list = []
+		try:
+			url = self.tmdb_newshows
+			self.list = cache.get(tmdb_indexer().tmdb_list, self.tmdbrecentday_hours, url)
+			next = ''
+			for i in range(len(self.list)): self.list[i]['next'] = next
+			self.worker()
+			if self.list is None: self.list = []
+			if create_directory: self.tvshowDirectory(self.list, folderName=folderName)
+			return self.list
+		except:
 			log_utils.error()
 			return
 

@@ -1,3 +1,6 @@
+[B]Update - v6.7.509 - Mar 15th, 2026[/B]
+--[Change] Added Academy Award Winners movies and New TV Shows (TMDb).
+
 [B]Update - v6.7.508 - Mar 15th, 2026[/B]
 --[Fix] More changes for Trakt api updated.
 
