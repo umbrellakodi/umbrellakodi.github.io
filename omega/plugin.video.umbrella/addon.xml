@@ -1,4 +1,4 @@
-<addon id="plugin.video.umbrella" name="Umbrella" provider-name="Umbrella" version="6.7.512">
+<addon id="plugin.video.umbrella" name="Umbrella" provider-name="Umbrella" version="6.7.513">
 	<requires>
 		<import addon="xbmc.python" version="3.0.0" />
 		<import addon="script.module.requests" />
@@ -234,7 +234,8 @@
 			<screenshot>resources/screenshots/screenshot003.jpg</screenshot>
 		</assets>
 		<news>
-[B]Update - v6.7.512 - Mar 16th, 2026[/B]
+[B]Update - v6.7.513 - Mar 16th, 2026[/B]
+--[Logging] Logging changed to indicate where in the process trakt sync is crashing.
 --[Fix] Changed Trakt to do batch calls in groups of 10 to control the amount of threads spawned.
 --[Fix] More changes for limiting number of trakt threads spawned when doing batch calls.
 		</news>

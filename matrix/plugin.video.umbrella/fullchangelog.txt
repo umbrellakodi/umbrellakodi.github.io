@@ -1,3 +1,6 @@
+[B]Update - v6.7.513 - Mar 16th, 2026[/B]
+--[Logging] Logging changed to indicate where in the process trakt sync is crashing.
+
 [B]Update - v6.7.512 - Mar 16th, 2026[/B]
 --[Fix] More changes for limiting number of trakt threads spawned when doing batch calls.
 

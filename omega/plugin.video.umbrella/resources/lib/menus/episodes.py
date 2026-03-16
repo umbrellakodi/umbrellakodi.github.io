@@ -927,6 +927,8 @@ class Episodes:
 		append = threads.append
 		for i in items:
 			append(Thread(target=items_list, args=(i,)))
+		from resources.lib.modules import log_utils
+		log_utils.log('trakt_progress_list: processing %s shows in batches of 10' % len(threads), __name__, log_utils.LOGINFO)
 		for i in range(0, len(threads), 10):
 			batch = threads[i:i + 10]
 			[t.start() for t in batch]
