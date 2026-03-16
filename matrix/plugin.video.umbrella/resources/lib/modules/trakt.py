@@ -1680,20 +1680,33 @@ def force_traktSync():
 	# wipe all tables and start fresh
 	clr_traktSync = {'bookmarks': True, 'hiddenProgress': True, 'liked_lists': True, 'movies_collection': True, 'movies_watchlist': True,
 							'public_lists': True, 'shows_collection': True, 'shows_watchlist': True, 'user_lists': True, 'watched': True}
+	log_utils.log('Forced Trakt Sync: Starting - clearing all tables', __name__, log_utils.LOGINFO)
 	traktsync.delete_tables(clr_traktSync)
+	log_utils.log('Forced Trakt Sync: Tables cleared - beginning sync steps', __name__, log_utils.LOGINFO)
 
+	log_utils.log('Forced Trakt Sync: Step 1/10 - Starting sync_playbackProgress', __name__, log_utils.LOGINFO)
 	sync_playbackProgress(forced=True)
+	log_utils.log('Forced Trakt Sync: Step 2/10 - Starting sync_hidden_progress', __name__, log_utils.LOGINFO)
 	sync_hidden_progress(forced=True)
+	log_utils.log('Forced Trakt Sync: Step 3/10 - Starting sync_liked_lists', __name__, log_utils.LOGINFO)
 	sync_liked_lists(forced=True)
+	log_utils.log('Forced Trakt Sync: Step 4/10 - Starting sync_collection', __name__, log_utils.LOGINFO)
 	sync_collection(forced=True)
+	log_utils.log('Forced Trakt Sync: Step 5/10 - Starting sync_watch_list', __name__, log_utils.LOGINFO)
 	sync_watch_list(forced=True)
+	log_utils.log('Forced Trakt Sync: Step 6/10 - Starting sync_popular_lists', __name__, log_utils.LOGINFO)
 	sync_popular_lists(forced=True)
+	log_utils.log('Forced Trakt Sync: Step 7/10 - Starting sync_trending_lists', __name__, log_utils.LOGINFO)
 	sync_trending_lists(forced=True)
+	log_utils.log('Forced Trakt Sync: Step 8/10 - Starting sync_user_lists', __name__, log_utils.LOGINFO)
 	sync_user_lists(forced=True)
+	log_utils.log('Forced Trakt Sync: Step 9/10 - Starting sync_watched (movies + shows)', __name__, log_utils.LOGINFO)
 	sync_watched(forced=True) # writes to traktsync.db as of 1-19-2022
+	log_utils.log('Forced Trakt Sync: Step 10/10 - Starting sync_watchedProgress (progress list)', __name__, log_utils.LOGINFO)
 	sync_watchedProgress(forced=True, trigger_refresh=False) # Trakt progress sync
 	control.hide()
 	control.trigger_widget_refresh() # single refresh after full sync completes
+	log_utils.log('Forced Trakt Sync: All steps complete', __name__, log_utils.LOGINFO)
 	control.notification(message='Forced Trakt Sync Complete')
 
 def sync_playbackProgress(activities=None, forced=False):
@@ -1733,13 +1746,17 @@ def sync_watchedProgress(activities=None, forced=False, trigger_refresh=True):
 def sync_watched(activities=None, forced=False): # writes to traktsync.db as of 1-19-2022
 	try:
 		if forced:
+			log_utils.log('Forced - Trakt Watched: syncing movies...', __name__, log_utils.LOGINFO)
 			cachesyncMovies()
-			#log_utils.log('Forced - Trakt Watched Movie Sync Complete', __name__, log_utils.LOGDEBUG)
+			log_utils.log('Forced - Trakt Watched Movie Sync Complete', __name__, log_utils.LOGINFO)
+			log_utils.log('Forced - Trakt Watched: syncing TV shows...', __name__, log_utils.LOGINFO)
 			cachesyncTVShows()
+			log_utils.log('Forced - Trakt Watched TV Shows Sync Complete', __name__, log_utils.LOGINFO)
 			control.sleep(5000)
-			service_syncSeasons() # syncs all watched shows season indicators and counts
-			#log_utils.log('Forced - Trakt Watched Shows Sync Complete', __name__, log_utils.LOGDEBUG)
-			traktsync.insert_syncSeasons_at()
+			# service_syncSeasons() is intentionally skipped here — it makes one API call per show
+			# (potentially 1000+) and causes OOM crashes on low-spec devices. Since delete_tables()
+			# resets last_syncSeasons_at to 1970, the background service will automatically trigger
+			# service_syncSeasons() on its next cycle after force sync completes.
 		else:
 			moviesWatchedActivity = getMoviesWatchedActivity(activities)
 			db_movies_last_watched = timeoutsyncMovies()
@@ -1837,8 +1854,10 @@ def sync_liked_lists(activities=None, forced=False):
 			threads = []
 			for i in items:
 				threads.append(Thread(target=items_list, args=(i,)))
-			[i.start() for i in threads]
-			[i.join() for i in threads]
+			for i in range(0, len(threads), 10):
+				batch = threads[i:i + 10]
+				[t.start() for t in batch]
+				[t.join() for t in batch]
 			traktsync.insert_liked_lists(thrd_items)
 			if forced: log_utils.log('Forced - Trakt Liked Lists Sync Complete', __name__, log_utils.LOGDEBUG)
 	except: log_utils.error()
@@ -1868,7 +1887,7 @@ def sync_collection(activities=None, forced=False):
 			if items is not None: traktsync.insert_collection(items, 'movies_collection')
 			items = get_all_pages(link % 'shows', silent=True)
 			if items is not None: traktsync.insert_collection(items, 'shows_collection')
-			#log_utils.log('Forced - Trakt Collection Sync Complete', __name__, log_utils.LOGDEBUG)
+			log_utils.log('Forced - Trakt Collection Sync Complete', __name__, log_utils.LOGINFO)
 		else:
 			db_last_collected = traktsync.last_sync('last_collected_at')
 			collectedActivity = getCollectedActivity(activities)
@@ -1894,7 +1913,7 @@ def sync_watch_list(activities=None, forced=False):
 			traktsync.insert_watch_list(items, 'movies_watchlist')
 			items = getTraktAsJson(link % 'shows', silent=True)
 			traktsync.insert_watch_list(items, 'shows_watchlist')
-			#log_utils.log('Forced - Trakt Watch List Sync Complete', __name__, log_utils.LOGDEBUG)
+			log_utils.log('Forced - Trakt Watch List Sync Complete', __name__, log_utils.LOGINFO)
 		else:
 			db_last_watchList = traktsync.last_sync('last_watchlisted_at')
 			watchListActivity = getWatchListedActivity(activities)
@@ -1924,6 +1943,7 @@ def sync_popular_lists(forced=False):
 								(str(db_last_popularList), str(cache_expiry)), __name__, log_utils.LOGDEBUG)
 			items = getTraktAsJson(link, silent=True)
 			if not items: return
+			log_utils.log('Forced - Trakt Popular Lists: processing %s lists in batches of 10' % len(items), __name__, log_utils.LOGINFO)
 			thrd_items = []
 			def items_list(i):
 				list_item = i.get('list', {})
@@ -1953,10 +1973,14 @@ def sync_popular_lists(forced=False):
 			threads = []
 			for i in items:
 				threads.append(Thread(target=items_list, args=(i,)))
-			[i.start() for i in threads]
-			[i.join() for i in threads]
+			total_batches = (len(threads) + 9) // 10
+			for i in range(0, len(threads), 10):
+				batch = threads[i:i + 10]
+				log_utils.log('Forced - Trakt Popular Lists: batch %s/%s' % ((i // 10) + 1, total_batches), __name__, log_utils.LOGDEBUG)
+				[t.start() for t in batch]
+				[t.join() for t in batch]
 			traktsync.insert_public_lists(thrd_items, service_type='last_popularlist_at', new_sync=False)
-			if forced: log_utils.log('Forced - Trakt Popular Lists Sync Complete', __name__, log_utils.LOGDEBUG)
+			if forced: log_utils.log('Forced - Trakt Popular Lists Sync Complete', __name__, log_utils.LOGINFO)
 	except: log_utils.error()
 
 def sync_trending_lists(forced=False):
@@ -1974,6 +1998,7 @@ def sync_trending_lists(forced=False):
 								(str(db_last_trendingList), str(cache_expiry)), __name__, log_utils.LOGDEBUG)
 			items = getTraktAsJson(link, silent=True)
 			if not items: return
+			log_utils.log('Forced - Trakt Trending Lists: processing %s lists in batches of 10' % len(items), __name__, log_utils.LOGINFO)
 			thrd_items = []
 			def items_list(i):
 				list_item = i.get('list', {})
@@ -2003,10 +2028,14 @@ def sync_trending_lists(forced=False):
 			threads = []
 			for i in items:
 				threads.append(Thread(target=items_list, args=(i,)))
-			[i.start() for i in threads]
-			[i.join() for i in threads]
+			total_batches = (len(threads) + 9) // 10
+			for i in range(0, len(threads), 10):
+				batch = threads[i:i + 10]
+				log_utils.log('Forced - Trakt Trending Lists: batch %s/%s' % ((i // 10) + 1, total_batches), __name__, log_utils.LOGDEBUG)
+				[t.start() for t in batch]
+				[t.join() for t in batch]
 			traktsync.insert_public_lists(thrd_items, service_type='last_trendinglist_at', new_sync=False)
-			if forced: log_utils.log('Forced - Trakt Trending Lists Sync Complete', __name__, log_utils.LOGDEBUG)
+			if forced: log_utils.log('Forced - Trakt Trending Lists Sync Complete', __name__, log_utils.LOGINFO)
 	except: log_utils.error()
 
 def traktClientID():
