@@ -155,19 +155,27 @@ def get_all_pages(url, silent=False):
 			# If we got fewer items than the limit, we've reached the last page
 			if items_this_page < limit:
 				break
-			
+
 			# Check pagination headers if available
-			total_pages = response.headers.get('X-Pagination-Page-Count') if hasattr(response, 'headers') else None
-			if total_pages:
-				try:
-					total_pages = int(total_pages)
-					if page >= total_pages:
-						break
-				except (ValueError, TypeError):
-					pass
-			
+			if hasattr(response, 'headers'):
+				total_pages = response.headers.get('X-Pagination-Page-Count')
+				if total_pages:
+					try:
+						total_pages = int(total_pages)
+						if page >= total_pages:
+							break
+					except (ValueError, TypeError):
+						pass
+				total_items = response.headers.get('X-Pagination-Item-Count')
+				if total_items:
+					try:
+						if len(results) >= int(total_items):
+							break
+					except (ValueError, TypeError):
+						pass
+
 			page += 1
-			
+
 			# Safety limit to prevent infinite loops (max 100 pages = 100,000 items)
 			if page > 100:
 				log_utils.log('TRAKT: get_all_pages reached safety limit of 100 pages for URL: %s' % url, level=log_utils.LOGWARNING)
@@ -1098,6 +1106,17 @@ def syncTVShows(): # sync all watched shows ex. [({'imdb': 'tt12571834', 'tvdb':
 		if not getTraktCredentialsInfo(): return
 		indicators = get_all_pages('/users/me/watched/shows?extended=full')
 		if not indicators: return None
+		# Deduplicate by trakt ID — guards against API pagination loops returning duplicate shows
+		seen_ids = set()
+		unique = []
+		for i in indicators:
+			tid = i['show']['ids']['trakt']
+			if tid not in seen_ids:
+				seen_ids.add(tid)
+				unique.append(i)
+		if len(unique) < len(indicators):
+			log_utils.log('TRAKT: syncTVShows - deduplicated %d -> %d shows (API pagination loop detected)' % (len(indicators), len(unique)), level=log_utils.LOGWARNING)
+		indicators = unique
 # /shows/ID/progress/watched  endpoint only accepts imdb or trakt ID so write all ID's
 		indicators = [({'imdb': i['show']['ids']['imdb'], 'tvdb': str(i['show']['ids']['tvdb']), 'tmdb': str(i['show']['ids']['tmdb']), 'trakt': str(i['show']['ids']['trakt'])}, \
 											i['show']['aired_episodes'], sum([[(s['number'], e['number']) for e in s['episodes'] if i['reset_at'] is None or e['last_watched_at'] > i['reset_at']] for s in i['seasons']], [])) for i in indicators]

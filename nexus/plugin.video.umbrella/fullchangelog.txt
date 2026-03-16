@@ -1,3 +1,6 @@
+[B]Update - v6.7.514 - Mar 16th, 2026[/B]
+--[Fix] Pagination error when trakt syncing fix.
+
 [B]Update - v6.7.513 - Mar 16th, 2026[/B]
 --[Logging] Logging changed to indicate where in the process trakt sync is crashing.
 

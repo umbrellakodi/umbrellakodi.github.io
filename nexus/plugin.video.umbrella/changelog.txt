@@ -1,4 +1,5 @@
-[B]Update - v6.7.513 - Mar 16th, 2026[/B]
+[B]Update - v6.7.514 - Mar 16th, 2026[/B]
+--[Fix] Pagination error when trakt syncing fix.
 --[Logging] Logging changed to indicate where in the process trakt sync is crashing.
 --[Fix] Changed Trakt to do batch calls in groups of 10 to control the amount of threads spawned.
 --[Fix] More changes for limiting number of trakt threads spawned when doing batch calls.
