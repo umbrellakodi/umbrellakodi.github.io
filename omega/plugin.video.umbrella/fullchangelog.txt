@@ -1,3 +1,7 @@
+[B]Update - v6.7.510 - Mar 15th, 2026[/B]
+--[Fix] Threading change for Trakt sync to stop crashes.
+--[Fix] Changes for skin detection to avoid heavy processing when checking for skin.
+
 [B]Update - v6.7.509 - Mar 15th, 2026[/B]
 --[Change] Added Academy Award Winners movies and New TV Shows (TMDb).
 
