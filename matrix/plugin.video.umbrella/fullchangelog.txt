@@ -1,3 +1,6 @@
+[B]Update - v6.7.515 - Mar 16th, 2026[/B]
+--[Change] Additonal logging added for trakt sync removed.
+
 [B]Update - v6.7.514 - Mar 16th, 2026[/B]
 --[Fix] Pagination error when trakt syncing fix.
 

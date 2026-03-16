@@ -1114,8 +1114,6 @@ def syncTVShows(): # sync all watched shows ex. [({'imdb': 'tt12571834', 'tvdb':
 			if tid not in seen_ids:
 				seen_ids.add(tid)
 				unique.append(i)
-		if len(unique) < len(indicators):
-			log_utils.log('TRAKT: syncTVShows - deduplicated %d -> %d shows (API pagination loop detected)' % (len(indicators), len(unique)), level=log_utils.LOGWARNING)
 		indicators = unique
 # /shows/ID/progress/watched  endpoint only accepts imdb or trakt ID so write all ID's
 		indicators = [({'imdb': i['show']['ids']['imdb'], 'tvdb': str(i['show']['ids']['tvdb']), 'tmdb': str(i['show']['ids']['tmdb']), 'trakt': str(i['show']['ids']['trakt'])}, \
@@ -1699,33 +1697,19 @@ def force_traktSync():
 	# wipe all tables and start fresh
 	clr_traktSync = {'bookmarks': True, 'hiddenProgress': True, 'liked_lists': True, 'movies_collection': True, 'movies_watchlist': True,
 							'public_lists': True, 'shows_collection': True, 'shows_watchlist': True, 'user_lists': True, 'watched': True}
-	log_utils.log('Forced Trakt Sync: Starting - clearing all tables', __name__, log_utils.LOGINFO)
 	traktsync.delete_tables(clr_traktSync)
-	log_utils.log('Forced Trakt Sync: Tables cleared - beginning sync steps', __name__, log_utils.LOGINFO)
-
-	log_utils.log('Forced Trakt Sync: Step 1/10 - Starting sync_playbackProgress', __name__, log_utils.LOGINFO)
 	sync_playbackProgress(forced=True)
-	log_utils.log('Forced Trakt Sync: Step 2/10 - Starting sync_hidden_progress', __name__, log_utils.LOGINFO)
 	sync_hidden_progress(forced=True)
-	log_utils.log('Forced Trakt Sync: Step 3/10 - Starting sync_liked_lists', __name__, log_utils.LOGINFO)
 	sync_liked_lists(forced=True)
-	log_utils.log('Forced Trakt Sync: Step 4/10 - Starting sync_collection', __name__, log_utils.LOGINFO)
 	sync_collection(forced=True)
-	log_utils.log('Forced Trakt Sync: Step 5/10 - Starting sync_watch_list', __name__, log_utils.LOGINFO)
 	sync_watch_list(forced=True)
-	log_utils.log('Forced Trakt Sync: Step 6/10 - Starting sync_popular_lists', __name__, log_utils.LOGINFO)
 	sync_popular_lists(forced=True)
-	log_utils.log('Forced Trakt Sync: Step 7/10 - Starting sync_trending_lists', __name__, log_utils.LOGINFO)
 	sync_trending_lists(forced=True)
-	log_utils.log('Forced Trakt Sync: Step 8/10 - Starting sync_user_lists', __name__, log_utils.LOGINFO)
 	sync_user_lists(forced=True)
-	log_utils.log('Forced Trakt Sync: Step 9/10 - Starting sync_watched (movies + shows)', __name__, log_utils.LOGINFO)
 	sync_watched(forced=True) # writes to traktsync.db as of 1-19-2022
-	log_utils.log('Forced Trakt Sync: Step 10/10 - Starting sync_watchedProgress (progress list)', __name__, log_utils.LOGINFO)
 	sync_watchedProgress(forced=True, trigger_refresh=False) # Trakt progress sync
 	control.hide()
 	control.trigger_widget_refresh() # single refresh after full sync completes
-	log_utils.log('Forced Trakt Sync: All steps complete', __name__, log_utils.LOGINFO)
 	control.notification(message='Forced Trakt Sync Complete')
 
 def sync_playbackProgress(activities=None, forced=False):
