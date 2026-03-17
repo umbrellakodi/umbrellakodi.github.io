@@ -1,4 +1,5 @@
-[B]Update - v6.7.517 - Mar 17th, 2026[/B]
+[B]Update - v6.7.518 - Mar 17th, 2026[/B]
+--[Changes] Removed widget refreshes from sync activity.
 --[Fix] Removed extended=full from watchedShows()
 --[Change] Changed trakt syncSeasons and watchHistory.
 --[Change] Changed trakt calls to be a max of 20 threads.
