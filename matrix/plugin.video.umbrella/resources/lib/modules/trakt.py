@@ -1104,24 +1104,44 @@ def cachesyncTVShows(timeout=0):
 def syncTVShows(): # sync all watched shows ex. [({'imdb': 'tt12571834', 'tvdb': '384435', 'tmdb': '105161', 'trakt': '163639'}, 16, [(1, 16)]), ({'imdb': 'tt11761194', 'tvdb': '377593', 'tmdb': '119845', 'trakt': '158621'}, 2, [(1, 1), (1, 2)])]
 	try:
 		if not getTraktCredentialsInfo(): return
-		indicators = get_all_pages('/users/me/watched/shows?extended=full')
-		if not indicators: return None
-		# Deduplicate by trakt ID — guards against API pagination loops returning duplicate shows
+		# Process page-by-page to avoid loading all raw show data into memory at once.
+		# ?extended=full is omitted — only ids/aired_episodes/seasons are used, not show metadata.
+		indicators = []
 		seen_ids = set()
-		unique = []
-		for i in indicators:
-			tid = i['show']['ids']['trakt']
-			if tid not in seen_ids:
-				seen_ids.add(tid)
-				unique.append(i)
-		indicators = unique
+		page = 1
+		limit = 1000
+		while True:
+			response = getTrakt('/users/me/watched/shows?page=%d&limit=%d' % (page, limit))
+			if not response: break
+			try: page_results = response.json()
+			except: break
+			if not page_results: break
+			for i in page_results:
+				try:
+					tid = i['show']['ids']['trakt']
+					if tid in seen_ids: continue
+					seen_ids.add(tid)
+					ids = {'imdb': i['show']['ids']['imdb'], 'tvdb': str(i['show']['ids']['tvdb']), 'tmdb': str(i['show']['ids']['tmdb']), 'trakt': str(i['show']['ids']['trakt'])}
+					aired = int(i['show'].get('aired_episodes', 0))
 # /shows/ID/progress/watched  endpoint only accepts imdb or trakt ID so write all ID's
-		indicators = [({'imdb': i['show']['ids']['imdb'], 'tvdb': str(i['show']['ids']['tvdb']), 'tmdb': str(i['show']['ids']['tmdb']), 'trakt': str(i['show']['ids']['trakt'])}, \
-											i['show']['aired_episodes'], sum([[(s['number'], e['number']) for e in s['episodes'] if i['reset_at'] is None or e['last_watched_at'] > i['reset_at']] for s in i['seasons']], [])) for i in indicators]
-		# indicators = [({'imdb': i['show']['ids']['imdb'], 'tvdb': str(i['show']['ids']['tvdb']), 'tmdb': str(i['show']['ids']['tmdb']), 'trakt': str(i['show']['ids']['trakt'])}, \
-		# 									i['show']['aired_episodes'], sum([[(s['number'], e['number']) for e in s['episodes']] for s in i['seasons']], [])) for i in indicators]
-		indicators = [(i[0], int(i[1]), i[2]) for i in indicators]
-		return indicators
+					episodes = sum([[(s['number'], e['number']) for e in s['episodes'] if i['reset_at'] is None or e['last_watched_at'] > i['reset_at']] for s in i.get('seasons', [])], [])
+					indicators.append((ids, aired, episodes))
+				except: pass
+			if len(page_results) < limit: break
+			if hasattr(response, 'headers'):
+				total_pages = response.headers.get('X-Pagination-Page-Count')
+				if total_pages:
+					try:
+						if page >= int(total_pages): break
+					except: pass
+				total_items = response.headers.get('X-Pagination-Item-Count')
+				if total_items:
+					try:
+						if len(indicators) >= int(total_items): break
+					except: pass
+			page += 1
+			if page > 100: break
+		return indicators if indicators else None
 	except: log_utils.error()
 
 # def syncTVShowsLibrary(indicators):
@@ -1265,8 +1285,8 @@ def service_syncSeasons(): # season indicators and counts for watched shows ex. 
 			tvdb = str(indicator[0].get('tvdb', '')) if indicator[0].get('tvdb') else ''
 			trakt = str(indicator[0].get('trakt', '')) if indicator[0].get('trakt') else ''
 			threads.append(Thread(target=cachesyncSeasons, args=(imdb, tvdb, trakt))) # season indicators and counts for an entire show
-		for i in range(0, len(threads), 10): # process in batches of 10 to avoid thread explosion on low-RAM devices
-			batch = threads[i:i + 10]
+		for i in range(0, len(threads), 20):
+			batch = threads[i:i + 20]
 			[t.start() for t in batch]
 			[t.join() for t in batch]
 	except: log_utils.error()
@@ -1751,12 +1771,10 @@ def sync_watched(activities=None, forced=False): # writes to traktsync.db as of 
 		if forced:
 			cachesyncMovies()
 			cachesyncTVShows()
+			traktsync.insert_syncSeasons_at()
 			log_utils.log('Forced - Trakt Watched Sync Complete (movies + shows)', __name__, log_utils.LOGINFO)
 			control.sleep(5000)
-			# service_syncSeasons() is intentionally skipped here — it makes one API call per show
-			# (potentially 1000+) and causes OOM crashes on low-spec devices. Since delete_tables()
-			# resets last_syncSeasons_at to 1970, the background service will automatically trigger
-			# service_syncSeasons() on its next cycle after force sync completes.
+			service_syncSeasons()
 		else:
 			moviesWatchedActivity = getMoviesWatchedActivity(activities)
 			db_movies_last_watched = timeoutsyncMovies()

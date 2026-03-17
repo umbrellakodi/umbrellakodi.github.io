@@ -1,3 +1,7 @@
+[B]Update - v6.7.516 - Mar 17th, 2026[/B]
+--[Change] Changed trakt syncSeasons and watchHistory.
+--[Change] Changed trakt calls to be a max of 20 threads.
+
 [B]Update - v6.7.515 - Mar 16th, 2026[/B]
 --[Change] Additonal logging added for trakt sync removed.
 
