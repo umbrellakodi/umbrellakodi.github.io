@@ -1063,7 +1063,7 @@ def watchedMoviesTime(imdb):
 def watchedShows():
 	try:
 		if not getTraktCredentialsInfo(): return
-		return get_all_pages('/users/me/watched/shows?extended=full')
+		return get_all_pages('/users/me/watched/shows')
 	except: log_utils.error()
 
 def watchedShowsTime(tvdb, season, episode):
@@ -1356,11 +1356,11 @@ def markEpisodeAsWatched(imdb, tvdb, season, episode):
 	try:
 		season, episode = int('%01d' % int(season)), int('%01d' % int(episode)) #same
 		result = getTraktAsJson('/sync/history', {"shows": [{"seasons": [{"episodes": [{"number": episode}], "number": season}], "ids": {"imdb": imdb, "tvdb": tvdb}}]})
-		if not result: result = False
+		if not result: return False
 		if result['added']['episodes'] == 0 and tvdb:
 			control.sleep(1000)
 			result = getTraktAsJson('/sync/history', {"shows": [{"seasons": [{"episodes": [{"number": episode}], "number": season}], "ids": {"imdb": tvdb}}]})
-			if not result: result = False
+			if not result: return False
 			result = result['added']['episodes'] !=0
 		else:
 			result = result['added']['episodes'] !=0
