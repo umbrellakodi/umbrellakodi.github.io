@@ -1138,10 +1138,10 @@ def syncTVShows(): # sync all watched shows ex. [({'imdb': 'tt12571834', 'tvdb':
 					aired = int(i['show'].get('aired_episodes', 0))
 # /shows/ID/progress/watched  endpoint only accepts imdb or trakt ID so write all ID's
 					episodes = {}
-				reset_at = i.get('reset_at')
-				for s in i.get('seasons', []):
-					ep_nums = sorted(e['number'] for e in s['episodes'] if reset_at is None or e['last_watched_at'] > reset_at)
-					if ep_nums: episodes[s['number']] = _make_episode_ranges(ep_nums)
+					reset_at = i.get('reset_at')
+					for s in i.get('seasons', []):
+						ep_nums = sorted(e['number'] for e in s['episodes'] if reset_at is None or e['last_watched_at'] > reset_at)
+						if ep_nums: episodes[s['number']] = _make_episode_ranges(ep_nums)
 					indicators.append((ids, aired, episodes))
 				except: pass
 			if len(page_results) < limit: break
