@@ -1,3 +1,6 @@
+[B]Update - v6.7.519 - Mar 17th, 2026[/B]
+--[Fix] Broken trakt due to syntax error.
+
 [B]Update - v6.7.518 - Mar 17th, 2026[/B]
 --[Changes] Removed widget refreshes from sync activity.
 

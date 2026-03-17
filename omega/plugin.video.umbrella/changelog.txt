@@ -1,4 +1,5 @@
-[B]Update - v6.7.518 - Mar 17th, 2026[/B]
+[B]Update - v6.7.519 - Mar 17th, 2026[/B]
+--[Fix] Broken trakt due to syntax error.
 --[Changes] Removed widget refreshes from sync activity.
 --[Fix] Removed extended=full from watchedShows()
 --[Change] Changed trakt syncSeasons and watchHistory.
