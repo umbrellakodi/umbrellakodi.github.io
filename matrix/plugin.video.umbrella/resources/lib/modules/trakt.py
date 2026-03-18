@@ -1986,7 +1986,7 @@ def sync_popular_lists(forced=False):
 								(str(db_last_popularList), str(cache_expiry)), __name__, log_utils.LOGDEBUG)
 			items = getTraktAsJson(link, silent=True)
 			if not items: return
-			log_utils.log('Forced - Trakt Popular Lists: processing %s lists in batches of 10' % len(items), __name__, log_utils.LOGINFO)
+			log_utils.log('Forced - Trakt Popular Lists: processing %s lists in batches of %s' % (len(items), 'unlimited' if getSetting('dev.batch.unlimited') == 'true' else getSetting('dev.batch.size') or '10'), __name__, log_utils.LOGINFO)
 			thrd_items = []
 			def items_list(i):
 				list_item = i.get('list', {})
@@ -2045,7 +2045,7 @@ def sync_trending_lists(forced=False):
 								(str(db_last_trendingList), str(cache_expiry)), __name__, log_utils.LOGDEBUG)
 			items = getTraktAsJson(link, silent=True)
 			if not items: return
-			log_utils.log('Forced - Trakt Trending Lists: processing %s lists in batches of 10' % len(items), __name__, log_utils.LOGINFO)
+			log_utils.log('Forced - Trakt Trending Lists: processing %s lists in batches of %s' % (len(items), 'unlimited' if getSetting('dev.batch.unlimited') == 'true' else getSetting('dev.batch.size') or '10'), __name__, log_utils.LOGINFO)
 			thrd_items = []
 			def items_list(i):
 				list_item = i.get('list', {})

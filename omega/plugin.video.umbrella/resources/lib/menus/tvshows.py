@@ -146,7 +146,7 @@ class TVshows:
 		self.simkltrendingtoday_link = 'https://api.simkl.com/tv/trending/today?client_id=%s&extended=tmdb' % '%s'
 		self.simkltrendingweek_link = 'https://api.simkl.com/tv/trending/week?client_id=%s&extended=tmdb' % '%s'
 		self.simkltrendingmonth_link = 'https://api.simkl.com/tv/trending/month?client_id=%s&extended=tmdb'% '%s'
-		self.imdblist_hours = int(getSetting('cache.imdblist'))
+		self.imdblist_hours = 168
 		self.trakt_hours = int(getSetting('cache.traktother'))
 		self.traktpopular_hours = int(getSetting('cache.traktpopular'))
 		self.trakttrending_hours = int(getSetting('cache.trakttrending'))
