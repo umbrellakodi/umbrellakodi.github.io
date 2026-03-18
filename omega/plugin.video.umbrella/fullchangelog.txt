@@ -1,3 +1,6 @@
+[B]Update - v6.7.521 - Mar 18th, 2026[/B]
+--[Fix] Changes made for mdblist double marking episodes as watched.
+
 [B]Update - v6.7.520 - Mar 18th, 2026[/B]
 --[Fix] Made changes to endpoints being called for mdblist scrobble and mark as watched.
 

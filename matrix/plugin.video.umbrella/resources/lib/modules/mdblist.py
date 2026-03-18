@@ -666,14 +666,15 @@ def scrobbleEpisode(tvshowtitle, year, imdb, tmdb, tvdb, season, episode, watche
 		log_utils.log('MDBList Scrobble Episode. imdb: %s S%sE%s percent: %s' % (imdb, season, episode, watched_percent), level=log_utils.LOGDEBUG)
 	except: log_utils.error()
 
-def scrobbleReset(imdb, tmdb='', tvdb='', season=None, episode=None, refresh=False, clear_local=True):
+def scrobbleReset(imdb, tmdb='', tvdb='', season=None, episode=None, refresh=False, clear_local=True, already_watched=False):
 	if not getMDBListCredentialsInfo(): return
 	try:
-		if episode:
-			_post_sync_watched(show_ids={'imdb': imdb, 'tmdb': tmdb, 'tvdb': tvdb},
-				seasons_dict={int(season) if season else 1: [int(episode)]})
-		else:
-			_post_sync_watched(movies=[{'imdb': imdb, 'tmdb': tmdb}])
+		if not already_watched:
+			if episode:
+				_post_sync_watched(show_ids={'imdb': imdb, 'tmdb': tmdb, 'tvdb': tvdb},
+					seasons_dict={int(season) if season else 1: [int(episode)]})
+			else:
+				_post_sync_watched(movies=[{'imdb': imdb, 'tmdb': tmdb}])
 		if clear_local:
 			mdbsync.delete_bookmark(imdb, tvdb or '', season or '', episode or '')
 			sync_watchedProgress(forced=True)
