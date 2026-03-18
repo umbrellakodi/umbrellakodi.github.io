@@ -1302,9 +1302,12 @@ def service_syncSeasons(): # season indicators and counts for watched shows ex. 
 			tvdb = str(indicator[0].get('tvdb', '')) if indicator[0].get('tvdb') else ''
 			trakt = str(indicator[0].get('trakt', '')) if indicator[0].get('trakt') else ''
 			threads.append(Thread(target=cachesyncSeasons, args=(imdb, tvdb, trakt))) # season indicators and counts for an entire show
-		for i in range(0, len(threads), 10):
+		_unlimited = getSetting('dev.batch.unlimited') == 'true'
+		_bs = int(getSetting('dev.batch.size') or '10')
+		_chunk = len(threads) if _unlimited else _bs
+		for i in range(0, len(threads), _chunk):
 			if control.monitor.abortRequested(): break
-			batch = threads[i:i + 10]
+			batch = threads[i:i + _chunk]
 			[t.start() for t in batch]
 			[t.join() for t in batch]
 	except: log_utils.error()
@@ -1891,8 +1894,11 @@ def sync_liked_lists(activities=None, forced=False):
 			threads = []
 			for i in items:
 				threads.append(Thread(target=items_list, args=(i,)))
-			for i in range(0, len(threads), 10):
-				batch = threads[i:i + 10]
+			_unlimited = getSetting('dev.batch.unlimited') == 'true'
+			_bs = int(getSetting('dev.batch.size') or '10')
+			_chunk = len(threads) if _unlimited else _bs
+			for i in range(0, len(threads), _chunk):
+				batch = threads[i:i + _chunk]
 				[t.start() for t in batch]
 				[t.join() for t in batch]
 			traktsync.insert_liked_lists(thrd_items)
@@ -2013,8 +2019,11 @@ def sync_popular_lists(forced=False):
 			threads = []
 			for i in items:
 				threads.append(Thread(target=items_list, args=(i,)))
-			for i in range(0, len(threads), 10):
-				batch = threads[i:i + 10]
+			_unlimited = getSetting('dev.batch.unlimited') == 'true'
+			_bs = int(getSetting('dev.batch.size') or '10')
+			_chunk = len(threads) if _unlimited else _bs
+			for i in range(0, len(threads), _chunk):
+				batch = threads[i:i + _chunk]
 				[t.start() for t in batch]
 				[t.join() for t in batch]
 			traktsync.insert_public_lists(thrd_items, service_type='last_popularlist_at', new_sync=False)
@@ -2069,8 +2078,11 @@ def sync_trending_lists(forced=False):
 			threads = []
 			for i in items:
 				threads.append(Thread(target=items_list, args=(i,)))
-			for i in range(0, len(threads), 10):
-				batch = threads[i:i + 10]
+			_unlimited = getSetting('dev.batch.unlimited') == 'true'
+			_bs = int(getSetting('dev.batch.size') or '10')
+			_chunk = len(threads) if _unlimited else _bs
+			for i in range(0, len(threads), _chunk):
+				batch = threads[i:i + _chunk]
 				[t.start() for t in batch]
 				[t.join() for t in batch]
 			traktsync.insert_public_lists(thrd_items, service_type='last_trendinglist_at', new_sync=False)

@@ -1,2 +1,2 @@
-[B]Update - v6.7.522 - Mar 18th, 2026[/B]
---[Fix] Added logging to start to show services set.
+[B]Update - v6.7.523 - Mar 18th, 2026[/B]
+--[Change] Added settings for threads.

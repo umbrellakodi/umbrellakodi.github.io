@@ -406,7 +406,10 @@ class TorBox:
 		progressBG.create('TorBox', 'Clearing cloud files')
 
 		try:
-			with ThreadPoolExecutor(max_workers=10) as executor:  # max-workers likely needs to be a setting.
+			from resources.lib.modules import control as _ctrl
+		_unlimited = _ctrl.setting('dev.batch.unlimited') == 'true'
+		_bs = None if _unlimited else int(_ctrl.setting('dev.batch.size') or '10')
+		with ThreadPoolExecutor(max_workers=_bs) as executor:
 				futures = {}
 				for count, req in enumerate(all_files, 1):
 					if req['type'] == 'torrent' or req['type'] == 'queue':
