@@ -1,6 +1,2 @@
-[B]Update - v6.7.519 - Mar 17th, 2026[/B]
---[Fix] Broken trakt due to syntax error.
---[Changes] Removed widget refreshes from sync activity.
---[Fix] Removed extended=full from watchedShows()
---[Change] Changed trakt syncSeasons and watchHistory.
---[Change] Changed trakt calls to be a max of 20 threads.
+[B]Update - v6.7.520 - Mar 18th, 2026[/B]
+--[Fix] Made changes to endpoints being called for mdblist scrobble and mark as watched.

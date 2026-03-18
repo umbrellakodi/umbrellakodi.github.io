@@ -1,3 +1,6 @@
+[B]Update - v6.7.520 - Mar 18th, 2026[/B]
+--[Fix] Made changes to endpoints being called for mdblist scrobble and mark as watched.
+
 [B]Update - v6.7.519 - Mar 17th, 2026[/B]
 --[Fix] Broken trakt due to syntax error.
 
