@@ -41,6 +41,7 @@ class Player(xbmc.Player):
 		self.playbackStopped_triggered = False
 		self.playback_resumed = False
 		self.onPlayBackStopped_ran = False
+		self.scrobble_sent = False
 		self.media_type = None
 		self.DBID = None
 		self.offset = '0'
@@ -639,7 +640,7 @@ class Player(xbmc.Player):
 			homeWindow.clearProperty('umbrella.window_keep_alive')
 			clear_local_bookmarks() # clear all umbrella bookmarks from kodi database
 			control.playlist.clear()
-			if not self.onPlayBackStopped_ran or (self.playbackStopped_triggered and not self.onPlayBackStopped_ran): # Kodi callback unreliable and often not issued
+			if (not self.onPlayBackStopped_ran or (self.playbackStopped_triggered and not self.onPlayBackStopped_ran)) and not self.scrobble_sent: # Kodi callback unreliable and often not issued
 				self.onPlayBackStopped_ran = True
 				self.playbackStopped_triggered = False
 				Bookmarks().reset(self.current_time, self.media_length, self.name, self.year)
@@ -676,6 +677,7 @@ class Player(xbmc.Player):
 			Bookmarks().set_scrobble(self.current_time, self.media_length, self.media_type, self.imdb, self.tmdb, self.tvdb, self.season, self.episode, service='simkl', title=self.title, year=self.year, already_watched=self.watched_during_playback)
 		if self.mdblistCredentials and (_scrobble_source == '3' or getSetting('mdblist.markwatched') == 'true'):
 			Bookmarks().set_scrobble(self.current_time, self.media_length, self.media_type, self.imdb, self.tmdb, self.tvdb, self.season, self.episode, service='mdblist', title=self.title, tvshowtitle=self.title, year=self.year, already_watched=self.watched_during_playback)
+		self.scrobble_sent = True
 		try:
 			playingfile = Player.isPlaying()
 		except:

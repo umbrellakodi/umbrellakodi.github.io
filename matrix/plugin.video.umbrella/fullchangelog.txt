@@ -1,3 +1,6 @@
+[B]Update - v6.7.524 - Mar 18th, 2026[/B]
+--[Fix] Fix for double scrobble when onPlayBackStopped and onPlayBackEneded have already run.
+
 [B]Update - v6.7.523 - Mar 18th, 2026[/B]
 --[Change] Added settings for threads.
 
