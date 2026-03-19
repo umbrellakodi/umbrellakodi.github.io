@@ -1,2 +1,4 @@
-[B]Update - v6.7.525 - Mar 18th, 2026[/B]
+[B]Update - v6.7.526 - Mar 19th, 2026[/B]
 --[Fix] Fix for double scrobble when onPlayBackStopped and onPlayBackEneded have already run.
+--[Change] Fix for torbox and offcloud broken try statements.
+--[Fix] Added resets for variables between episodes when using playnext.

@@ -236,11 +236,10 @@ class Offcloud:
 		len_files = len(files)
 		progressBG = control.progressDialogBG
 		progressBG.create('Offcloud', 'Clearing cloud files')
+		_unlimited = control.setting('dev.batch.unlimited') == 'true'
+		_bs = None if _unlimited else int(control.setting('dev.batch.size') or '10')
 		try:
-			from resources.lib.modules import control as _ctrl
-		_unlimited = _ctrl.setting('dev.batch.unlimited') == 'true'
-		_bs = None if _unlimited else int(_ctrl.setting('dev.batch.size') or '10')
-		with ThreadPoolExecutor(max_workers=_bs) as executor:
+			with ThreadPoolExecutor(max_workers=_bs) as executor:
 				futures = {
 					executor.submit(self.delete_torrent, req['requestId']): req
 					for req in files
@@ -256,10 +255,8 @@ class Offcloud:
 						)
 						control.sleep(200)
 					except Exception as e:
-						from resources.lib.modules import log_utils
 						log_utils.error(f"Error deleting file {req['fileName']}: {str(e)}")
 		except Exception as e:
-			from resources.lib.modules import log_utils
 			log_utils.error(f"Error clearing cloud files: {str(e)}")
 		finally:
 			try:
