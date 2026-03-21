@@ -1,5 +1,5 @@
 <?xml version='1.0' encoding='utf-8'?>
-<addons><addon id="plugin.video.umbrella" name="Umbrella" provider-name="Umbrella" version="6.7.526">
+<addons><addon id="plugin.video.umbrella" name="Umbrella" provider-name="Umbrella" version="6.7.527">
 	<requires>
 		<import addon="xbmc.python" version="3.0.0" />
 		<import addon="script.module.requests" />
@@ -235,10 +235,9 @@
 			<screenshot>resources/screenshots/screenshot003.jpg</screenshot>
 		</assets>
 		<news>
-[B]Update - v6.7.526 - Mar 19th, 2026[/B]
---[Fix] Fix for double scrobble when onPlayBackStopped and onPlayBackEneded have already run.
---[Change] Fix for torbox and offcloud broken try statements.
---[Fix] Added resets for variables between episodes when using playnext.
+[B]Update - v6.7.527 - Mar 21st, 2026[/B]
+--[Fix] Changes to player for onPlaybackEnded to add a try catch.
+--[Fix] Changes to cache.py to catch some errors on clear_local_bookmarks.
 		</news>
 	</extension>
 
