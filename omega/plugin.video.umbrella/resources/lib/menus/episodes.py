@@ -1679,6 +1679,8 @@ class Episodes:
 					#item.setProperty('ResumeTime', str(resumetime))
 					try: item.setProperty('WatchedProgress', str(int(float(resumetime) / float(runtime) * 100))) # resumetime and runtime are both in minutes
 					except: pass
+				else:
+					resumetime = ''  # reset so unaired episodes don't inherit resume point from previous iteration
 
 				try: # Year is the shows year, not the seasons year. Extract year from premier date for infoLabels to have "season_year."
 					season_year = re.findall(r'(\d{4})', i.get('premiered', ''))[0]

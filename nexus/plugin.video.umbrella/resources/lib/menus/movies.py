@@ -1426,6 +1426,7 @@ class Movies:
 			next = url.replace('?' + urlparse(url).query, '') + '?' + q
 			next = next + '&folderName=%s' % quote_plus(folderName)
 		except: next = ''
+		watched_dates = trakt.getWatchedMoviesLastWatchedDates()
 		for item in items: # rating and votes via TMDb, or I must use "extended=full" and it slows down
 			try:
 				values = {}
@@ -1434,14 +1435,14 @@ class Movies:
 				values['paused_at'] = item.get('paused_at', '') # for unfinished
 				try: values['progress'] = item['progress']
 				except: values['progress'] = ''
-				try: values['lastplayed'] = item['watched_at'] # for history
-				except: values['lastplayed'] = ''
 				movie = item.get('movie') or item
 				values['title'] = movie.get('title')
 				values['originaltitle'] = values['title']
 				values['year'] = str(movie.get('year', '')) if movie.get('year') else ''
 				ids = movie.get('ids', {})
 				values['imdb'] = str(ids.get('imdb', '')) if ids.get('imdb') else ''
+				# lastplayed: history endpoints include watched_at; for user lists fetch from watched data
+				values['lastplayed'] = item.get('watched_at') or watched_dates.get(values['imdb'], '')
 				values['tmdb'] = str(ids.get('tmdb', '')) if ids.get('tmdb') else ''
 				values['tvdb'] = ''
 				values['mediatype'] = 'movies'

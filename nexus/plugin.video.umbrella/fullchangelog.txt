@@ -1,3 +1,8 @@
+[B]Update - v6.7.528 - Mar 22nd, 2026[/B]
+--[Fix] Simkl sorting fix for movies.
+--[Fix] Trakt sorting for data_watched on movies and others..
+--[Info] Will be trying to add offcloud back before pushing to release side.
+
 [B]Update - v6.7.527 - Mar 21st, 2026[/B]
 --[Fix] Changes to player for onPlaybackEnded to add a try catch.
 --[Fix] Changes to cache.py to catch some errors on clear_local_bookmarks.
