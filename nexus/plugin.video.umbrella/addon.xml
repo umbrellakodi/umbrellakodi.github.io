@@ -1,4 +1,4 @@
-<addon id="plugin.video.umbrella" name="Umbrella" provider-name="Umbrella" version="6.7.528">
+<addon id="plugin.video.umbrella" name="Umbrella" provider-name="Umbrella" version="6.7.529">
 	<requires>
 		<import addon="xbmc.python" version="3.0.0" />
 		<import addon="script.module.requests" />
@@ -234,7 +234,7 @@
 			<screenshot>resources/screenshots/screenshot003.jpg</screenshot>
 		</assets>
 		<news>
-[B]Update - v6.7.528 - Mar 22nd, 2026[/B]
+[B]Update - v6.7.529 - Mar 22nd, 2026[/B]
 --[Fix] Simkl sorting fix for movies.
 --[Fix] Trakt sorting for data_watched on movies and others..
 --[Info] Will be trying to add offcloud back before pushing to release side.
