@@ -1,3 +1,6 @@
+[B]Update - v6.7.530 - Mar 23rd, 2026[/B]
+--[Change] Updated for new offcloud api changes.
+
 [B]Update - v6.7.529 - Mar 22nd, 2026[/B]
 --[Fix] Fixed error in control.
 

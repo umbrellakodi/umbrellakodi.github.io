@@ -4337,9 +4337,17 @@
 							<condition operator="is" setting="offcloudtoken"/>
 						</dependency>
 					</dependencies>
-					<control type="button" format="action">
-						<close>true</close>
-					</control>
+					<control type="button" format="action"/>
+				</setting>
+				<setting id="offcloudAuthInfo" type="string" label="40664" help="">
+					<default/>
+					<enable>false</enable>
+					<dependencies>
+						<dependency type="visible">
+							<condition operator="is" setting="offcloudtoken"/>
+						</dependency>
+					</dependencies>
+					<control type="label"/>
 				</setting>
 				<setting id="offcloudRevokeButton" type="action" label="40110" help="">
 					<data>RunPlugin(plugin://plugin.video.umbrella/?action=oc_Deauthorize&amp;query=9.0)</data>

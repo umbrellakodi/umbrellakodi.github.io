@@ -1,4 +1,2 @@
-[B]Update - v6.7.529 - Mar 22nd, 2026[/B]
---[Fix] Simkl sorting fix for movies.
---[Fix] Trakt sorting for data_watched on movies and others..
---[Info] Will be trying to add offcloud back before pushing to release side.
+[B]Update - v6.7.530 - Mar 23rd, 2026[/B]
+--[Change] Updated for new offcloud api changes.
