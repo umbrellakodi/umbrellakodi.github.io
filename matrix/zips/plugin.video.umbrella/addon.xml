@@ -1,4 +1,4 @@
-<addon id="plugin.video.umbrella" name="Umbrella" provider-name="Umbrella" version="6.7.532">
+<addon id="plugin.video.umbrella" name="Umbrella" provider-name="Umbrella" version="6.7.533">
 	<requires>
 		<import addon="xbmc.python" version="3.0.0" />
 		<import addon="script.module.requests" />
@@ -236,6 +236,7 @@
 		<news>
 [B]Update - v6.7.533 - Mar 24th, 2026[/B]
 --[Change] Moved back to using setResumePoint for resume points.
+--[Change] Added Offcloud Cloud back.
 		</news>
 	</extension>
 

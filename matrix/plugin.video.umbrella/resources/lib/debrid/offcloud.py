@@ -271,8 +271,18 @@ class Offcloud:
 		highlight_color = getSetting('highlight.color')
 		folder_str, deleteMenu = getLS(40046).upper(), getLS(40050)
 		file_str, downloadMenu = getLS(40047).upper(), getLS(40048)
-		cloud_dict = self.user_cloud()
-		if not cloud_dict: return
+		try:
+			cloud_dict = self.user_cloud()
+		except Exception as e:
+			log_utils.error('Offcloud user_cloud failed: %s' % str(e))
+			control.notification(message='Offcloud: Failed to retrieve cloud items', icon=oc_icon)
+			control.content(syshandle, 'files')
+			control.directory(syshandle, cacheToDisc=False)
+			return
+		if not cloud_dict:
+			control.content(syshandle, 'files')
+			control.directory(syshandle, cacheToDisc=False)
+			return
 		cloud_dict = [i for i in cloud_dict if i.get('status') == 'downloaded']
 		for count, item in enumerate(cloud_dict, 1):
 			try:
