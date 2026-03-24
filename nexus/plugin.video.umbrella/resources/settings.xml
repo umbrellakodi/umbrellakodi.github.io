@@ -4341,6 +4341,9 @@
 				</setting>
 				<setting id="offcloudAuthInfo" type="string" label="40664" help="">
 					<default/>
+					<constraints>
+						<allowempty>true</allowempty>
+					</constraints>
 					<enable>false</enable>
 					<dependencies>
 						<dependency type="visible">
