@@ -234,9 +234,8 @@
 			<screenshot>resources/screenshots/screenshot003.jpg</screenshot>
 		</assets>
 		<news>
-[B]Update - v6.7.532 - Mar 23rd, 2026[/B]
---[Change] More offcloud changes.
---[Fix] Offcloud login.
+[B]Update - v6.7.533 - Mar 24th, 2026[/B]
+--[Change] Moved back to using setResumePoint for resume points.
 		</news>
 	</extension>
 
