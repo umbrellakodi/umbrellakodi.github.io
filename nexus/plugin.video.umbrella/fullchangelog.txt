@@ -1,3 +1,6 @@
+[B]Update - v6.7.534 - Mar 24th, 2026[/B]
+--[Change] Settings fix.
+
 [B]Update - v6.7.533 - Mar 24th, 2026[/B]
 --[Change] Moved back to using setResumePoint for resume points.
 --[Change] Added Offcloud Cloud back.

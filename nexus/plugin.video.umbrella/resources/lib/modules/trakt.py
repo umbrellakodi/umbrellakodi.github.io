@@ -293,6 +293,7 @@ def traktAuth(fromSettings=0):
 			if not control.yesnoDialog('Do you want to set Trakt as your service for your watched and unwatched indicators?','','','Indicators', 'No', 'Yes'): return True
 			control.homeWindow.setProperty('umbrella.updateSettings', 'false')
 			control.setSetting('indicators.alt', '1')
+			control.setSetting('scrobble.source', '1')
 			control.homeWindow.setProperty('umbrella.updateSettings', 'true')
 			control.setSetting('indicators', 'Trakt')
 			return True
@@ -328,6 +329,9 @@ def traktRevoke(fromSettings=0):
 			if getSetting('indicators.alt') == '1':
 				control.setSetting('indicators.alt', '0')
 				control.setSetting('indicators', 'Local')
+			if getSetting('scrobble.source') == '1':
+				control.setSetting('scrobble.source', '0')
+			control.setSetting('trakt.markwatched', 'false')
 			if fromSettings == 1:
 				control.openSettings('8.3', 'plugin.video.umbrella')
 				control.dialog.ok(control.lang(32315), control.lang(40109))
