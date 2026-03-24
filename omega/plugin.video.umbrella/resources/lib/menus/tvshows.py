@@ -532,8 +532,8 @@ class TVshows:
 	def sort(self, type='shows'):
 		try:
 			if not self.list: return
-			attribute = int(getSetting('sort.%s.type' % type))
-			reverse = int(getSetting('sort.%s.order' % type)) == 1
+			attribute = int(getSetting('sort.%s.type' % type) or '0')
+			reverse = int(getSetting('sort.%s.order' % type) or '0') == 1
 			if attribute == 0: 
 				if type == 'progress':
 					reverse = True

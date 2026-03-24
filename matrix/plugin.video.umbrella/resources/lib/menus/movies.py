@@ -823,8 +823,8 @@ class Movies:
 	def sort(self, type='movies'):
 		try:
 			if not self.list: return
-			attribute = int(getSetting('sort.%s.type' % type))
-			reverse = int(getSetting('sort.%s.order' % type)) == 1
+			attribute = int(getSetting('sort.%s.type' % type) or '0')
+			reverse = int(getSetting('sort.%s.order' % type) or '0') == 1
 			if attribute == 0: reverse = False # Sorting Order is not enabled when sort method is "Default"
 			if attribute > 0:
 				if attribute == 1:
@@ -1542,6 +1542,12 @@ class Movies:
 			return self.list
 		self.list = cache.get(userList_totalItems, self.traktuserlist_hours, url.split('limit')[0] + 'limit=1000&extended=full')
 		if not self.list: return
+		if int(getSetting('sort.movies.type') or '0') == 6:
+			watched_dates = trakt.getWatchedMoviesLastWatchedDates()
+			if watched_dates:
+				for item in self.list:
+					if not item.get('lastplayed'):
+						item['lastplayed'] = watched_dates.get(item.get('imdb', ''), '')
 		self.sort() # sort before local pagination
 		total_pages = 1
 		useNext = True

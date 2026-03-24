@@ -1807,7 +1807,7 @@ def sync_watchedProgress(activities=None, forced=False, trigger_refresh=True):
 				log_utils.log('Trakt Progress List Sync Update...(local db latest "list_cached_at" = %s, trakt api latest "progress_activity" = %s)' % \
 									(str(local_listCache), str(progressActivity)), __name__, log_utils.LOGDEBUG)
 			if trigger_refresh: control.trigger_widget_refresh()
-		except: log_utils.error()
+	except: log_utils.error()
 
 def sync_watched(activities=None, forced=False): # writes to traktsync.db as of 1-19-2022
 	try:
