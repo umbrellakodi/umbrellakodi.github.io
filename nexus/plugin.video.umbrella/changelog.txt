@@ -1,2 +1,2 @@
-[B]Update - v6.7.535 - Mar 24th, 2026[/B]
---[Change] Removed ISO files from results to avoid viruses.
+[B]Update - v6.7.536 - Mar 25th, 2026[/B]
+--[Fix] Made force trakt sync delete actual local database file first to fix malformed trakt databases.
