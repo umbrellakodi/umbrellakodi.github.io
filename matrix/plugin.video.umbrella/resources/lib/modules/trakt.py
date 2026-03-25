@@ -8,7 +8,7 @@ from json import dumps as jsdumps, loads as jsloads
 import re
 import requests
 from requests.adapters import HTTPAdapter
-from threading import Thread
+from threading import Thread, Lock
 from urllib3.util.retry import Retry
 from urllib.parse import urljoin
 from resources.lib.database import cache, traktsync
@@ -32,6 +32,8 @@ service_syncInterval = int(getSetting('background.service.syncInterval')) if get
 trakt_icon = control.joinPath(control.artPath(), 'trakt.png')
 #trakt_qr = control.joinPath(control.artPath(), 'traktqr.png')
 trakt_token = getSetting('trakt.user.token')
+_reauth_lock = Lock()
+_reauth_failed = False
 
 def getTrakt(url, post=None, extended=False, silent=False, reauth_attempts=0):
 	try:
@@ -190,77 +192,80 @@ def get_all_pages(url, silent=False):
 		return None
 
 def re_auth(headers):
-	try:
-		authed_clientid = getSetting('trakt.authed.clientid')
-		current_clientid = traktClientID()
-		if authed_clientid and authed_clientid != current_clientid:
-			log_utils.log('TRAKT: Client ID mismatch detected in re_auth. Token was issued by a different client app. Re-authentication required.', level=log_utils.LOGWARNING)
-			control.notification(title=32315, message=40617)
-			control.homeWindow.setProperty('umbrella.updateSettings', 'false')
-			setSetting('trakt.isauthed', 'false')
-			setSetting('trakt.user.token', '')
-			setSetting('trakt.refreshtoken', '')
-			setSetting('trakt.token.expires', '')
-			control.homeWindow.setProperty('umbrella.updateSettings', 'true')
-			return False
-		oauth = urljoin(BASE_URL, '/oauth/token')
-		opost = {'client_id': traktClientID(), 'client_secret': traktClientSecret(), 'redirect_uri': REDIRECT_URI, 'grant_type': 'refresh_token', 'refresh_token': getSetting('trakt.refreshtoken')}
-		log_utils.log('TRAKT: Re-Authenticating with refresh token', level=log_utils.LOGINFO)
-		response = session.post(url=oauth, data=jsdumps(opost), headers=headers, timeout=20)
-		status_code = str(response.status_code)
-
-		error_handler(oauth, response, status_code)
-		if status_code not in ('401', '403', '405'):
-			try: 
-				response_json = response.json()
-			except Exception as e:
-				log_utils.log('TRAKT: JSON decode error in re_auth: %s - Response text: %s' % (str(e), response.text), level=log_utils.LOGWARNING)
-				return False
-			
-			if 'error' in response_json and response_json['error'] == 'invalid_grant':
-				log_utils.log('Please Re-Authorize your Trakt Account: %s : %s' % (status_code, str(response_json)), __name__, level=log_utils.LOGWARNING)
-				control.notification(title=32315, message=33677)
-				# Clear invalid tokens to force re-authorization
-				control.homeWindow.setProperty('umbrella.updateSettings', 'false')
-				setSetting('trakt.isauthed', 'false')
-				setSetting('trakt.user.token', '')
-				setSetting('trakt.refreshtoken', '')
-				setSetting('trakt.token.expires', '')
-				control.homeWindow.setProperty('umbrella.updateSettings', 'true')
-				return False
-			
-			token, refresh = response_json['access_token'], response_json['refresh_token']
-			log_utils.log('TRAKT: Re-authentication successful, new tokens received', level=log_utils.LOGINFO)
-			# Use Trakt's provided expiration time instead of hardcoded 24 hours
-			expires_from_trakt = response_json['expires_in']
-			expires = str(time.time() + expires_from_trakt)
-			log_utils.log('TRAKT: Umbrella Trakt Expire: %s Trakt Expire: %s' % (str(expires),str(expires_from_trakt)), level=log_utils.LOGINFO)
-			control.homeWindow.setProperty('umbrella.updateSettings', 'false')
-			setSetting('trakt.isauthed', 'true')
-			setSetting('trakt.user.token', token)
-			setSetting('trakt.refreshtoken', refresh)
-			control.homeWindow.setProperty('umbrella.updateSettings', 'true')
-			setSetting('trakt.token.expires', expires)
-			#control.addon('script.module.myaccounts').setSetting('trakt.user.token', token)
-			#control.addon('script.module.myaccounts').setSetting('trakt.refreshtoken', refresh)
-			#control.addon('script.module.myaccounts').setSetting('trakt.token.expires', expires)
-			log_utils.log('Trakt Token Successfully Re-Authorized: expires on %s' % str(datetime.fromtimestamp(float(expires))), level=log_utils.LOGDEBUG)
-			return True
-		else:
-			log_utils.log('Error while Re-Authorizing Trakt Token: %s : %s' % (status_code, response.text), level=log_utils.LOGWARNING)
-			# If we get 401/403/405 on refresh, the refresh token is invalid
-			if status_code in ('401', '403'):
-				log_utils.log('TRAKT: Refresh token appears to be invalid, clearing tokens', level=log_utils.LOGWARNING)
-				control.homeWindow.setProperty('umbrella.updateSettings', 'false')
-				setSetting('trakt.isauthed', 'false')
-				setSetting('trakt.user.token', '')
-				setSetting('trakt.refreshtoken', '')
-				setSetting('trakt.token.expires', '')
-				control.homeWindow.setProperty('umbrella.updateSettings', 'true')
-			return False
-	except Exception as e: 
-		log_utils.log('TRAKT: Exception in re_auth: %s' % str(e), level=log_utils.LOGWARNING)
+	global _reauth_failed
+	if _reauth_failed:
 		return False
+	with _reauth_lock:
+		if _reauth_failed:
+			return False
+		if getSetting('trakt.isauthed') == 'true' and getSetting('trakt.user.token'):
+			return True  # another thread already refreshed while we waited on the lock
+		try:
+			authed_clientid = getSetting('trakt.authed.clientid')
+			current_clientid = traktClientID()
+			if authed_clientid and authed_clientid != current_clientid:
+				log_utils.log('TRAKT: Client ID mismatch detected in re_auth. Token was issued by a different client app. Re-authentication required.', level=log_utils.LOGWARNING)
+				control.notification(title=32315, message=40617)
+				control.homeWindow.setProperty('umbrella.updateSettings', 'false')
+				setSetting('trakt.isauthed', 'false')
+				setSetting('trakt.user.token', '')
+				setSetting('trakt.refreshtoken', '')
+				setSetting('trakt.token.expires', '')
+				control.homeWindow.setProperty('umbrella.updateSettings', 'true')
+				_reauth_failed = True
+				return False
+			oauth = urljoin(BASE_URL, '/oauth/token')
+			opost = {'client_id': traktClientID(), 'client_secret': traktClientSecret(), 'redirect_uri': REDIRECT_URI, 'grant_type': 'refresh_token', 'refresh_token': getSetting('trakt.refreshtoken')}
+			log_utils.log('TRAKT: Re-Authenticating with refresh token', level=log_utils.LOGINFO)
+			response = session.post(url=oauth, data=jsdumps(opost), headers=headers, timeout=20)
+			status_code = str(response.status_code)
+			error_handler(oauth, response, status_code)
+			if status_code not in ('401', '403', '405'):
+				try:
+					response_json = response.json()
+				except Exception as e:
+					log_utils.log('TRAKT: JSON decode error in re_auth: %s - Response text: %s' % (str(e), response.text), level=log_utils.LOGWARNING)
+					_reauth_failed = True
+					return False
+				if 'error' in response_json and response_json['error'] == 'invalid_grant':
+					log_utils.log('Please Re-Authorize your Trakt Account: %s : %s' % (status_code, str(response_json)), __name__, level=log_utils.LOGWARNING)
+					control.notification(title=32315, message=33677)
+					control.homeWindow.setProperty('umbrella.updateSettings', 'false')
+					setSetting('trakt.isauthed', 'false')
+					setSetting('trakt.user.token', '')
+					setSetting('trakt.refreshtoken', '')
+					setSetting('trakt.token.expires', '')
+					control.homeWindow.setProperty('umbrella.updateSettings', 'true')
+					_reauth_failed = True
+					return False
+				token, refresh = response_json['access_token'], response_json['refresh_token']
+				log_utils.log('TRAKT: Re-authentication successful, new tokens received', level=log_utils.LOGINFO)
+				expires_from_trakt = response_json['expires_in']
+				expires = str(time.time() + expires_from_trakt)
+				log_utils.log('TRAKT: Umbrella Trakt Expire: %s Trakt Expire: %s' % (str(expires), str(expires_from_trakt)), level=log_utils.LOGINFO)
+				control.homeWindow.setProperty('umbrella.updateSettings', 'false')
+				setSetting('trakt.isauthed', 'true')
+				setSetting('trakt.user.token', token)
+				setSetting('trakt.refreshtoken', refresh)
+				control.homeWindow.setProperty('umbrella.updateSettings', 'true')
+				setSetting('trakt.token.expires', expires)
+				log_utils.log('Trakt Token Successfully Re-Authorized: expires on %s' % str(datetime.fromtimestamp(float(expires))), level=log_utils.LOGDEBUG)
+				return True
+			else:
+				log_utils.log('Error while Re-Authorizing Trakt Token: %s : %s' % (status_code, response.text), level=log_utils.LOGWARNING)
+				if status_code in ('401', '403'):
+					log_utils.log('TRAKT: Refresh token appears to be invalid, clearing tokens', level=log_utils.LOGWARNING)
+					control.homeWindow.setProperty('umbrella.updateSettings', 'false')
+					setSetting('trakt.isauthed', 'false')
+					setSetting('trakt.user.token', '')
+					setSetting('trakt.refreshtoken', '')
+					setSetting('trakt.token.expires', '')
+					control.homeWindow.setProperty('umbrella.updateSettings', 'true')
+					_reauth_failed = True
+				return False
+		except Exception as e:
+			log_utils.log('TRAKT: Exception in re_auth: %s' % str(e), level=log_utils.LOGWARNING)
+			return False
 
 def traktAuth(fromSettings=0):
 	try:
@@ -296,6 +301,8 @@ def traktAuth(fromSettings=0):
 			if fromSettings == 1:
 				control.openSettings('8.3', 'plugin.video.umbrella')
 			if not control.yesnoDialog('Do you want to set Trakt as your service for your watched and unwatched indicators?','','','Indicators', 'No', 'Yes'): return True
+			global _reauth_failed
+			_reauth_failed = False
 			control.homeWindow.setProperty('umbrella.updateSettings', 'false')
 			control.setSetting('indicators.alt', '1')
 			control.setSetting('scrobble.source', '1')
@@ -337,6 +344,8 @@ def traktRevoke(fromSettings=0):
 			if getSetting('scrobble.source') == '1':
 				control.setSetting('scrobble.source', '0')
 			control.setSetting('trakt.markwatched', 'false')
+			global _reauth_failed
+			_reauth_failed = False
 			if fromSettings == 1:
 				control.openSettings('8.3', 'plugin.video.umbrella')
 				control.dialog.ok(control.lang(32315), control.lang(40109))
@@ -1781,16 +1790,22 @@ def force_traktSync():
 			os.remove(control.traktSyncFile)
 	except Exception as e:
 		log_utils.log('TRAKT: force_traktSync failed to delete database: %s' % str(e), level=log_utils.LOGWARNING)
-	sync_playbackProgress(forced=True)
-	sync_hidden_progress(forced=True)
+	# Run lightweight syncs in parallel (no internal threading, safe on low-end devices)
+	lightweight = [
+		Thread(target=sync_playbackProgress, kwargs={'forced': True}),
+		Thread(target=sync_hidden_progress, kwargs={'forced': True}),
+		Thread(target=sync_collection, kwargs={'forced': True}),
+		Thread(target=sync_watch_list, kwargs={'forced': True}),
+	]
+	[t.start() for t in lightweight]
+	[t.join() for t in lightweight]
+	# Thread-spawning functions run sequentially to cap concurrency on low-end devices
+	sync_user_lists(forced=True)
 	sync_liked_lists(forced=True)
-	sync_collection(forced=True)
-	sync_watch_list(forced=True)
 	sync_popular_lists(forced=True)
 	sync_trending_lists(forced=True)
-	sync_user_lists(forced=True)
-	sync_watched(forced=True) # writes to traktsync.db as of 1-19-2022
-	sync_watchedProgress(forced=True, trigger_refresh=False) # Trakt progress sync
+	sync_watched(forced=True)
+	sync_watchedProgress(forced=True, trigger_refresh=False)
 	control.hide()
 	control.trigger_widget_refresh() # single refresh after full sync completes
 	control.notification(message='Forced Trakt Sync Complete')
@@ -1836,7 +1851,6 @@ def sync_watched(activities=None, forced=False): # writes to traktsync.db as of 
 			cachesyncTVShows()
 			traktsync.insert_syncSeasons_at()
 			log_utils.log('Forced - Trakt Watched Sync Complete (movies + shows)', __name__, log_utils.LOGINFO)
-			control.sleep(5000)
 			service_syncSeasons()
 		else:
 			moviesWatchedActivity = getMoviesWatchedActivity(activities)
@@ -1874,7 +1888,6 @@ def sync_user_lists(activities=None, forced=False):
 				list_items = getTraktAsJson(list_link % (trakt_id, 'shows'), silent=True)
 				if not list_items or list_items == '[]': pass
 				else: i['content_type'] = 'mixed' if i['content_type'] == 'movies' else 'shows'
-				control.sleep(200)
 			traktsync.insert_user_lists(items)
 			log_utils.log('Forced - Trakt User Lists Sync Complete', __name__, log_utils.LOGDEBUG)
 		else:
@@ -1897,7 +1910,6 @@ def sync_user_lists(activities=None, forced=False):
 					list_items = getTraktAsJson(list_link % (trakt_id, 'shows'), silent=True)
 					if not list_items or list_items == '[]': pass
 					else: i['content_type'] = 'mixed' if i['content_type'] == 'movies' else 'shows'
-					control.sleep(200)
 				traktsync.insert_user_lists(items)
 	except: log_utils.error()
 

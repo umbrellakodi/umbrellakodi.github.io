@@ -234,8 +234,8 @@
 			<screenshot>resources/screenshots/screenshot003.jpg</screenshot>
 		</assets>
 		<news>
-[B]Update - v6.7.536 - Mar 25th, 2026[/B]
---[Fix] Made force trakt sync delete actual local database file first to fix malformed trakt databases.
+[B]Update - v6.7.537 - Mar 25th, 2026[/B]
+--[Fix] Trakt sync changes to speed up for speed and stability.
 		</news>
 	</extension>
 

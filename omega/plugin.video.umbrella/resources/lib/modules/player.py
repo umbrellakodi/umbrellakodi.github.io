@@ -1033,21 +1033,6 @@ class Subtitles:
 				if Player().isPlayback():
 					control.sleep(500)
 					control.notification(title=filename, message=getLS(40506) % lang.upper())
-			if self.playnext_method== '2' and getSetting('enable.playnext')== 'true' and Player().subtitletime == None: #added to check for playnext using subtitles if downloaded.
-				times = []
-				pattern = r'(\d{2}:\d{2}:\d{2},d{3}$)|(\d{2}:\d{2}:\d{2})'
-				with control.openFile(subtitles) as file:
-					text = file.read()
-					times = re.findall(pattern, text)
-					times = times[len(times)-4][-1]
-					file.close()
-				if len(times) > 0:
-					total_time = Player().media_length
-					h, m, s = str(times).split(':')
-					totalSeconds =  int(h) * 3600 + int(m) * 60 + int(s)
-					Player().subtitletime = int(total_time) - int(totalSeconds)
-				else:
-					Player().subtitletime = 'default'
 		except: log_utils.error()
 
 	def downloadForPlayNext(self,  title, year, imdb, season, episode, media_length):
@@ -1082,6 +1067,10 @@ class Subtitles:
 					return playnextTime
 			except:
 				log_utils.error()
+				return 'default'
+			if getSetting('subtitles') == 'true':
+				# Auto-download is enabled; get() handles the download and writes the temp file.
+				# Temp file not found yet means get() is still running — don't download twice.
 				return 'default'
 			try:
 				quality = ['bluray', 'hdrip', 'brrip', 'bdrip', 'dvdrip', 'webrip', 'hdtv']
