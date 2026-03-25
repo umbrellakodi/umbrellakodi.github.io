@@ -1,2 +1,2 @@
-[B]Update - v6.7.534 - Mar 24th, 2026[/B]
---[Change] Settings fix.
+[B]Update - v6.7.535 - Mar 24th, 2026[/B]
+--[Change] Removed ISO files from results to avoid viruses.
