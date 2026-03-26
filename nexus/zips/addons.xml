@@ -1,5 +1,5 @@
 <?xml version='1.0' encoding='utf-8'?>
-<addons><addon id="plugin.video.umbrella" name="Umbrella" provider-name="Umbrella" version="6.7.536">
+<addons><addon id="plugin.video.umbrella" name="Umbrella" provider-name="Umbrella" version="6.7.538">
 	<requires>
 		<import addon="xbmc.python" version="3.0.0" />
 		<import addon="script.module.requests" />
@@ -235,8 +235,10 @@
 			<screenshot>resources/screenshots/screenshot003.jpg</screenshot>
 		</assets>
 		<news>
-[B]Update - v6.7.537 - Mar 25th, 2026[/B]
---[Fix] Trakt sync changes to speed up for speed and stability.
+[B]Update - v6.7.538 - Mar 26th, 2026[/B]
+--[Change] Sexy-ized the service selection window.
+--[Fix] Artwork change for fallback for episode artwork.
+--[Fix] Made local show scrobble notifications.
 		</news>
 	</extension>
 
