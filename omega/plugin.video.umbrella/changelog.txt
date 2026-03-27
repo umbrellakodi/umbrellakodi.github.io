@@ -1,2 +1,2 @@
-[B]Update - v6.7.539 - Mar 27th, 2026[/B]
---[Fix] Changes made to trakt threading.
+[B]Update - v6.7.540 - Mar 27th, 2026[/B]
+--[Fix] Changed trakt to be accessed from a window property instead of setting.

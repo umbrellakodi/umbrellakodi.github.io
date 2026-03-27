@@ -36,14 +36,18 @@ trakt_token = getSetting('trakt.user.token')
 _reauth_lock = Lock()
 _reauth_failed = False
 _REAUTH_BUSY_PROP = 'umbrella.trakt.reauth.busy'
+_TRAKT_TOKEN_PROP = 'umbrella.trakt.access_token'
+control.homeWindow.setProperty(_TRAKT_TOKEN_PROP, getSetting('trakt.user.token') or '')
 
 def getTrakt(url, post=None, extended=False, silent=False, reauth_attempts=0):
 	try:
 		if not url.startswith(BASE_URL): url = urljoin(BASE_URL, url)
 		headers['trakt-api-key'] = traktClientID()
 		if post: post = jsdumps(post)
-		if getTraktCredentialsInfo(): 
-			current_token = getSetting('trakt.user.token')
+		if getTraktCredentialsInfo():
+			# Use homeWindow property — immediately updated after re_auth() succeeds,
+			# avoiding stale getSetting() cache causing repeat 401s on retry.
+			current_token = control.homeWindow.getProperty(_TRAKT_TOKEN_PROP) or getSetting('trakt.user.token')
 			headers['Authorization'] = 'Bearer %s' % current_token
 		if post:
 			response = session.post(url, data=post, headers=headers, timeout=20)
@@ -207,13 +211,10 @@ def re_auth(headers):
 			if control.homeWindow.getProperty(_REAUTH_BUSY_PROP) != 'true':
 				break
 			control.sleep(500)
-		# Double-check via direct (non-cached) read — getSetting() reads a stale homeWindow cache
-		# that is not updated immediately when setSetting() writes to xbmcaddon. Using xbmcaddon
-		# directly guarantees we see the token another thread/process just stored.
-		try:
-			current_token = _xbmcaddon.Addon('plugin.video.umbrella').getSetting('trakt.user.token')
-		except Exception:
-			current_token = getSetting('trakt.user.token')
+		# Double-check: read the token from the shared homeWindow property.
+		# homeWindow properties are immediately visible across ALL Kodi processes (no caching).
+		# If the token changed since we got our 401, another process already refreshed.
+		current_token = control.homeWindow.getProperty(_TRAKT_TOKEN_PROP)
 		if current_token and expired_token and current_token != expired_token:
 			return True  # Another thread/process already refreshed — caller will retry with new token
 		# Claim cross-process busy flag before making the HTTP call
@@ -268,6 +269,9 @@ def re_auth(headers):
 				setSetting('trakt.refreshtoken', refresh)
 				control.homeWindow.setProperty('umbrella.updateSettings', 'true')
 				setSetting('trakt.token.expires', expires)
+				# Publish new token immediately to homeWindow so other processes/threads
+				# see it in their double-check without waiting for xbmcaddon cache propagation.
+				control.homeWindow.setProperty(_TRAKT_TOKEN_PROP, token)
 				log_utils.log('Trakt Token Successfully Re-Authorized: expires on %s' % str(datetime.fromtimestamp(float(expires))), level=log_utils.LOGDEBUG)
 				return True
 			else:
@@ -305,6 +309,7 @@ def traktAuth(fromSettings=0):
 			control.homeWindow.setProperty('umbrella.updateSettings', 'false')
 			control.setSetting('trakt.token.expires', str(expires_at))
 			control.setSetting('trakt.user.token', deviceCode["access_token"])
+			control.homeWindow.setProperty(_TRAKT_TOKEN_PROP, deviceCode["access_token"])
 			control.setSetting('trakt.scrobble', 'true')
 			control.setSetting('resume.source', '1')
 			control.setSetting('trakt.isauthed', 'true')
@@ -369,6 +374,7 @@ def traktRevoke(fromSettings=0):
 			global _reauth_failed
 			_reauth_failed = False
 			control.homeWindow.setProperty(_REAUTH_BUSY_PROP, '')
+			control.homeWindow.setProperty(_TRAKT_TOKEN_PROP, '')
 			if fromSettings == 1:
 				control.openSettings('8.3', 'plugin.video.umbrella')
 				control.dialog.ok(control.lang(32315), control.lang(40109))
