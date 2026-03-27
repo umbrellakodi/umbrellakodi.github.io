@@ -16,6 +16,7 @@ from resources.lib.modules import cleandate
 from resources.lib.modules import control
 from resources.lib.modules import log_utils
 import time
+import xbmcaddon as _xbmcaddon
 
 getLS = control.lang
 getSetting = control.setting
@@ -34,6 +35,7 @@ trakt_icon = control.joinPath(control.artPath(), 'trakt.png')
 trakt_token = getSetting('trakt.user.token')
 _reauth_lock = Lock()
 _reauth_failed = False
+_REAUTH_BUSY_PROP = 'umbrella.trakt.reauth.busy'
 
 def getTrakt(url, post=None, extended=False, silent=False, reauth_attempts=0):
 	try:
@@ -195,11 +197,27 @@ def re_auth(headers):
 	global _reauth_failed
 	if _reauth_failed:
 		return False
+	# The expired token that triggered the 401 — used to detect if another thread already refreshed
+	expired_token = headers.get('Authorization', '').replace('Bearer ', '').strip()
 	with _reauth_lock:
 		if _reauth_failed:
 			return False
-		if getSetting('trakt.isauthed') == 'true' and getSetting('trakt.user.token'):
-			return True  # another thread already refreshed while we waited on the lock
+		# Cross-process wait: if another process is currently refreshing, wait up to 5 s
+		for _ in range(10):
+			if control.homeWindow.getProperty(_REAUTH_BUSY_PROP) != 'true':
+				break
+			control.sleep(500)
+		# Double-check via direct (non-cached) read — getSetting() reads a stale homeWindow cache
+		# that is not updated immediately when setSetting() writes to xbmcaddon. Using xbmcaddon
+		# directly guarantees we see the token another thread/process just stored.
+		try:
+			current_token = _xbmcaddon.Addon('plugin.video.umbrella').getSetting('trakt.user.token')
+		except Exception:
+			current_token = getSetting('trakt.user.token')
+		if current_token and expired_token and current_token != expired_token:
+			return True  # Another thread/process already refreshed — caller will retry with new token
+		# Claim cross-process busy flag before making the HTTP call
+		control.homeWindow.setProperty(_REAUTH_BUSY_PROP, 'true')
 		try:
 			authed_clientid = getSetting('trakt.authed.clientid')
 			current_clientid = traktClientID()
@@ -227,7 +245,8 @@ def re_auth(headers):
 					log_utils.log('TRAKT: JSON decode error in re_auth: %s - Response text: %s' % (str(e), response.text), level=log_utils.LOGWARNING)
 					_reauth_failed = True
 					return False
-				if 'error' in response_json and response_json['error'] == 'invalid_grant':
+				if 'access_token' not in response_json:
+					# Handles invalid_grant, invalid_client, Cloudflare rate limit JSON, or any other error response
 					log_utils.log('Please Re-Authorize your Trakt Account: %s : %s' % (status_code, str(response_json)), __name__, level=log_utils.LOGWARNING)
 					control.notification(title=32315, message=33677)
 					control.homeWindow.setProperty('umbrella.updateSettings', 'false')
@@ -261,11 +280,13 @@ def re_auth(headers):
 					setSetting('trakt.refreshtoken', '')
 					setSetting('trakt.token.expires', '')
 					control.homeWindow.setProperty('umbrella.updateSettings', 'true')
-					_reauth_failed = True
+				_reauth_failed = True
 				return False
 		except Exception as e:
 			log_utils.log('TRAKT: Exception in re_auth: %s' % str(e), level=log_utils.LOGWARNING)
 			return False
+		finally:
+			control.homeWindow.setProperty(_REAUTH_BUSY_PROP, '')
 
 def traktAuth(fromSettings=0):
 	try:
@@ -303,6 +324,7 @@ def traktAuth(fromSettings=0):
 			if not control.yesnoDialog('Do you want to set Trakt as your service for your watched and unwatched indicators?','','','Indicators', 'No', 'Yes'): return True
 			global _reauth_failed
 			_reauth_failed = False
+			control.homeWindow.setProperty(_REAUTH_BUSY_PROP, '')
 			control.homeWindow.setProperty('umbrella.updateSettings', 'false')
 			control.setSetting('indicators.alt', '1')
 			control.setSetting('scrobble.source', '1')
@@ -346,6 +368,7 @@ def traktRevoke(fromSettings=0):
 			control.setSetting('trakt.markwatched', 'false')
 			global _reauth_failed
 			_reauth_failed = False
+			control.homeWindow.setProperty(_REAUTH_BUSY_PROP, '')
 			if fromSettings == 1:
 				control.openSettings('8.3', 'plugin.video.umbrella')
 				control.dialog.ok(control.lang(32315), control.lang(40109))

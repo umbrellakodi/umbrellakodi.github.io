@@ -1,4 +1,2 @@
-[B]Update - v6.7.538 - Mar 26th, 2026[/B]
---[Change] Sexy-ized the service selection window.
---[Fix] Artwork change for fallback for episode artwork.
---[Fix] Made local show scrobble notifications.
+[B]Update - v6.7.539 - Mar 27th, 2026[/B]
+--[Fix] Changes made to trakt threading.
