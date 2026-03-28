@@ -474,13 +474,13 @@ class Player(xbmc.Player):
 									self.preScrape_triggered = True
 								remaining_time = self.getRemainingTime()
 								if self.playnext_method== '0':
-									if remaining_time < (self.playnext_time + 1) and remaining_time != 0:
+									if remaining_time < (self.playnext_time + 1) and remaining_time > 0:
 										if self.debuglog:
 											log_utils.log('Playnext triggered by method time. IMDB: %s Title: %s Time Used: %s Remaining Time: %s' % (self.imdb, self.title, self.playnext_time, remaining_time), level=log_utils.LOGDEBUG)
 										xbmc.executebuiltin('RunPlugin(plugin://plugin.video.umbrella/?action=play_nextWindowXML)')
 										self.play_next_triggered = True
 								elif self.playnext_method== '1':	
-									if self.getWatchedPercent() >= int(self.playnext_percentage) and remaining_time != 0:
+									if self.getWatchedPercent() >= int(self.playnext_percentage) and remaining_time > 0:
 										if self.debuglog:
 											log_utils.log('Playnext triggered by method percentage. IMDB: %s Title: %s Percentage Used: %s Current Percentage: %s' % (self.imdb, self.title, self.playnext_percentage, self.getWatchedPercent()), level=log_utils.LOGDEBUG)
 										xbmc.executebuiltin('RunPlugin(plugin://plugin.video.umbrella/?action=play_nextWindowXML)')
@@ -491,14 +491,14 @@ class Player(xbmc.Player):
 									if str(self.subtitletime) == 'default':
 										if getSetting('playnext.sub.backupmethod')== '0': #subtitle failed use seconds as backup
 											subtitletimeumb = int(getSetting('playnext.sub.seconds'))
-											if remaining_time < (subtitletimeumb + 1) and remaining_time != 0:
+											if remaining_time < (subtitletimeumb + 1) and remaining_time > 0:
 												if self.debuglog:
 													log_utils.log('Playnext triggered by method subtitle backup. IMDB: %s Title: %s Time Used: %s Current Time: %s' % (self.imdb, self.title, subtitletimeumb, remaining_time), level=log_utils.LOGDEBUG)
 												xbmc.executebuiltin('RunPlugin(plugin://plugin.video.umbrella/?action=play_nextWindowXML)')
 												self.play_next_triggered = True
 										elif getSetting('playnext.sub.backupmethod') == '1': #subtitle failed use percentage as backup
 											subtitletimeumb = int(getSetting('playnext.sub.percent'))
-											if self.getWatchedPercent() >= int(subtitletimeumb) and remaining_time != 0:
+											if self.getWatchedPercent() >= int(subtitletimeumb) and remaining_time > 0:
 												if self.debuglog:
 													log_utils.log('Playnext triggered by method subtitle backup. IMDB: %s Title: %s Percent Used: %s Current Percent: %s' % (self.imdb, self.title, subtitletimeumb, self.getWatchedPercent()), level=log_utils.LOGDEBUG)
 												xbmc.executebuiltin('RunPlugin(plugin://plugin.video.umbrella/?action=play_nextWindowXML)')
@@ -511,7 +511,7 @@ class Player(xbmc.Player):
 											#subtitle time is greater than 10 minutes we need to use the default now.
 											log_utils.log('Playnext triggered by method subtitle but the time is over 10 minutes. IMDB: %s Title: %s Time Attempting to Use Was: %s Changed to: %s Current Time: %s' % (self.imdb, self.title, self.subtitletime, int(getSetting('playnext.sub.seconds')), remaining_time), level=log_utils.LOGDEBUG)
 											self.subtitletime = int(getSetting('playnext.sub.seconds'))
-										if (remaining_time < (int(self.subtitletime) + 1) or remaining_time < int(self.playnext_min)) and remaining_time != 0:
+										if (remaining_time < (int(self.subtitletime) + 1) or remaining_time < int(self.playnext_min)) and remaining_time > 0:
 											if self.debuglog:
 													log_utils.log('Playnext triggered by method subtitle. IMDB: %s Title: %s Subtitle Time Used: %s Current Time: %s' % (self.imdb, self.title, self.subtitletime, remaining_time), level=log_utils.LOGDEBUG)
 											xbmc.executebuiltin('RunPlugin(plugin://plugin.video.umbrella/?action=play_nextWindowXML)')

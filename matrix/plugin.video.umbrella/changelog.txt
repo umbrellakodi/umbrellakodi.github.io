@@ -1,2 +1,2 @@
-[B]Update - v6.7.540 - Mar 27th, 2026[/B]
---[Fix] Changed trakt to be accessed from a window property instead of setting.
+[B]Update - v6.7.541 - Mar 27th, 2026[/B]
+--[Fix] Changes made for playnext popup windows.
