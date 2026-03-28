@@ -235,8 +235,11 @@
 			<screenshot>resources/screenshots/screenshot003.jpg</screenshot>
 		</assets>
 		<news>
-[B]Update - v6.7.542 - Mar 28th, 2026[/B]
---[Fix] Changes made for how some values are retreived due to resuselanginvoker caching window ids.
+[B]Update - v6.7.61 - Mar 28th, 2026 [/B]
+--[Fix] Changes for those using reuselanguageInvoker
+--[Fix] Chnages for trakt key and storage.
+--[Change] Changed the way online services popup and scrobble services popup looked. motivated by pov so credit to kfw.
+
 		</news>
 	</extension>
 

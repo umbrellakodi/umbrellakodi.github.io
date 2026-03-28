@@ -1,107 +1,24 @@
-[B]Update - v6.7.542 - Mar 28th, 2026[/B]
---[Fix] Changes made for how some values are retreived due to resuselanginvoker caching window ids.
+[B]Update - v6.7.61 - Mar 28th, 2026 [/B]
+--[Fix] Changes for those using reuselanguageInvoker
+--[Fix] Chnages for trakt key and storage.
+--[Change] Changed the way online services popup and scrobble services popup looked. motivated by pov so credit to kfw.
 
-[B]Update - v6.7.541 - Mar 27th, 2026[/B]
---[Fix] Changes made for playnext popup windows.
-
-[B]Update - v6.7.540 - Mar 27th, 2026[/B]
---[Fix] Changed trakt to be accessed from a window property instead of setting.
-
-[B]Update - v6.7.539 - Mar 27th, 2026[/B]
---[Fix] Changes made to trakt threading.
-
-[B]Update - v6.7.538 - Mar 26th, 2026[/B]
---[Change] Sexy-ized the service selection window.
---[Fix] Artwork change for fallback for episode artwork.
---[Fix] Made local show scrobble notifications.
-
-[B]Update - v6.7.537 - Mar 25th, 2026[/B]
---[Fix] Trakt sync changes to speed up for speed and stability.
-
-[B]Update - v6.7.536 - Mar 24th, 2026[/B]
+[B]Update - v6.7.60 - Mar 25th, 2026[/B]
 --[Fix] Made force trakt sync delete actual local database file first to fix malformed trakt databases.
+--[Change] Removed ISO files from results.
 
-[B]Update - v6.7.535 - Mar 24th, 2026[/B]
---[Change] Removed ISO files from results to avoid viruses.
-
-[B]Update - v6.7.534 - Mar 24th, 2026[/B]
---[Change] Settings fix.
-
-[B]Update - v6.7.533 - Mar 24th, 2026[/B]
---[Change] Moved back to using setResumePoint for resume points.
---[Change] Added Offcloud Cloud back.
-
-[B]Update - v6.7.532 - Mar 23rd, 2026[/B]
---[Fix] Offcloud login.
-
-[B]Update - v6.7.531 - Mar 23rd, 2026[/B]
---[Change] More offcloud changes.
-
-[B]Update - v6.7.530 - Mar 23rd, 2026[/B]
+[B]Update - v6.7.59 - Mar 24th, 2026[/B]
 --[Change] Updated for new offcloud api changes.
-
-[B]Update - v6.7.529 - Mar 22nd, 2026[/B]
---[Fix] Fixed error in control.
-
-[B]Update - v6.7.528 - Mar 22nd, 2026[/B]
 --[Fix] Simkl sorting fix for movies.
 --[Fix] Trakt sorting for data_watched on movies and others..
---[Info] Will be trying to add offcloud back before pushing to release side.
-
-[B]Update - v6.7.527 - Mar 21st, 2026[/B]
---[Fix] Changes to player for onPlaybackEnded to add a try catch.
---[Fix] Changes to cache.py to catch some errors on clear_local_bookmarks.
-
-[B]Update - v6.7.526 - Mar 19th, 2026[/B]
 --[Fix] Fix for double scrobble when onPlayBackStopped and onPlayBackEneded have already run.
---[Change] Fix for torbox and offcloud broken try statements.
---[Fix] Added resets for variables between episodes when using playnext.
-
-[B]Update - v6.7.525 - Mar 18th, 2026[/B]
---[Fix] Fix for error in code.
-
-[B]Update - v6.7.524 - Mar 18th, 2026[/B]
---[Fix] Fix for double scrobble when onPlayBackStopped and onPlayBackEneded have already run.
-
-[B]Update - v6.7.523 - Mar 18th, 2026[/B]
---[Change] Added settings for threads.
-
-[B]Update - v6.7.522 - Mar 18th, 2026[/B]
---[Fix] Added logging to start to show services set.
-
-[B]Update - v6.7.521 - Mar 18th, 2026[/B]
---[Fix] Changes made for mdblist double marking episodes as watched.
-
-[B]Update - v6.7.520 - Mar 18th, 2026[/B]
 --[Fix] Made changes to endpoints being called for mdblist scrobble and mark as watched.
 
-[B]Update - v6.7.519 - Mar 17th, 2026[/B]
---[Fix] Broken trakt due to syntax error.
+[B]Update - v6.7.58 - Mar 17th, 2026[/B]
+--[Fix] Changes made to trakt to try to fix issues with Trakt sync causing out of memory error and crashing kodi.
 
-[B]Update - v6.7.518 - Mar 17th, 2026[/B]
---[Changes] Removed widget refreshes from sync activity.
-
-[B]Update - v6.7.517 - Mar 17th, 2026[/B]
---[Fix] Removed extended=full from watchedShows()
-
-[B]Update - v6.7.516 - Mar 17th, 2026[/B]
---[Change] Changed trakt syncSeasons and watchHistory.
---[Change] Changed trakt calls to be a max of 20 threads.
-
-[B]Update - v6.7.515 - Mar 16th, 2026[/B]
---[Change] Additonal logging added for trakt sync removed.
-
-[B]Update - v6.7.514 - Mar 16th, 2026[/B]
---[Fix] Pagination error when trakt syncing fix.
-
-[B]Update - v6.7.513 - Mar 16th, 2026[/B]
---[Logging] Logging changed to indicate where in the process trakt sync is crashing.
-
-[B]Update - v6.7.512 - Mar 16th, 2026[/B]
---[Fix] More changes for limiting number of trakt threads spawned when doing batch calls.
-
-[B]Update - v6.7.511 - Mar 16th, 2026[/B]
---[Fix] Changed Trakt to do batch calls in groups of 10 to control the amount of threads spawned.
+[B]Update - v6.7.57 - Mar 16th, 2026[/B]
+--[Fix] Fix for issues with Trakt Sync causing crashes.
 
 [B]Update - v6.7.56 - Mar 16th, 2026[/B]
 --[Fix] Threading change for Trakt sync to stop crashes.
