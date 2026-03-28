@@ -1,6 +1,6 @@
-[B]Update - v6.7.61 - Mar 28th, 2026 [/B]
+[B]Update - v6.7.543 - Mar 28th, 2026 [/B]
 --[Fix] Changes for those using reuselanguageInvoker
---[Fix] Chnages for trakt key and storage.
+--[Fix] Changes for trakt key and storage.
 --[Change] Changed the way online services popup and scrobble services popup looked. motivated by pov so credit to kfw.
 
 [B]Update - v6.7.60 - Mar 25th, 2026[/B]

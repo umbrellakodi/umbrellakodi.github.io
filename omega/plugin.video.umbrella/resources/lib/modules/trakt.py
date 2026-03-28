@@ -335,6 +335,8 @@ def traktAuth(fromSettings=0):
 			control.setSetting('scrobble.source', '1')
 			control.homeWindow.setProperty('umbrella.updateSettings', 'true')
 			control.setSetting('indicators', 'Trakt')
+			control.notification(message='Trakt Indicators Enabled - Syncing Watched Data...')
+			Thread(target=sync_watched, kwargs={'forced': True}).start()
 			return True
 		if fromSettings == 1:
 				control.openSettings('8.3', 'plugin.video.umbrella')
@@ -1834,10 +1836,10 @@ def force_traktSync():
 	sync_popular_lists(forced=True)
 	sync_trending_lists(forced=True)
 	sync_watched(forced=True)
-	sync_watchedProgress(forced=True, trigger_refresh=False)
 	control.hide()
-	control.trigger_widget_refresh() # single refresh after full sync completes
-	control.notification(message='Forced Trakt Sync Complete')
+	control.trigger_widget_refresh() # refresh after watched sync, progress will refresh again when done
+	control.notification(message='Trakt Sync Complete - Progress List Updating...')
+	Thread(target=sync_watchedProgress, kwargs={'forced': True, 'trigger_refresh': True}).start()
 
 def sync_playbackProgress(activities=None, forced=False):
 	#log_utils.log('Trakt Sync Playback Called Forced: %s' % (str(forced)), level=log_utils.LOGDEBUG)
