@@ -695,7 +695,7 @@ class Player(xbmc.Player):
 			except:
 				playingfile = False
 			log_utils.log('onPlayBackEnded Playlist Position: %s isPlaying: %s' % (control.playlist.getposition(), playingfile), level=log_utils.LOGDEBUG)
-			if control.playlist.getposition() == control.playlist.size() or control.playlist.size() == 1 or (control.playlist.getposition() == 0 and playerWindow.getProperty('playnextPlayPressed') == '0'):
+			if control.playlist.getposition() == control.playlist.size() or control.playlist.size() == 1 or (control.playlist.getposition() == 0 and playerWindow.getProperty('umbrella.playnextPlayPressed') == '0'):
 				control.playlist.clear()
 			log_utils.log('onPlayBackEnded callback', level=log_utils.LOGDEBUG)
 			#control.checkforSkin(action='off')
@@ -740,7 +740,7 @@ class PlayNext(xbmc.Player):
 			else: return
 			if self.playing_file != self.getPlayingFile(): return
 			if not self.isPlayingVideo(): return
-			if control.getCurrentWindowId != 12005: return
+			if not xbmc.getCondVisibility('Window.IsVisible(fullscreenvideo)'): return
 			target()
 
 	def isStill_watching(self):

@@ -1,2 +1,2 @@
-[B]Update - v6.7.541 - Mar 27th, 2026[/B]
---[Fix] Changes made for playnext popup windows.
+[B]Update - v6.7.542 - Mar 28th, 2026[/B]
+--[Fix] Changes made for how some values are retreived due to resuselanginvoker caching window ids.

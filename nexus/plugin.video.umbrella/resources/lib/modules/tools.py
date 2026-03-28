@@ -191,7 +191,7 @@ def setIndicatorService():
 			li.setArt({'icon': icon, 'thumb': icon})
 			items.append(li)
 		select = control.selectDialog(items, 'Please select service to use for indicators:', useDetails=True)
-		if select == -1: return
+		if select == -1: control.openSettings('8.0', 'plugin.video.umbrella'); return
 		selection, _, optionVal = service_map[select]
 
 		if currentSetting != optionVal:
@@ -227,7 +227,7 @@ def setScrobbleService():
 			li.setArt({'icon': icon, 'thumb': icon})
 			items.append(li)
 		select = control.selectDialog(items, getLS(40623), useDetails=True)
-		if select == -1: return
+		if select == -1: control.openSettings('8.0', 'plugin.video.umbrella'); return
 		selection, _, optionVal = service_map[select]
 		control.homeWindow.setProperty('umbrella.updateSettings', 'false')
 		control.setSetting('scrobble.source', optionVal)

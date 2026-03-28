@@ -1818,8 +1818,12 @@ class TVshows:
 			if self.list is None: self.list = []
 			try:
 				hidden = traktsync.fetch_hidden_progress()
-				hidden = [str(i['tvdb']) for i in hidden]
-				self.list = [i for i in self.list if i['tvdb'] not in hidden] # removes hidden progress items
+				hidden_imdb = {str(i['imdb']) for i in hidden if i.get('imdb')}
+				hidden_tvdb = {str(i['tvdb']) for i in hidden if i.get('tvdb')}
+				self.list = [i for i in self.list if not (
+					(i.get('imdb') and i['imdb'] in hidden_imdb) or
+					(i.get('tvdb') and i['tvdb'] in hidden_tvdb)
+				)] # removes dropped/hidden progress items
 				prior_week = int(re.sub(r'[^0-9]', '', (self.date_time - timedelta(days=7)).strftime('%Y-%m-%d')))
 				sorted_list = []
 				top_items = [i for i in self.list if i['premiered'] and (int(re.sub(r'[^0-9]', '', str(i['premiered']))) >= prior_week)]
