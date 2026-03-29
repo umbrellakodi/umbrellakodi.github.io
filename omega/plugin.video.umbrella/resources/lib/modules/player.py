@@ -243,13 +243,13 @@ class Player(xbmc.Player):
 						tvshowid = show_meta['tvshowid']
 						if tvshowid:
 							dbidmetameta = control.jsonrpc('{"jsonrpc": "2.0", "method": "VideoLibrary.GetEpisodes", "params":{"tvshowid": %d, "filter":{"and": [{"field": "season", "operator": "is", "value": "%s"}, {"field": "episode", "operator": "is", "value": "%s"}]}, "properties": ["showtitle", "title", "season", "episode", "firstaired", "runtime", "rating", "director", "writer", "cast", "plot", "thumbnail", "art", "file"]}, "id": 1}' % (tvshowid, self.season, self.episode))
-							dbidmetameta = jsloads(meta)['result']['episodes']
-						if dbidmetameta: meta = meta[0]
+							dbidmetameta = jsloads(dbidmetameta)['result']['episodes']
+						if dbidmetameta: meta = dbidmetameta[0]
 						else: raise Exception()
 						return meta.get('episodeid')
 				except:
 					log_utils.error()
-					return ''
+					return None
 			poster = meta.get('poster3') or meta.get('poster2') or meta.get('poster') #poster2 and poster3 may not be passed anymore
 			thumb = meta.get('thumb')
 			thumb = thumb or poster or control.addonThumb()
@@ -556,7 +556,7 @@ class Player(xbmc.Player):
 		return playing and playingvideo and playTime
 
 	def libForPlayback(self):
-		if self.DBID is None: return
+		if not self.DBID: return
 		try:
 			if self.media_type == 'movie':
 				rpc = '{"jsonrpc": "2.0", "method": "VideoLibrary.SetMovieDetails", "params": {"movieid": %s, "playcount": 1 }, "id": 1 }' % str(self.DBID)

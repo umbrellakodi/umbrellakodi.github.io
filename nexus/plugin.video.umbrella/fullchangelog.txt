@@ -1,4 +1,5 @@
-[B]Update - v6.7.543 - Mar 28th, 2026 [/B]
+[B]Update - v6.7.544 - Mar 28th, 2026 [/B]
+--[Fix] Changes to the way json is read back from kodi.
 --[Fix] Changes for those using reuselanguageInvoker
 --[Fix] Changes for trakt key and storage.
 --[Change] Changed the way online services popup and scrobble services popup looked. motivated by pov so credit to kfw.

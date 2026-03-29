@@ -1116,24 +1116,30 @@ def watchedMoviesTime(imdb):
 			if str(item['movie']['ids']['imdb']) == imdb: return item['last_watched_at']
 	except: log_utils.error()
 
+def _fetch_watched_movies_dates():
+	items = get_all_pages('/users/me/watched/movies')
+	if not items: return {}
+	return {str(i['movie']['ids']['imdb']): i.get('last_watched_at', '') for i in items if i.get('movie', {}).get('ids', {}).get('imdb')}
+
 def getWatchedMoviesLastWatchedDates():
 	"""Returns {imdb_id: last_watched_at} for all watched movies. Used to populate lastplayed for sort-by-date-watched on user lists."""
 	try:
 		if not getTraktCredentialsInfo(): return {}
-		items = get_all_pages('/users/me/watched/movies')
-		if not items: return {}
-		return {str(i['movie']['ids']['imdb']): i.get('last_watched_at', '') for i in items if i.get('movie', {}).get('ids', {}).get('imdb')}
+		return traktsync.get(_fetch_watched_movies_dates, 60) or {}
 	except:
 		log_utils.error()
 		return {}
+
+def _fetch_watched_shows_dates():
+	items = get_all_pages('/users/me/watched/shows')
+	if not items: return {}
+	return {str(i['show']['ids']['tvdb']): i.get('last_watched_at', '') for i in items if i.get('show', {}).get('ids', {}).get('tvdb')}
 
 def getWatchedShowsLastWatchedDates():
 	"""Returns {tvdb_id: last_watched_at} for all watched shows. Used to populate lastplayed for sort-by-date-watched on user lists."""
 	try:
 		if not getTraktCredentialsInfo(): return {}
-		items = get_all_pages('/users/me/watched/shows')
-		if not items: return {}
-		return {str(i['show']['ids']['tvdb']): i.get('last_watched_at', '') for i in items if i.get('show', {}).get('ids', {}).get('tvdb')}
+		return traktsync.get(_fetch_watched_shows_dates, 60) or {}
 	except:
 		log_utils.error()
 		return {}
