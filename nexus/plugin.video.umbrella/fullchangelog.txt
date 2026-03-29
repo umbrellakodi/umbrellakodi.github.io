@@ -1,3 +1,8 @@
+[B]Update - v6.7.546 - Mar 29th, 2026 [/B]
+--[Fix] Real-Debrid error notifications (internal_error, connection errors) are now suppressed during background pre-resolve so they no longer pop up on-screen mid-playback.
+--[Fix] Fixed Real-Debrid server notifications setting being ignored (boolean setting was always evaluating as true regardless of user preference).
+--[Debug] Added comprehensive debug logging to addEpisodetoPlaylist, keepAlive playnext checks, and prescrapeNext to help diagnose cases where the playnext popup does not appear.
+
 [B]Update - v6.7.545 - Mar 28th, 2026 [/B]
 --[Fix] Changes for playnext total time remaining calculation.
 
