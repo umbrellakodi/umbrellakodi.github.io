@@ -1,2 +1,2 @@
-[B]Update - v6.7.544 - Mar 28th, 2026 [/B]
---[Fix] Changes to the way json is read back from kodi.
+[B]Update - v6.7.545 - Mar 28th, 2026 [/B]
+--[Fix] Changes for playnext total time remaining calculation.

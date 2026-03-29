@@ -391,7 +391,7 @@ class Player(xbmc.Player):
 					position = self.getTime()
 					if position != 0: self.current_time = position
 					total_length = self.getTotalTime()
-					if total_length != 0: self.media_length = total_length
+					if total_length > 0: self.media_length = max(self.media_length, total_length)
 				except: pass
 			current_position = self.current_time
 			#log_utils.log('getWatchedPercent() current_position: %s' % current_position, level=log_utils.LOGDEBUG)
@@ -444,7 +444,8 @@ class Player(xbmc.Player):
 
 				try:
 					self.current_time = self.getTime()
-					self.media_length = self.getTotalTime()
+					_total = self.getTotalTime()
+					if _total > 0: self.media_length = max(self.media_length, _total)
 				except: pass
 				watcher = (self.getWatchedPercent() >= int(self.markwatched_percentage))
 				property = homeWindow.getProperty(pname)
@@ -480,7 +481,7 @@ class Player(xbmc.Player):
 										xbmc.executebuiltin('RunPlugin(plugin://plugin.video.umbrella/?action=play_nextWindowXML)')
 										self.play_next_triggered = True
 								elif self.playnext_method== '1':	
-									if self.getWatchedPercent() >= int(self.playnext_percentage) and remaining_time > 0:
+									if self.getWatchedPercent() >= int(self.playnext_percentage) and remaining_time >= 0:
 										if self.debuglog:
 											log_utils.log('Playnext triggered by method percentage. IMDB: %s Title: %s Percentage Used: %s Current Percentage: %s' % (self.imdb, self.title, self.playnext_percentage, self.getWatchedPercent()), level=log_utils.LOGDEBUG)
 										xbmc.executebuiltin('RunPlugin(plugin://plugin.video.umbrella/?action=play_nextWindowXML)')
