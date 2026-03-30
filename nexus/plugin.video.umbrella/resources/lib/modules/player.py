@@ -4,6 +4,7 @@
 """
 
 from hashlib import md5
+from threading import Thread
 from json import dumps as jsdumps, loads as jsloads
 from sys import argv, exit as sysexit
 from sqlite3 import dbapi2 as database
@@ -488,7 +489,7 @@ class Player(xbmc.Player):
 							homeWindow.setProperty(pname, '5')
 							if self.debuglog:
 								log_utils.log('Sending Episode to be marked as watched. IMDB: %s TVDB: %s Season: %s Episode: %s Title: %s Watch Percentage Used: %s Current Percentage: %s' % (self.imdb, self.tvdb, self.season, self.episode, self.title, self.markwatched_percentage, self.getWatchedPercent()), level=log_utils.LOGDEBUG)
-							playcount.markEpisodeDuringPlayback(self.imdb, self.tvdb, self.season, self.episode, '5')
+							Thread(target=playcount.markEpisodeDuringPlayback, args=(self.imdb, self.tvdb, self.season, self.episode, '5')).start()
 							self.watched_during_playback = True
 						if self.enable_playnext and not self.play_next_triggered:
 							playlist_size = int(control.playlist.size())

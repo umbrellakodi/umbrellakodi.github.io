@@ -1964,7 +1964,7 @@ def sync_liked_lists(activities=None, forced=False):
 							'public_lists': False, 'shows_collection': False, 'shows_watchlist': False, 'user_lists': False, 'watched': False}
 			traktsync.delete_tables(clr_traktSync)
 			items = get_all_pages(link, silent=True)
-			if not items: return
+			if items is None: return
 			thrd_items = []
 			def items_list(i):
 				list_item = i.get('list', {})
