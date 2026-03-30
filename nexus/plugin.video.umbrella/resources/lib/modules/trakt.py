@@ -1815,18 +1815,24 @@ def trakt_service_sync():
 			sync_trending_lists()
 		if control.monitor.waitForAbort(60*service_syncInterval): break
 
+def delete_traktSyncDatabase():
+	import os
+	if not control.yesnoDialog('Are you sure you want to delete the Trakt sync database? This will clear all cached Trakt data and force a full re-sync.', '', ''): return
+	try:
+		if os.path.exists(control.traktSyncFile):
+			os.remove(control.traktSyncFile)
+			control.notification(message='Trakt sync database deleted. Run Force Sync to rebuild.')
+			log_utils.log('TRAKT: traktsync database deleted by user.', level=log_utils.LOGINFO)
+		else:
+			control.notification(message='Trakt sync database not found.')
+	except Exception as e:
+		control.notification(message='Failed to delete Trakt sync database: %s' % str(e))
+		log_utils.log('TRAKT: delete_traktSyncDatabase failed: %s' % str(e), level=log_utils.LOGWARNING)
+
 def force_traktSync():
 	if not control.yesnoDialog(getLS(32056), '', ''): return
 	control.busy()
 
-	# delete the physical DB file so corruption can't block the sync
-	# tables are recreated fresh by each sync function via CREATE TABLE IF NOT EXISTS
-	import os
-	try:
-		if os.path.exists(control.traktSyncFile):
-			os.remove(control.traktSyncFile)
-	except Exception as e:
-		log_utils.log('TRAKT: force_traktSync failed to delete database: %s' % str(e), level=log_utils.LOGWARNING)
 	# Run lightweight syncs in parallel (no internal threading, safe on low-end devices)
 	lightweight = [
 		Thread(target=sync_playbackProgress, kwargs={'forced': True}),

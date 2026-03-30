@@ -1,3 +1,2 @@
-[B]Update - v6.7.548 - Mar 30th, 2026 [/B]
---[Fix] Fix for Trakt sync error causing endless sync when user has no liked lists.
---[Fix] Made a change to mark episode as watched using a thread to stop blocking other processses.
+[B]Update - v6.7.549 - Mar 30th, 2026 [/B]
+--[Change] Made changes to the trakt force sync to no longer delete database and added individual option to do it.
