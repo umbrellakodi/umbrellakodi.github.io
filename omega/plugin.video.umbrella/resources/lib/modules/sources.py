@@ -798,7 +798,7 @@ class Sources:
 			log_utils.error()
 			return playerWindow.clearProperty('umbrella.preResolved_nextUrl')
 
-		playerWindow.setProperty('umbrella.preResolving', 'true')
+		homeWindow.setProperty('umbrella.preResolving', 'true')
 		try:
 			for i in range(len(next_sources)):
 				try:
@@ -832,7 +832,7 @@ class Sources:
 					except: pass
 				except: log_utils.error()
 		finally:
-			playerWindow.clearProperty('umbrella.preResolving')
+			homeWindow.clearProperty('umbrella.preResolving')
 		control.sleep(200)
 
 	def prepareSources(self):
