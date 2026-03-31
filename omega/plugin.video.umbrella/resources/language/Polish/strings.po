@@ -3366,7 +3366,7 @@ msgid "[COLOR %s][B]Force Trakt Sync to local database[/B][/COLOR]"
 msgstr "[COLOR %s][B]Wymuś synchronizację Trakt z lokalną bazą danych[/B][/COLOR]"
 
 msgctxt "#35067"
-msgid ""
+msgid "[COLOR %s][B]Delete Trakt Sync Database[/B][/COLOR]"
 msgstr ""
 
 msgctxt "#35068"
@@ -6902,4 +6902,8 @@ msgstr ""
 
 msgctxt "#40664"
 msgid "Visit offcloud.com/activate and enter the code shown"
+msgstr ""
+
+msgctxt "#40665"
+msgid "Performance"
 msgstr ""

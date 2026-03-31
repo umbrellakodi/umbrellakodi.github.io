@@ -493,24 +493,18 @@ class Player(xbmc.Player):
 							self.watched_during_playback = True
 						if self.enable_playnext and not self.play_next_triggered:
 							playlist_size = int(control.playlist.size())
-							if self.debuglog and playlist_size <= 1 and not self.preScrape_triggered:
-								log_utils.log('Playnext waiting: playlist size=%s (next episode not yet added)' % playlist_size, level=log_utils.LOGDEBUG)
 							if playlist_size > 1:
 								if self.preScrape_triggered == False:
 									xbmc.executebuiltin('RunPlugin(plugin://plugin.video.umbrella/?action=play_preScrapeNext)')
 									self.preScrape_triggered = True
 								remaining_time = self.getRemainingTime()
 								if self.playnext_method== '0':
-									if self.debuglog and remaining_time > 0 and remaining_time < (self.playnext_time + 120):
-										log_utils.log('Playnext check (time method): remaining=%ss threshold=%ss media_length=%ss' % (remaining_time, self.playnext_time, self.media_length), level=log_utils.LOGDEBUG)
 									if remaining_time < (self.playnext_time + 1) and remaining_time > 0:
 										if self.debuglog:
 											log_utils.log('Playnext triggered by method time. IMDB: %s Title: %s Time Used: %s Remaining Time: %s' % (self.imdb, self.title, self.playnext_time, remaining_time), level=log_utils.LOGDEBUG)
 										xbmc.executebuiltin('RunPlugin(plugin://plugin.video.umbrella/?action=play_nextWindowXML)')
 										self.play_next_triggered = True
 								elif self.playnext_method== '1':
-									if self.debuglog:
-										log_utils.log('Playnext check (percent method): watched=%s%% threshold=%s%% remaining=%ss media_length=%ss' % (self.getWatchedPercent(), self.playnext_percentage, remaining_time, self.media_length), level=log_utils.LOGDEBUG)
 									if self.getWatchedPercent() >= int(self.playnext_percentage) and remaining_time >= 0:
 										if self.debuglog:
 											log_utils.log('Playnext triggered by method percentage. IMDB: %s Title: %s Percentage Used: %s Current Percentage: %s' % (self.imdb, self.title, self.playnext_percentage, self.getWatchedPercent()), level=log_utils.LOGDEBUG)
@@ -892,7 +886,6 @@ class PlayNext(xbmc.Player):
 			if getSetting('play.mode.tv') == '0': return
 			playlist_pos = control.playlist.getposition()
 			playlist_size = control.playlist.size()
-			if self.debuglog: log_utils.log('prescrapeNext: playlist size=%s position=%s' % (playlist_size, playlist_pos), level=log_utils.LOGDEBUG)
 			if playlist_size > 0 and playlist_pos != (playlist_size - 1):
 				from resources.lib.modules import sources
 				from resources.lib.database import providerscache
@@ -911,7 +904,6 @@ class PlayNext(xbmc.Player):
 				premiered = next_meta.get('premiered')
 				if self.debuglog: log_utils.log('prescrapeNext: scraping sources for "%s" S%sE%s' % (tvshowtitle, season, episode), level=log_utils.LOGDEBUG)
 				next_sources = providerscache.get(sources.Sources().getSources, self.providercache_hours, title, year, imdb, tmdb, tvdb, str(season), str(episode), tvshowtitle, premiered, next_meta, True)
-				if self.debuglog: log_utils.log('prescrapeNext: got %s sources for S%sE%s' % (len(next_sources) if next_sources else 0, season, episode), level=log_utils.LOGDEBUG)
 				if not self.isPlayingVideo():
 					return playerWindow.clearProperty('umbrella.preResolved_nextUrl')
 				sources.Sources().preResolve(next_sources, next_meta)

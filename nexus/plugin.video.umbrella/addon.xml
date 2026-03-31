@@ -1,4 +1,4 @@
-<addon id="plugin.video.umbrella" name="Umbrella" provider-name="Umbrella" version="6.7.549">
+<addon id="plugin.video.umbrella" name="Umbrella" provider-name="Umbrella" version="6.7.550">
 	<requires>
 		<import addon="xbmc.python" version="3.0.0" />
 		<import addon="script.module.requests" />
@@ -234,8 +234,9 @@
 			<screenshot>resources/screenshots/screenshot003.jpg</screenshot>
 		</assets>
 		<news>
-[B]Update - v6.7.549 - Mar 30th, 2026 [/B]
---[Change] Made changes to the trakt force sync to no longer delete database and added individual option to do it.
+[B]Update - v6.7.550 - Mar 31st, 2026 [/B]
+--[Change] Made changes to allow users to set number of batches to use for Trakt. Settings: General > Performance
+
 		</news>
 	</extension>
 

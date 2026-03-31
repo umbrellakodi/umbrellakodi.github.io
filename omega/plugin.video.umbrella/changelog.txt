@@ -1,2 +1,2 @@
-[B]Update - v6.7.549 - Mar 30th, 2026 [/B]
---[Change] Made changes to the trakt force sync to no longer delete database and added individual option to do it.
+[B]Update - v6.7.550 - Mar 31st, 2026 [/B]
+--[Change] Made changes to allow users to set number of batches to use for Trakt. Settings: General > Performance
