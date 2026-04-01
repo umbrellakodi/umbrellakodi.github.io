@@ -1,5 +1,5 @@
 <?xml version='1.0' encoding='utf-8'?>
-<addons><addon id="plugin.video.umbrella" name="Umbrella" provider-name="Umbrella" version="6.7.62">
+<addons><addon id="plugin.video.umbrella" name="Umbrella" provider-name="Umbrella" version="6.7.552">
 	<requires>
 		<import addon="xbmc.python" version="3.0.0" />
 		<import addon="script.module.requests" />
@@ -235,9 +235,8 @@
 			<screenshot>resources/screenshots/screenshot003.jpg</screenshot>
 		</assets>
 		<news>
-[B]Update - v6.7.551 - April 1st, 2026 [/B]
---[Change] Made changes to allow users to set number of batches to use for Trakt. Settings: General &gt; Performance
---[Fix] Fixed issue with old hidden shows causing dropped not to sync from Trakt. You will need to "Drop" any shows previously hidden.
+[B]Update - v6.7.552 - April 1st, 2026 [/B]
+--[Change] Added overzealous ai code for episodes without runtimes. Thanks Adam! Good luck everybody else!
 		</news>
 	</extension>
 
