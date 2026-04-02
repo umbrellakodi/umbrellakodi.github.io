@@ -1,4 +1,4 @@
-<addon id="plugin.video.umbrella" name="Umbrella" provider-name="Umbrella" version="6.7.552">
+<addon id="plugin.video.umbrella" name="Umbrella" provider-name="Umbrella" version="6.7.553">
 	<requires>
 		<import addon="xbmc.python" version="3.0.0" />
 		<import addon="script.module.requests" />
@@ -234,8 +234,8 @@
 			<screenshot>resources/screenshots/screenshot003.jpg</screenshot>
 		</assets>
 		<news>
-[B]Update - v6.7.552 - April 1st, 2026 [/B]
---[Change] Added overzealous ai code for episodes without runtimes. Thanks Adam! Good luck everybody else!
+[B]Update - v6.7.553 - April 2nd, 2026 [/B]
+--[Change] Changed Shows Progress to use cache to make it faster.
 		</news>
 	</extension>
 

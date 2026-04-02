@@ -1,2 +1,2 @@
-[B]Update - v6.7.552 - April 1st, 2026 [/B]
---[Change] Added overzealous ai code for episodes without runtimes. Thanks Adam! Good luck everybody else!
+[B]Update - v6.7.553 - April 2nd, 2026 [/B]
+--[Change] Changed Shows Progress to use cache to make it faster.
