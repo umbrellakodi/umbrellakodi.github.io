@@ -1,3 +1,8 @@
+[B]Update - v6.7.555 - April 8th, 2026 [/B]
+--[Change] Set simkl to use percent watched on "start" when resuming.
+--[Fix] Bug fix for real debrid cloud scraper.
+--[Fix] Bug for for double marking from trakt.
+
 [B]Update - v6.7.554 - April 8th, 2026 [/B]
 --[Change] Set simkl to use percent watched on "start" when resuming.
 --[Fix] Bug fix for real debrid cloud scraper.
