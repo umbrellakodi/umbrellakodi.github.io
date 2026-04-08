@@ -1,5 +1,5 @@
 <?xml version='1.0' encoding='utf-8'?>
-<addons><addon id="plugin.video.umbrella" name="Umbrella" provider-name="Umbrella" version="6.7.553">
+<addons><addon id="plugin.video.umbrella" name="Umbrella" provider-name="Umbrella" version="6.7.554">
 	<requires>
 		<import addon="xbmc.python" version="3.0.0" />
 		<import addon="script.module.requests" />
@@ -235,8 +235,9 @@
 			<screenshot>resources/screenshots/screenshot003.jpg</screenshot>
 		</assets>
 		<news>
-[B]Update - v6.7.553 - April 2nd, 2026 [/B]
---[Change] Changed Shows Progress to use cache to make it faster.
+[B]Update - v6.7.554 - April 8th, 2026 [/B]
+--[Change] Set simkl to use percent watched on "start" when resuming.
+--[Fix] Bug fix for real debrid cloud scraper.
 		</news>
 	</extension>
 

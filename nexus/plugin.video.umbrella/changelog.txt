@@ -1,2 +1,3 @@
-[B]Update - v6.7.553 - April 2nd, 2026 [/B]
---[Change] Changed Shows Progress to use cache to make it faster.
+[B]Update - v6.7.554 - April 8th, 2026 [/B]
+--[Change] Set simkl to use percent watched on "start" when resuming.
+--[Fix] Bug fix for real debrid cloud scraper.
