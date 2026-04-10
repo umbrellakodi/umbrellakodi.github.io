@@ -1,3 +1,7 @@
+[B]Update - v6.7.556 - April 10th, 2026 [/B]
+--[Change] Added DMM cache check for RD results. Credit to kodifitzwell for the method.
+--[Fix] Made changes for error after backing out of source selection.
+
 [B]Update - v6.7.555 - April 8th, 2026 [/B]
 --[Change] Set simkl to use percent watched on "start" when resuming.
 --[Fix] Bug fix for real debrid cloud scraper.
