@@ -1,3 +1,2 @@
-[B]Update - v6.7.556 - April 10th, 2026 [/B]
---[Change] Added DMM cache check for RD results. Credit to kodifitzwell for the method.
---[Fix] Made changes for error after backing out of source selection.
+[B]Update - v6.7.557 - April 18th, 2026 [/B]
+--[Fix] Made changes for calculation of total episodes when using mdblist.

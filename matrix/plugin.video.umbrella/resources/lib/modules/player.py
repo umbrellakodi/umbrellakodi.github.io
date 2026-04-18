@@ -1384,6 +1384,10 @@ class Bookmarks:
 			else:
 				if not skip_scrobble and (seekable or percent >= int(markwatched_percentage)):
 					trakt.scrobbleMovie(imdb, tmdb, percent) if media_type == 'movie' else trakt.scrobbleEpisode(imdb, tmdb, tvdb, season, episode, percent)
+				elif skip_scrobble:
+					# Item was already marked watched during playback. Close the open Trakt scrobble
+					# session at 0% so Trakt's server doesn't auto-scrobble it as a second watch.
+					trakt.scrobbleMovie(imdb, tmdb, 0) if media_type == 'movie' else trakt.scrobbleEpisode(imdb, tmdb, tvdb, season, episode, 0)
 				if percent >= int(markwatched_percentage): trakt.scrobbleReset(imdb, tmdb, tvdb, season, episode, refresh=False)
 		except:
 			log_utils.error()

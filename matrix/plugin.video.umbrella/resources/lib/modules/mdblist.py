@@ -589,6 +589,10 @@ def syncSeasons(imdb, tvdb):
 			counts[sn] = {'total': total, 'watched': watched, 'unwatched': unwatched}
 			if total > 0 and watched >= total:
 				completed_seasons.append('%01d' % sn)
+		# Include aired seasons with no watched episodes so getShowCount totals all seasons, not just watched ones
+		for sn, ep_count in season_totals.items():
+			if sn not in counts:
+				counts[sn] = {'total': ep_count, 'watched': 0, 'unwatched': ep_count}
 		return [completed_seasons, counts]
 	except: log_utils.error()
 	return [[], {}]
