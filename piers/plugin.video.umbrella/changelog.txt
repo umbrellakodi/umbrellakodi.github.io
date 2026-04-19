@@ -1,0 +1,2 @@
+[B]Update - v6.7.559 - April 19th, 2026 [/B]
+--[Fix] Scrobble reset option added for MDBList Manager.
