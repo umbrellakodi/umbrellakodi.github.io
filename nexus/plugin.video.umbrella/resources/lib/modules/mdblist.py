@@ -187,7 +187,14 @@ def manager(name, imdb=None, tvdb=None, tmdb=None, watched=None, season=None, ep
     try:
         if season: season = int(season)
         if episode: episode = int(episode)
-        content_type = 'tvshow' if tvdb and tvdb != 'None' else 'movie'
+        if episode:
+            content_type = 'episode'
+        elif season:
+            content_type = 'season'
+        elif tvdb and tvdb != 'None':
+            content_type = 'tvshow'
+        else:
+            content_type = 'movie'
         items = []
         if watched is not None:
             if watched is True:
@@ -222,10 +229,10 @@ def manager(name, imdb=None, tvdb=None, tmdb=None, watched=None, season=None, ep
         if select == -1: return
         if select >= 0:
                 if items[select][1] == 'watch':
-                    watch(content_type, name, imdb=imdb, tvdb=tvdb, tmdb=tmdb)
+                    watch(content_type, name, imdb=imdb, tvdb=tvdb, tmdb=tmdb, season=season, episode=episode)
                     return
                 if items[select][1] == 'unwatch':
-                    unwatch(content_type, name, imdb=imdb, tvdb=tvdb, tmdb=tmdb)
+                    unwatch(content_type, name, imdb=imdb, tvdb=tvdb, tmdb=tmdb, season=season, episode=episode)
                     return
                 if items[select][1] == 'scrobbleReset':
                     scrobbleReset(imdb=imdb, tmdb=tmdb, tvdb=tvdb, season=season, episode=episode, refresh=True, clear_local=getSetting('indicators.alt') == '3')

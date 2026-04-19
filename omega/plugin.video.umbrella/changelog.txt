@@ -1,2 +1,2 @@
-[B]Update - v6.7.557 - April 18th, 2026 [/B]
---[Fix] Made changes for calculation of total episodes when using mdblist.
+[B]Update - v6.7.558 - April 19th, 2026 [/B]
+--[Fix] Made changes for mdblist marking episode or season as watched from mdblist manager.
