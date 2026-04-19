@@ -1,3 +1,5 @@
+[B]Update - v6.7.560 - April 19th, 2026 [/B]
+--[Fix] Changed ah2 and arctic fuse style playnext window skins to look the same on all skins.
 
 [B]Update - v6.7.559 - April 19th, 2026 [/B]
 --[Fix] Scrobble reset option added for MDBList Manager.
