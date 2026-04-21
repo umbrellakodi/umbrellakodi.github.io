@@ -1,3 +1,9 @@
+[B]Update - v6.7.562- April 21st, 2026 [/B]
+--[Fix] Made changes for scrobble reset showing wrong service in title.
+
+[B]Update - v6.7.561 - April 21st, 2026 [/B]
+--[Fix] Change made to settings to allow Watch History and Indicators to show when no online services are enabled.
+
 [B]Update - v6.7.560 - April 19th, 2026 [/B]
 --[Fix] Changed ah2 and arctic fuse style playnext window skins to look the same on all skins.
 

@@ -1,4 +1,4 @@
-<addon id="plugin.video.umbrella" name="Umbrella" provider-name="Umbrella" version="6.7.560">
+<addon id="plugin.video.umbrella" name="Umbrella" provider-name="Umbrella" version="6.7.562">
 	<requires>
 		<import addon="xbmc.python" version="3.0.0" />
 		<import addon="script.module.requests" />
@@ -234,9 +234,8 @@
 			<screenshot>resources/screenshots/screenshot003.jpg</screenshot>
 		</assets>
 		<news>
-[B]Update - v6.7.560 - April 19th, 2026 [/B]
---[Fix] Changed ah2 and arctic fuse style playnext window skins to look the same on all skins.
-
+[B]Update - v6.7.562 - April 21st, 2026 [/B]
+--[Fix] Made changes for scrobble reset showing wrong service in title.
 		</news>
 	</extension>
 
