@@ -1,3 +1,7 @@
+[B]Update - v6.7.563 - April 22nd, 2026 [/B]
+--[Fix] Changes for more Trakt reductions in results from api.
+--[Fix] Made changes to hidden/ dropped items from progress.
+
 [B]Update - v6.7.562- April 21st, 2026 [/B]
 --[Fix] Made changes for scrobble reset showing wrong service in title.
 
