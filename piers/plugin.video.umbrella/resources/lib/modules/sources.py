@@ -504,7 +504,16 @@ class Sources:
 						except: pass
 						del progressDialog
 					from resources.lib.modules import player
-					player.Player().play_source(title, self.year, self.season, self.episode, self.imdb, self.tmdb, self.tvdb, self.url, meta)
+					player.Player().play_source(
+						title,
+						getattr(self, 'year', meta.get('year') if isinstance(meta, dict) else None),
+						getattr(self, 'season', meta.get('season') if isinstance(meta, dict) else None),
+						getattr(self, 'episode', meta.get('episode') if isinstance(meta, dict) else None),
+						getattr(self, 'imdb', meta.get('imdb', '') if isinstance(meta, dict) else ''),
+						getattr(self, 'tmdb', meta.get('tmdb', '') if isinstance(meta, dict) else ''),
+						getattr(self, 'tvdb', meta.get('tvdb', '') if isinstance(meta, dict) else ''),
+						self.url, meta
+					)
 					return self.url
 				except: log_utils.error()
 			try: progressDialog.close()

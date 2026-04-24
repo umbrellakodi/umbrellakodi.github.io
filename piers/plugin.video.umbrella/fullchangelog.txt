@@ -1,3 +1,6 @@
+[B]Update - v6.7.567 - April 24th, 2026 [/B]
+--[Change] Added fix for year missing on re-scrape.
+
 [B]Update - v6.7.566 - April 24th, 2026 [/B]
 --[Change] Added fix to allow playing a file after caching it to rd.
 
