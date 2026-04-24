@@ -2366,6 +2366,15 @@ class TVshows:
 						# Safety net: has_next_episode guarantees ≥1 unwatched episode
 						if int(count.get('unwatched', 0)) == 0:
 							count['unwatched'] = max(1, trakt_aired - trakt_watched) if trakt_aired > trakt_watched else 1
+					# Stale Trakt progress data (syncSeasons returned 0 watched/total): fall back to
+					# the more reliable watched/shows endpoint count before display.
+					if count is not None and count['watched'] == 0:
+						_trakt_watched = int(meta.get('trakt_watched_episodes') or 0)
+						_trakt_aired = int(meta.get('trakt_aired_episodes') or 0)
+						if _trakt_watched > 0:
+							count['watched'] = _trakt_watched
+							count['total'] = max(count['total'], _trakt_aired)
+							count['unwatched'] = max(0, count['total'] - count['watched'])
 					if count:
 						count['unwatched'] = max(0, count['unwatched'])
 					if self.showCounts:
