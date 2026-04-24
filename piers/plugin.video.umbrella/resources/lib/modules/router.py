@@ -1289,10 +1289,43 @@ def router(argv2):
 		# 	from resources.lib.debrid.easydebrid import EasyDebrid as debrid_function
 		elif caller == 'TorBox':
 			from resources.lib.debrid.torbox import TorBox as debrid_function
-		success = debrid_function().add_uncached_torrent(url, pack=pack)
-		if success:
-			from resources.lib.modules import sources
-			sources.Sources().playItem(title, params.get('items'), source, params.get('meta'))
+		rd_inst = debrid_function()
+		torrent_id = rd_inst.add_uncached_torrent(url, pack=pack)
+		if torrent_id and caller == 'Real-Debrid' and not pack:
+			from resources.lib.modules.control import yesnoDialog
+			if yesnoDialog('Play item now?', '', ''):
+				try:
+					from json import loads as jsloads
+					from resources.lib.modules import player as _player
+					meta_dict = jsloads(params.get('meta')) if params.get('meta') else {}
+					torrent_info = rd_inst.torrent_info(torrent_id)
+					links = torrent_info.get('links', [])
+					if links:
+						file_url = rd_inst.unrestrict_link(links[0])
+					else:
+						# Torrent was already in RD cloud (no file selection done); resolve_magnet handles selection + matching
+						source_list = jsloads(source) if source else []
+						if isinstance(source_list, list) and source_list: source_dict_item = source_list[0]
+						else: source_dict_item = source_list if isinstance(source_list, dict) else {}
+						info_hash = source_dict_item.get('hash', '')
+						play_title_for_resolve = meta_dict.get('tvshowtitle') or meta_dict.get('title', '')
+						file_url = rd_inst.resolve_magnet(url, info_hash, meta_dict.get('season'), meta_dict.get('episode'), play_title_for_resolve)
+					if file_url:
+						_player.Player().play_source(
+							meta_dict.get('tvshowtitle') or meta_dict.get('title', title),
+							meta_dict.get('year'),
+							meta_dict.get('season'),
+							meta_dict.get('episode'),
+							meta_dict.get('imdb'),
+							meta_dict.get('tmdb'),
+							meta_dict.get('tvdb'),
+							file_url,
+							meta_dict,
+							debridPackCall=True
+						)
+				except:
+					from resources.lib.modules import log_utils
+					log_utils.error()
 
 	elif action == 'rescrapeAuto':
 		from resources.lib.modules import sources

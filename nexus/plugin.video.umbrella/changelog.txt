@@ -1,2 +1,2 @@
-[B]Update - v6.7.565 - April 24th, 2026 [/B]
---[Fix] More changes made for tv shows to show completed instead of 0 remaining.
+[B]Update - v6.7.566 - April 24th, 2026 [/B]
+--[Change] Added fix to allow playing a file after caching it to rd.

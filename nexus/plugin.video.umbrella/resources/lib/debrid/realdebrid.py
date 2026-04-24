@@ -552,8 +552,9 @@ class RealDebrid:
 				try: self.progressDialog.close()
 				except: pass
 		if status == 'downloaded':
-			control.busy()
-			return True
+			control.hide()
+			control.notification(message=getLS(32057), icon=rd_icon)
+			return torrent_id
 		if status == 'magnet_conversion': return _return_failed()
 		if any(x in status for x in stalled): return _return_failed(status)
 		if status == 'waiting_files_selection': 
@@ -572,7 +573,7 @@ class RealDebrid:
 					self.add_torrent_select(torrent_id, torrent_keys)
 					control.okDialog(title='default', message=getLS(40017) % getLS(40058))
 					control.hide()
-					return True # returning true here causes "success" to be returned and resolve runs on  non valid link
+					return torrent_id
 				except: return _return_failed()
 			else:
 				try:
@@ -586,7 +587,7 @@ class RealDebrid:
 			if status == 'downloaded':
 				control.hide()
 				control.notification(message=getLS(32057), icon=rd_icon)
-				return True
+				return torrent_id
 			file_size = round(float(video['bytes']) / (1000 ** 3), 2)
 			line1 = '%s...' % (getLS(40017) % getLS(40058))
 			line2 = torrent_info['filename']
@@ -625,7 +626,7 @@ class RealDebrid:
 				try: self.progressDialog.close()
 				except: pass
 			control.hide()
-			return True
+			return torrent_id
 		control.hide()
 		return False
 
