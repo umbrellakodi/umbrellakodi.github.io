@@ -1,5 +1,5 @@
 <?xml version='1.0' encoding='utf-8'?>
-<addons><addon id="plugin.video.umbrella" name="Umbrella" provider-name="Umbrella" version="6.7.563">
+<addons><addon id="plugin.video.umbrella" name="Umbrella" provider-name="Umbrella" version="6.7.564">
 	<requires>
 		<import addon="xbmc.python" version="3.0.0" />
 		<import addon="script.module.requests" />
@@ -235,9 +235,8 @@
 			<screenshot>resources/screenshots/screenshot003.jpg</screenshot>
 		</assets>
 		<news>
-[B]Update - v6.7.563 - April 22nd, 2026 [/B]
---[Fix] Changes for more Trakt reductions in results from api.
---[Fix] Made changes to hidden/ dropped items from progress.
+[B]Update - v6.7.564 - April 24th, 2026 [/B]
+--[Fix] Changes made for tv shows to show completed instead of 0 remaining.
 		</news>
 	</extension>
 

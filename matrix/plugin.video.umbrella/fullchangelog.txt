@@ -1,37 +1,22 @@
-[B]Update - v6.7.563 - April 22nd, 2026 [/B]
+[B]Update - v6.7.564 - April 24th, 2026 [/B]
+--[Fix] Changes made for tv shows to show completed instead of 0 remaining.
+
+[B]Update - v6.7.66 - April 22nd, 2026 [/B]
 --[Fix] Changes for more Trakt reductions in results from api.
 --[Fix] Made changes to hidden/ dropped items from progress.
-
-[B]Update - v6.7.562- April 21st, 2026 [/B]
 --[Fix] Made changes for scrobble reset showing wrong service in title.
-
-[B]Update - v6.7.561 - April 21st, 2026 [/B]
 --[Fix] Change made to settings to allow Watch History and Indicators to show when no online services are enabled.
-
-[B]Update - v6.7.560 - April 19th, 2026 [/B]
 --[Fix] Changed ah2 and arctic fuse style playnext window skins to look the same on all skins.
-
-[B]Update - v6.7.559 - April 19th, 2026 [/B]
 --[Fix] Scrobble reset option added for MDBList Manager.
-
-[B]Update - v6.7.558 - April 19th, 2026 [/B]
 --[Fix] Made changes for mdblist marking episode or season as watched from mdblist manager.
-
-[B]Update - v6.7.557 - April 18th, 2026 [/B]
 --[Fix] Made changes for calculation of total episodes when using mdblist.
-
-[B]Update - v6.7.556 - April 10th, 2026 [/B]
 --[Change] Added DMM cache check for RD results. Credit to kodifitzwell for the method.
 --[Fix] Made changes for error after backing out of source selection.
 
-[B]Update - v6.7.555 - April 8th, 2026 [/B]
+[B]Update - v6.7.65 - April 8th, 2026 [/B]
 --[Change] Set simkl to use percent watched on "start" when resuming.
 --[Fix] Bug fix for real debrid cloud scraper.
 --[Fix] Bug for for double marking from trakt.
-
-[B]Update - v6.7.554 - April 8th, 2026 [/B]
---[Change] Set simkl to use percent watched on "start" when resuming.
---[Fix] Bug fix for real debrid cloud scraper.
 
 [B]Update - v6.7.64 - April 7th, 2026 [/B]
 --[Change] Made changes for trakt re-try logic.
