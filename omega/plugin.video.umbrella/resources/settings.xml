@@ -2312,6 +2312,11 @@
 					<default>false</default>
 					<control type="toggle"/>
 				</setting>
+				<setting id="sources.dmm.cache" type="boolean" label="40666" help="">
+					<level>0</level>
+					<default>false</default>
+					<control type="toggle"/>
+				</setting>
 				<setting id="sources.retryall" type="boolean" label="40405" help="" parent="">
 					<level>0</level>
 					<default>false</default>
@@ -2403,6 +2408,11 @@
 				<setting id="remove.3D.sources" type="boolean" label="32051" help="">
 					<level>0</level>
 					<default>true</default>
+					<control type="toggle"/>
+				</setting>
+				<setting id="remove.aiupscaled.sources" type="boolean" label="40667" help="">
+					<level>0</level>
+					<default>false</default>
 					<control type="toggle"/>
 				</setting>
 				<setting id="torrent.min.seeders" type="integer" label="32638" help="">

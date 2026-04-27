@@ -1,2 +1,3 @@
-[B]Update - v6.7.567 - April 24th, 2026 [/B]
---[Change] Added fix for year missing on re-scrape.
+[B]Update - v6.7.568 - April 27th, 2026 [/B]
+--[Change] Added DMM cache check as an option. Turn off to have all RD as unchecked again. Turn on for cached vs uncached.
+--[Change] Added new filter for ai upscale.
