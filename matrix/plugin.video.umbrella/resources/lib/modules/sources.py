@@ -1889,8 +1889,8 @@ class Sources:
 		try:
 			for i in torrent_List:
 				if not api_success:
-					if 'package' in i: i.update({'source': 'unchecked (pack) torrent'})
-					else: i.update({'source': 'unchecked'})
+					if 'package' in i: i.update({'source': 'uncached (pack) torrent'})
+					else: i.update({'source': 'uncached torrent'})
 				elif i['hash'].lower() in cached_hashes:
 					if 'package' in i: i.update({'source': 'cached (pack) torrent'})
 					else: i.update({'source': 'cached torrent'})
@@ -1898,8 +1898,8 @@ class Sources:
 					if 'package' in i: i.update({'source': 'uncached (pack) torrent'})
 					else: i.update({'source': 'uncached torrent'})
 				else:
-					if 'package' in i: i.update({'source': 'unchecked (pack) torrent'})
-					else: i.update({'source': 'unchecked'})
+					if 'package' in i: i.update({'source': 'uncached (pack) torrent'})
+					else: i.update({'source': 'uncached torrent'})
 			return torrent_List
 		except: log_utils.error()
 

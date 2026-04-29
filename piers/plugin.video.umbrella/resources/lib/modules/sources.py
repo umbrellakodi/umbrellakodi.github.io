@@ -386,7 +386,7 @@ class Sources:
 			if getSetting('uncached.seeder.sort') == 'true':
 				uncached_items = sorted(uncached_items, key=lambda k: k['seeders'], reverse=True)
 				uncached_items = self.sort_byQuality(source_list=uncached_items)
-			if items == uncached_items:
+			if items == uncached_items and not self.uncached_chosen:
 				from resources.lib.windows.uncached_results import UncachedResultsXML
 				window = UncachedResultsXML('uncached_results.xml', control.addonPath(control.addonId()), uncached=uncached_items, meta=self.meta)
 			else:
@@ -394,7 +394,7 @@ class Sources:
 				window = SourceResultsXML('source_results.xml', control.addonPath(control.addonId()), results=items, uncached=uncached_items, meta=self.meta)
 			action, chosen_source = window.run()
 			del window
-			if action == 'play_Item' and self.uncached_chosen != True:
+			if action == 'play_Item':
 				return self.playItem(title, items, chosen_source.getProperty('umbrella.source_dict'), self.meta)
 			else:
 				homeWindow.clearProperty('umbrella.window_keep_alive')
@@ -1059,6 +1059,8 @@ class Sources:
 				self.sources = [i for i in self.sources if i['quality'] != 'SD']
 		if getSetting('remove.3D.sources') == 'true':
 			self.sources = [i for i in self.sources if '3D' not in i.get('info', '')]
+		if getSetting('remove.aiupscaled.sources') == 'true':
+			self.sources = [i for i in self.sources if ' AI-UPSCALED ' not in i.get('info', '')]
 		if getSetting('remove.audio.opus') == 'true':   #start of audio codec filters
 			self.sources = [i for i in self.sources if ' OPUS ' not in i.get('info', '')]
 		if getSetting('remove.audio.atmos') == 'true': 
@@ -1853,7 +1855,7 @@ class Sources:
 			_meta = getattr(self, 'meta', None) or {}
 			imdb = getattr(self, 'imdb', None) or _meta.get('imdb')
 			hashes = [h for h in hashList if len(h) == 40]
-			if imdb and hashes:
+			if getSetting('sources.dmm.cache') != 'false' and imdb and hashes:
 				# DMM proof-of-work (ported from plugin.video.pov/resources/lib/magneto/dmm.py)
 				def _calc(t, n, c):
 					tmp = t ^ n
@@ -1887,8 +1889,8 @@ class Sources:
 		try:
 			for i in torrent_List:
 				if not api_success:
-					if 'package' in i: i.update({'source': 'unchecked (pack) torrent'})
-					else: i.update({'source': 'unchecked'})
+					if 'package' in i: i.update({'source': 'uncached (pack) torrent'})
+					else: i.update({'source': 'uncached torrent'})
 				elif i['hash'].lower() in cached_hashes:
 					if 'package' in i: i.update({'source': 'cached (pack) torrent'})
 					else: i.update({'source': 'cached torrent'})
@@ -1896,8 +1898,8 @@ class Sources:
 					if 'package' in i: i.update({'source': 'uncached (pack) torrent'})
 					else: i.update({'source': 'uncached torrent'})
 				else:
-					if 'package' in i: i.update({'source': 'unchecked (pack) torrent'})
-					else: i.update({'source': 'unchecked'})
+					if 'package' in i: i.update({'source': 'uncached (pack) torrent'})
+					else: i.update({'source': 'uncached torrent'})
 			return torrent_List
 		except: log_utils.error()
 
