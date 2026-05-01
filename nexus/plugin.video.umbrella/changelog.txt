@@ -1,6 +1,2 @@
-[B]Update - v6.7.569 - April 29th, 2026 [/B]
---[Change] Added DMM cache check as an option. Turn off to have all RD as unchecked again. Turn on for cached vs uncached.
---[Change] Added new filter for ai upscale.
---[Fix] Fix added for uncached torrents from RD.
---[Fix] Fix where several menu items in tools list were opening wrong settings page.
---[Fix] Fix for bug where a fresh install would default to Trakt for watch indicators without Trakt being authenticated.
+[B]Update - v6.7.570 - May 1st, 2026 [/B]
+--[Change] Changes made to Trakt api to comply with new 250 pagination limit. If you have large lists and large amounts of watch history I would switch to a different service.

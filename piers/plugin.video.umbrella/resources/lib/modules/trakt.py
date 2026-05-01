@@ -137,7 +137,7 @@ def get_all_pages(url, silent=False):
 			url = url.split('?limit=')[0]
 		
 		sep = '&' if '?' in url else '?'
-		limit = 1000
+		limit = 250  # Trakt enforces a 250-item max across all paginated endpoints as of mid-June 2026
 		page = 1
 		results = []
 		
@@ -174,17 +174,13 @@ def get_all_pages(url, silent=False):
 				if page == 1: return None
 				break
 			
-			# If we got fewer items than the limit, we've reached the last page
-			if items_this_page < limit:
-				break
-
-			# Check pagination headers if available
+			# Check pagination headers first — authoritative even when the API caps the page
+			# size below the requested limit (e.g. Trakt's 250-item cap on /watched/ endpoints)
 			if hasattr(response, 'headers'):
 				total_pages = response.headers.get('X-Pagination-Page-Count')
 				if total_pages:
 					try:
-						total_pages = int(total_pages)
-						if page >= total_pages:
+						if page >= int(total_pages):
 							break
 					except (ValueError, TypeError):
 						pass
@@ -195,6 +191,10 @@ def get_all_pages(url, silent=False):
 							break
 					except (ValueError, TypeError):
 						pass
+
+			# Fallback when no pagination headers: fewer items than requested means last page
+			if items_this_page < limit:
+				break
 
 			page += 1
 
@@ -1119,7 +1119,7 @@ def syncMoviesLibrary(indicators):
 def watchedMovies():
 	try:
 		if not getTraktCredentialsInfo(): return
-		return get_all_pages('/users/me/watched/movies?extended=full')
+		return get_all_pages('/users/me/watched/movies')
 	except: log_utils.error()
 
 def watchedMoviesTime(imdb):
@@ -1220,7 +1220,7 @@ def syncTVShows(): # sync all watched shows ex. [({'imdb': 'tt12571834', 'tvdb':
 		indicators = []
 		seen_ids = set()
 		page = 1
-		limit = 1000
+		limit = 250  # Trakt enforces a 250-item max across all paginated endpoints as of mid-June 2026
 		while True:
 			response = getTrakt('/users/me/watched/shows?page=%d&limit=%d' % (page, limit))
 			if not response: break
@@ -1242,7 +1242,6 @@ def syncTVShows(): # sync all watched shows ex. [({'imdb': 'tt12571834', 'tvdb':
 						if ep_nums: episodes[s['number']] = _make_episode_ranges(ep_nums)
 					indicators.append((ids, aired, episodes))
 				except: pass
-			if len(page_results) < limit: break
 			if hasattr(response, 'headers'):
 				total_pages = response.headers.get('X-Pagination-Page-Count')
 				if total_pages:
@@ -1254,6 +1253,7 @@ def syncTVShows(): # sync all watched shows ex. [({'imdb': 'tt12571834', 'tvdb':
 					try:
 						if len(indicators) >= int(total_items): break
 					except: pass
+			if len(page_results) < limit: break
 			page += 1
 			if page > 100: break
 		return indicators if indicators else None
@@ -2086,7 +2086,7 @@ def sync_watch_list(activities=None, forced=False):
 def sync_popular_lists(forced=False):
 	try:
 		from datetime import timedelta
-		link = '/lists/popular?limit=300'
+		link = '/lists/popular?limit=250'
 		list_link = '/users/%s/lists/%s/items/%s?page=1&limit=1'
 		official_link = '/lists/%s/items/%s?page=1&limit=1'
 		db_last_popularList = traktsync.last_sync('last_popularlist_at')
@@ -2144,7 +2144,7 @@ def sync_popular_lists(forced=False):
 def sync_trending_lists(forced=False):
 	try:
 		from datetime import timedelta
-		link = '/lists/trending?limit=300'
+		link = '/lists/trending?limit=250'
 		list_link = '/users/%s/lists/%s/items/%s?page=1&limit=1'
 		official_link = '/lists/%s/items/%s?page=1&limit=1'
 
