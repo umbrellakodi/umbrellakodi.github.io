@@ -1,3 +1,8 @@
+[B]Update - v6.7.571 - May 5th, 2026 [/B]
+--[Change] Changes made for page limit with new Trakt 250 limit.
+--[Change] Changes made in the resolve code for packs.
+--[Change] Changes made to avoid failded scrobble notification on a watched item.
+
 [B]Update - v6.7.570 - May 1st, 2026 [/B]
 --[Change] Changes made to Trakt api to comply with new 250 pagination limit. If you have large lists and large amounts of watch history I would switch to a different service.
 

@@ -198,9 +198,9 @@ def get_all_pages(url, silent=False):
 
 			page += 1
 
-			# Safety limit to prevent infinite loops (max 100 pages = 100,000 items)
-			if page > 100:
-				log_utils.log('TRAKT: get_all_pages reached safety limit of 100 pages for URL: %s' % url, level=log_utils.LOGWARNING)
+			# Safety limit to prevent infinite loops (max 1000 pages = 250,000 items at 250/page)
+			if page > 1000:
+				log_utils.log('TRAKT: get_all_pages reached safety limit of 1000 pages for URL: %s' % url, level=log_utils.LOGWARNING)
 				break
 		
 		if page > 1:
@@ -1255,7 +1255,7 @@ def syncTVShows(): # sync all watched shows ex. [({'imdb': 'tt12571834', 'tvdb':
 					except: pass
 			if len(page_results) < limit: break
 			page += 1
-			if page > 100: break
+			if page > 1000: break
 		return indicators if indicators else None
 	except: log_utils.error()
 
@@ -1674,6 +1674,12 @@ def scrobbleMovie(imdb, tmdb, watched_percent):
 	log_utils.log('Trakt Scrobble Movie Called. Received: imdb: %s tmdb: %s watched_percent: %s' % (imdb, tmdb, watched_percent), level=log_utils.LOGDEBUG)
 	try:
 		if not imdb.startswith('tt'): imdb = 'tt' + imdb
+		if watched_percent == 0:
+			# Silent session-close: item was already marked watched during playback (skip_scrobble).
+			# Use /scrobble/stop at 0% to terminate the open server session without recording a
+			# second watch or saving a resume point. No notification on success or failure.
+			getTrakt('/scrobble/stop', {"movie": {"ids": {"imdb": imdb}}, "progress": 0}, silent=True)
+			return
 		success = getTrakt('/scrobble/pause', {"movie": {"ids": {"imdb": imdb}}, "progress": watched_percent})
 		if success:
 			log_utils.log('Trakt Scrobble Movie Success: imdb: %s s' % (imdb), level=log_utils.LOGDEBUG)
@@ -1688,6 +1694,10 @@ def scrobbleEpisode(imdb, tmdb, tvdb, season, episode, watched_percent):
 	#log_utils.log('Trakt Scrobble Episode Called. Received: imdb: %s tmdb: %s season: %s episode: %s watched_percent: %s' % (imdb, tmdb, season, episode, watched_percent), level=log_utils.LOGDEBUG)
 	try:
 		season, episode = int('%01d' % int(season)), int('%01d' % int(episode))
+		if watched_percent == 0:
+			# Silent session-close: same skip_scrobble logic as scrobbleMovie.
+			getTrakt('/scrobble/stop', {"show": {"ids": {"tvdb": tvdb}}, "episode": {"season": season, "number": episode}, "progress": 0}, silent=True)
+			return
 		success = getTrakt('/scrobble/pause', {"show": {"ids": {"tvdb": tvdb}}, "episode": {"season": season, "number": episode}, "progress": watched_percent})
 		if success:
 			log_utils.log('Trakt Scrobble Episode Success: imdb: %s s' % (imdb), level=log_utils.LOGDEBUG)
