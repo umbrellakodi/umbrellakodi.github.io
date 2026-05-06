@@ -260,6 +260,7 @@ def services_syncs():
 				if getSetting('bookmarks') == 'true' and getSetting('scrobble.source') == '1':
 					trakt.sync_playbackProgress(activities)
 				trakt.sync_watchedProgress(activities, trigger_refresh=False)
+				trakt.sync_tvshowProgress(activities)
 			if not control.monitor.abortRequested():
 				if getSetting('indicators.alt') == '1':
 					trakt.sync_watched(activities) # writes to traktsync.db as of 1-19-2022

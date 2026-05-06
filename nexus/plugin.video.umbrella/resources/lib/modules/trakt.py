@@ -1876,6 +1876,7 @@ def force_traktSync():
 	control.trigger_widget_refresh() # refresh after watched sync, progress will refresh again when done
 	control.notification(message='Trakt Sync Complete - Progress List Updating...')
 	Thread(target=sync_watchedProgress, kwargs={'forced': True, 'trigger_refresh': True}).start()
+	Thread(target=sync_tvshowProgress, kwargs={'forced': True}).start()
 
 def sync_playbackProgress(activities=None, forced=False):
 	#log_utils.log('Trakt Sync Playback Called Forced: %s' % (str(forced)), level=log_utils.LOGDEBUG)
@@ -1909,6 +1910,19 @@ def sync_watchedProgress(activities=None, forced=False, trigger_refresh=True):
 				log_utils.log('Trakt Progress List Sync Update...(local db latest "list_cached_at" = %s, trakt api latest "progress_activity" = %s)' % \
 									(str(local_listCache), str(progressActivity)), __name__, log_utils.LOGDEBUG)
 			if trigger_refresh: control.trigger_widget_refresh()
+	except: log_utils.error()
+
+def sync_tvshowProgress(activities=None, forced=False):
+	try:
+		from resources.lib.menus import tvshows
+		progressActivity = getProgressActivity(activities)
+		local_listCache = cache.timeout(tvshows.TVShows().trakt_tvshow_progress, '')
+		if forced or (progressActivity > local_listCache) or (int(time.time()) - local_listCache > 21600):
+			cache.get(tvshows.TVShows().trakt_tvshow_progress, 0, '')
+			if forced: log_utils.log('Forced - Trakt TVShow Progress Sync Complete', __name__, log_utils.LOGDEBUG)
+			else:
+				log_utils.log('Trakt TVShow Progress Sync Update...(local db latest "list_cached_at" = %s, trakt api latest "progress_activity" = %s)' % \
+									(str(local_listCache), str(progressActivity)), __name__, log_utils.LOGDEBUG)
 	except: log_utils.error()
 
 def sync_watched(activities=None, forced=False): # writes to traktsync.db as of 1-19-2022
