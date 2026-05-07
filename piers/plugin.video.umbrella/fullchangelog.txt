@@ -1,3 +1,6 @@
+[B]Update - v6.7.573 - May 7th, 2026 [/B]
+--[Change] Changes made for threading setting to make sure setting is initialised as a number.
+
 [B]Update - v6.7.572 - May 6th, 2026 [/B]
 --[Change] Changes to try to help progress shows load faster.
 

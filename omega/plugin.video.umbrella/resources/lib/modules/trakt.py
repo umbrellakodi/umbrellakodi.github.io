@@ -1401,7 +1401,7 @@ def service_syncSeasons(): # season indicators and counts for watched shows ex. 
 			trakt = str(indicator[0].get('trakt', '')) if indicator[0].get('trakt') else ''
 			threads.append(Thread(target=cachesyncSeasons, args=(imdb, tvdb, trakt))) # season indicators and counts for an entire show
 		_unlimited = getSetting('dev.batch.unlimited') == 'true'
-		_bs = int(getSetting('dev.batch.size') or '10')
+		_bs = max(int(getSetting('dev.batch.size') or '10'), 1)
 		_chunk = len(threads) if _unlimited else _bs
 		for i in range(0, len(threads), _chunk):
 			if control.monitor.abortRequested(): break
@@ -2030,7 +2030,7 @@ def sync_liked_lists(activities=None, forced=False):
 			for i in items:
 				threads.append(Thread(target=items_list, args=(i,)))
 			_unlimited = getSetting('dev.batch.unlimited') == 'true'
-			_bs = int(getSetting('dev.batch.size') or '10')
+			_bs = max(int(getSetting('dev.batch.size') or '10'), 1)
 			_chunk = len(threads) if _unlimited else _bs
 			for i in range(0, len(threads), _chunk):
 				batch = threads[i:i + _chunk]
@@ -2155,7 +2155,7 @@ def sync_popular_lists(forced=False):
 			for i in items:
 				threads.append(Thread(target=items_list, args=(i,)))
 			_unlimited = getSetting('dev.batch.unlimited') == 'true'
-			_bs = int(getSetting('dev.batch.size') or '10')
+			_bs = max(int(getSetting('dev.batch.size') or '10'), 1)
 			_chunk = len(threads) if _unlimited else _bs
 			for i in range(0, len(threads), _chunk):
 				batch = threads[i:i + _chunk]
@@ -2214,7 +2214,7 @@ def sync_trending_lists(forced=False):
 			for i in items:
 				threads.append(Thread(target=items_list, args=(i,)))
 			_unlimited = getSetting('dev.batch.unlimited') == 'true'
-			_bs = int(getSetting('dev.batch.size') or '10')
+			_bs = max(int(getSetting('dev.batch.size') or '10'), 1)
 			_chunk = len(threads) if _unlimited else _bs
 			for i in range(0, len(threads), _chunk):
 				batch = threads[i:i + _chunk]
