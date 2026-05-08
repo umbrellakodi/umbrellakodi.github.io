@@ -1,5 +1,5 @@
 <?xml version='1.0' encoding='utf-8'?>
-<addons><addon id="plugin.video.umbrella" name="Umbrella" provider-name="Umbrella" version="6.7.573">
+<addons><addon id="plugin.video.umbrella" name="Umbrella" provider-name="Umbrella" version="6.7.574">
 	<requires>
 		<import addon="xbmc.python" version="3.0.0" />
 		<import addon="script.module.requests" />
@@ -235,8 +235,8 @@
 			<screenshot>resources/screenshots/screenshot003.jpg</screenshot>
 		</assets>
 		<news>
-[B]Update - v6.7.573 - May 7th, 2026 [/B]
---[Change] Changes made for threading setting to make sure setting is initialised as a number.
+[B]Update - v6.7.574 - May 8th, 2026 [/B]
+--[Fix] Possible fix for crashing when using Trakt.
 		</news>
 	</extension>
 

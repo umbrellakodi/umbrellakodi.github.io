@@ -174,8 +174,6 @@ def get_all_pages(url, silent=False):
 				if page == 1: return None
 				break
 			
-			# Check pagination headers first — authoritative even when the API caps the page
-			# size below the requested limit (e.g. Trakt's 250-item cap on /watched/ endpoints)
 			if hasattr(response, 'headers'):
 				total_pages = response.headers.get('X-Pagination-Page-Count')
 				if total_pages:
@@ -192,13 +190,11 @@ def get_all_pages(url, silent=False):
 					except (ValueError, TypeError):
 						pass
 
-			# Fallback when no pagination headers: fewer items than requested means last page
 			if items_this_page < limit:
 				break
 
 			page += 1
 
-			# Safety limit to prevent infinite loops (max 1000 pages = 250,000 items at 250/page)
 			if page > 1000:
 				log_utils.log('TRAKT: get_all_pages reached safety limit of 1000 pages for URL: %s' % url, level=log_utils.LOGWARNING)
 				break
@@ -215,23 +211,18 @@ def re_auth(headers):
 	global _reauth_failed
 	if _reauth_failed:
 		return False
-	# The expired token that triggered the 401 — used to detect if another thread already refreshed
+
 	expired_token = headers.get('Authorization', '').replace('Bearer ', '').strip()
 	with _reauth_lock:
 		if _reauth_failed:
 			return False
-		# Cross-process wait: if another process is currently refreshing, wait up to 5 s
-		for _ in range(10):
+		for _ in range(45):
 			if control.homeWindow.getProperty(_REAUTH_BUSY_PROP) != 'true':
 				break
 			control.sleep(500)
-		# Double-check: read the token from the shared homeWindow property.
-		# homeWindow properties are immediately visible across ALL Kodi processes (no caching).
-		# If the token changed since we got our 401, another process already refreshed.
-		current_token = control.homeWindow.getProperty(_TRAKT_TOKEN_PROP)
+		current_token = control.homeWindow.getProperty(_TRAKT_TOKEN_PROP) or getSetting('trakt.user.token')
 		if current_token and expired_token and current_token != expired_token:
 			return True  # Another thread/process already refreshed — caller will retry with new token
-		# Claim cross-process busy flag before making the HTTP call
 		control.homeWindow.setProperty(_REAUTH_BUSY_PROP, 'true')
 		try:
 			authed_clientid = getSetting('trakt.authed.clientid')
@@ -283,8 +274,6 @@ def re_auth(headers):
 				setSetting('trakt.refreshtoken', refresh)
 				control.homeWindow.setProperty('umbrella.updateSettings', 'true')
 				setSetting('trakt.token.expires', expires)
-				# Publish new token immediately to homeWindow so other processes/threads
-				# see it in their double-check without waiting for xbmcaddon cache propagation.
 				control.homeWindow.setProperty(_TRAKT_TOKEN_PROP, token)
 				log_utils.log('Trakt Token Successfully Re-Authorized: expires on %s' % str(datetime.fromtimestamp(float(expires))), level=log_utils.LOGDEBUG)
 				return True

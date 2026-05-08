@@ -1227,7 +1227,7 @@ class TVshows:
 				next = url.replace('?' + urlparse(url).query, '') + '?' + q
 				next = next + '&folderName=%s' % quote_plus(folderName)
 			except: next = ''
-		if not items: return
+		if not items: return self.list
 		watched_dates = trakt.getWatchedShowsLastWatchedDates()
 		for item in items: # rating and votes via TMDb, or I must use `extended=full and it slows down
 			try:
@@ -2065,7 +2065,7 @@ class TVshows:
 	def trakt_tvshow_watched(self, create_directory=True, folderName=''):
 		self.list = []
 		try:
-			historyurl = 'https://api.trakt.tv/users/me/watched/shows?limit=1000&page=1'
+			historyurl = 'https://api.trakt.tv/users/me/watched/shows?limit=250&page=1'
 			self.list = self.trakt_list(historyurl, self.trakt_user, folderName)
 			next = ''
 			for i in range(len(self.list)): self.list[i]['next'] = next
