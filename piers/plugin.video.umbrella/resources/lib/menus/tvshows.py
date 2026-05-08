@@ -1215,10 +1215,7 @@ class TVshows:
 		self.list = []
 		if ',return' in url: url = url.split(',return')[0]
 		if getSetting('trakt.paginate.lists') != 'true':
-			if '/trending' in url or '/popular' in url:
-				items = trakt.getTraktAsJson(url)  # use page_limit from URL — get_all_pages would fetch all pages
-			else:
-				items = trakt.get_all_pages(url, silent=True)
+			items = trakt.get_all_pages(url, silent=True)
 			next = ''
 		else:
 			items = trakt.getTraktAsJson(url)
@@ -1230,7 +1227,7 @@ class TVshows:
 				next = url.replace('?' + urlparse(url).query, '') + '?' + q
 				next = next + '&folderName=%s' % quote_plus(folderName)
 			except: next = ''
-		if not items: return self.list
+		if not items: return
 		watched_dates = trakt.getWatchedShowsLastWatchedDates()
 		for item in items: # rating and votes via TMDb, or I must use `extended=full and it slows down
 			try:
@@ -1817,7 +1814,7 @@ class TVshows:
 	def trakt_tvshow_progress(self, create_directory=True, folderName=''):
 		self.list = []
 		try:
-			historyurl = 'https://api.trakt.tv/users/me/watched/shows?extended=full&limit=250&page=1'
+			historyurl = 'https://api.trakt.tv/users/me/watched/shows?extended=full&limit=1000&page=1'
 			self.list = self.trakt_list(historyurl, self.trakt_user, folderName)
 			next = ''
 			for i in range(len(self.list)): self.list[i]['next'] = next
@@ -2068,7 +2065,7 @@ class TVshows:
 	def trakt_tvshow_watched(self, create_directory=True, folderName=''):
 		self.list = []
 		try:
-			historyurl = 'https://api.trakt.tv/users/me/watched/shows?extended=full&limit=250&page=1'
+			historyurl = 'https://api.trakt.tv/users/me/watched/shows?limit=1000&page=1'
 			self.list = self.trakt_list(historyurl, self.trakt_user, folderName)
 			next = ''
 			for i in range(len(self.list)): self.list[i]['next'] = next

@@ -1,2 +1,2 @@
-[B]Update - v6.7.579 - May 8th, 2026 [/B]
---[Fix] More trakt bs.
+[B]Update - v6.7.580 - May 8th, 2026 [/B]
+--[Fix] Reverted Trakt back to 1,000 limit due to issues with crashing and freezing on lower limit.
