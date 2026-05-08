@@ -1885,6 +1885,7 @@ def sync_playbackProgress(activities=None, forced=False):
 
 def sync_watchedProgress(activities=None, forced=False, trigger_refresh=True):
 	try:
+		import threading
 		from resources.lib.menus import episodes
 		trakt_user = getSetting('trakt.user.name').strip()
 		lang = control.apiLanguage()['tmdb']
@@ -1892,26 +1893,44 @@ def sync_watchedProgress(activities=None, forced=False, trigger_refresh=True):
 		url = 'https://api.trakt.tv/users/me/watched/shows'
 		progressActivity = getProgressActivity(activities)
 		local_listCache = cache.timeout(episodes.Episodes().trakt_progress_list, url, trakt_user, lang, direct)
+		if not forced and local_listCache == 0:
+			return
 		if forced or (progressActivity > local_listCache) or (int(time.time()) - local_listCache > 21600):
-			cache.get(episodes.Episodes().trakt_progress_list, 0, url, trakt_user, lang, direct)
-			if forced: log_utils.log('Forced - Trakt Progress List Sync Complete', __name__, log_utils.LOGDEBUG)
+			if forced:
+				cache.get(episodes.Episodes().trakt_progress_list, 0, url, trakt_user, lang, direct)
+				log_utils.log('Forced - Trakt Progress List Sync Complete', __name__, log_utils.LOGDEBUG)
+				if trigger_refresh: control.trigger_widget_refresh()
 			else:
 				log_utils.log('Trakt Progress List Sync Update...(local db latest "list_cached_at" = %s, trakt api latest "progress_activity" = %s)' % \
 									(str(local_listCache), str(progressActivity)), __name__, log_utils.LOGDEBUG)
-			if trigger_refresh: control.trigger_widget_refresh()
+				def _do_watched_progress(_url=url, _user=trakt_user, _lang=lang, _direct=direct, _refresh=trigger_refresh):
+					try:
+						cache.get(episodes.Episodes().trakt_progress_list, 0, _url, _user, _lang, _direct)
+						if _refresh: control.trigger_widget_refresh()
+					except: log_utils.error()
+				threading.Thread(target=_do_watched_progress, daemon=True).start()
 	except: log_utils.error()
 
 def sync_tvshowProgress(activities=None, forced=False):
 	try:
+		import threading
 		from resources.lib.menus import tvshows
 		progressActivity = getProgressActivity(activities)
 		local_listCache = cache.timeout(tvshows.TVshows().trakt_tvshow_progress, '')
+		if not forced and local_listCache == 0:
+			return
 		if forced or (progressActivity > local_listCache) or (int(time.time()) - local_listCache > 21600):
-			cache.get(tvshows.TVshows().trakt_tvshow_progress, 0, '')
-			if forced: log_utils.log('Forced - Trakt TVShow Progress Sync Complete', __name__, log_utils.LOGDEBUG)
+			if forced:
+				cache.get(tvshows.TVshows().trakt_tvshow_progress, 0, '')
+				log_utils.log('Forced - Trakt TVShow Progress Sync Complete', __name__, log_utils.LOGDEBUG)
 			else:
 				log_utils.log('Trakt TVShow Progress Sync Update...(local db latest "list_cached_at" = %s, trakt api latest "progress_activity" = %s)' % \
 									(str(local_listCache), str(progressActivity)), __name__, log_utils.LOGDEBUG)
+				def _do_tvshow_progress():
+					try:
+						cache.get(tvshows.TVshows().trakt_tvshow_progress, 0, '')
+					except: log_utils.error()
+				threading.Thread(target=_do_tvshow_progress, daemon=True).start()
 	except: log_utils.error()
 
 def sync_watched(activities=None, forced=False): # writes to traktsync.db as of 1-19-2022
