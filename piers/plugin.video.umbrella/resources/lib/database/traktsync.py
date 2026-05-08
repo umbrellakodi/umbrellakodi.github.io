@@ -255,8 +255,8 @@ def fetch_hidden_progress():
 	return list
 
 def insert_hidden_progress(items, new_sync=True):
-	if not items:
-		return  # Don't wipe existing table if API returned nothing
+	if items is None:
+		return  # Don't wipe existing table on network failure
 	try:
 		dbcon = get_connection()
 		dbcur = get_connection_cursor(dbcon)
