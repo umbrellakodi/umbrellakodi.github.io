@@ -1814,7 +1814,7 @@ class TVshows:
 	def trakt_tvshow_progress(self, create_directory=True, folderName=''):
 		self.list = []
 		try:
-			historyurl = 'https://api.trakt.tv/users/me/watched/shows?limit=250&page=1'
+			historyurl = 'https://api.trakt.tv/users/me/watched/shows?extended=full&limit=250&page=1'
 			self.list = self.trakt_list(historyurl, self.trakt_user, folderName)
 			next = ''
 			for i in range(len(self.list)): self.list[i]['next'] = next
@@ -2065,14 +2065,14 @@ class TVshows:
 	def trakt_tvshow_watched(self, create_directory=True, folderName=''):
 		self.list = []
 		try:
-			historyurl = 'https://api.trakt.tv/users/me/watched/shows?limit=250&page=1'
+			historyurl = 'https://api.trakt.tv/users/me/watched/shows?extended=full&limit=250&page=1'
 			self.list = self.trakt_list(historyurl, self.trakt_user, folderName)
 			next = ''
 			for i in range(len(self.list)): self.list[i]['next'] = next
 			self.worker()
 			if self.list is None: self.list = []
 		except:
-			
+
 			log_utils.error()
 		return self.list
 

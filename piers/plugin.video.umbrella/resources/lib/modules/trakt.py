@@ -1905,9 +1905,9 @@ def sync_tvshowProgress(activities=None, forced=False):
 	try:
 		from resources.lib.menus import tvshows
 		progressActivity = getProgressActivity(activities)
-		local_listCache = cache.timeout(tvshows.TVShows().trakt_tvshow_progress, '')
+		local_listCache = cache.timeout(tvshows.TVshows().trakt_tvshow_progress, '')
 		if forced or (progressActivity > local_listCache) or (int(time.time()) - local_listCache > 21600):
-			cache.get(tvshows.TVShows().trakt_tvshow_progress, 0, '')
+			cache.get(tvshows.TVshows().trakt_tvshow_progress, 0, '')
 			if forced: log_utils.log('Forced - Trakt TVShow Progress Sync Complete', __name__, log_utils.LOGDEBUG)
 			else:
 				log_utils.log('Trakt TVShow Progress Sync Update...(local db latest "list_cached_at" = %s, trakt api latest "progress_activity" = %s)' % \

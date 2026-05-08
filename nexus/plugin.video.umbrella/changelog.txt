@@ -1,2 +1,2 @@
-[B]Update - v6.7.574 - May 8th, 2026 [/B]
---[Fix] Possible fix for crashing when using Trakt.
+[B]Update - v6.7.576 - May 8th, 2026 [/B]
+--[Fix] Made changes for Trakt api call to continue to use extended=full until trakt api changes to send fill information without that parameter.
