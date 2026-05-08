@@ -1,4 +1,4 @@
-[B]Update - v6.7.577 - May 8th, 2026 [/B]
+[B]Update - v6.7.578 - May 8th, 2026 [/B]
 --[Fix] More Trakt changes to prevent hanging.
 
 [B]Update - v6.7.576 - May 8th, 2026 [/B]

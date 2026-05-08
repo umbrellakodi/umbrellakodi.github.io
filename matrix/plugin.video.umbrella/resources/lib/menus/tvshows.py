@@ -1215,7 +1215,10 @@ class TVshows:
 		self.list = []
 		if ',return' in url: url = url.split(',return')[0]
 		if getSetting('trakt.paginate.lists') != 'true':
-			items = trakt.get_all_pages(url, silent=True)
+			if '/trending' in url or '/popular' in url:
+				items = trakt.getTraktAsJson(url)  # use page_limit from URL — get_all_pages would fetch all pages
+			else:
+				items = trakt.get_all_pages(url, silent=True)
 			next = ''
 		else:
 			items = trakt.getTraktAsJson(url)

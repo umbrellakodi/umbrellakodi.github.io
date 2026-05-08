@@ -1935,6 +1935,7 @@ def sync_tvshowProgress(activities=None, forced=False):
 
 def sync_watched(activities=None, forced=False): # writes to traktsync.db as of 1-19-2022
 	try:
+		import threading
 		if forced:
 			cachesyncMovies()
 			cachesyncTVShows()
@@ -1947,18 +1948,23 @@ def sync_watched(activities=None, forced=False): # writes to traktsync.db as of 
 			if moviesWatchedActivity - db_movies_last_watched >= 30: # do not sync unless 30secs more to allow for variation between trakt post and local db update.
 				log_utils.log('Trakt Watched Movie Sync Update...(local db latest "watched_at" = %s, trakt api latest "watched_at" = %s)' % \
 								(str(db_movies_last_watched), str(moviesWatchedActivity)), __name__, log_utils.LOGDEBUG)
-				cachesyncMovies()
+				threading.Thread(target=cachesyncMovies, daemon=True).start()
 			episodesWatchedActivity = getEpisodesWatchedActivity(activities)
 			db_last_syncTVShows = timeoutsyncTVShows()
 			db_last_syncSeasons = traktsync.last_sync('last_syncSeasons_at')
 			if any(episodesWatchedActivity > value for value in (db_last_syncTVShows, db_last_syncSeasons)):
 				log_utils.log('Trakt Watched Shows Sync Update...(local db latest "watched_at" = %s, trakt api latest "watched_at" = %s)' % \
 								(str(min(db_last_syncTVShows, db_last_syncSeasons)), str(episodesWatchedActivity)), __name__, log_utils.LOGDEBUG)
-				cachesyncTVShows()
-				if time.time() - db_last_syncSeasons > 14400: # only run season sync every 4 hours in background to avoid memory pressure
-					control.sleep(5000)
-					service_syncSeasons()
-				traktsync.insert_syncSeasons_at()
+				run_seasons = time.time() - db_last_syncSeasons > 14400
+				def _do_shows_sync(_run_seasons=run_seasons):
+					try:
+						cachesyncTVShows()
+						if _run_seasons:
+							control.sleep(5000)
+							service_syncSeasons()
+						traktsync.insert_syncSeasons_at()
+					except: log_utils.error()
+				threading.Thread(target=_do_shows_sync, daemon=True).start()
 	except: log_utils.error()
 
 def sync_user_lists(activities=None, forced=False):
