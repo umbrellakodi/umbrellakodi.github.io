@@ -1824,6 +1824,8 @@ class TVshows:
 			self.list = self.trakt_list(historyurl, self.trakt_user, folderName)
 			next = ''
 			for i in range(len(self.list)): self.list[i]['next'] = next
+			if not self.watched_progress:
+				self.list = [i for i in self.list if i.get('has_next_episode', True)]
 			self.worker()
 			if self.list is None: self.list = []
 			try:

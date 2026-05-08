@@ -1,2 +1,2 @@
-[B]Update - v6.7.581 - May 8th, 2026 [/B]
---[Fix] Changed progress shows to use cache so it loads faster.
+[B]Update - v6.7.582 - May 8th, 2026 [/B]
+--[Fix] Change to Torbox cloud scraper to respect timeout.
