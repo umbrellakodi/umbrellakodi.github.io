@@ -1,2 +1,3 @@
-[B]Update - v6.7.582 - May 8th, 2026 [/B]
---[Fix] Change to Torbox cloud scraper to respect timeout.
+[B]Update - v6.7.583 - May 11th, 2026 [/B]
+--[Fix] Change made for RD when infringing file is returned.
+--[Fix] Fix for crash during playback when using certain skins due to closeAll() causing the skin to attempt to access a destroyed window.

@@ -1,32 +1,11 @@
-[B]Update - v6.7.582 - May 8th, 2026 [/B]
+[B]Update - v6.7.583 - May 11th, 2026 [/B]
+--[Fix] Change made for RD when infringing file is returned.
+--[Fix] Fix for crash during playback when using certain skins due to closeAll() causing the skin to attempt to access a destroyed window.
+
+[B]Update - v6.7.71 - May 8th, 2026 [/B]
 --[Fix] Change to Torbox cloud scraper to respect timeout.
-
-[B]Update - v6.7.581 - May 8th, 2026 [/B]
---[Fix] Changed progress shows to use cache so it loads faster.
-
-[B]Update - v6.7.580 - May 8th, 2026 [/B]
 --[Fix] Reverted Trakt back to 1,000 limit due to issues with crashing and freezing on lower limit.
-
-[B]Update - v6.7.579 - May 8th, 2026 [/B]
---[Fix] More trakt bs.
-
-[B]Update - v6.7.578 - May 8th, 2026 [/B]
---[Fix] More Trakt changes to prevent hanging.
-
-[B]Update - v6.7.576 - May 8th, 2026 [/B]
 --[Fix] Made changes for Trakt api call to continue to use extended=full until trakt api changes to send fill information without that parameter.
-
-[B]Update - v6.7.575 - May 8th, 2026 [/B]
---[Fix] Change to two calls incorrectly using TVShows instead of TVshows causing errors.
-
-[B]Update - v6.7.574 - May 8th, 2026 [/B]
---[Fix] Possible fix for crashing when using Trakt.
-
-[B]Update - v6.7.573 - May 7th, 2026 [/B]
---[Change] Changes made for threading setting to make sure setting is initialised as a number.
-
-[B]Update - v6.7.572 - May 6th, 2026 [/B]
---[Change] Changes to try to help progress shows load faster.
 
 [B]Update - v6.7.70 - May 6th, 2026 [/B]
 --[Change] Changes made for page limit with new Trakt 250 limit.
