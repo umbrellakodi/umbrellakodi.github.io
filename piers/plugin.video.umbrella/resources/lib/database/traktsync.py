@@ -720,7 +720,7 @@ def get_connection(setRowFactory=False):
 	dbcon.execute('''PRAGMA journal_mode = OFF''')
 	dbcon.execute('''PRAGMA synchronous = OFF''')
 	dbcon.execute('''PRAGMA temp_store = memory''')
-	dbcon.execute('''PRAGMA mmap_size = 30000000000''')
+	dbcon.execute('''PRAGMA mmap_size = 67108864''')
 	if setRowFactory: dbcon.row_factory = _dict_factory
 	return dbcon
 

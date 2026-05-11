@@ -1902,7 +1902,9 @@ def sync_watched(activities=None, forced=False): # writes to traktsync.db as of 
 			cachesyncTVShows()
 			traktsync.insert_syncSeasons_at()
 			log_utils.log('Forced - Trakt Watched Sync Complete (movies + shows)', __name__, log_utils.LOGINFO)
-			service_syncSeasons()
+			control.sleep(5000) # avoid memory pressure on embedded hardware after heavy initial sync
+			if not control.monitor.abortRequested():
+				service_syncSeasons()
 		else:
 			moviesWatchedActivity = getMoviesWatchedActivity(activities)
 			db_movies_last_watched = timeoutsyncMovies()
