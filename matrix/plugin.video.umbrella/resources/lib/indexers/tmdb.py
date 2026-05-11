@@ -778,13 +778,30 @@ class TVshows(TMDb):
 			log_utils.error()
 		return result
 
-	def get_season_counts(self, tmdb): # lightweight: returns {str(season_num): episode_count} without heavy append_to_response data
+	def get_season_aired_counts(self, tmdb): # lightweight: returns {str(season_num): aired_episode_count} using last_episode_to_air for accuracy on airing shows
 		if not tmdb: return None
 		try:
 			url = base_link + 'tv/%s?api_key=%s&language=%s' % (tmdb, self.API_key, self.lang)
 			result = self.get_request(url)
 			if not result or '404:NOT FOUND' in str(result): return None
-			return dict(sorted({(str(i['season_number']), i['episode_count']) for i in result.get('seasons', [])}, key=lambda k: int(k[0])))
+			seasons = result.get('seasons') or []
+			last_aired = result.get('last_episode_to_air') or {}
+			status = (result.get('status') or '').lower()
+			ended = status in ('ended', 'canceled', 'cancelled')
+			last_aired_season = last_aired.get('season_number', 0)
+			last_aired_episode = last_aired.get('episode_number', 0)
+			counts = {}
+			for s in seasons:
+				sn = s.get('season_number')
+				if sn is None: continue
+				ep_count = s.get('episode_count', 0)
+				if ended or sn < last_aired_season:
+					counts[str(sn)] = ep_count  # all episodes have aired
+				elif sn == last_aired_season:
+					counts[str(sn)] = last_aired_episode  # only episodes up to last aired
+				else:
+					counts[str(sn)] = 0  # future season, nothing aired yet
+			return counts
 		except:
 			from resources.lib.modules import log_utils
 			log_utils.error()

@@ -1398,7 +1398,7 @@ def service_syncSeasons(): # season indicators and counts for watched shows ex. 
 			tvdb = str(ids.get('tvdb', '') or '')
 			tmdb_id = str(ids.get('tmdb', '') or '')
 			if not tmdb_id: return
-			tmdb_counts = cache.get(_TMDbTVshows().get_season_counts, 96, tmdb_id) or {} # {str(season_num): episode_count}
+			tmdb_counts = cache.get(_TMDbTVshows().get_season_aired_counts, 96, tmdb_id) or {} # {str(season_num): aired_episode_count}
 			completed, counts = [], {}
 			for season_num, ranges in episodes_dict.items():
 				watched = sum(end - start + 1 for start, end in ranges)

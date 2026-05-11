@@ -1,3 +1,6 @@
+[B]Update - v6.7.585 - May 11th, 2026 [/B]
+--[Fix] Made change where episode data is coming from tmdb instead of trakt to reduce calls to trakt.
+
 [B]Update - v6.7.584 - May 11th, 2026 [/B]
 --[Fix] Made change to limit to avoid loop.
 

@@ -1,5 +1,5 @@
 <?xml version='1.0' encoding='utf-8'?>
-<addons><addon id="plugin.video.umbrella" name="Umbrella" provider-name="Umbrella" version="6.7.584">
+<addons><addon id="plugin.video.umbrella" name="Umbrella" provider-name="Umbrella" version="6.7.585">
 	<requires>
 		<import addon="xbmc.python" version="3.0.0" />
 		<import addon="script.module.requests" />
@@ -235,8 +235,8 @@
 			<screenshot>resources/screenshots/screenshot003.jpg</screenshot>
 		</assets>
 		<news>
-[B]Update - v6.7.584 - May 11th, 2026 [/B]
---[Fix] Made change to limit to avoid loop.
+[B]Update - v6.7.585 - May 11th, 2026 [/B]
+--[Fix] Made change where episode data is coming from tmdb instead of trakt to reduce calls to trakt.
 		</news>
 	</extension>
 
