@@ -890,6 +890,22 @@ def insert_syncSeasons_at():
 		try: dbcon.close()
 		except: pass
 
+def insert_service(setting, value):
+	try:
+		dbcon = get_connection()
+		dbcur = get_connection_cursor(dbcon)
+		dbcur.execute('''CREATE TABLE IF NOT EXISTS service (setting TEXT, value TEXT, UNIQUE(setting));''')
+		dbcur.execute('''INSERT OR REPLACE INTO service Values (?, ?)''', (setting, value))
+		dbcur.connection.commit()
+	except:
+		from resources.lib.modules import log_utils
+		log_utils.error()
+	finally:
+		try: dbcur.close()
+		except: pass
+		try: dbcon.close()
+		except: pass
+
 # future
 def insert_nextEpisode(imdb, tvdb, tmdb, trakt, next_episode):
 	try:

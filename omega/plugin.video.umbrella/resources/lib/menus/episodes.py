@@ -934,7 +934,7 @@ class Episodes:
 		from resources.lib.modules import log_utils
 		_unlimited = getSetting('dev.batch.unlimited') == 'true'
 		_bs = max(int(getSetting('dev.batch.size') or '10'), 1)
-		_chunk = len(threads) if _unlimited else _bs
+		_chunk = max(len(threads), 1) if _unlimited else _bs
 		log_utils.log('trakt_progress_list: processing %s shows in batches of %s' % (len(threads), 'unlimited' if _unlimited else _bs), __name__, log_utils.LOGINFO)
 		for i in range(0, len(threads), _chunk):
 			if control.monitor.abortRequested(): break

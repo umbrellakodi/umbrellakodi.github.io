@@ -778,6 +778,18 @@ class TVshows(TMDb):
 			log_utils.error()
 		return result
 
+	def get_season_counts(self, tmdb): # lightweight: returns {str(season_num): episode_count} without heavy append_to_response data
+		if not tmdb: return None
+		try:
+			url = base_link + 'tv/%s?api_key=%s&language=%s' % (tmdb, self.API_key, self.lang)
+			result = self.get_request(url)
+			if not result or '404:NOT FOUND' in str(result): return None
+			return dict(sorted({(str(i['season_number']), i['episode_count']) for i in result.get('seasons', [])}, key=lambda k: int(k[0])))
+		except:
+			from resources.lib.modules import log_utils
+			log_utils.error()
+			return None
+
 	def get_showSeasons_meta(self, tmdb): # builds seasons meta from show level request
 		if not tmdb: return None
 		try:
