@@ -5600,3 +5600,15 @@ msgstr ""
 msgctxt "#40667"
 msgid "Remove AI Upscaled Sources"
 msgstr ""
+
+msgctxt "#40668"
+msgid "MDBList Liked Lists"
+msgstr ""
+
+msgctxt "#40669"
+msgid "Authorize MDBList"
+msgstr ""
+
+msgctxt "#40670"
+msgid "Revoke MDBList Authorization"
+msgstr ""

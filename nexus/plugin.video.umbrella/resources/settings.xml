@@ -3262,7 +3262,7 @@
 					<dependencies>
 						<dependency type="visible">
 							<and>
-								<condition operator="!is" setting="mdblist.api"/>
+								<condition operator="!is" setting="mdblist.token"/>
 								<condition operator="!is" setting="indicators.alt">3</condition>
 							</and>
 						</dependency>
@@ -3933,14 +3933,64 @@
 				</setting>
 			</group>
 			<group id="4" label="40172">
-				<setting id="mdblist.api" type="string" label="40085" help="">
+				<setting id="mdblist.token" type="string" label="" help="">
 					<level>0</level>
 					<default/>
 					<constraints>
 						<allowempty>true</allowempty>
 					</constraints>
+					<dependencies>
+						<dependency type="visible">
+							<condition on="property" name="InfoBool">false</condition>
+						</dependency>
+					</dependencies>
 					<control type="edit" format="string">
-						<heading>40085</heading>
+						<heading/>
+					</control>
+				</setting>
+				<setting id="mdblist.refresh.token" type="string" label="" help="">
+					<level>0</level>
+					<default/>
+					<constraints>
+						<allowempty>true</allowempty>
+					</constraints>
+					<dependencies>
+						<dependency type="visible">
+							<condition on="property" name="InfoBool">false</condition>
+						</dependency>
+					</dependencies>
+					<control type="edit" format="string">
+						<heading/>
+					</control>
+				</setting>
+				<setting id="showMDBListAuth" type="action" label="40669" help="">
+					<level>0</level>
+					<data>RunPlugin(plugin://plugin.video.umbrella/?action=mdblistAuth)</data>
+					<constraints>
+						<allowempty>true</allowempty>
+					</constraints>
+					<dependencies>
+						<dependency type="visible">
+							<condition operator="is" setting="mdblist.token"/>
+						</dependency>
+					</dependencies>
+					<control type="button" format="action">
+						<close>true</close>
+					</control>
+				</setting>
+				<setting id="showMDBListRevoke" type="action" label="40670" help="">
+					<level>0</level>
+					<data>RunPlugin(plugin://plugin.video.umbrella/?action=mdblistRevoke)</data>
+					<constraints>
+						<allowempty>true</allowempty>
+					</constraints>
+					<dependencies>
+						<dependency type="visible">
+							<condition operator="!is" setting="mdblist.token"/>
+						</dependency>
+					</dependencies>
+					<control type="button" format="action">
+						<close>true</close>
 					</control>
 				</setting>
 				<setting id="mdblist.general.notifications" type="boolean" label="40644" help="">
@@ -3948,7 +3998,7 @@
 					<default>false</default>
 					<dependencies>
 						<dependency type="visible">
-							<condition operator="!is" setting="mdblist.api"/>
+							<condition operator="!is" setting="mdblist.token"/>
 						</dependency>
 					</dependencies>
 					<control type="toggle"/>
@@ -3962,7 +4012,7 @@
 					</constraints>
 					<dependencies>
 						<dependency type="visible">
-							<condition operator="!is" setting="mdblist.api"/>
+							<condition operator="!is" setting="mdblist.token"/>
 						</dependency>
 					</dependencies>
 					<control type="slider" format="integer">
@@ -3974,7 +4024,7 @@
 					<default>true</default>
 					<dependencies>
 						<dependency type="visible">
-							<condition operator="!is" setting="mdblist.api"/>
+							<condition operator="!is" setting="mdblist.token"/>
 						</dependency>
 					</dependencies>
 					<control type="toggle"/>
@@ -3984,7 +4034,7 @@
 					<default>false</default>
 					<dependencies>
 						<dependency type="visible">
-							<condition operator="!is" setting="mdblist.api"/>
+							<condition operator="!is" setting="mdblist.token"/>
 						</dependency>
 					</dependencies>
 					<control type="toggle"/>
@@ -3997,7 +4047,7 @@
 					</constraints>
 					<dependencies>
 						<dependency type="visible">
-							<condition operator="!is" setting="mdblist.api"/>
+							<condition operator="!is" setting="mdblist.token"/>
 						</dependency>
 					</dependencies>
 					<control type="button" format="action"/>
@@ -4007,7 +4057,7 @@
 					<default>false</default>
 					<dependencies>
 						<dependency type="visible">
-							<condition operator="!is" setting="mdblist.api"/>
+							<condition operator="!is" setting="mdblist.token"/>
 						</dependency>
 					</dependencies>
 					<control type="toggle"/>
@@ -4017,7 +4067,7 @@
 					<default>false</default>
 					<dependencies>
 						<dependency type="visible">
-							<condition operator="!is" setting="mdblist.api"/>
+							<condition operator="!is" setting="mdblist.token"/>
 						</dependency>
 					</dependencies>
 					<control type="toggle"/>
@@ -4027,7 +4077,7 @@
 					<default>false</default>
 					<dependencies>
 						<dependency type="visible">
-							<condition operator="!is" setting="mdblist.api"/>
+							<condition operator="!is" setting="mdblist.token"/>
 						</dependency>
 					</dependencies>
 					<control type="toggle"/>
@@ -4038,7 +4088,7 @@
 					<dependencies>
 						<dependency type="visible">
 							<and>
-								<condition operator="!is" setting="mdblist.api"/>
+								<condition operator="!is" setting="mdblist.token"/>
 								<or>
 									<condition operator="is" setting="indicators.alt">3</condition>
 									<condition operator="is" setting="mdblist.markwatched">true</condition>
@@ -4054,7 +4104,7 @@
 					<dependencies>
 						<dependency type="visible">
 							<and>
-								<condition operator="!is" setting="mdblist.api"/>
+								<condition operator="!is" setting="mdblist.token"/>
 								<or>
 									<condition operator="is" setting="indicators.alt">3</condition>
 									<condition operator="is" setting="mdblist.markwatched">true</condition>
@@ -5760,7 +5810,7 @@
 						<dependency type="visible">
 							<or>
 								<condition operator="is" setting="trakt.isauthed">true</condition>
-								<condition operator="!is" setting="mdblist.api"></condition>
+								<condition operator="!is" setting="mdblist.token"></condition>
 								<condition operator="!is" setting="tmdb.v4.accesstoken"></condition>
 							</or>
 						</dependency>
@@ -5783,7 +5833,7 @@
 						<dependency type="visible">
 							<or>
 								<condition operator="is" setting="trakt.isauthed">true</condition>
-								<condition operator="!is" setting="mdblist.api"></condition>
+								<condition operator="!is" setting="mdblist.token"></condition>
 								<condition operator="!is" setting="tmdb.v4.accesstoken"></condition>
 							</or>
 						</dependency>
@@ -5809,7 +5859,7 @@
 						<dependency type="visible">
 							<or>
 								<condition operator="is" setting="trakt.isauthed">true</condition>
-								<condition operator="!is" setting="mdblist.api"></condition>
+								<condition operator="!is" setting="mdblist.token"></condition>
 								<condition operator="!is" setting="tmdb.v4.accesstoken"></condition>
 							</or>
 						</dependency>
@@ -5831,7 +5881,7 @@
 								<condition operator="is" setting="library.autoimportlists">true</condition>
 								<or>
 									<condition operator="is" setting="trakt.isauthed">true</condition>
-									<condition operator="!is" setting="mdblist.api"></condition>
+									<condition operator="!is" setting="mdblist.token"></condition>
 									<condition operator="!is" setting="tmdb.v4.accesstoken"></condition>
 								</or>
 							</and>
@@ -5854,7 +5904,7 @@
 								<condition operator="is" setting="library.autoimportlists">true</condition>
 								<or>
 									<condition operator="is" setting="trakt.isauthed">true</condition>
-									<condition operator="!is" setting="mdblist.api"></condition>
+									<condition operator="!is" setting="mdblist.token"></condition>
 									<condition operator="!is" setting="tmdb.v4.accesstoken"></condition>
 								</or>
 							</and>
@@ -5875,7 +5925,7 @@
 						<dependency type="visible">
 							<or>
 								<condition operator="is" setting="trakt.isauthed">true</condition>
-								<condition operator="!is" setting="mdblist.api"></condition>
+								<condition operator="!is" setting="mdblist.token"></condition>
 								<condition operator="!is" setting="tmdb.v4.accesstoken"></condition>
 							</or>
 						</dependency>
@@ -6877,7 +6927,7 @@
 					</constraints>
 					<dependencies>
 						<dependency type="visible">
-							<condition operator="!is" setting="mdblist.api"/>
+							<condition operator="!is" setting="mdblist.token"/>
 						</dependency>
 					</dependencies>
 					<control type="button" format="action"/>

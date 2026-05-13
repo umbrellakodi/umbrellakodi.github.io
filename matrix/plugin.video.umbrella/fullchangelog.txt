@@ -1,10 +1,10 @@
-[B]Update - v6.7.585 - May 11th, 2026 [/B]
+[B]Update - v6.7.586 - May 12th, 2026 [/B]
+--[Change] Added "liked lists" from MDBList.
+--[Change] Changed MDBList to use Device Auth now instead of apikey. Will need to re-authorize.
+--[Change] Moved Anime from getting list from imdb (no longer working) to use SIMKL trending daily file.
+
+[B]Update - v6.7.72 - May 11th, 2026 [/B]
 --[Fix] Made change where episode data is coming from tmdb instead of trakt to reduce calls to trakt.
-
-[B]Update - v6.7.584 - May 11th, 2026 [/B]
---[Fix] Made change to limit to avoid loop.
-
-[B]Update - v6.7.583 - May 11th, 2026 [/B]
 --[Fix] Change made for RD when infringing file is returned.
 --[Fix] Fix for crash during playback when using certain skins due to closeAll() causing the skin to attempt to access a destroyed window.
 

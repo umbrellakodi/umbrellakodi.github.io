@@ -162,6 +162,12 @@ def router(argv2):
 	elif action == 'traktRevoke':
 		from resources.lib.modules import trakt as Trakt
 		Trakt.traktRevoke(fromSettings=1)
+	elif action == 'mdblistAuth':
+		from resources.lib.modules import mdblist
+		mdblist.mdblistAuth(fromSettings=1)
+	elif action == 'mdblistRevoke':
+		from resources.lib.modules import mdblist
+		mdblist.mdblistRevoke(fromSettings=1)
 	elif action == 'traktAccountInfo':
 		from resources.lib.modules import trakt as Trakt
 		Trakt.getTraktAccountInfo()
@@ -210,6 +216,9 @@ def router(argv2):
 	elif action == 'mdbUserWatchListMovies':
 		from resources.lib.menus import movies
 		movies.Movies().get_mdbuser_watchlist(url, folderName=folderName)
+	elif action == 'mdbLikedListMovies':
+		from resources.lib.menus import movies
+		movies.Movies().getMDBLikedLists(folderName=folderName)
 	elif action == 'mdbUserWatchListTVShows':
 		from resources.lib.menus import tvshows
 		tvshows.TVshows().get_mdbuser_watchlist(url, folderName=folderName)
@@ -372,6 +381,9 @@ def router(argv2):
 	elif action == 'mdbUserListTV':
 		from resources.lib.menus import tvshows
 		tvshows.TVshows().getMDBUserList(folderName=folderName)
+	elif action == 'mdbLikedListShows':
+		from resources.lib.menus import tvshows
+		tvshows.TVshows().getMDBLikedLists(folderName=folderName)
 	elif action == 'shows_progress':
 		from resources.lib.menus import tvshows
 		tvshows.TVshows().tvshow_progress(url, folderName=folderName)
@@ -700,10 +712,10 @@ def router(argv2):
 			navigator.Navigator().anime(folderName=folderName)
 		elif action == 'anime_Movies':
 			from resources.lib.menus import movies
-			movies.Movies().get(url, folderName=folderName)
+			movies.Movies().getAnime(folderName=folderName)
 		elif action == 'anime_TVshows':
 			from resources.lib.menus import tvshows
-			tvshows.TVshows().get(url, folderName=folderName)
+			tvshows.TVshows().getAnime(folderName=folderName)
 
 	elif action == 'trakt_Navigator':
 		from resources.lib.menus import navigator
