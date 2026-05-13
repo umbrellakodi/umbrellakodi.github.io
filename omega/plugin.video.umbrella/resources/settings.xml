@@ -5407,6 +5407,16 @@
 					</dependencies>
 					<control type="toggle"/>
 				</setting>
+				<setting id="easynews.seekable" type="boolean" label="40492" help="" parent="easynews.enable">
+					<level>0</level>
+					<default>false</default>
+					<dependencies>
+						<dependency type="visible">
+							<condition operator="is" setting="easynews.enable">true</condition>
+						</dependency>
+					</dependencies>
+					<control type="toggle"/>
+				</setting>
 				<setting id="easyNewsTitleCheckButton" type="action" label="32137" help="">
 					<level>0</level>
 					<data>RunPlugin(plugin://plugin.video.umbrella/?action=tools_ShowHelp&amp;name=EasyNews_titleCheck)</data>

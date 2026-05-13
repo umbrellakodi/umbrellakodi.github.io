@@ -4912,6 +4912,9 @@ msgctxt "#40491"
 msgid "Title Check Results"
 msgstr ""
 
+msgctxt "#40492"
+msgid "EasyNews Seekable Links"
+msgstr ""
 
 msgctxt "#40493"
 msgid "Genres (Trakt)"

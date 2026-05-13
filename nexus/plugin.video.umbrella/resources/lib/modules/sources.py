@@ -396,6 +396,10 @@ class Sources:
 			del window
 			if action == 'play_Item':
 				return self.playItem(title, items, chosen_source.getProperty('umbrella.source_dict'), self.meta)
+			elif action == 'play_EN_Seekable':
+				from resources.lib.modules import player
+				player.Player().play(chosen_source)
+				return
 			else:
 				homeWindow.clearProperty('umbrella.window_keep_alive')
 				try: self.window.close()
@@ -1431,6 +1435,17 @@ class Sources:
 							return url
 						except: pass
 					else:
+						if item.get('provider') == 'easynews':
+							try:
+								from resources.lib.debrid.easynews import EasyNews
+								base_url = url.split('|')[0]
+								resolved = EasyNews().unrestrict_link(base_url)
+								if resolved:
+									if getSetting('easynews.seekable') != 'true':
+										resolved += '|seekable=0'
+									self.url = resolved
+									return resolved
+							except: log_utils.error()
 						self.url = url
 						return url
 				else: # hosters
