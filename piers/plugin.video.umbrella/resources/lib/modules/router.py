@@ -669,6 +669,9 @@ def router(argv2):
 		elif action == 'tb_DeleteUserTorrent':
 			from resources.lib.debrid import torbox
 			torbox.TorBox().delete_user_torrent(params.get('id'), mediatype, name)
+		elif action == 'tb_ReferralLink':
+			from resources.lib.debrid import torbox
+			torbox.TorBox().referral_link()
 		if action == 'tb_ServiceNavigator':
 			from resources.lib.menus import navigator
 			navigator.Navigator().torbox_service()
@@ -850,6 +853,7 @@ def router(argv2):
 					from resources.lib.modules import downloader
 					from resources.lib.debrid import torbox
 					if mediatype == 'usenet': url = torbox.TorBox().unrestrict_usenet(url.replace(' ', '%20'))
+					elif mediatype == 'webdl': url = torbox.TorBox().unrestrict_webdl(url.replace(' ', '%20'))
 					else: url = torbox.TorBox().unrestrict_link(url.replace(' ', '%20'))
 					downloader.download(name, image, torbox.TorBox().add_headers_to_url(url))
 				except:
@@ -1142,6 +1146,7 @@ def router(argv2):
 				from resources.lib.debrid import torbox
 				if params.get('type') == 'unrestrict':
 					if mediatype == 'usenet': control.player.play(torbox.TorBox().unrestrict_usenet(url.replace(' ', '%20')))
+					elif mediatype == 'webdl': control.player.play(torbox.TorBox().unrestrict_webdl(url.replace(' ', '%20')))
 					else: control.player.play(torbox.TorBox().unrestrict_link(url.replace(' ', '%20')))
 				else: control.player.play(url.replace(' ', '%20'))
 			else:

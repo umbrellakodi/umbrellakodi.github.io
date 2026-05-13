@@ -4975,13 +4975,26 @@
 					<enable>false</enable>
 					<dependencies>
 						<dependency type="visible">
+							<condition on="property" name="InfoBool">false</condition>
+						</dependency>
+					</dependencies>
+					<control type="edit" format="string"/>
+				</setting>
+				<setting id="tbAccountInfoButton" type="action" label="32153" help="">
+					<level>0</level>
+					<data>RunPlugin(plugin://plugin.video.umbrella/?action=tb_AccountInfo)</data>
+					<constraints>
+						<allowempty>true</allowempty>
+					</constraints>
+					<dependencies>
+						<dependency type="visible">
 							<and>
 								<condition operator="!is" setting="torboxtoken"/>
 								<condition operator="is" setting="torbox.enable">true</condition>
 							</and>
 						</dependency>
 					</dependencies>
-					<control type="edit" format="string"/>
+					<control type="button" format="action"/>
 				</setting>
 				<setting id="torbox.priority" type="integer" label="40005" help="">
 					<level>0</level>
@@ -5058,20 +5071,12 @@
 						<close>true</close>
 					</control>
 				</setting>
-				<setting id="tbAccountInfoButton" type="action" label="32153" help="">
+				<setting id="tbReferralLinkButton" type="action" label="40671" help="">
 					<level>0</level>
-					<data>RunPlugin(plugin://plugin.video.umbrella/?action=tb_AccountInfo)</data>
+					<data>RunPlugin(plugin://plugin.video.umbrella/?action=tb_ReferralLink)</data>
 					<constraints>
 						<allowempty>true</allowempty>
 					</constraints>
-					<dependencies>
-						<dependency type="visible">
-							<and>
-								<condition operator="!is" setting="torboxtoken"/>
-								<condition operator="is" setting="torbox.enable">true</condition>
-							</and>
-						</dependency>
-					</dependencies>
 					<control type="button" format="action"/>
 				</setting>
 			</group>
