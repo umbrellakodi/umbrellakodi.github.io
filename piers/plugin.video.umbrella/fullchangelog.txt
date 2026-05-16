@@ -1,3 +1,6 @@
+[B]Update - v6.7.590 - May 16th, 2026 [/B]
+--[Fix] Change made for plex authorization.
+
 [B]Update - v6.7.589 - May 14th, 2026 [/B]
 --[Fix] Change for case sensitivity on hash comparison in Torbox. -credit to /u/SoMe0nE-BG
 --[Change] Added option to add year in tv show title. Settings, TV Shows, Show Year in TV Show title
