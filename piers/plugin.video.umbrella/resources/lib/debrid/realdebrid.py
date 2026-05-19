@@ -808,17 +808,18 @@ class RealDebrid:
 				return False, response
 
 			self.token = response['access_token']
-			control.sleep(500)
-			account_info = self.account_info()
-			username = account_info['username']
 			control.homeWindow.setProperty('umbrella.updateSettings', 'false')
-			control.setSetting('realdebridusername', username)
 			control.setSetting('realdebrid.clientid', self.client_ID)
-			control.setSetting('realdebridsecret', self.secret,)
+			control.setSetting('realdebridsecret', self.secret)
 			control.setSetting('realdebridtoken', self.token)
 			#control.addon('script.module.myaccounts').setSetting('realdebridtoken', self.token)
 			control.homeWindow.setProperty('umbrella.updateSettings', 'true')
 			control.setSetting('realdebridrefresh', response['refresh_token'])
+			control.sleep(500)
+			account_info = self.account_info()
+			username = account_info['username'] if account_info else ''
+			if username:
+				control.setSetting('realdebridusername', username)
 			if fromSettings == 1:
 				control.openSettings('9.5', 'plugin.video.umbrella')
 				control.notification(message="Real Debrid Authorized", icon=rd_icon)
