@@ -18,7 +18,7 @@ class WatchedCache:
 		self.__create_cache_db()
 
 	def __connect_database(self):
-		self.dbcon = db.connect(watchedcacheFile, timeout=60, isolation_level=None)
+		self.dbcon = db.connect(watchedcacheFile, timeout=60, isolation_level=None, check_same_thread=False)
 		self.dbcon.row_factory = db.Row # return results indexed by field names and not numbers so we can convert to dict
 
 	def __set_PRAGMAS(self):

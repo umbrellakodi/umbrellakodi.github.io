@@ -1,3 +1,6 @@
+[B]Update - v6.7.592 - May 19th, 2026 [/B]
+--[Fix] Possible fix for hang when playing items from rd cloud.
+
 [B]Update - v6.7.591 - May 19th, 2026 [/B]
 --[Change] Setup for dynamic root menu. TV and Movie sections will be next.
 

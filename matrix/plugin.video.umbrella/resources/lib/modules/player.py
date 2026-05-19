@@ -601,12 +601,12 @@ class Player(xbmc.Player):
 		self.preScrape_triggered = False
 		self.subtitletime = None
 		#control.sleep(200)
+		homeWindow.clearProperty('umbrella.window_keep_alive')
 		for i in range(0, 500):
 			if self.isPlayback():
 				#control.closeAll() #i cannot remember what this was for.
 				break
 			else: control.sleep(200)
-		homeWindow.clearProperty('umbrella.window_keep_alive')
 		if self.offset != '0' and self.playback_resumed is False:
 			control.sleep(200)
 			_resume_source = getSetting('scrobble.source')
