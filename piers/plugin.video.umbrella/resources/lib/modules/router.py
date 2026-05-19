@@ -44,6 +44,9 @@ def router(argv2):
 			from resources.lib.modules import changelog
 			changelog.get('Umbrella')
 		navigator.Navigator().root()
+	elif action == 'mainMenuEditor':
+		from resources.lib.menus import navigator
+		navigator.Navigator().mainMenuEditor(params.get('menu_name', 'root'))
 	####################################################
 	#---MOVIES
 	####################################################

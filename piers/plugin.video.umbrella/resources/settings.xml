@@ -912,103 +912,33 @@
 			</group>
 		</category>
 		<category id="navigation" label="32621" help="40184">
-			<group id="1" label="32005">
-				<setting id="navi.searchMovies" type="boolean" label="33042" help="">
+			<group id="1" label="40060">
+				<setting id="navi.alldebrid" type="boolean" label="32223" help="">
 					<level>0</level>
 					<default>true</default>
 					<control type="toggle"/>
 				</setting>
-				<setting id="navi.searchTVShows" type="boolean" label="33043" help="">
+				<setting id="navi.easynews" type="boolean" label="32224" help="">
 					<level>0</level>
 					<default>true</default>
 					<control type="toggle"/>
 				</setting>
-				<setting id="mylists.widget" type="boolean" label="32329" help="">
+				<setting id="navi.offcloud" type="boolean" label="40541" help="">
+					<default>true</default>
+					<control type="toggle"/>
+				</setting>
+				<setting id="navi.premiumize" type="boolean" label="32225" help="">
 					<level>0</level>
 					<default>true</default>
 					<control type="toggle"/>
 				</setting>
-				<setting id="navi.anime" type="boolean" label="40068" help="">
-					<level>0</level>
-					<default>false</default>
-					<control type="toggle"/>
-				</setting>
-				<setting id="navi.youtube" type="boolean" label="40061" help="">
+				<setting id="navi.realdebrid" type="boolean" label="32226" help="">
 					<level>0</level>
 					<default>true</default>
 					<control type="toggle"/>
 				</setting>
-				<setting id="navi.prem.services" type="boolean" label="40060" help="">
-					<level>0</level>
+				<setting id="navi.torbox" type="boolean" label="40527" help="">
 					<default>true</default>
-					<control type="toggle"/>
-				</setting>
-				<setting id="navi.alldebrid" type="boolean" label="32223" help="" parent="navi.prem.services">
-					<level>0</level>
-					<default>true</default>
-					<dependencies>
-						<dependency type="visible">
-							<condition operator="is" setting="navi.prem.services">true</condition>
-						</dependency>
-					</dependencies>
-					<control type="toggle"/>
-				</setting>
-				<setting id="navi.easynews" type="boolean" label="32224" help="" parent="navi.prem.services">
-					<level>0</level>
-					<default>true</default>
-					<dependencies>
-						<dependency type="visible">
-							<condition operator="is" setting="navi.prem.services">true</condition>
-						</dependency>
-					</dependencies>
-					<control type="toggle"/>
-				</setting>
-				<setting id="navi.offcloud" type="boolean" label="40541" help="" parent="navi.prem.services">
-					<default>true</default>
-					<dependencies>
-						<dependency type="visible">
-							<condition operator="is" setting="navi.prem.services">true</condition>
-						</dependency>
-					</dependencies>
-					<control type="toggle"/>
-				</setting>
-				<setting id="navi.premiumize" type="boolean" label="32225" help="" parent="navi.prem.services">
-					<level>0</level>
-					<default>true</default>
-					<dependencies>
-						<dependency type="visible">
-							<condition operator="is" setting="navi.prem.services">true</condition>
-						</dependency>
-					</dependencies>
-					<control type="toggle"/>
-				</setting>
-				<setting id="navi.realdebrid" type="boolean" label="32226" help="" parent="navi.prem.services">
-					<level>0</level>
-					<default>true</default>
-					<dependencies>
-						<dependency type="visible">
-							<condition operator="is" setting="navi.prem.services">true</condition>
-						</dependency>
-					</dependencies>
-					<control type="toggle"/>
-				</setting>
-				<setting id="navi.torbox" type="boolean" label="40527" help="" parent="navi.prem.services">
-					<default>true</default>
-					<dependencies>
-						<dependency type="visible">
-							<condition operator="is" setting="navi.prem.services">true</condition>
-						</dependency>
-					</dependencies>
-					<control type="toggle"/>
-				</setting>
-				<setting id="navi.changelog" type="boolean" label="32014" help="">
-					<level>0</level>
-					<default>true</default>
-					<control type="toggle"/>
-				</setting>
-				<setting id="navi.fullchangelog" type="boolean" label="32014" help="">
-					<level>0</level>
-					<default>false</default>
 					<control type="toggle"/>
 				</setting>
 			</group>

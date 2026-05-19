@@ -1,4 +1,4 @@
-<addon id="plugin.video.umbrella" name="Umbrella" provider-name="Umbrella" version="6.7.590">
+<addon id="plugin.video.umbrella" name="Umbrella" provider-name="Umbrella" version="6.7.591">
 	<requires>
 		<import addon="xbmc.python" version="3.0.0" />
 		<import addon="script.module.requests" />
@@ -234,8 +234,8 @@
 			<screenshot>resources/screenshots/screenshot003.jpg</screenshot>
 		</assets>
 		<news>
-[B]Update - v6.7.590 - May 16th, 2026 [/B]
---[Fix] Change made for plex authorization.
+[B]Update - v6.7.591 - May 19th, 2026 [/B]
+--[Change] Setup for dynamic root menu. TV and Movie sections will be next.
 		</news>
 	</extension>
 

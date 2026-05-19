@@ -48,25 +48,129 @@ class Navigator:
 		self.favoriteEpisodes = favourites.checkForFavourites(content='episode')
 
 	def root(self):
-		if getMenuEnabled('navi.searchMovies'):self.addDirectoryItem(33042, 'movieSearch&folderName=%s' % quote_plus(getLS(33042)), 'trakt.png' if self.iconLogos else 'searchmovies.png', 'DefaultAddonsSearch.png')
-		if getMenuEnabled('navi.searchTVShows'):self.addDirectoryItem(33043, 'tvSearch&folderName=%s' % quote_plus(getLS(33043)), 'trakt.png' if self.iconLogos else 'searchtv.png', 'DefaultAddonsSearch.png')
-		self.addDirectoryItem(33046, 'movieNavigator&folderName=%s' % quote_plus(getLS(33046)), 'movies.png', 'DefaultMovies.png')
-		self.addDirectoryItem(33047, 'tvNavigator&folderName=%s' % quote_plus(getLS(33047)), 'tvshows.png', 'DefaultTVShows.png')
-		if getMenuEnabled('navi.anime'): self.addDirectoryItem('Anime', 'anime_Navigator&folderName=%s' % quote_plus('Anime'), 'boxsets.png', 'DefaultFolder.png')
-		if getMenuEnabled('mylists.widget'):
-			self.addDirectoryItem(32003, 'mymovieNavigator&folderName=%s' % quote_plus(getLS(32003)), 'mymovies.png', 'DefaultVideoPlaylists.png')
-			self.addDirectoryItem(32004, 'mytvNavigator&folderName=%s' % quote_plus(getLS(32004)), 'mytvshows.png', 'DefaultVideoPlaylists.png')
-		if getMenuEnabled('navi.youtube'): self.addDirectoryItem('YouTube Videos', 'youtube&folderName=%s' % quote_plus('YouTube Videos'), 'youtube.png', 'youtube.png')
-		self.addDirectoryItem(32010, 'tools_searchNavigator&folderName=%s' % quote_plus(getLS(32010)), 'search.png', 'DefaultAddonsSearch.png')
-		self.addDirectoryItem(32008, 'tools_toolNavigator&folderName=%s' % quote_plus(getLS(32008)), 'tools.png', 'tools.png')
-		downloads = True if getSetting('downloads') == 'true' and (len(control.listDir(getSetting('movie.download.path'))[0]) > 0 or len(control.listDir(getSetting('tv.download.path'))[0]) > 0) else False
-		if downloads: self.addDirectoryItem(32009, 'downloadNavigator&folderName=%s' % quote_plus(getLS(32009)), 'downloads.png', 'DefaultFolder.png')
-		favorite = favourites.checkForFavourites()
-		if favorite: self.addDirectoryItem(40464, 'favouriteNavigator&folderName=%s' % quote_plus(getLS(40464)), 'highly-rated.png', 'DefaultFolder.png')
-		if getMenuEnabled('navi.prem.services'): self.addDirectoryItem('Premium Services', 'premiumNavigator&folderName=%s'% quote_plus('Premium Services'), 'premium.png', 'DefaultFolder.png')
-		if getMenuEnabled('navi.changelog'): self.addDirectoryItem(32014, 'tools_ShowChangelog&name=Umbrella', 'changelog.png', 'DefaultAddonHelper.png', isFolder=False)
-		if getMenuEnabled('navi.fullchangelog'): self.addDirectoryItem(40589, 'tools_ShowFullChangelog&name=Umbrella', 'changelog.png', 'DefaultAddonHelper.png', isFolder=False)
+		from resources.lib.database import menu as menu_db
+		menu_db.initialize('root')
+		rendered = 0
+		for item in menu_db.get_menu_items('root'):
+			if not self._eval_item_condition(item['item_id']):
+				continue
+			label = getLS(int(item['label'])) if item['label'].isdigit() else item['label']
+			action = '%s&folderName=%s' % (item['action'], quote_plus(label)) if item['is_folder'] else item['action']
+			self.addDirectoryItem(label, action, item['poster'], item['icon'],
+				isFolder=bool(item['is_folder']), isAction=bool(item['is_action']),
+				multi_context=[('Edit Main Menu', 'mainMenuEditor&menu_name=root')])
+			rendered += 1
+		if rendered == 0:
+			tools_label = getLS(32008)
+			self.addDirectoryItem(tools_label, 'tools_toolNavigator&folderName=%s' % quote_plus(tools_label),
+				'tools.png', 'tools.png', multi_context=[('Edit Main Menu', 'mainMenuEditor&menu_name=root')])
 		self.endDirectory()
+
+	def _eval_item_condition(self, item_id):
+		if item_id == 'favourites':
+			return bool(favourites.checkForFavourites())
+		if item_id == 'downloads':
+			if getSetting('downloads') != 'true':
+				return False
+			return (len(control.listDir(getSetting('movie.download.path'))[0]) > 0 or
+				len(control.listDir(getSetting('tv.download.path'))[0]) > 0)
+		return True
+
+	def mainMenuEditor(self, menu_name='root'):
+		from resources.lib.database import menu as menu_db
+		menu_db.initialize(menu_name)
+		while True:
+			all_items = menu_db.get_all_menu_items(menu_name)
+			display = []
+			for it in all_items:
+				lbl = getLS(int(it['label'])) if it['label'].isdigit() else it['label']
+				dot = '[COLOR lime]●[/COLOR] ' if it['enabled'] else '[COLOR red]○[/COLOR] '
+				display.append(dot + lbl)
+			display.append('[COLOR yellow]Add Custom Item...[/COLOR]')
+			display.append('[COLOR red]Reset to Defaults[/COLOR]')
+			display.append('Done')
+			sel = control.selectDialog(display, heading='Edit Main Menu')
+			if sel < 0:
+				break
+			n = len(all_items)
+			if sel == n:
+				self._mainMenuAddCustomItem(menu_name, menu_db)
+			elif sel == n + 1:
+				if control.yesnoDialog('Reset the main menu to its default items and order?', '', ''):
+					menu_db.reset_to_defaults(menu_name)
+			elif sel == n + 2:
+				break
+			else:
+				item = all_items[sel]
+				item_lbl = getLS(int(item['label'])) if item['label'].isdigit() else item['label']
+				sub_options = ['Disable' if item['enabled'] else 'Enable', 'Re-order']
+				if item['is_custom']:
+					sub_options.append('Delete')
+				sub_options.append('Back')
+				sub_sel = control.selectDialog(sub_options, heading=item_lbl)
+				if sub_sel < 0:
+					continue
+				chosen = sub_options[sub_sel]
+				if chosen in ('Enable', 'Disable'):
+					menu_db.toggle_item(menu_name, item['item_id'])
+				elif chosen == 'Re-order':
+					self.mainMenuReorderEditor(menu_name, preselected_id=item['item_id'])
+				elif chosen == 'Delete':
+					if control.yesnoDialog('Delete "%s"?' % item_lbl, '', ''):
+						menu_db.delete_item(menu_name, item['item_id'])
+		control.refresh()
+
+	def _mainMenuAddCustomItem(self, menu_name, menu_db):
+		import xbmcgui
+		label = control.dialog.input('Enter Label')
+		if not label:
+			return
+		url = control.dialog.input('Enter URL or Action  (e.g. plugin://... or movieNavigator)')
+		if not url:
+			return
+		is_action = 0 if '://' in url else 1
+		try:
+			icon_files = sorted([f for f in control.listDir(self.artPath)[1] if f.lower().endswith('.png')])
+			list_items = []
+			for f in icon_files:
+				li = xbmcgui.ListItem(label=f)
+				icon_path = control.joinPath(self.artPath, f)
+				li.setArt({'icon': icon_path, 'thumb': icon_path})
+				list_items.append(li)
+			icon_sel = control.selectDialog(list_items, 'Select Icon', useDetails=True)
+			icon = icon_files[icon_sel] if 0 <= icon_sel < len(icon_files) else 'DefaultFolder.png'
+		except Exception:
+			icon = 'DefaultFolder.png'
+		menu_db.add_custom_item(menu_name, label, url, icon, icon, is_folder=1, is_action=is_action)
+
+	def mainMenuReorderEditor(self, menu_name='root', preselected_id=None):
+		from resources.lib.database import menu as menu_db
+		enabled = menu_db.get_menu_items(menu_name)
+		if preselected_id is not None:
+			sel = next((i for i, it in enumerate(enabled) if it['item_id'] == preselected_id), -1)
+			if sel < 0:
+				control.refresh()
+				return
+		else:
+			display = [getLS(int(it['label'])) if it['label'].isdigit() else it['label'] for it in enabled]
+			sel = control.selectDialog(display, heading='Re-order: Select item to move')
+			if sel < 0:
+				control.refresh()
+				return
+		item = enabled[sel]
+		lbl = getLS(int(item['label'])) if item['label'].isdigit() else item['label']
+		pos_display = []
+		for idx, it in enumerate(enabled):
+			it_lbl = getLS(int(it['label'])) if it['label'].isdigit() else it['label']
+			marker = '  <<' if it['item_id'] == item['item_id'] else ''
+			pos_display.append('%d.  %s%s' % (idx + 1, it_lbl, marker))
+		target = control.selectDialog(pos_display, heading='Move "%s" to:' % lbl, preselect=sel)
+		if target >= 0 and target != sel:
+			current_ids = [it['item_id'] for it in enabled]
+			current_ids.remove(item['item_id'])
+			current_ids.insert(target, item['item_id'])
+			menu_db.reorder_enabled_items(menu_name, current_ids)
+		control.refresh()
 
 	def movies(self, lite=False, folderName=''):
 		if self.useContainerTitles: control.setContainerName(folderName)
@@ -845,7 +949,7 @@ class Navigator:
 			from resources.lib.modules import log_utils
 			log_utils.error()
 
-	def addDirectoryItem(self, name, query, poster, icon, context=None, queue=False, isAction=True, isFolder=True, isPlayable=False, isSearch=False, table=''):
+	def addDirectoryItem(self, name, query, poster, icon, context=None, queue=False, isAction=True, isFolder=True, isPlayable=False, isSearch=False, table='', multi_context=None):
 		try:
 			from sys import argv # some functions like ActivateWindow() throw invalid handle less this is imported here.
 			if isinstance(name, int): name = getLS(name)
@@ -857,6 +961,9 @@ class Navigator:
 			if queue: cm.append((queueMenu, 'RunPlugin(plugin://plugin.video.umbrella/?action=playlist_QueueItem)'))
 			if context: cm.append((getLS(context[0]), 'RunPlugin(plugin://plugin.video.umbrella/?action=%s)' % context[1]))
 			if isSearch: cm.append(('Clear Search Phrase', 'RunPlugin(plugin://plugin.video.umbrella/?action=cache_clearSearchPhrase&source=%s&name=%s)' % (table, quote_plus(name))))
+			if multi_context:
+				for ctx_label, ctx_action in multi_context:
+					cm.append((ctx_label, 'RunPlugin(plugin://plugin.video.umbrella/?action=%s)' % ctx_action))
 			cm.append(('[COLOR %s]Umbrella Settings[/COLOR]' % self.highlight_color, 'RunPlugin(plugin://plugin.video.umbrella/?action=tools_openSettings)'))
 			item = control.item(label=name, offscreen=True)
 			item.addContextMenuItems(cm)

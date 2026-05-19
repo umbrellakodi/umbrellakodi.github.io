@@ -1,3 +1,6 @@
+[B]Update - v6.7.591 - May 19th, 2026 [/B]
+--[Change] Setup for dynamic root menu. TV and Movie sections will be next.
+
 [B]Update - v6.7.590 - May 16th, 2026 [/B]
 --[Fix] Change made for plex authorization.
 
