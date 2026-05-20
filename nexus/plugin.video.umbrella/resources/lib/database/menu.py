@@ -206,6 +206,22 @@ def add_custom_item(menu_name, label, action, icon, poster, is_folder=1, is_acti
 	dbcon.close()
 
 
+def update_custom_item(menu_name, item_id, **kwargs):
+	allowed = {'label', 'action', 'icon', 'poster', 'is_folder', 'is_action'}
+	updates = {k: v for k, v in kwargs.items() if k in allowed}
+	if not updates:
+		return
+	set_clause = ', '.join('%s=?' % k for k in updates)
+	values = list(updates.values()) + [menu_name, item_id]
+	dbcon = _get_connection()
+	dbcon.execute(
+		'UPDATE menu_items SET %s WHERE menu_name=? AND item_id=? AND is_custom=1' % set_clause,
+		values
+	)
+	dbcon.commit()
+	dbcon.close()
+
+
 def reset_to_defaults(menu_name='root'):
 	dbcon = _get_connection()
 	dbcon.execute('DELETE FROM menu_items WHERE menu_name=?', (menu_name,))

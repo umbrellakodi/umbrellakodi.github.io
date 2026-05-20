@@ -47,6 +47,9 @@ def router(argv2):
 	elif action == 'mainMenuEditor':
 		from resources.lib.menus import navigator
 		navigator.Navigator().mainMenuEditor(params.get('menu_name', 'root'))
+	elif action == 'runBuiltin':
+		import xbmc
+		xbmc.executebuiltin(params.get('cmd', ''))
 	####################################################
 	#---MOVIES
 	####################################################

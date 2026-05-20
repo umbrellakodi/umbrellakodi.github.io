@@ -1,2 +1,3 @@
-[B]Update - v6.7.593 - May 19th, 2026 [/B]
---[Fix] Possible fix authorizing rd with a bad network.
+[B]Update - v6.7.594 - May 20th, 2026 [/B]
+--[Change] Added ability to edit custom items. Label, icon, or path.
+--[Change] Added ability to use kodi built in functions as custom items. (Reload Skin or Exit Kodi)

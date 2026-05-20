@@ -105,7 +105,7 @@ class Navigator:
 				item_lbl = getLS(int(item['label'])) if item['label'].isdigit() else item['label']
 				sub_options = ['Disable' if item['enabled'] else 'Enable', 'Re-order']
 				if item['is_custom']:
-					sub_options.append('Delete')
+					sub_options += ['Edit', 'Delete']
 				sub_options.append('Back')
 				sub_sel = control.selectDialog(sub_options, heading=item_lbl)
 				if sub_sel < 0:
@@ -115,6 +115,8 @@ class Navigator:
 					menu_db.toggle_item(menu_name, item['item_id'])
 				elif chosen == 'Re-order':
 					self.mainMenuReorderEditor(menu_name, preselected_id=item['item_id'])
+				elif chosen == 'Edit':
+					self._mainMenuEditCustomItem(menu_name, item, menu_db)
 				elif chosen == 'Delete':
 					if control.yesnoDialog('Delete "%s"?' % item_lbl, '', ''):
 						menu_db.delete_item(menu_name, item['item_id'])
@@ -125,10 +127,10 @@ class Navigator:
 		label = control.dialog.input('Enter Label')
 		if not label:
 			return
-		url = control.dialog.input('Enter URL or Action  (e.g. plugin://... or movieNavigator)')
+		url = control.dialog.input('Enter URL, Action, or Kodi Command (e.g. plugin://)')
 		if not url:
 			return
-		is_action = 0 if '://' in url else 1
+		action, is_folder, is_action = self._parseCustomUrl(url.strip())
 		try:
 			icon_files = sorted([f for f in control.listDir(self.artPath)[1] if f.lower().endswith('.png')])
 			list_items = []
@@ -141,7 +143,55 @@ class Navigator:
 			icon = icon_files[icon_sel] if 0 <= icon_sel < len(icon_files) else 'DefaultFolder.png'
 		except Exception:
 			icon = 'DefaultFolder.png'
-		menu_db.add_custom_item(menu_name, label, url, icon, icon, is_folder=1, is_action=is_action)
+		menu_db.add_custom_item(menu_name, label, action, icon, icon, is_folder=is_folder, is_action=is_action)
+
+	@staticmethod
+	def _parseCustomUrl(url):
+		import re
+		if '://' in url:
+			return url, 1, 0
+		if re.match(r'^[A-Za-z]\w*\(.*\)$', url):
+			return 'runBuiltin&cmd=%s' % url, 0, 1
+		return url, 1, 1
+
+	def _mainMenuEditCustomItem(self, menu_name, item, menu_db):
+		import xbmcgui
+		item_lbl = item['label']
+		while True:
+			sub = control.selectDialog(['Edit Name', 'Edit Path', 'Edit Icon', 'Back'], heading='Edit: %s' % item_lbl)
+			if sub < 0 or sub == 3:
+				break
+			if sub == 0:
+				new_label = control.dialog.input('Edit Label', defaultt=item_lbl)
+				if new_label and new_label != item_lbl:
+					menu_db.update_custom_item(menu_name, item['item_id'], label=new_label)
+					item_lbl = new_label
+			elif sub == 1:
+				stored = item['action']
+				display_url = stored[len('runBuiltin&cmd='):] if stored.startswith('runBuiltin&cmd=') else stored
+				new_url = control.dialog.input('Edit Path / Action', defaultt=display_url)
+				if new_url and new_url.strip() != display_url:
+					new_action, new_is_folder, new_is_action = self._parseCustomUrl(new_url.strip())
+					menu_db.update_custom_item(menu_name, item['item_id'],
+						action=new_action, is_folder=new_is_folder, is_action=new_is_action)
+					item['action'] = new_action
+					item['is_folder'] = new_is_folder
+					item['is_action'] = new_is_action
+			elif sub == 2:
+				try:
+					icon_files = sorted([f for f in control.listDir(self.artPath)[1] if f.lower().endswith('.png')])
+					list_items = []
+					for f in icon_files:
+						li = xbmcgui.ListItem(label=f)
+						icon_path = control.joinPath(self.artPath, f)
+						li.setArt({'icon': icon_path, 'thumb': icon_path})
+						list_items.append(li)
+					icon_sel = control.selectDialog(list_items, 'Select Icon', useDetails=True)
+					if 0 <= icon_sel < len(icon_files):
+						new_icon = icon_files[icon_sel]
+						menu_db.update_custom_item(menu_name, item['item_id'], icon=new_icon, poster=new_icon)
+				except Exception:
+					pass
 
 	def mainMenuReorderEditor(self, menu_name='root', preselected_id=None):
 		from resources.lib.database import menu as menu_db
