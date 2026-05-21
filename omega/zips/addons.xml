@@ -1,5 +1,5 @@
 <?xml version='1.0' encoding='utf-8'?>
-<addons><addon id="plugin.video.umbrella" name="Umbrella" provider-name="Umbrella" version="6.7.594">
+<addons><addon id="plugin.video.umbrella" name="Umbrella" provider-name="Umbrella" version="6.7.595">
 	<requires>
 		<import addon="xbmc.python" version="3.0.0" />
 		<import addon="script.module.requests" />
@@ -235,9 +235,11 @@
 			<screenshot>resources/screenshots/screenshot003.jpg</screenshot>
 		</assets>
 		<news>
-[B]Update - v6.7.594 - May 20th, 2026 [/B]
---[Change] Added ability to edit custom items. Label, icon, or path.
---[Change] Added ability to use kodi built in functions as custom items. (Reload Skin or Exit Kodi)
+[B]Update - v6.7.595 - May 21st, 2026 [/B]
+--[Change] Made Movies, TV Shows, My Movies, and My TV Shows all dynamic menus that can be enabled, disabled, re-ordered, or custom shortcuts can be added.
+--[Change] Added the ability to browse addons for shortcut creation.
+--[Change] Added the ability to select icons from skin, umbrella, or custom url when setting a custom shortcut.
+--[Change] Added shortcut folders. The option is under Tools.
 		</news>
 	</extension>
 

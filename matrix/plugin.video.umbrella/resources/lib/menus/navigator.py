@@ -76,6 +76,45 @@ class Navigator:
 				len(control.listDir(getSetting('tv.download.path'))[0]) > 0)
 		return True
 
+	def _eval_condition_key(self, key, lite=False):
+		if key == 'not_lite':                return not lite
+		if key == 'simkl_token':             return bool(self.simkltoken)
+		if key == 'simkl_credentials':       return bool(self.simklCredentials)
+		if key == 'trakt_credentials':       return bool(self.traktCredentials)
+		if key == 'trakt_with_indicators':   return bool(self.traktCredentials and (self.traktIndicators or getSetting('trakt.markwatched') == 'true'))
+		if key == 'mdblist_token':           return bool(getSetting('mdblist.token'))
+		if key == 'mdblist_credentials':     return bool(self.mdblistCredentials)
+		if key == 'mdblist_with_indicators': return bool(self.mdblistCredentials and (self.mdblistIndicators or getSetting('mdblist.markwatched') == 'true'))
+		if key == 'tmdb_v4_token':           return bool(getSetting('tmdb.v4.accesstoken'))
+		if key == 'has_lib_movies':          return bool(self.hasLibMovies)
+		if key == 'favorite_movie':          return bool(self.favoriteMovie)
+		if key == 'favorite_tvshows':        return bool(self.favoriteTVShows)
+		if key == 'favorite_episodes':       return bool(self.favoriteEpisodes)
+		if key == 'local_scrobble':          return getSetting('indicators.alt') == '0' and getSetting('scrobble.source') == '0'
+		return True
+
+	def _renderDbMenu(self, menu_name, editor_action, editor_label, lite=False, folderName=''):
+		from resources.lib.database import menu as menu_db
+		menu_db.initialize(menu_name)
+		rendered = 0
+		for item in menu_db.get_menu_items(menu_name):
+			ck = item.get('condition_key')
+			if ck and not self._eval_condition_key(ck, lite=lite):
+				continue
+			label = getLS(int(item['label'])) if item['label'].isdigit() else item['label']
+			icon_file = item['icon'] if self.iconLogos else item['poster']
+			action = '%s&folderName=%s' % (item['action'], quote_plus(label)) if item['is_folder'] else item['action']
+			self.addDirectoryItem(label, action, icon_file, icon_file,
+				isFolder=bool(item['is_folder']), isAction=bool(item['is_action']),
+				queue=bool(item['queue']),
+				multi_context=[(editor_label, '%s&menu_name=%s' % (editor_action, menu_name))])
+			rendered += 1
+		if rendered == 0:
+			self.addDirectoryItem(editor_label, '%s&menu_name=%s' % (editor_action, menu_name),
+				'tools.png', 'tools.png', isFolder=False, isAction=True)
+		if self.useContainerTitles: control.setContainerName(folderName)
+		self.endDirectory()
+
 	def mainMenuEditor(self, menu_name='root'):
 		from resources.lib.database import menu as menu_db
 		menu_db.initialize(menu_name)
@@ -123,26 +162,14 @@ class Navigator:
 		control.refresh()
 
 	def _mainMenuAddCustomItem(self, menu_name, menu_db):
-		import xbmcgui
 		label = control.dialog.input('Enter Label')
 		if not label:
 			return
-		url = control.dialog.input('Enter URL, Action, or Kodi Command (e.g. plugin://)')
+		url = self._browseForPath('Select Path')
 		if not url:
 			return
-		action, is_folder, is_action = self._parseCustomUrl(url.strip())
-		try:
-			icon_files = sorted([f for f in control.listDir(self.artPath)[1] if f.lower().endswith('.png')])
-			list_items = []
-			for f in icon_files:
-				li = xbmcgui.ListItem(label=f)
-				icon_path = control.joinPath(self.artPath, f)
-				li.setArt({'icon': icon_path, 'thumb': icon_path})
-				list_items.append(li)
-			icon_sel = control.selectDialog(list_items, 'Select Icon', useDetails=True)
-			icon = icon_files[icon_sel] if 0 <= icon_sel < len(icon_files) else 'DefaultFolder.png'
-		except Exception:
-			icon = 'DefaultFolder.png'
+		action, is_folder, is_action = self._parseCustomUrl(url)
+		icon = self._browseForIcon(self.artPath) or 'DefaultFolder.png'
 		menu_db.add_custom_item(menu_name, label, action, icon, icon, is_folder=is_folder, is_action=is_action)
 
 	@staticmethod
@@ -154,8 +181,121 @@ class Navigator:
 			return 'runBuiltin&cmd=%s' % url, 0, 1
 		return url, 1, 1
 
-	def _mainMenuEditCustomItem(self, menu_name, item, menu_db):
+	@staticmethod
+	def _browseForPath(heading='Select Path', default_for_manual=''):
+		TOP = [
+			('Add-ons',             'addons://sources/video/'),
+			('Video Library',       'library://video/'),
+			('My Shortcut Folders', '__shortcut_folders__'),
+			('Kodi Commands',       '__kodi_commands__'),
+			('Enter Manually',      '__manual__'),
+		]
+		sel = control.selectDialog([t[0] for t in TOP], heading=heading)
+		if sel < 0:
+			return None
+		_, start = TOP[sel]
+		if start == '__manual__':
+			result = control.dialog.input(heading, defaultt=default_for_manual)
+			return result.strip() if result else None
+		if start == '__kodi_commands__':
+			return Navigator._browseKodiCommands()
+		if start == '__shortcut_folders__':
+			return Navigator._browseShortcutFolders()
+		return Navigator._browseDirectory(start, [])
+
+	@staticmethod
+	def _browseShortcutFolders():
+		from resources.lib.database import menu as menu_db
+		menu_db.initialize('root')
+		folders = menu_db.get_custom_folders()
+		if not folders:
+			control.dialog.ok('My Shortcut Folders', 'No shortcut folders found. Create one via Tools > Shortcut Folder Manager.')
+			return None
+		sel = control.selectDialog([f['folder_name'] for f in folders], heading='My Shortcut Folders')
+		if sel < 0:
+			return None
+		return 'customFolderNavigator&folder_id=%s' % folders[sel]['folder_id']
+
+	@staticmethod
+	def _browseDirectory(path, history):
+		import json
+		rpc = json.loads(control.jsonrpc(json.dumps({
+			'jsonrpc': '2.0', 'method': 'Files.GetDirectory',
+			'params': {'directory': path, 'media': 'files', 'properties': ['title']},
+			'id': 1
+		})))
+		files = rpc.get('result', {}).get('files', [])
+		if not files:
+			return path.rstrip('/')
+		display = []
+		if history:
+			display.append('[B]<< Back[/B]')
+		display.append('[COLOR lime]>> Select This Location[/COLOR]')
+		display += [f['label'] for f in files]
+		sel = control.selectDialog(display, heading='Select Path')
+		if sel < 0:
+			return None
+		back_offset = 1 if history else 0
+		if history and sel == 0:
+			return Navigator._browseDirectory(history[-1], history[:-1])
+		if sel == back_offset:
+			return path.rstrip('/')
+		item = files[sel - back_offset - 1]
+		if item.get('filetype') == 'directory':
+			return Navigator._browseDirectory(item['file'], history + [path])
+		return item.get('file', path).rstrip('/')
+
+	@staticmethod
+	def _browseKodiCommands():
+		COMMANDS = [
+			('Home',                 'ActivateWindow(Home)'),
+			('Movies Library',       'ActivateWindow(VideoLibrary,Movies)'),
+			('TV Shows Library',     'ActivateWindow(VideoLibrary,TvShows)'),
+			('Music Library',        'ActivateWindow(MusicLibrary)'),
+			('Add-ons Browser',      'ActivateWindow(AddonBrowser)'),
+			('File Manager',         'ActivateWindow(FileManager)'),
+			('Settings',             'ActivateWindow(Settings)'),
+			('Favourites',           'ActivateWindow(Favourites)'),
+			('Shutdown Menu',        'ActivateWindow(ShutdownMenu)'),
+			('Suspend',              'Suspend()'),
+			('Reboot',               'Reboot()'),
+			('Quit Kodi',            'Quit()'),
+			('Update Video Library', 'UpdateLibrary(video)'),
+			('Update Music Library', 'UpdateLibrary(music)'),
+			('Toggle Debug Logging', 'ToggleDebug()'),
+		]
+		sel = control.selectDialog([c[0] for c in COMMANDS], heading='Kodi Commands')
+		return COMMANDS[sel][1] if 0 <= sel < len(COMMANDS) else None
+
+	@staticmethod
+	def _browseForIcon(art_path):
 		import xbmcgui
+		_SKIN = 'special://skin/'
+		choice = control.selectDialog(['Browse for Image', 'Enter URL', 'Umbrella Icons'], heading='Select Icon')
+		if choice < 0:
+			return None
+		if choice == 0:
+			result = xbmcgui.Dialog().browse(2, 'Select Icon', 'files', '.png|.jpg|.gif', False, False, _SKIN)
+			return result if result and result != _SKIN else None
+		if choice == 1:
+			result = control.dialog.input('Enter Icon URL or Path')
+			return result.strip() if result else None
+		try:
+			icon_files = sorted([f for f in control.listDir(art_path)[1] if f.lower().endswith('.png')])
+			list_items = []
+			for f in icon_files:
+				li = xbmcgui.ListItem(label=f)
+				icon_path = control.joinPath(art_path, f)
+				li.setArt({'icon': icon_path, 'thumb': icon_path})
+				list_items.append(li)
+			icon_sel = control.selectDialog(list_items, 'Select Icon', useDetails=True)
+			if 0 <= icon_sel < len(icon_files):
+				return control.joinPath(art_path, icon_files[icon_sel])
+		except Exception:
+			pass
+		return None
+
+	def _mainMenuEditCustomItem(self, menu_name, item, menu_db):
 		item_lbl = item['label']
 		while True:
 			sub = control.selectDialog(['Edit Name', 'Edit Path', 'Edit Icon', 'Back'], heading='Edit: %s' % item_lbl)
@@ -169,29 +309,18 @@ class Navigator:
 			elif sub == 1:
 				stored = item['action']
 				display_url = stored[len('runBuiltin&cmd='):] if stored.startswith('runBuiltin&cmd=') else stored
-				new_url = control.dialog.input('Edit Path / Action', defaultt=display_url)
-				if new_url and new_url.strip() != display_url:
-					new_action, new_is_folder, new_is_action = self._parseCustomUrl(new_url.strip())
+				new_url = self._browseForPath('Edit Path', default_for_manual=display_url)
+				if new_url and new_url != display_url:
+					new_action, new_is_folder, new_is_action = self._parseCustomUrl(new_url)
 					menu_db.update_custom_item(menu_name, item['item_id'],
 						action=new_action, is_folder=new_is_folder, is_action=new_is_action)
 					item['action'] = new_action
 					item['is_folder'] = new_is_folder
 					item['is_action'] = new_is_action
 			elif sub == 2:
-				try:
-					icon_files = sorted([f for f in control.listDir(self.artPath)[1] if f.lower().endswith('.png')])
-					list_items = []
-					for f in icon_files:
-						li = xbmcgui.ListItem(label=f)
-						icon_path = control.joinPath(self.artPath, f)
-						li.setArt({'icon': icon_path, 'thumb': icon_path})
-						list_items.append(li)
-					icon_sel = control.selectDialog(list_items, 'Select Icon', useDetails=True)
-					if 0 <= icon_sel < len(icon_files):
-						new_icon = icon_files[icon_sel]
-						menu_db.update_custom_item(menu_name, item['item_id'], icon=new_icon, poster=new_icon)
-				except Exception:
-					pass
+				new_icon = self._browseForIcon(self.artPath)
+				if new_icon:
+					menu_db.update_custom_item(menu_name, item['item_id'], icon=new_icon, poster=new_icon)
 
 	def mainMenuReorderEditor(self, menu_name='root', preselected_id=None):
 		from resources.lib.database import menu as menu_db
@@ -223,6 +352,9 @@ class Navigator:
 		control.refresh()
 
 	def movies(self, lite=False, folderName=''):
+		self._renderDbMenu('movies', 'movieNavigatorEditor', 'Edit Movies Menu', lite=lite, folderName=folderName)
+
+	def _movies_legacy(self, lite=False, folderName=''):
 		if self.useContainerTitles: control.setContainerName(folderName)
 		if getMenuEnabled('navi.movie.tmdb.nowplaying'):
 			self.addDirectoryItem(32423 if self.indexLabels else 32422, 'tmdbmovies&url=tmdb_nowplaying&folderName=%s' % quote_plus(getLS(32423 if self.indexLabels else 32422)), 'tmdb.png' if self.iconLogos else 'in-theaters.png', 'DefaultMovies.png')
@@ -318,6 +450,10 @@ class Navigator:
 
 	def mymovies(self, lite=False, folderName=''):
 		self.accountCheck()
+		self._renderDbMenu('mymovies', 'myMoviesNavigatorEditor', 'Edit My Movies Menu', lite=lite, folderName=folderName)
+
+	def _mymovies_legacy(self, lite=False, folderName=''):
+		self.accountCheck()
 		if self.useContainerTitles: control.setContainerName(folderName)
 		self.addDirectoryItem(32039, 'movieUserlists&folderName=%s' % quote_plus(getLS(32039)), 'userlists.png', 'DefaultVideoPlaylists.png')
 		if self.favoriteMovie:
@@ -352,6 +488,9 @@ class Navigator:
 		self.endDirectory()
 
 	def tvshows(self, lite=False, folderName=''):
+		self._renderDbMenu('tvshows', 'tvNavigatorEditor', 'Edit TV Shows Menu', lite=lite, folderName=folderName)
+
+	def _tvshows_legacy(self, lite=False, folderName=''):
 		if self.useContainerTitles: control.setContainerName(folderName)
 		if getMenuEnabled('navi.originals'):
 			self.addDirectoryItem(40077 if self.indexLabels else 40070, 'tvOriginals&folderName=%s' % quote_plus(getLS(40077 if self.indexLabels else 40070)), 'tvmaze.png' if self.iconLogos else 'networks.png', 'DefaultNetwork.png')
@@ -424,6 +563,10 @@ class Navigator:
 		self.endDirectory()
 
 	def mytvshows(self, lite=False, folderName=''):
+		self.accountCheck()
+		self._renderDbMenu('mytvshows', 'myTVShowsNavigatorEditor', 'Edit My TV Shows Menu', lite=lite, folderName=folderName)
+
+	def _mytvshows_legacy(self, lite=False, folderName=''):
 		self.accountCheck()
 		if self.useContainerTitles: control.setContainerName(folderName)
 		self.addDirectoryItem(32040, 'tvUserlists&folderName=%s' % quote_plus(getLS(32040)), 'userlists.png', 'DefaultVideoPlaylists.png')
@@ -561,6 +704,52 @@ class Navigator:
 				from resources.lib.menus import tvshows
 				tvshows.TVshows().getTraktPublicLists(url, folderName='')
 
+	def customFolder(self, folder_id, folderName=''):
+		from resources.lib.database import menu as menu_db
+		menu_db.initialize(folder_id)
+		self._renderDbMenu(folder_id, 'customFolderEditor', 'Edit Folder', folderName=folderName)
+
+	def customFolderManager(self):
+		from resources.lib.database import menu as menu_db
+		menu_db.initialize('root')
+		addon_url = 'plugin://plugin.video.umbrella/?action=customFolderNavigator&folder_id='
+		while True:
+			folders = menu_db.get_custom_folders()
+			display = ['[COLOR yellow]+ Create New Folder...[/COLOR]']
+			display += [f['folder_name'] for f in folders]
+			display.append('Done')
+			sel = control.selectDialog(display, heading='Shortcut Folder Manager')
+			if sel < 0 or sel == len(display) - 1:
+				break
+			if sel == 0:
+				name = control.dialog.input('Folder Name')
+				if name:
+					menu_db.create_custom_folder(name)
+				continue
+			folder = folders[sel - 1]
+			fid = folder['folder_id']
+			fname = folder['folder_name']
+			widget_url = addon_url + fid
+			action_str = 'customFolderNavigator&folder_id=%s' % fid
+			sub = control.selectDialog(
+				['Edit Items', 'Show Widget URL', 'Rename', 'Delete', 'Back'],
+				heading=fname
+			)
+			if sub < 0 or sub == 4:
+				continue
+			if sub == 0:
+				self.mainMenuEditor(fid)
+			elif sub == 1:
+				control.dialog.ok(fname,
+					'[B]Widget URL:[/B]\n%s\n\n[B]Menu Item Action:[/B]\n%s' % (widget_url, action_str))
+			elif sub == 2:
+				new_name = control.dialog.input('Rename Folder', defaultt=fname)
+				if new_name and new_name != fname:
+					menu_db.rename_custom_folder(fid, new_name)
+			elif sub == 3:
+				if control.yesnoDialog('Delete folder "%s" and all its items?' % fname, '', ''):
+					menu_db.delete_custom_folder(fid)
+
 	def tools(self, folderName=''):
 		if self.useContainerTitles: control.setContainerName(folderName)
 		self.addDirectoryItem(32510, 'cache_Navigator&folderName=%s' % quote_plus(getLS(40462)), 'settings.png', 'DefaultAddonService.png', isFolder=True)
@@ -580,6 +769,7 @@ class Navigator:
 		self.addDirectoryItem(40611, 'tools_openSettings&query=8.0', 'tools.png', 'DefaultAddonService.png', isFolder=False)
 		#self.addDirectoryItem(40559, 'tools_openSettings&query=9.0', 'tools.png', 'DefaultAddonService.png', isFolder=False)
 		#self.addDirectoryItem(40123, 'tools_openSettings&query=9.0', 'tools.png', 'DefaultAddonService.png', isFolder=False)
+		self.addDirectoryItem('[B]Shortcut Folder Manager[/B]', 'customFolderManager', 'tools.png', 'DefaultAddonService.png', isFolder=False, isAction=True)
 		if self.simklCredentials: self.addDirectoryItem(40551, 'tools_simklToolsNavigator&folderName=%s' % quote_plus(getLS(40552)), 'tools.png', 'DefaultAddonService.png', isFolder=True)
 		if self.traktCredentials: self.addDirectoryItem(35057, 'tools_traktToolsNavigator&folderName=%s' % quote_plus(getLS(40461)), 'tools.png', 'DefaultAddonService.png', isFolder=True)
 		if self.mdblistCredentials: self.addDirectoryItem(40635, 'tools_mdblistToolsNavigator&folderName=%s' % quote_plus(getLS(40636)), 'tools.png', 'DefaultAddonService.png', isFolder=True)
@@ -711,13 +901,12 @@ class Navigator:
 
 	def premium_services(self, folderName=''):
 		if self.useContainerTitles: control.setContainerName(folderName)
-		if getMenuEnabled('navi.alldebrid') and self.alldebridCredentials: self.addDirectoryItem(40059, 'ad_ServiceNavigator&folderName=%s' % quote_plus(getLS(40059)), 'alldebrid.png', 'alldebrid.png')
-		if getMenuEnabled('navi.easynews') and self.easynewsCredentials: self.addDirectoryItem(32327, 'en_ServiceNavigator&folderName=%s' % quote_plus(getLS(32327)), 'easynews.png', 'easynews.png')
-		if getMenuEnabled('navi.offcloud') and self.offcloudCredentials: self.addDirectoryItem(40540, 'oc_ServiceNavigator&folderName=%s' % quote_plus(getLS(40540)), 'offcloud.png', 'offcloud.png')
-		#if getMenuEnabled('navi.furk'): self.addDirectoryItem('Furk.net', 'furk_ServiceNavigator', 'furk.png', 'furk.png')
-		if getMenuEnabled('navi.premiumize') and self.premiumizeCredentials: self.addDirectoryItem(40057, 'pm_ServiceNavigator&folderName=%s' % quote_plus(getLS(40057)), 'premiumize.png', 'premiumize.png')
-		if getMenuEnabled('navi.realdebrid') and self.realdebridCredentials: self.addDirectoryItem(40058, 'rd_ServiceNavigator&folderName=%s' % quote_plus(getLS(40058)), 'realdebrid.png', 'realdebrid.png')
-		if getMenuEnabled('navi.torbox') and self.torboxCredentials: self.addDirectoryItem(40529, 'tb_ServiceNavigator&folderName=%s' % quote_plus(getLS(35539)), 'torbox.png', 'torbox.png')
+		if self.alldebridCredentials:  self.addDirectoryItem(40059, 'ad_ServiceNavigator&folderName=%s' % quote_plus(getLS(40059)), 'alldebrid.png', 'alldebrid.png')
+		if self.easynewsCredentials:   self.addDirectoryItem(32327, 'en_ServiceNavigator&folderName=%s' % quote_plus(getLS(32327)), 'easynews.png', 'easynews.png')
+		if self.offcloudCredentials:   self.addDirectoryItem(40540, 'oc_ServiceNavigator&folderName=%s' % quote_plus(getLS(40540)), 'offcloud.png', 'offcloud.png')
+		if self.premiumizeCredentials: self.addDirectoryItem(40057, 'pm_ServiceNavigator&folderName=%s' % quote_plus(getLS(40057)), 'premiumize.png', 'premiumize.png')
+		if self.realdebridCredentials: self.addDirectoryItem(40058, 'rd_ServiceNavigator&folderName=%s' % quote_plus(getLS(40058)), 'realdebrid.png', 'realdebrid.png')
+		if self.torboxCredentials:     self.addDirectoryItem(40529, 'tb_ServiceNavigator&folderName=%s' % quote_plus(getLS(35539)), 'torbox.png', 'torbox.png')
 		self.endDirectory()
 
 	def alldebrid_service(self, folderName=''):
@@ -1004,8 +1193,9 @@ class Navigator:
 			from sys import argv # some functions like ActivateWindow() throw invalid handle less this is imported here.
 			if isinstance(name, int): name = getLS(name)
 			url = 'plugin://plugin.video.umbrella/?action=%s' % query if isAction else query
-			poster = control.joinPath(self.artPath, poster) if self.artPath else icon
-			if not icon.startswith('Default'): icon = control.joinPath(self.artPath, icon)
+			_abs = lambda p: '://' in p or p.startswith('/') or (len(p) > 1 and p[1] == ':')
+			poster = control.joinPath(self.artPath, poster) if self.artPath and not _abs(poster) else (poster or icon)
+			if not icon.startswith('Default') and not _abs(icon): icon = control.joinPath(self.artPath, icon)
 			cm = []
 			queueMenu = getLS(32065)
 			if queue: cm.append((queueMenu, 'RunPlugin(plugin://plugin.video.umbrella/?action=playlist_QueueItem)'))

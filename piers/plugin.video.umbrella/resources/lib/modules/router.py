@@ -47,9 +47,30 @@ def router(argv2):
 	elif action == 'mainMenuEditor':
 		from resources.lib.menus import navigator
 		navigator.Navigator().mainMenuEditor(params.get('menu_name', 'root'))
+	elif action == 'movieNavigatorEditor':
+		from resources.lib.menus import navigator
+		navigator.Navigator().mainMenuEditor(params.get('menu_name', 'movies'))
+	elif action == 'tvNavigatorEditor':
+		from resources.lib.menus import navigator
+		navigator.Navigator().mainMenuEditor(params.get('menu_name', 'tvshows'))
+	elif action == 'myMoviesNavigatorEditor':
+		from resources.lib.menus import navigator
+		navigator.Navigator().mainMenuEditor(params.get('menu_name', 'mymovies'))
+	elif action == 'myTVShowsNavigatorEditor':
+		from resources.lib.menus import navigator
+		navigator.Navigator().mainMenuEditor(params.get('menu_name', 'mytvshows'))
 	elif action == 'runBuiltin':
 		import xbmc
 		xbmc.executebuiltin(params.get('cmd', ''))
+	elif action == 'customFolderNavigator':
+		from resources.lib.menus import navigator
+		navigator.Navigator().customFolder(params.get('folder_id', ''), folderName=folderName)
+	elif action == 'customFolderManager':
+		from resources.lib.menus import navigator
+		navigator.Navigator().customFolderManager()
+	elif action == 'customFolderEditor':
+		from resources.lib.menus import navigator
+		navigator.Navigator().mainMenuEditor(params.get('folder_id', ''))
 	####################################################
 	#---MOVIES
 	####################################################
