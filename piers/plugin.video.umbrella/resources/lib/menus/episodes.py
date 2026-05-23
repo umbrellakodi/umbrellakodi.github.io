@@ -270,6 +270,11 @@ class Episodes:
 					self.list = cache.get(self.trakt_progress_list, 0, url, self.trakt_user, self.lang, self.trakt_directProgressScrape, True)
 				else: self.list = cache.get(self.trakt_progress_list, self.trakt_progress_hours, url, self.trakt_user, self.lang, self.trakt_directProgressScrape, True)
 				try:
+					hidden_prog = traktsync.fetch_hidden_progress()
+					hidden_tvdb_set = {str(i['tvdb']) for i in hidden_prog if i.get('tvdb')}
+					self.list = [i for i in (self.list or []) if i.get('tvdb') not in hidden_tvdb_set]
+				except: pass
+				try:
 					if not self.list: raise Exception()
 					for i in range(len(self.list)):
 						if 'premiered' not in self.list[i]: self.list[i]['premiered'] = ''
@@ -320,6 +325,11 @@ class Episodes:
 				if trakt.getProgressActivity() > cache.timeout(self.trakt_progress_list, api_url, self.trakt_user, self.lang, self.trakt_directProgressScrape):
 					self.list = cache.get(self.trakt_progress_list, 0, api_url, self.trakt_user, self.lang, self.trakt_directProgressScrape)
 				else: self.list = cache.get(self.trakt_progress_list, self.trakt_progress_hours, api_url, self.trakt_user, self.lang, self.trakt_directProgressScrape)
+				try:
+					hidden_prog = traktsync.fetch_hidden_progress()
+					hidden_tvdb_set = {str(i['tvdb']) for i in hidden_prog if i.get('tvdb')}
+					self.list = [i for i in (self.list or []) if i.get('tvdb') not in hidden_tvdb_set]
+				except: pass
 				self.sort(type='progress')
 				if self.list is None: self.list = []
 				# place new season ep1's at top of list for 1 week
@@ -858,14 +868,6 @@ class Episodes:
 				items.append(values)
 				
 			except: pass
-		try:
-			hidden = traktsync.fetch_hidden_progress()
-			hidden = [str(i['tvdb']) for i in hidden]
-			items = [i for i in items if i['tvdb'] not in hidden] # removes hidden progress items
-		except:
-			from resources.lib.modules import log_utils
-			log_utils.error()
-
 		def items_list(i):
 			values = i
 			imdb, tmdb, tvdb = i.get('imdb'), i.get('tmdb'), i.get('tvdb')

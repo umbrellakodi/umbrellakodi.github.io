@@ -1,4 +1,4 @@
-<addon id="plugin.video.umbrella" name="Umbrella" provider-name="Umbrella" version="6.7.596">
+<addon id="plugin.video.umbrella" name="Umbrella" provider-name="Umbrella" version="6.7.597">
 	<requires>
 		<import addon="xbmc.python" version="3.0.0" />
 		<import addon="script.module.requests" />
@@ -234,10 +234,8 @@
 			<screenshot>resources/screenshots/screenshot003.jpg</screenshot>
 		</assets>
 		<news>
-[B]Update - v6.7.596 - May 23rd, 2026 [/B]
---[Change] Made new dymanic menu respect the "Show Meta Provider" setting from Settings General.
---[Change] Added a new setting to filter known infringing filenames from rd. Setting added to rd section in settings.
---[Change] Added Finish Watching for MDBList for movies and shows. (if you do not want it, just hide it)
+[B]Update - v6.7.597 - May 23rd, 2026 [/B]
+--[Change] Change made so that dropping a show on trakt immediately updates.
 		</news>
 	</extension>
 
