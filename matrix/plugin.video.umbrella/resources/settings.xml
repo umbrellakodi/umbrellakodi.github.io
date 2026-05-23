@@ -4415,6 +4415,19 @@
 					</dependencies>
 					<control type="toggle"/>
 				</setting>
+				<setting id="realdebrid.filter.filename" type="boolean" label="Filter Common Infringing Filenames" help="">
+					<level>0</level>
+					<default>false</default>
+					<dependencies>
+						<dependency type="visible">
+							<and>
+								<condition operator="!is" setting="realdebridtoken"/>
+								<condition operator="is" setting="realdebrid.enable">true</condition>
+							</and>
+						</dependency>
+					</dependencies>
+					<control type="toggle"/>
+				</setting>
 				<setting id="rd_cloud.enabled" type="boolean" label="32050" help="">
 					<level>0</level>
 					<default>false</default>

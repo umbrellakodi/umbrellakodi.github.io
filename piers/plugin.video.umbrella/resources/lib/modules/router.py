@@ -177,6 +177,9 @@ def router(argv2):
 	elif action == 'moviesUnfinished':
 		from resources.lib.menus import movies
 		movies.Movies().unfinished(url, folderName=folderName)
+	elif action == 'mdblistMoviesUnfinished':
+		from resources.lib.menus import movies
+		movies.Movies().mdblist_unfinished(url, folderName=folderName)
 	elif action == 'movieUserlists':
 		from resources.lib.menus import movies
 		movies.Movies().userlists(folderName=folderName, create_directory=True)
@@ -498,6 +501,9 @@ def router(argv2):
 	elif action == 'episodesUnfinished':
 		from resources.lib.menus import episodes
 		episodes.Episodes().unfinished(url, folderName=folderName)
+	elif action == 'mdblistEpisodesUnfinished':
+		from resources.lib.menus import episodes
+		episodes.Episodes().mdblist_unfinished(url=url, folderName=folderName)
 	elif action == 'episodes_traktUnfinishedManager':
 		from resources.lib.menus import episodes
 		episodes.Episodes().unfinishedManager()

@@ -219,6 +219,30 @@ class Episodes:
 			from resources.lib.modules import log_utils
 			log_utils.error()
 
+	def mdblist_unfinished(self, url=None, create_directory=True, folderName=''):
+		self.list = []
+		try:
+			from resources.lib.database import mdbsync
+			from resources.lib.modules import mdblist
+			items = mdbsync.fetch_bookmarks(imdb='', ret_all=True, ret_type='episodes')
+			if not items:
+				if create_directory: self.episodeDirectory(self.list, unfinished=True, next=False, folderName=folderName)
+				return self.list
+			cache_key = 'mdblistunfinished'
+			if mdblist.getWatchedActivity() > cache.timeout(self.trakt_episodes_list, cache_key, self.trakt_user, self.lang, items):
+				self.list = cache.get(self.trakt_episodes_list, 0, cache_key, self.trakt_user, self.lang, items)
+			else:
+				self.list = cache.get(self.trakt_episodes_list, self.trakt_unfinished_hours, cache_key, self.trakt_user, self.lang, items)
+			if self.list is None: self.list = []
+			self.list = sorted(self.list, key=lambda k: k['paused_at'], reverse=True)
+			if self.list and not self.showunaired:
+				self.list = [i for i in self.list if i.get('unaired', '') != 'true']
+			if create_directory: self.episodeDirectory(self.list, unfinished=True, next=False, folderName=folderName)
+			return self.list
+		except:
+			from resources.lib.modules import log_utils
+			log_utils.error()
+
 	def unfinishedManager(self):
 		try:
 			control.busy()

@@ -1,3 +1,8 @@
+[B]Update - v6.7.596 - May 23rd, 2026 [/B]
+--[Change] Made new dymanic menu respect the "Show Meta Provider" setting from Settings General.
+--[Change] Added a new setting to filter known infringing filenames from rd. Setting added to rd section in settings.
+--[Change] Added Finish Watching for MDBList for movies and shows. (if you do not want it, just hide it)
+
 [B]Update - v6.7.595 - May 20th, 2026 [/B]
 --[Change] Made Movies, TV Shows, My Movies, and My TV Shows all dynamic menus that can be enabled, disabled, re-ordered, or custom shortcuts can be added.
 --[Change] Added the ability to browse addons for shortcut creation.

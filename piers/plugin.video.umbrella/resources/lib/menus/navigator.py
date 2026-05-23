@@ -100,7 +100,10 @@ class Navigator:
 			ck = item.get('condition_key')
 			if ck and not self._eval_condition_key(ck, lite=lite):
 				continue
-			label = getLS(int(item['label'])) if item['label'].isdigit() else item['label']
+			raw_label = item['label']
+			if not self.indexLabels and item.get('alt_label'):
+				raw_label = item['alt_label']
+			label = getLS(int(raw_label)) if raw_label.isdigit() else raw_label
 			icon_file = item['icon'] if self.iconLogos else item['poster']
 			action = '%s&folderName=%s' % (item['action'], quote_plus(label)) if item['is_folder'] else item['action']
 			self.addDirectoryItem(label, action, icon_file, icon_file,
@@ -114,9 +117,18 @@ class Navigator:
 		if self.useContainerTitles: control.setContainerName(folderName)
 		self.endDirectory()
 
+	_MENU_EDITOR_LABELS = {
+		'root':      'Edit Main Menu',
+		'movies':    'Edit Movies Menu',
+		'mymovies':  'Edit My Movies Menu',
+		'tvshows':   'Edit TV Shows Menu',
+		'mytvshows': 'Edit My TV Shows Menu',
+	}
+
 	def mainMenuEditor(self, menu_name='root'):
 		from resources.lib.database import menu as menu_db
 		menu_db.initialize(menu_name)
+		heading = self._MENU_EDITOR_LABELS.get(menu_name, 'Edit Menu')
 		while True:
 			all_items = menu_db.get_all_menu_items(menu_name)
 			display = []
@@ -127,7 +139,7 @@ class Navigator:
 			display.append('[COLOR yellow]Add Custom Item...[/COLOR]')
 			display.append('[COLOR red]Reset to Defaults[/COLOR]')
 			display.append('Done')
-			sel = control.selectDialog(display, heading='Edit Main Menu')
+			sel = control.selectDialog(display, heading=heading)
 			if sel < 0:
 				break
 			n = len(all_items)
