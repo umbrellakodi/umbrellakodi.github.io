@@ -1,3 +1,2 @@
-[B]Update - v6.7.601 - May 24th, 2026 [/B]
---[Fix] Downloads now pad single digits with a leading zero on folder name and file name.
---[Change] Change to cloud scrapers to reduce number of false matches.
+[B]Update - v6.7.602 - May 24th, 2026 [/B]
+--[Fix] Change made to prevent multiple threads when resolving rd from causing users to get rate limited. Threading using semaphore limit of 3.
