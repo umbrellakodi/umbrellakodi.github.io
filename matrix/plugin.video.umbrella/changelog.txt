@@ -1,2 +1,2 @@
-[B]Update - v6.7.597 - May 23rd, 2026 [/B]
---[Change] Change made so that dropping a show on trakt immediately updates.
+[B]Update - v6.7.598 - May 23rd, 2026 [/B]
+--[Fix] Trakt fix for dropping shows.
