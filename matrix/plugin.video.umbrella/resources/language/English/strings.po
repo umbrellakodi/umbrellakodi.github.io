@@ -5651,3 +5651,7 @@ msgstr ""
 msgctxt "#40679"
 msgid "Show Year in TV Show Title"
 msgstr ""
+
+msgctxt "#40680"
+msgid "Filter Common Infringing Filenames"
+msgstr ""

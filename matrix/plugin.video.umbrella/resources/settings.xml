@@ -4415,7 +4415,7 @@
 					</dependencies>
 					<control type="toggle"/>
 				</setting>
-				<setting id="realdebrid.filter.filename" type="boolean" label="Filter Common Infringing Filenames" help="">
+				<setting id="realdebrid.filter.filename" type="boolean" label="40680" help="">
 					<level>0</level>
 					<default>false</default>
 					<dependencies>

@@ -136,10 +136,10 @@ def download(name, image, url, meta_name=None, pack=None): # needs re-write, pac
 				log_utils.log('dest: %s' % dest, __name__)
 
 			control.makeFile(dest)
-			dest = os.path.join(dest, 'Season %01d' % int(content[1]))
+			dest = os.path.join(dest, 'Season %02d' % int(content[1]))
 			control.makeFile(dest)
 			if file_format == '0' and not meta_name:
-				transname = transtvshowtitle + ' S%sE%s' % (content[1], content[2])
+				transname = transtvshowtitle + ' S%02dE%02d' % (int(content[1]), int(content[2]))
 			# else:
 			# 	try:
 			# 		s = re.sub(r'^[\w,\s-]+\.[A-Za-z]{3}$)','', transname)
@@ -358,10 +358,10 @@ def createStrm(name, image, url, meta_name=None):
 				transtvshowtitle = titlecase(re.sub(r'[^A-Za-z0-9\s-]+', ' ', transtvshowtitle))
 			dest = os.path.join(dest, transtvshowtitle)
 			control.makeFile(dest)
-			dest = os.path.join(dest, 'Season %01d' % int(content[1]))
+			dest = os.path.join(dest, 'Season %02d' % int(content[1]))
 			control.makeFile(dest)
 			if file_format == '0' and not meta_name:
-				transname = transtvshowtitle + ' S%sE%s' % (content[1], content[2])
+				transname = transtvshowtitle + ' S%02dE%02d' % (int(content[1]), int(content[2]))
 		dest = os.path.join(dest, transname + '.strm')
 		doStrm(url, dest, transname)
 	except: log_utils.error()
