@@ -139,8 +139,12 @@ def change_watched(media_type, imdb_id, tmdb_id, season='', episode='', title=''
 	def _update_watched(media_type, imdb_id, tmdb_id, season='', episode='', title='', watched=''):
 		last_played = get_current_time()
 		if watched == 4:
-			sql_update = "DELETE FROM watched WHERE media_type = ? AND imdb_id = ? AND season = ? and episode = ?"
-			vals = (media_type, imdb_id, season, episode)
+			if media_type == 'movie':
+				sql_update = "DELETE FROM watched WHERE media_type = ? AND imdb_id = ?"
+				vals = (media_type, imdb_id)
+			else:
+				sql_update = "DELETE FROM watched WHERE media_type = ? AND imdb_id = ? AND season = ? AND episode = ?"
+				vals = (media_type, imdb_id, season, episode)
 		else:
 			sql_update = "INSERT OR REPLACE INTO watched VALUES (?, ?, ?, ?, ?, ?, ?, ?)"
 			vals = (media_type, imdb_id, tmdb_id, season, episode, title, last_played, watched)
