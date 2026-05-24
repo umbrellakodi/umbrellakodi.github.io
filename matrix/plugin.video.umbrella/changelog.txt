@@ -1,2 +1,2 @@
-[B]Update - v6.7.599 - May 24th, 2026 [/B]
---[Fix] Changes made for local tracking and marking movies.
+[B]Update - v6.7.600 - May 24th, 2026 [/B]
+--[Fix] Changes made for season pack on torbox when downloading being named file-hash instead of source file name.

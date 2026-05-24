@@ -64,7 +64,9 @@ def download(name, image, url, meta_name=None, pack=None): # needs re-write, pac
 			if control.setting('debug.level') == '1':
 				log_utils.log('content: %s' % str(content), __name__)
 			# transname = url.rsplit('/', 1)[1].split('|')[0]
-			transname = unquote(url.rsplit('/', 1)[1].split('|')[0])
+			url_basename = unquote(url.rsplit('/', 1)[1].split('|')[0])
+			if any(url_basename.lower().endswith(ext) for ext in ('.3gp', '.avi', '.divx', '.flv', '.m4v', '.mp4', '.mpeg', '.mpg', '.m2ts', '.mov', '.mkv', '.wmv', '.webm', '.xvid')):
+				transname = url_basename
 
 
 		elif meta_name:
