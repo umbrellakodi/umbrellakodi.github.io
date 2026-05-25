@@ -1,2 +1,2 @@
-[B]Update - v6.7.602 - May 24th, 2026 [/B]
---[Fix] Change made to prevent multiple threads when resolving rd from causing users to get rate limited. Threading using semaphore limit of 3.
+[B]Update - v6.7.603 - May 25th, 2026 [/B]
+--[Fix] Changes made to menu labels.

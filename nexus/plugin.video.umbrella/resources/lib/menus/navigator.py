@@ -53,9 +53,13 @@ class Navigator:
 		for item in menu_db.get_menu_items('root'):
 			if not self._eval_item_condition(item['item_id']):
 				continue
-			label = getLS(int(item['label'])) if item['label'].isdigit() else item['label']
+			raw_label = item['label']
+			if not self.indexLabels and item.get('alt_label'):
+				raw_label = item['alt_label']
+			label = getLS(int(raw_label)) if raw_label.isdigit() else raw_label
+			icon_file = item['icon'] if self.iconLogos else item['poster']
 			action = '%s&folderName=%s' % (item['action'], quote_plus(label)) if item['is_folder'] else item['action']
-			self.addDirectoryItem(label, action, item['poster'], item['icon'],
+			self.addDirectoryItem(label, action, icon_file, icon_file,
 				isFolder=bool(item['is_folder']), isAction=bool(item['is_action']),
 				multi_context=[('Edit Main Menu', 'mainMenuEditor&menu_name=root')])
 			rendered += 1

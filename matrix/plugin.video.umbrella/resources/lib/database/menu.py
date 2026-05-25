@@ -14,8 +14,8 @@ menuFile = control.joinPath(control.dataPath, 'menu.db')
 # alt_label = string ID used when the setting is OFF (e.g. "Popular"); None means same as label
 
 _ROOT_DEFAULTS = [
-	('searchMovies',    '33042', 'movieSearch',                            'searchmovies.png', 'searchmovies.png', 1, 1, 1, 0,  0, None, 0, None),
-	('searchTVShows',   '33043', 'tvSearch',                               'searchtv.png',     'searchtv.png',     1, 1, 1, 1,  0, None, 0, None),
+	('searchMovies',    '33042', 'movieSearch',                            'trakt.png',        'searchmovies.png', 1, 1, 1, 0,  0, None, 0, None),
+	('searchTVShows',   '33043', 'tvSearch',                               'trakt.png',        'searchtv.png',     1, 1, 1, 1,  0, None, 0, None),
 	('movies',          '33046', 'movieNavigator',                         'movies.png',       'movies.png',       1, 1, 1, 2,  0, None, 0, None),
 	('tvshows',         '33047', 'tvNavigator',                            'tvshows.png',      'tvshows.png',      1, 1, 1, 3,  0, None, 0, None),
 	('anime',           'Anime', 'anime_Navigator',                        'boxsets.png',      'boxsets.png',      1, 1, 1, 4,  0, None, 0, None),
@@ -49,8 +49,8 @@ _MOVIES_DEFAULTS = [
 	('mv_simkl_today',         '40350', 'simklMovies&url=simkltrendingtoday',                 'simkl.png',       'trending.png',      1, 1, 1, 14, 0, 'simkl_token',    0, '40351'),
 	('mv_simkl_week',          '40352', 'simklMovies&url=simkltrendingweek',                  'simkl.png',       'trending.png',      1, 1, 1, 15, 0, 'simkl_token',    0, '40353'),
 	('mv_simkl_month',         '40354', 'simklMovies&url=simkltrendingmonth',                 'simkl.png',       'trending.png',      1, 1, 1, 16, 0, 'simkl_token',    0, '40355'),
-	('mv_tmdb_trend_day',      '40330', 'movies&url=tmdbrecentday',                           'tmdb.png',        'trending.png',      1, 1, 1, 17, 0, None,             0, '32442'),
-	('mv_tmdb_trend_week',     '40331', 'movies&url=tmdbrecentweek',                          'tmdb.png',        'trending.png',      1, 1, 1, 18, 0, None,             0, '32442'),
+	('mv_tmdb_trend_day',      '40330', 'movies&url=tmdbrecentday',                           'tmdb.png',        'trending.png',      1, 1, 1, 17, 0, None,             0, '40702'),
+	('mv_tmdb_trend_week',     '40331', 'movies&url=tmdbrecentweek',                          'tmdb.png',        'trending.png',      1, 1, 1, 18, 0, None,             0, '40703'),
 	('mv_trakt_recommended',   '32445', 'movies&url=traktrecommendations',                    'trakt.png',       'highly-rated.png',  1, 1, 1, 19, 0, None,             0, '32444'),
 	('mv_lib_similar',         '40392', 'moviesimilarFromLibrary',                            'most-popular.png','most-popular.png',  1, 1, 1, 20, 0, 'has_lib_movies', 0, None),
 	('mv_lib_recommended',     '40393', 'movierecommendedFromLibrary',                        'featured.png',    'featured.png',      1, 1, 1, 21, 0, 'has_lib_movies', 0, None),
@@ -82,8 +82,8 @@ _TVSHOWS_DEFAULTS = [
 	('tv_simkl_today',        '40350', 'simklTvshows&url=simkltrendingtoday',     'simkl.png',   'trending.png',     1, 1, 1,  6, 0, 'simkl_token',     0, '40351'),
 	('tv_simkl_week',         '40352', 'simklTvshows&url=simkltrendingweek',      'simkl.png',   'trending.png',     1, 1, 1,  7, 0, 'simkl_token',     0, '40353'),
 	('tv_simkl_month',        '40354', 'simklTvshows&url=simkltrendingmonth',     'simkl.png',   'trending.png',     1, 1, 1,  8, 0, 'simkl_token',     0, '40355'),
-	('tv_tmdb_trend_day',     '40330', 'tvshows&url=tmdbrecentday',               'tmdb.png',    'trending.png',     1, 1, 1,  9, 0, None,              0, '32442'),
-	('tv_tmdb_trend_week',    '40331', 'tvshows&url=tmdbrecentweek',              'tmdb.png',    'trending.png',     1, 1, 1, 10, 0, None,              0, '32442'),
+	('tv_tmdb_trend_day',     '40330', 'tvshows&url=tmdbrecentday',               'tmdb.png',    'trending.png',     1, 1, 1,  9, 0, None,              0, '40702'),
+	('tv_tmdb_trend_week',    '40331', 'tvshows&url=tmdbrecentweek',              'tmdb.png',    'trending.png',     1, 1, 1, 10, 0, None,              0, '40703'),
 	('tv_trakt_recommended',  '32445', 'tvshows&url=traktrecommendations',        'trakt.png',   'highly-rated.png', 1, 1, 1, 11, 0, None,              1, '32444'),
 	('tv_trakt_recent',       '40255', 'tvshows&url=traktbasedonrecent',          'trakt.png',   'years.png',        1, 1, 1, 12, 0, None,              0, '40256'),
 	('tv_trakt_similar',      '40260', 'tvshows&url=traktbasedonsimilar',         'trakt.png',   'years.png',        1, 1, 1, 13, 0, None,              0, '40261'),
@@ -108,20 +108,20 @@ _TVSHOWS_DEFAULTS = [
 _MYMOVIES_DEFAULTS = [
 	('mymv_userlists',        '32039', 'movieUserlists',                                   'userlists.png', 'userlists.png', 1, 1, 1,  0, 0, None,                   0, None),
 	('mymv_fav_movies',       '40465', 'getFavouritesMovies&url=favourites_movies',        'movies.png',    'movies.png',    1, 1, 1,  1, 0, 'favorite_movie',       0, None),
-	('mymv_mdb_userlist',     '40087', 'mdbUserListMovies',                                'mdblist.png',   'mdblist.png',   1, 1, 1,  2, 0, 'mdblist_token',        0, None),
-	('mymv_mdb_watchlist',    '40595', 'mdbUserWatchListMovies',                           'mdblist.png',   'mdblist.png',   1, 1, 1,  3, 0, 'mdblist_token',        0, None),
-	('mymv_mdb_liked',        '40668', 'mdbLikedListMovies',                               'mdblist.png',   'mdblist.png',   1, 1, 1,  4, 0, 'mdblist_token',        0, None),
-	('mymv_mdb_unfinished',   '35308', 'mdblistMoviesUnfinished',                          'mdblist.png',   'mdblist.png',   1, 1, 1,  5, 0, 'mdblist_with_indicators', 1, None),
+	('mymv_mdb_userlist',     '40681', 'mdbUserListMovies',                                'mdblist.png',   'mdblist.png',   1, 1, 1,  2, 0, 'mdblist_token',        0, '40699'),
+	('mymv_mdb_watchlist',    '40682', 'mdbUserWatchListMovies',                           'mdblist.png',   'mdblist.png',   1, 1, 1,  3, 0, 'mdblist_token',        0, '40700'),
+	('mymv_mdb_liked',        '40683', 'mdbLikedListMovies',                               'mdblist.png',   'mdblist.png',   1, 1, 1,  4, 0, 'mdblist_token',        0, '40701'),
+	('mymv_mdb_unfinished',   '40686', 'mdblistMoviesUnfinished',                          'mdblist.png',   'mdblist.png',   1, 1, 1,  5, 0, 'mdblist_with_indicators', 1, '35308'),
 	('mymv_tmdb_userlists',   'TMDb User Lists', 'tmdbUserListsMovies',                    'tmdb.png',      'tmdb.png',      1, 1, 1,  6, 0, 'tmdb_v4_token',        0, None),
 	('mymv_tmdb_watchlist',   '40612', 'tmdbV4WatchlistMovies',                            'tmdb.png',      'tmdb.png',      1, 1, 1,  7, 0, 'tmdb_v4_token',        0, None),
 	('mymv_simkl_completed',  '40548', 'movies&url=simklhistory',                          'simkl.png',     'simkl.png',     1, 1, 1,  8, 0, 'simkl_token',          0, None),
 	('mymv_simkl_watchlist',  '40550', 'movies&url=simklwatchlist',                        'simkl.png',     'simkl.png',     1, 1, 1,  9, 0, 'simkl_token',          0, None),
 	('mymv_simkl_dropped',    'Simkl Dropped', 'movies&url=simkldropped',                 'simkl.png',     'simkl.png',     1, 1, 1, 10, 0, 'simkl_token',          0, None),
-	('mymv_trakt_unfinished', '35308', 'moviesUnfinished&url=traktunfinished',             'trakt.png',     'trakt.png',     1, 1, 1, 11, 0, 'trakt_with_indicators', 1, None),
-	('mymv_trakt_history',    '32036', 'movies&url=trakthistory',                          'trakt.png',     'trakt.png',     1, 1, 1, 12, 0, 'trakt_with_indicators', 1, None),
-	('mymv_trakt_watchlist',  '32683', 'movies&url=traktwatchlist',                        'trakt.png',     'trakt.png',     1, 1, 1, 13, 0, 'trakt_credentials',    0, None),
-	('mymv_trakt_collection', '32032', 'movies&url=traktcollection',                       'trakt.png',     'trakt.png',     1, 1, 1, 14, 0, 'trakt_credentials',    0, None),
-	('mymv_trakt_liked',      'My Liked Lists', 'movies_LikedLists',                      'trakt.png',     'trakt.png',     1, 1, 1, 15, 0, 'trakt_credentials',     1, None),
+	('mymv_trakt_unfinished', '40687', 'moviesUnfinished&url=traktunfinished',             'trakt.png',     'trakt.png',     1, 1, 1, 11, 0, 'trakt_with_indicators', 1, '35308'),
+	('mymv_trakt_history',    '40695', 'movies&url=trakthistory',                          'trakt.png',     'trakt.png',     1, 1, 1, 12, 0, 'trakt_with_indicators', 1, '32036'),
+	('mymv_trakt_watchlist',  '40696', 'movies&url=traktwatchlist',                        'trakt.png',     'trakt.png',     1, 1, 1, 13, 0, 'trakt_credentials',    0, '40700'),
+	('mymv_trakt_collection', '40697', 'movies&url=traktcollection',                       'trakt.png',     'trakt.png',     1, 1, 1, 14, 0, 'trakt_credentials',    0, '32032'),
+	('mymv_trakt_liked',      '40698', 'movies_LikedLists',                               'trakt.png',     'trakt.png',     1, 1, 1, 15, 0, 'trakt_credentials',     1, 'My Liked Lists'),
 	('mymv_movies_menu',      '32031', 'movieliteNavigator',                               'movies.png',    'movies.png',    1, 1, 1, 16, 0, 'not_lite',             0, None),
 	('mymv_person_search',    '33044', 'moviePerson',                                      'imdb.png',      'people-search.png', 0, 1, 1, 17, 0, 'not_lite',         0, None),
 	('mymv_movie_search',     '33042', 'movieSearch',                                      'search.png',    'search.png',    1, 1, 1, 18, 0, 'not_lite',             0, None),
@@ -131,12 +131,12 @@ _MYTVSHOWS_DEFAULTS = [
 	('mytv_userlists',         '32040', 'tvUserlists',                                          'userlists.png', 'userlists.png', 1, 1, 1,  0, 0, None,                    0, None),
 	('mytv_fav_tvshows',       '40466', 'getFavouritesTVShows&url=favourites_tvshows',          'tvshows.png',   'tvshows.png',   1, 1, 1,  1, 0, 'favorite_tvshows',      0, None),
 	('mytv_fav_episodes',      '40467', 'getFavouritesEpisodes',                                'tvshows.png',   'tvshows.png',   1, 1, 1,  2, 0, 'favorite_episodes',     0, None),
-	('mytv_mdb_userlist',      '40087', 'mdbUserListTV',                                        'mdblist.png',   'mdblist.png',   1, 1, 1,  3, 0, 'mdblist_token',         0, None),
-	('mytv_mdb_watchlist',     '40595', 'mdbUserWatchListTVShows',                              'mdblist.png',   'mdblist.png',   1, 1, 1,  4, 0, 'mdblist_token',         0, None),
-	('mytv_mdb_liked',         '40668', 'mdbLikedListShows',                                    'mdblist.png',   'mdblist.png',   1, 1, 1,  5, 0, 'mdblist_token',         0, None),
-	('mytv_mdb_shows_prog',    '40645', 'mdblist_shows_progress&url=mdbprogress',               'mdblist.png',   'mdblist.png',   1, 1, 1,  6, 0, 'mdblist_with_indicators',1, None),
-	('mytv_mdb_ep_prog',       '40646', 'mdblist_calendar&url=mdbprogress',                     'mdblist.png',   'mdblist.png',   1, 1, 1,  7, 0, 'mdblist_with_indicators',1, None),
-	('mytv_mdb_unfinished',    '35308', 'mdblistEpisodesUnfinished',                            'mdblist.png',   'mdblist.png',   1, 1, 1,  8, 0, 'mdblist_with_indicators',1, None),
+	('mytv_mdb_userlist',      '40681', 'mdbUserListTV',                                        'mdblist.png',   'mdblist.png',   1, 1, 1,  3, 0, 'mdblist_token',         0, '40699'),
+	('mytv_mdb_watchlist',     '40682', 'mdbUserWatchListTVShows',                              'mdblist.png',   'mdblist.png',   1, 1, 1,  4, 0, 'mdblist_token',         0, '40700'),
+	('mytv_mdb_liked',         '40683', 'mdbLikedListShows',                                    'mdblist.png',   'mdblist.png',   1, 1, 1,  5, 0, 'mdblist_token',         0, '40701'),
+	('mytv_mdb_shows_prog',    '40684', 'mdblist_shows_progress&url=mdbprogress',               'mdblist.png',   'mdblist.png',   1, 1, 1,  6, 0, 'mdblist_with_indicators',1, '40401'),
+	('mytv_mdb_ep_prog',       '40685', 'mdblist_calendar&url=mdbprogress',                     'mdblist.png',   'mdblist.png',   1, 1, 1,  7, 0, 'mdblist_with_indicators',1, '32037'),
+	('mytv_mdb_unfinished',    '40686', 'mdblistEpisodesUnfinished',                            'mdblist.png',   'mdblist.png',   1, 1, 1,  8, 0, 'mdblist_with_indicators',1, '35308'),
 	('mytv_local_shows_prog',  '40658', 'local_shows_progress&url=localprogress',               'icon.png',      'icon.png',      1, 1, 1,  9, 0, 'local_scrobble',        1, None),
 	('mytv_local_calendar',    '40659', 'local_calendar&url=localprogress',                     'icon.png',      'icon.png',      1, 1, 1, 10, 0, 'local_scrobble',        1, None),
 	('mytv_tmdb_userlists',    'TMDb User Lists', 'tmdbUserListsTV',                            'tmdb.png',      'tmdb.png',      1, 1, 1, 11, 0, 'tmdb_v4_token',         0, None),
@@ -147,18 +147,18 @@ _MYTVSHOWS_DEFAULTS = [
 	('mytv_simkl_onhold',      'Simkl On Hold', 'tvshows&url=simklonhold',                     'simkl.png',     'simkl.png',     1, 1, 1, 16, 0, 'simkl_credentials',     0, None),
 	('mytv_simkl_completed',   'Simkl Completed', 'tvshows&url=simklhistory',                  'simkl.png',     'simkl.png',     1, 1, 1, 17, 0, 'simkl_credentials',     0, None),
 	('mytv_simkl_dropped',     'Simkl Dropped', 'tvshows&url=simkldropped',                   'simkl.png',     'simkl.png',     1, 1, 1, 18, 0, 'simkl_credentials',     0, None),
-	('mytv_trakt_unfinished',  '35308', 'episodesUnfinished&url=traktunfinished',               'trakt.png',     'trakt.png',     1, 1, 1, 19, 0, 'trakt_with_indicators',  1, None),
-	('mytv_trakt_ep_prog',     '32037', 'calendar&url=progress',                                'trakt.png',     'trakt.png',     1, 1, 1, 20, 0, 'trakt_with_indicators',  1, None),
-	('mytv_trakt_show_prog',   '40401', 'shows_progress&url=progresstv',                       'trakt.png',     'trakt.png',     1, 1, 1, 21, 0, 'trakt_with_indicators',  1, None),
-	('mytv_trakt_watched',     '40433', 'shows_watched&url=watchedtv',                         'trakt.png',     'trakt.png',     1, 1, 1, 22, 0, 'trakt_with_indicators',  1, None),
-	('mytv_trakt_upcoming',    '32019', 'upcomingProgress&url=progress',                       'trakt.png',     'trakt.png',     1, 1, 1, 23, 0, 'trakt_with_indicators',  1, None),
-	('mytv_trakt_cal_recent',  '32202', 'calendar&url=mycalendarRecent',                       'trakt.png',     'trakt.png',     1, 1, 1, 24, 0, 'trakt_with_indicators',  1, None),
-	('mytv_trakt_cal_upcoming','32203', 'calendar&url=mycalendarUpcoming',                     'trakt.png',     'trakt.png',     1, 1, 1, 25, 0, 'trakt_with_indicators',  1, None),
-	('mytv_trakt_cal_premiers','32204', 'calendar&url=mycalendarPremiers',                     'trakt.png',     'trakt.png',     1, 1, 1, 26, 0, 'trakt_with_indicators',  1, None),
-	('mytv_trakt_history',     '32036', 'calendar&url=trakthistory',                           'trakt.png',     'trakt.png',     1, 1, 1, 27, 0, 'trakt_with_indicators',  1, None),
-	('mytv_trakt_watchlist',   '32683', 'tvshows&url=traktwatchlist',                          'trakt.png',     'trakt.png',     1, 1, 1, 28, 0, 'trakt_credentials',     0, None),
-	('mytv_trakt_collection',  '32032', 'tvshows&url=traktcollection',                         'trakt.png',     'trakt.png',     1, 1, 1, 29, 0, 'trakt_credentials',     0, None),
-	('mytv_trakt_liked',       'My Liked Lists', 'shows_LikedLists',                           'trakt.png',     'trakt.png',     1, 1, 1, 30, 0, 'trakt_credentials',      1, None),
+	('mytv_trakt_unfinished',  '40687', 'episodesUnfinished&url=traktunfinished',               'trakt.png',     'trakt.png',     1, 1, 1, 19, 0, 'trakt_with_indicators',  1, '35308'),
+	('mytv_trakt_ep_prog',     '40688', 'calendar&url=progress',                                'trakt.png',     'trakt.png',     1, 1, 1, 20, 0, 'trakt_with_indicators',  1, '32037'),
+	('mytv_trakt_show_prog',   '40689', 'shows_progress&url=progresstv',                       'trakt.png',     'trakt.png',     1, 1, 1, 21, 0, 'trakt_with_indicators',  1, '40401'),
+	('mytv_trakt_watched',     '40690', 'shows_watched&url=watchedtv',                         'trakt.png',     'trakt.png',     1, 1, 1, 22, 0, 'trakt_with_indicators',  1, '40433'),
+	('mytv_trakt_upcoming',    '40691', 'upcomingProgress&url=progress',                       'trakt.png',     'trakt.png',     1, 1, 1, 23, 0, 'trakt_with_indicators',  1, '32019'),
+	('mytv_trakt_cal_recent',  '40692', 'calendar&url=mycalendarRecent',                       'trakt.png',     'trakt.png',     1, 1, 1, 24, 0, 'trakt_with_indicators',  1, '32202'),
+	('mytv_trakt_cal_upcoming','40693', 'calendar&url=mycalendarUpcoming',                     'trakt.png',     'trakt.png',     1, 1, 1, 25, 0, 'trakt_with_indicators',  1, '32203'),
+	('mytv_trakt_cal_premiers','40694', 'calendar&url=mycalendarPremiers',                     'trakt.png',     'trakt.png',     1, 1, 1, 26, 0, 'trakt_with_indicators',  1, '32204'),
+	('mytv_trakt_history',     '40695', 'calendar&url=trakthistory',                           'trakt.png',     'trakt.png',     1, 1, 1, 27, 0, 'trakt_with_indicators',  1, '32036'),
+	('mytv_trakt_watchlist',   '40696', 'tvshows&url=traktwatchlist',                          'trakt.png',     'trakt.png',     1, 1, 1, 28, 0, 'trakt_credentials',     0, '40700'),
+	('mytv_trakt_collection',  '40697', 'tvshows&url=traktcollection',                         'trakt.png',     'trakt.png',     1, 1, 1, 29, 0, 'trakt_credentials',     0, '32032'),
+	('mytv_trakt_liked',       '40698', 'shows_LikedLists',                                    'trakt.png',     'trakt.png',     1, 1, 1, 30, 0, 'trakt_credentials',      1, 'My Liked Lists'),
 	('mytv_tv_menu',           '32031', 'tvliteNavigator',                                     'tvshows.png',   'tvshows.png',   1, 1, 1, 31, 0, 'not_lite',              0, None),
 	('mytv_person_search',     '33045', 'tvPerson',                                            'imdb.png',      'people-search.png', 0, 1, 1, 32, 0, 'not_lite',          0, None),
 	('mytv_tv_search',         '33043', 'tvSearch',                                            'trakt.png',     'search.png',    1, 1, 1, 33, 0, 'not_lite',              0, None),
@@ -233,23 +233,18 @@ def initialize(menu_name='root'):
 		except db.OperationalError:
 			pass
 	dbcon.commit()
-	# Populate alt_label for any existing rows that are missing it
-	for item_id, alt in _ALT_LABEL_MAP.items():
+	# Sync label, icon, poster, alt_label for all non-custom items to match current defaults.
+	# This ensures changes to defaults (e.g. new alt_labels, corrected icons) always propagate
+	# to existing databases, not just new installs.
+	_field_sync = {
+		row[0]: (row[1], row[3], row[4], row[12])
+		for defaults in MENU_DEFAULTS.values()
+		for row in defaults
+	}
+	for item_id, (label, icon, poster, alt_label) in _field_sync.items():
 		dbcon.execute(
-			'UPDATE menu_items SET alt_label=? WHERE item_id=? AND alt_label IS NULL',
-			(alt, item_id)
-		)
-	dbcon.commit()
-	# Insert new MDBList Finish Watching items for existing users (idempotent)
-	_NEW_DEFAULT_ITEMS = [
-		('mymovies',  'mymv_mdb_unfinished', '35308', 'mdblistMoviesUnfinished',   'mdblist.png', 'mdblist.png', 1, 1, 1, 99, 0, 'mdblist_with_indicators', 1, None),
-		('mytvshows', 'mytv_mdb_unfinished', '35308', 'mdblistEpisodesUnfinished', 'mdblist.png', 'mdblist.png', 1, 1, 1, 99, 0, 'mdblist_with_indicators', 1, None),
-	]
-	for row in _NEW_DEFAULT_ITEMS:
-		dbcon.execute(
-			'INSERT OR IGNORE INTO menu_items '
-			'(menu_name, item_id, label, action, icon, poster, is_folder, is_action, enabled, sort_order, is_custom, condition_key, queue, alt_label) '
-			'VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)', row
+			'UPDATE menu_items SET label=?, icon=?, poster=?, alt_label=? WHERE item_id=? AND is_custom=0',
+			(label, icon, poster, alt_label, item_id)
 		)
 	dbcon.commit()
 	dbcon.execute('''CREATE TABLE IF NOT EXISTS custom_folders (
@@ -263,6 +258,18 @@ def initialize(menu_name='root'):
 	cur.execute('SELECT COUNT(*) as cnt FROM menu_items WHERE menu_name=?', (menu_name,))
 	if cur.fetchone()['cnt'] == 0:
 		_populate_defaults(dbcon, menu_name)
+	# Insert items added after initial release for existing users (idempotent — OR IGNORE skips duplicates)
+	_NEW_DEFAULT_ITEMS = [
+		('mymovies',  'mymv_mdb_unfinished', '40686',  'mdblistMoviesUnfinished',   'mdblist.png', 'mdblist.png', 1, 1, 1, 99, 0, 'mdblist_with_indicators', 1, '35308'),
+		('mytvshows', 'mytv_mdb_unfinished', '40686',  'mdblistEpisodesUnfinished', 'mdblist.png', 'mdblist.png', 1, 1, 1, 99, 0, 'mdblist_with_indicators', 1, '35308'),
+	]
+	for row in _NEW_DEFAULT_ITEMS:
+		dbcon.execute(
+			'INSERT OR IGNORE INTO menu_items '
+			'(menu_name, item_id, label, action, icon, poster, is_folder, is_action, enabled, sort_order, is_custom, condition_key, queue, alt_label) '
+			'VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)', row
+		)
+	dbcon.commit()
 	dbcon.close()
 
 
