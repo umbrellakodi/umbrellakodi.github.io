@@ -1266,7 +1266,8 @@ class Sources:
 			key = src.get('debrid', '') or src.get('provider', '')
 			try: return _prov_list.index(key)
 			except: return 10**6
-		def _srank(src): return -round(float(src.get('size', 0)))
+		_prefer_smaller = getSetting('source.prefer.smaller') == 'true'
+		def _srank(src): return round(float(src.get('size', 0))) if _prefer_smaller else -round(float(src.get('size', 0)))
 		_sort_order = int(getSetting('sources.sort.order') or '0')
 		_sort_keys = (
 			lambda k: (_qrank(k), _prank(k), _srank(k)),

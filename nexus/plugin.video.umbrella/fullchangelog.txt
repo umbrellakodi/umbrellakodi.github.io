@@ -1,3 +1,7 @@
+[B]Update - v6.7.604 - May 25th, 2026 [/B]
+--[Fix] More changes for tools menu to call correct settings pages.
+--[Change] Added option to prefer smaller file sizes in source select.
+
 [B]Update - v6.7.603 - May 25th, 2026 [/B]
 --[Fix] Changes made to menu labels.
 

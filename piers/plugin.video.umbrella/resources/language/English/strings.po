@@ -199,7 +199,7 @@ msgid "[B]SETTINGS[/B] : General"
 msgstr ""
 
 msgctxt "#32044"
-msgid "[B]SETTINGS[/B] : Accounts"
+msgid "[B]SETTINGS[/B] : Accounts (Debrid)"
 msgstr ""
 
 msgctxt "#32045"
@@ -5746,4 +5746,8 @@ msgstr ""
 
 msgctxt "#40703"
 msgid "Trending Weekly"
+msgstr ""
+
+msgctxt "#40704"
+msgid "Prefer Smaller File Sizes"
 msgstr ""

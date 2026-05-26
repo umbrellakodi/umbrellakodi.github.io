@@ -2682,6 +2682,11 @@
 						<heading>40672</heading>
 					</control>
 				</setting>
+				<setting id="source.prefer.smaller" type="boolean" label="40704" help="">
+					<level>0</level>
+					<default>false</default>
+					<control type="toggle"/>
+				</setting>
 				<setting id="uncached.seeder.sort" type="boolean" label="32213" help="">
 					<level>0</level>
 					<default>false</default>
