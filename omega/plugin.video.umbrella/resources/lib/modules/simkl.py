@@ -64,7 +64,7 @@ class SIMKL:
 					log_utils.error()
 					control.okDialog(title='default', message=40347)
 					if fromSettings == 1:
-						control.openSettings('8.2', 'plugin.video.umbrella')
+						control.openSettings('5.2', 'plugin.video.umbrella')
 				return
 		else:
 			log_utils.error()
@@ -108,7 +108,7 @@ class SIMKL:
 			control.notification(message="Simkl Authorized", icon=simkl_icon)
 			if not control.yesnoDialog('Do you want to set Simkl as your service for your watched and unwatched indicators?','','','Indicators', 'No', 'Yes'):
 				if fromSettings == 1:
-					control.openSettings('8.2', 'plugin.video.umbrella')
+					control.openSettings('5.2', 'plugin.video.umbrella')
 				force_simklSync(silent=True)
 				return True, None
 			force_simklSync(silent=True)
@@ -118,12 +118,12 @@ class SIMKL:
 			control.homeWindow.setProperty('umbrella.updateSettings', 'true')
 			control.setSetting('indicators', 'Simkl')
 			if fromSettings == 1:
-				control.openSettings('8.2', 'plugin.video.umbrella')
+				control.openSettings('5.2', 'plugin.video.umbrella')
 			return True, None
 		except:
 			log_utils.error('Simkl Authorization Failed : ')
 			if fromSettings == 1:
-				control.openSettings('8.2', 'plugin.video.umbrella')
+				control.openSettings('5.2', 'plugin.video.umbrella')
 			return False, None
 
 	def reset_authorization(self, fromSettings=0):
@@ -151,7 +151,7 @@ class SIMKL:
 				control.setSetting('scrobble.source', '0')
 			control.setSetting('simkl.markwatched', 'false')
 			if fromSettings == 1:
-				control.openSettings('8.2', 'plugin.video.umbrella')
+				control.openSettings('5.2', 'plugin.video.umbrella')
 			control.dialog.ok(getLS(40342), getLS(32320))
 		except: log_utils.error()
 

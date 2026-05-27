@@ -1,3 +1,9 @@
+[B]Update - v6.7.607 - May 27th, 2026 [/B]
+--[Fix] Change made for Trakt to no longer use extended=full and switch to new api requirement of using extended=progress.
+
+[B]Update - v6.7.606 - May 27th, 2026 [/B]
+--[Fix] Correction to make authorizations open the correct settings after authorization is complete. Wrong due to removing 3 sections from settings.
+
 [B]Update - v6.7.605 - May 27th, 2026 [/B]
 --[Fix] Changes made to allow for download of packs.
 --[Change] Changes made to attempt to comply with Trakt 250 item limits.

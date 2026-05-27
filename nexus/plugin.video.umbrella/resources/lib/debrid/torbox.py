@@ -307,7 +307,7 @@ class TorBox:
 			control.setSetting('torboxtoken', access_token)
 			control.setSetting('torbox.username', customer)
 			control.notification(message='TorBox successfully authorized', icon=tb_icon)
-			control.openSettings('9.6', 'plugin.video.umbrella')
+			control.openSettings('6.6', 'plugin.video.umbrella')
 			return True
 		except:
 			log_utils.error('TorBox auth: ')
@@ -321,7 +321,7 @@ class TorBox:
 			control.setSetting('torboxtoken', '')
 			control.setSetting('torbox.username', '')
 			control.notification(title='TorBox', message=40009, icon=tb_icon)
-			control.openSettings('9.6', 'plugin.video.umbrella')
+			control.openSettings('6.6', 'plugin.video.umbrella')
 		except: log_utils.error()
 
 	def referral_link(self):

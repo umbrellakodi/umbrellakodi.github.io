@@ -1,3 +1,2 @@
-[B]Update - v6.7.605 - May 27th, 2026 [/B]
---[Fix] Changes made to allow for download of packs.
---[Change] Changes made to attempt to comply with Trakt 250 item limits.
+[B]Update - v6.7.607 - May 27th, 2026 [/B]
+--[Fix] Change made for Trakt to no longer use extended=full and switch to new api requirement of using extended=progress.

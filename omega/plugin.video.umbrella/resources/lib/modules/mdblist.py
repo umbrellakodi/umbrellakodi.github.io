@@ -434,7 +434,7 @@ def mdblistAuth(fromSettings=0):
 			timeout=20)
 		if response.status_code != 200:
 			control.notification(title='MDBList', message='Authorization request failed')
-			if fromSettings: control.openSettings('8.4', 'plugin.video.umbrella')
+			if fromSettings: control.openSettings('5.4', 'plugin.video.umbrella')
 			return False
 		device_data = response.json()
 		device_code = device_data['device_code']
@@ -480,18 +480,18 @@ def mdblistAuth(fromSettings=0):
 			progressDialog.close()
 		if not access_token:
 			control.notification(title='MDBList', message='Authorization failed or timed out')
-			if fromSettings: control.openSettings('8.4', 'plugin.video.umbrella')
+			if fromSettings: control.openSettings('5.4', 'plugin.video.umbrella')
 			return False
 		control.setSetting('mdblist.token', access_token)
 		if refresh_token:
 			control.setSetting('mdblist.refresh.token', refresh_token)
 		session.headers.update({'Authorization': 'Bearer %s' % access_token})
 		control.notification(title='MDBList', message='MDBList Authorized Successfully')
-		if fromSettings: control.openSettings('8.4', 'plugin.video.umbrella')
+		if fromSettings: control.openSettings('5.4', 'plugin.video.umbrella')
 		return True
 	except:
 		log_utils.error()
-		if fromSettings: control.openSettings('8.4', 'plugin.video.umbrella')
+		if fromSettings: control.openSettings('5.4', 'plugin.video.umbrella')
 		return False
 
 def mdblistRevoke(fromSettings=0):
@@ -502,7 +502,7 @@ def mdblistRevoke(fromSettings=0):
 		control.notification(title='MDBList', message='MDBList Authorization Revoked')
 	except: log_utils.error()
 	finally:
-		if fromSettings: control.openSettings('8.4', 'plugin.video.umbrella')
+		if fromSettings: control.openSettings('5.4', 'plugin.video.umbrella')
 
 def get_request(url, post=None, method='GET'):
 	try:

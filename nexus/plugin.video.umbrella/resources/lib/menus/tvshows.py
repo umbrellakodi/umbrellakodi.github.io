@@ -88,8 +88,8 @@ class TVshows:
 		self.simklprogress_link = 'https://api.simkl.com/progress/shows?limit=%s&page=1' % self.page_limit
 		self.traktcollection_link = 'https://api.trakt.tv/users/me/collection/shows?limit=%s&page=1' % self.page_limit # this is now a dummy link for pagination to work
 		self.traktlist_link = 'https://api.trakt.tv/users/%s/lists/%s/items/shows?limit=%s&page=1' % ('%s', '%s', self.page_limit) # local pagination, limit and page used to advance, pulled from request
-		self.progress_link = 'https://api.trakt.tv/sync/watched/shows?extended=noseasons&limit=1000&page=1'
-		self.progresstv_link = 'https://api.trakt.tv/users/me/watched/shows'
+		self.progress_link = 'https://api.trakt.tv/sync/watched/shows?limit=250&page=1'
+		self.progresstv_link = 'https://api.trakt.tv/users/me/watched/shows?extended=progress'
 		self.trakt_genres = 'https://api.trakt.tv/genres/shows/'
 		self.traktanticipated_link = 'https://api.trakt.tv/shows/anticipated?limit=%s&page=1' % self.page_limit 
 		self.trakttrending_link = 'https://api.trakt.tv/shows/trending?limit=%s&page=1' % self.page_limit
@@ -1317,7 +1317,11 @@ class TVshows:
 		def userList_totalItems(url):
 			items = trakt.get_all_pages(url)
 			if not items: return
-			watchedItems = trakt.watchedShows()
+			_cached = traktsync.cache_existing(trakt.syncTVShows)
+			if _cached:
+				watchedItems = [{'show': {'ids': e[0]}, 'seasons': []} for e in _cached]
+			else:
+				watchedItems = trakt.watchedShows()
 			for item in items:
 				try:
 					values = {}
@@ -1883,7 +1887,7 @@ class TVshows:
 	def trakt_tvshow_progress(self, create_directory=True, folderName=''):
 		self.list = []
 		try:
-			historyurl = 'https://api.trakt.tv/users/me/watched/shows?extended=full&limit=1000&page=1'
+			historyurl = 'https://api.trakt.tv/users/me/watched/shows?extended=progress&limit=250&page=1'
 			self.list = self.trakt_list(historyurl, self.trakt_user, folderName)
 			next = ''
 			for i in range(len(self.list)): self.list[i]['next'] = next
@@ -2129,7 +2133,7 @@ class TVshows:
 	def trakt_tvshow_watched(self, create_directory=True, folderName=''):
 		self.list = []
 		try:
-			historyurl = 'https://api.trakt.tv/users/me/watched/shows?extended=full&limit=1000&page=1'
+			historyurl = 'https://api.trakt.tv/users/me/watched/shows?extended=progress&limit=250&page=1'
 			self.list = self.trakt_list(historyurl, self.trakt_user, folderName)
 			next = ''
 			for i in range(len(self.list)): self.list[i]['next'] = next

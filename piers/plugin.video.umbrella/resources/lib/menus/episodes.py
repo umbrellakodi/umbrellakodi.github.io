@@ -825,7 +825,7 @@ class Episodes:
 		#https://api.trakt.tv/users/me/watched/shows?extended=full
 
 		try:
-			url += ('&' if '?' in url else '?') + 'extended=full'
+			url += ('&' if '?' in url else '?') + 'extended=progress'
 			result = trakt.get_all_pages(url)
 			if not result: return
 		except: return

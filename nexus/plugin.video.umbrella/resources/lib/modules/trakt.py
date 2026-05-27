@@ -315,7 +315,7 @@ def traktAuth(fromSettings=0):
 		traktDeviceCode = getTraktDeviceCode()
 		if not traktDeviceCode:
 			if fromSettings == 1:
-				control.openSettings('8.3', 'plugin.video.umbrella')
+				control.openSettings('5.3', 'plugin.video.umbrella')
 			control.notification(message=40108, icon=trakt_icon)
 			return False
 		deviceCode = getTraktDeviceToken(traktDeviceCode)
@@ -343,7 +343,7 @@ def traktAuth(fromSettings=0):
 			except: pass
 			control.notification(message=40107, icon=trakt_icon)
 			if fromSettings == 1:
-				control.openSettings('8.3', 'plugin.video.umbrella')
+				control.openSettings('5.3', 'plugin.video.umbrella')
 			if not control.yesnoDialog('Do you want to set Trakt as your service for your watched and unwatched indicators?','','','Indicators', 'No', 'Yes'): return True
 			global _reauth_failed
 			_reauth_failed = False
@@ -352,12 +352,14 @@ def traktAuth(fromSettings=0):
 			control.setSetting('indicators.alt', '1')
 			control.setSetting('scrobble.source', '1')
 			control.homeWindow.setProperty('umbrella.updateSettings', 'true')
+			control.setSetting('scrobble', 'Trakt')
 			control.setSetting('indicators', 'Trakt')
 			control.notification(message='Trakt Indicators Enabled - Syncing Watched Data...')
+			control.openSettings('5.1', 'plugin.video.umbrella')
 			Thread(target=sync_watched, kwargs={'forced': True}).start()
 			return True
 		if fromSettings == 1:
-				control.openSettings('8.3', 'plugin.video.umbrella')
+				control.openSettings('5.3', 'plugin.video.umbrella')
 		control.notification(message=40108, icon=trakt_icon)
 		return False
 	except:
@@ -396,7 +398,7 @@ def traktRevoke(fromSettings=0):
 			control.homeWindow.setProperty(_REAUTH_BUSY_PROP, '')
 			control.homeWindow.setProperty(_TRAKT_TOKEN_PROP, '')
 			if fromSettings == 1:
-				control.openSettings('8.3', 'plugin.video.umbrella')
+				control.openSettings('5.3', 'plugin.video.umbrella')
 				control.dialog.ok(control.lang(32315), control.lang(40109))
 		except:
 			log_utils.error()
@@ -1251,7 +1253,7 @@ def syncTVShows(): # sync all watched shows ex. [({'imdb': 'tt12571834', 'tvdb':
 		page = 1
 		limit = 250
 		while True:
-			response = getTrakt('/users/me/watched/shows?page=%d&limit=%d' % (page, limit))
+			response = getTrakt('/users/me/watched/shows?extended=progress&page=%d&limit=%d' % (page, limit))
 			if not response: break
 			try: page_results = response.json()
 			except: break
