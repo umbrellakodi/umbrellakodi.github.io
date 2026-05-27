@@ -2687,6 +2687,11 @@
 					<default>false</default>
 					<control type="toggle"/>
 				</setting>
+				<setting id="cloud.sources.first" type="boolean" label="40705" help="">
+					<level>0</level>
+					<default>false</default>
+					<control type="toggle"/>
+				</setting>
 				<setting id="uncached.seeder.sort" type="boolean" label="32213" help="">
 					<level>0</level>
 					<default>false</default>

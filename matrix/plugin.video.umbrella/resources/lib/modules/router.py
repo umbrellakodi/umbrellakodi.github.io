@@ -892,6 +892,18 @@ def router(argv2):
 				except:
 					import traceback
 					traceback.print_exc()
+		elif action == 'downloadPack':
+			caller = params.get('caller')
+			if caller == 'sources':
+				control.busy()
+				try:
+					from json import loads as jsloads
+					from resources.lib.modules import downloader
+					info = jsloads(source)[0]
+					downloader.download_pack(name, image, info)
+				except:
+					import traceback
+					traceback.print_exc()
 
 	####################################################
 	#---tmdbbv4

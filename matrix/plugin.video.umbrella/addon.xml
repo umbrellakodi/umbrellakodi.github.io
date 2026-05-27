@@ -1,4 +1,4 @@
-<addon id="plugin.video.umbrella" name="Umbrella" provider-name="Umbrella" version="6.7.604">
+<addon id="plugin.video.umbrella" name="Umbrella" provider-name="Umbrella" version="6.7.605">
 	<requires>
 		<import addon="xbmc.python" version="3.0.0" />
 		<import addon="script.module.requests" />
@@ -234,9 +234,9 @@
 			<screenshot>resources/screenshots/screenshot003.jpg</screenshot>
 		</assets>
 		<news>
-[B]Update - v6.7.604 - May 25th, 2026 [/B]
---[Fix] More changes for tools menu to call correct settings pages.
---[Change] Added option to prefer smaller file sizes in source select.
+[B]Update - v6.7.605 - May 27th, 2026 [/B]
+--[Fix] Changes made to allow for download of packs.
+--[Change] Changes made to attempt to comply with Trakt 250 item limits.
 		</news>
 	</extension>
 

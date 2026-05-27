@@ -1315,7 +1315,7 @@ class TVshows:
 		q = dict(parse_qsl(urlsplit(url).query))
 		index = int(q['page']) - 1
 		def userList_totalItems(url):
-			items = trakt.getTraktAsJson(url)
+			items = trakt.get_all_pages(url)
 			if not items: return
 			watchedItems = trakt.watchedShows()
 			for item in items:
@@ -1355,7 +1355,7 @@ class TVshows:
 					
 					log_utils.error()
 			return self.list
-		self.list = cache.get(userList_totalItems, self.traktuserlist_hours, url.split('limit')[0] + 'limit=1000&extended=full')
+		self.list = cache.get(userList_totalItems, self.traktuserlist_hours, url.split('?')[0] + '?extended=full')
 		if not self.list: return
 		self.sort() # sort before local pagination
 		total_pages = 1

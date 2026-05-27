@@ -256,7 +256,8 @@ def initialize(menu_name='root'):
 	dbcon.commit()
 	cur = dbcon.cursor()
 	cur.execute('SELECT COUNT(*) as cnt FROM menu_items WHERE menu_name=?', (menu_name,))
-	if cur.fetchone()['cnt'] == 0:
+	cnt = cur.fetchone()['cnt']
+	if cnt < len(MENU_DEFAULTS.get(menu_name, [])):
 		_populate_defaults(dbcon, menu_name)
 	# Insert items added after initial release for existing users (idempotent — OR IGNORE skips duplicates)
 	_NEW_DEFAULT_ITEMS = [

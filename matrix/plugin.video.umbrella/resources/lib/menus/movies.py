@@ -1585,7 +1585,7 @@ class Movies:
 		q = dict(parse_qsl(urlsplit(url).query))
 		index = int(q['page']) - 1
 		def userList_totalItems(url):
-			items = trakt.getTraktAsJson(url)
+			items = trakt.get_all_pages(url)
 			if not items: return
 			for item in items:
 				try:
@@ -1611,7 +1611,7 @@ class Movies:
 					from resources.lib.modules import log_utils
 					log_utils.error()
 			return self.list
-		self.list = cache.get(userList_totalItems, self.traktuserlist_hours, url.split('limit')[0] + 'limit=1000&extended=full')
+		self.list = cache.get(userList_totalItems, self.traktuserlist_hours, url.split('?')[0] + '?extended=full')
 		if not self.list: return
 		if int(getSetting('sort.movies.type') or '0') == 6:
 			watched_dates = trakt.getWatchedMoviesLastWatchedDates()

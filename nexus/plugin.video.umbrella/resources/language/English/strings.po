@@ -5751,3 +5751,7 @@ msgstr ""
 msgctxt "#40704"
 msgid "Prefer Smaller File Sizes"
 msgstr ""
+
+msgctxt "#40705"
+msgid "Cloud Sources First"
+msgstr ""

@@ -60,7 +60,7 @@ class Episodes:
 		self.mdblist_progressFlatten = getSetting('mdblist.progressFlatten') == 'true'
 		self.trakt_link = 'https://api.trakt.tv'
 		self.trakthistory_link = 'https://api.trakt.tv/users/me/history/shows?limit=%s&page=1' % self.count
-		self.progress_link = 'https://api.trakt.tv/users/me/watched/shows?limit=1000'
+		self.progress_link = 'https://api.trakt.tv/users/me/watched/shows'
 		self.mycalendarRecent_link = 'https://api.trakt.tv/calendars/my/shows/date[30]/33/'
 		self.mycalendarUpcoming_link = 'https://api.trakt.tv/calendars/my/shows/date[0]/33/'
 		self.mycalendarPremiers_link = 'https://api.trakt.tv/calendars/my/shows/premieres/date[0]/33'
@@ -826,8 +826,11 @@ class Episodes:
 
 		try:
 			url += ('&' if '?' in url else '?') + 'extended=full'
-			result = trakt.getTrakt(url).json()
+			result = trakt.get_all_pages(url)
+			if not result: return
 		except: return
+		from resources.lib.modules import log_utils as _trakt_log
+		_trakt_log.log('TRAKT: trakt_progress_list fetched %d shows' % len(result), level=_trakt_log.LOGDEBUG)
 		items = []
 		# progress_showunaired = getSetting('trakt.progress.showunaired') == 'true'
 		for item in result:
