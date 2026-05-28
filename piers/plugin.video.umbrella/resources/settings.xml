@@ -4613,6 +4613,14 @@
 					</dependencies>
 					<control type="toggle"/>
 				</setting>
+				<setting id="tbReferralButton" type="action" label="40671" help="">
+					<level>0</level>
+					<data>RunPlugin(plugin://plugin.video.umbrella/?action=tb_ReferralLink)</data>
+					<constraints>
+						<allowempty>true</allowempty>
+					</constraints>
+					<control type="button" format="action"/>
+				</setting>
 				<setting id="tbAuthorizeButton" type="action" label="40121" help="">
 					<level>0</level>
 					<data>RunPlugin(plugin://plugin.video.umbrella/?action=tb_Authorize)</data>

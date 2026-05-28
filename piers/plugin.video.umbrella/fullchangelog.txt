@@ -1,3 +1,7 @@
+[B]Update - v6.7.609 - May 28th, 2026 [/B]
+--[Fix] Changed make_settings_dict to use ET instead of minidom.
+--[Fix] Added retry logic with 1 second pause to function to clean settings.xml after update.
+
 [B]Update - v6.7.608 - May 27th, 2026 [/B]
 --[Fix] Change made for updating watch history table when an item has been marked as unwatched.
 
