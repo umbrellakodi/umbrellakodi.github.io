@@ -704,6 +704,14 @@ class Player(xbmc.Player):
 								_wc.change_watched('episode', self.imdb, '', season=self.season, episode=self.episode, watched=5)
 							elif self.media_type == 'movie':
 								_wc.change_watched('movie', self.imdb, '', watched=5)
+						if self.imdb:
+							from resources.lib.database import watchedcache as _wc
+							_wc.delete_progress(self.media_type, self.imdb, self.tmdb or '', self.season or 0, self.episode or 0)
+				elif seekable and _scrobble_source == '0' and self.imdb:
+					from resources.lib.database import watchedcache as _wc
+					_wc.save_progress(self.media_type, self.imdb, self.tmdb or '',
+									  self.season or 0, self.episode or 0,
+									  self.name, round(watcher, 2), self.current_time)
 				if getSetting('crefresh') == 'true' and seekable:
 					log_utils.log('container.refresh issued', level=log_utils.LOGDEBUG)
 					control.refresh() #not all skins refresh after playback stopped
@@ -745,6 +753,9 @@ class Player(xbmc.Player):
 							_wc.change_watched('episode', self.imdb, '', season=self.season, episode=self.episode, watched=5)
 						elif self.media_type == 'movie':
 							_wc.change_watched('movie', self.imdb, '', watched=5)
+				if self.imdb:
+					from resources.lib.database import watchedcache as _wc
+					_wc.delete_progress(self.media_type, self.imdb, self.tmdb or '', self.season or 0, self.episode or 0)
 			try:
 				playingfile = Player.isPlaying()
 			except:

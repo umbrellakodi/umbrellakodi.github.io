@@ -46,19 +46,19 @@ def router(argv2):
 		navigator.Navigator().root()
 	elif action == 'mainMenuEditor':
 		from resources.lib.menus import navigator
-		navigator.Navigator().mainMenuEditor(params.get('menu_name', 'root'))
+		navigator.Navigator(lightweight=True).mainMenuEditor(params.get('menu_name', 'root'))
 	elif action == 'movieNavigatorEditor':
 		from resources.lib.menus import navigator
-		navigator.Navigator().mainMenuEditor(params.get('menu_name', 'movies'))
+		navigator.Navigator(lightweight=True).mainMenuEditor(params.get('menu_name', 'movies'))
 	elif action == 'tvNavigatorEditor':
 		from resources.lib.menus import navigator
-		navigator.Navigator().mainMenuEditor(params.get('menu_name', 'tvshows'))
+		navigator.Navigator(lightweight=True).mainMenuEditor(params.get('menu_name', 'tvshows'))
 	elif action == 'myMoviesNavigatorEditor':
 		from resources.lib.menus import navigator
-		navigator.Navigator().mainMenuEditor(params.get('menu_name', 'mymovies'))
+		navigator.Navigator(lightweight=True).mainMenuEditor(params.get('menu_name', 'mymovies'))
 	elif action == 'myTVShowsNavigatorEditor':
 		from resources.lib.menus import navigator
-		navigator.Navigator().mainMenuEditor(params.get('menu_name', 'mytvshows'))
+		navigator.Navigator(lightweight=True).mainMenuEditor(params.get('menu_name', 'mytvshows'))
 	elif action == 'runBuiltin':
 		import xbmc
 		xbmc.executebuiltin(params.get('cmd', ''))
@@ -67,10 +67,10 @@ def router(argv2):
 		navigator.Navigator().customFolder(params.get('folder_id', ''), folderName=folderName)
 	elif action == 'customFolderManager':
 		from resources.lib.menus import navigator
-		navigator.Navigator().customFolderManager()
+		navigator.Navigator(lightweight=True).customFolderManager()
 	elif action == 'customFolderEditor':
 		from resources.lib.menus import navigator
-		navigator.Navigator().mainMenuEditor(params.get('folder_id', ''))
+		navigator.Navigator(lightweight=True).mainMenuEditor(params.get('folder_id', ''))
 	####################################################
 	#---MOVIES
 	####################################################
@@ -429,6 +429,9 @@ def router(argv2):
 	elif action == 'local_shows_progress':
 		from resources.lib.menus import tvshows
 		tvshows.TVshows().local_progress(url, folderName=folderName)
+	elif action == 'local_finish_watching_movies':
+		from resources.lib.menus import movies
+		movies.Movies().local_finish_watching(url, folderName=folderName)
 
 	####################################################
 	#---Plex
@@ -516,6 +519,9 @@ def router(argv2):
 	elif action == 'local_calendar':
 		from resources.lib.menus import episodes
 		episodes.Episodes().local_calendar(url, folderName=folderName)
+	elif action == 'local_finish_watching_episodes':
+		from resources.lib.menus import episodes
+		episodes.Episodes().local_finish_watching(url, folderName=folderName)
 
 	####################################################
 	#---Premium Services

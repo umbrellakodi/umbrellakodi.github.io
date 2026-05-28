@@ -122,9 +122,10 @@ _MYMOVIES_DEFAULTS = [
 	('mymv_trakt_watchlist',  '40696', 'movies&url=traktwatchlist',                        'trakt.png',     'trakt.png',     1, 1, 1, 13, 0, 'trakt_credentials',    0, '40700'),
 	('mymv_trakt_collection', '40697', 'movies&url=traktcollection',                       'trakt.png',     'trakt.png',     1, 1, 1, 14, 0, 'trakt_credentials',    0, '32032'),
 	('mymv_trakt_liked',      '40698', 'movies_LikedLists',                               'trakt.png',     'trakt.png',     1, 1, 1, 15, 0, 'trakt_credentials',     1, 'My Liked Lists'),
-	('mymv_movies_menu',      '32031', 'movieliteNavigator',                               'movies.png',    'movies.png',    1, 1, 1, 16, 0, 'not_lite',             0, None),
-	('mymv_person_search',    '33044', 'moviePerson',                                      'imdb.png',      'people-search.png', 0, 1, 1, 17, 0, 'not_lite',         0, None),
-	('mymv_movie_search',     '33042', 'movieSearch',                                      'search.png',    'search.png',    1, 1, 1, 18, 0, 'not_lite',             0, None),
+	('mymv_local_finish',     'Local: Finish Watching', 'local_finish_watching_movies',       'icon.png',      'icon.png',      1, 1, 1, 16, 0, 'local_scrobble',       1, None),
+	('mymv_movies_menu',      '32031', 'movieliteNavigator',                               'movies.png',    'movies.png',    1, 1, 1, 17, 0, 'not_lite',             0, None),
+	('mymv_person_search',    '33044', 'moviePerson',                                      'imdb.png',      'people-search.png', 0, 1, 1, 18, 0, 'not_lite',         0, None),
+	('mymv_movie_search',     '33042', 'movieSearch',                                      'search.png',    'search.png',    1, 1, 1, 19, 0, 'not_lite',             0, None),
 ]
 
 _MYTVSHOWS_DEFAULTS = [
@@ -139,6 +140,7 @@ _MYTVSHOWS_DEFAULTS = [
 	('mytv_mdb_unfinished',    '40686', 'mdblistEpisodesUnfinished',                            'mdblist.png',   'mdblist.png',   1, 1, 1,  8, 0, 'mdblist_with_indicators',1, '35308'),
 	('mytv_local_shows_prog',  '40658', 'local_shows_progress&url=localprogress',               'icon.png',      'icon.png',      1, 1, 1,  9, 0, 'local_scrobble',        1, None),
 	('mytv_local_calendar',    '40659', 'local_calendar&url=localprogress',                     'icon.png',      'icon.png',      1, 1, 1, 10, 0, 'local_scrobble',        1, None),
+	('mytv_local_finish',      'Local: Finish Watching', 'local_finish_watching_episodes',         'icon.png',      'icon.png',      1, 1, 1, 11, 0, 'local_scrobble',        1, None),
 	('mytv_tmdb_userlists',    'TMDb User Lists', 'tmdbUserListsTV',                            'tmdb.png',      'tmdb.png',      1, 1, 1, 11, 0, 'tmdb_v4_token',         0, None),
 	('mytv_tmdb_watchlist',    '40612', 'tmdbV4WatchlistTV',                                    'tmdb.png',      'tmdb.png',      1, 1, 1, 12, 0, 'tmdb_v4_token',         0, None),
 	('mytv_simkl_ep_prog',     'Simkl Progress Episodes', 'simkl_calendar&url=/sync/all-items/shows/watching', 'simkl.png', 'simkl.png', 1, 1, 1, 13, 0, 'simkl_credentials', 1, None),
@@ -261,8 +263,10 @@ def initialize(menu_name='root'):
 		_populate_defaults(dbcon, menu_name)
 	# Insert items added after initial release for existing users (idempotent — OR IGNORE skips duplicates)
 	_NEW_DEFAULT_ITEMS = [
-		('mymovies',  'mymv_mdb_unfinished', '40686',  'mdblistMoviesUnfinished',   'mdblist.png', 'mdblist.png', 1, 1, 1, 99, 0, 'mdblist_with_indicators', 1, '35308'),
-		('mytvshows', 'mytv_mdb_unfinished', '40686',  'mdblistEpisodesUnfinished', 'mdblist.png', 'mdblist.png', 1, 1, 1, 99, 0, 'mdblist_with_indicators', 1, '35308'),
+		('mymovies',  'mymv_mdb_unfinished', '40686',  'mdblistMoviesUnfinished',          'mdblist.png', 'mdblist.png', 1, 1, 1, 99, 0, 'mdblist_with_indicators', 1, '35308'),
+		('mytvshows', 'mytv_mdb_unfinished', '40686',  'mdblistEpisodesUnfinished',         'mdblist.png', 'mdblist.png', 1, 1, 1, 99, 0, 'mdblist_with_indicators', 1, '35308'),
+		('mymovies',  'mymv_local_finish',   'Local: Finish Watching', 'local_finish_watching_movies',   'icon.png',    'icon.png',    1, 1, 1, 99, 0, 'local_scrobble',          1, None),
+		('mytvshows', 'mytv_local_finish',   'Local: Finish Watching', 'local_finish_watching_episodes', 'icon.png',    'icon.png',    1, 1, 1, 99, 0, 'local_scrobble',          1, None),
 	]
 	for row in _NEW_DEFAULT_ITEMS:
 		dbcon.execute(
@@ -463,7 +467,7 @@ def delete_custom_folder(folder_id):
 
 def reset_to_defaults(menu_name='root'):
 	dbcon = _get_connection()
-	dbcon.execute('DELETE FROM menu_items WHERE menu_name=?', (menu_name,))
+	dbcon.execute('DELETE FROM menu_items WHERE menu_name=? AND is_custom=0', (menu_name,))
 	dbcon.commit()
 	_populate_defaults(dbcon, menu_name)
 	dbcon.close()

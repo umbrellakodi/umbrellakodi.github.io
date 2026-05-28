@@ -794,6 +794,41 @@ class Movies:
 			from resources.lib.modules import log_utils
 			log_utils.error()
 
+	def local_finish_watching(self, url='', folderName=''):
+		self.list = []
+		try:
+			from resources.lib.database import watchedcache as wc
+			import datetime as _dt
+			items = wc.get_movies_in_progress()
+			if not items:
+				control.hide()
+				if self.notifications: control.notification(title=32001, message=33049)
+				return
+			for item in items:
+				try:
+					values = {}
+					values['imdb'] = item.get('imdb_id', '')
+					values['tmdb'] = item.get('tmdb_id', '')
+					values['progress'] = item.get('resume_point', '0')
+					try:
+						ts = int(item.get('last_played', 0))
+						dt = _dt.datetime.utcfromtimestamp(ts)
+						values['paused_at'] = dt.strftime('%Y-%m-%dT%H:%M:%S.000Z')
+					except:
+						values['paused_at'] = ''
+					self.list.append(values)
+				except:
+					log_utils.error()
+			self.worker()
+			if self.list is None: self.list = []
+			self.list = sorted(self.list, key=lambda k: k.get('paused_at', ''), reverse=True)
+			self.movieDirectory(self.list, unfinished=True, next=False, folderName=folderName)
+		except:
+			log_utils.error()
+			if not self.list:
+				control.hide()
+				if self.notifications: control.notification(title=32001, message=33049)
+
 	def unfinishedManager(self):
 		try:
 			control.busy()

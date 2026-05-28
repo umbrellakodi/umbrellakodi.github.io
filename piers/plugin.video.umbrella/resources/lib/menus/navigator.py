@@ -19,7 +19,7 @@ decades = ['1930-1939', '1940-1949','1950-1959', '1960-1969', '1970-1979', '1980
 
 
 class Navigator:
-	def __init__(self):
+	def __init__(self, lightweight=False):
 		self.artPath = control.artPath()
 		self.iconLogos = getSetting('icon.logos') != 'Traditional'
 		self.indexLabels = getSetting('index.labels') == 'true'
@@ -40,8 +40,14 @@ class Navigator:
 		self.tmdbSessionID = getSetting('tmdb.sessionid') != ''
 		self.reuselanguageinv = getSetting('reuse.languageinvoker') == 'true'
 		self.highlight_color = getSetting('highlight.color')
-		self.hasLibMovies = len(jsloads(control.jsonrpc('{"jsonrpc": "2.0", "method": "VideoLibrary.GetMovies", "params": { "limits": { "start" : 0, "end": 1 }, "properties" : ["title", "genre", "uniqueid", "art", "rating", "thumbnail", "playcount", "file"] }, "id": "1"}'))['result']['movies']) > 0
 		self.useContainerTitles = getSetting('enable.containerTitles') == 'true'
+		if lightweight:
+			self.hasLibMovies = False
+			self.favoriteMovie = False
+			self.favoriteTVShows = False
+			self.favoriteEpisodes = False
+			return
+		self.hasLibMovies = len(jsloads(control.jsonrpc('{"jsonrpc": "2.0", "method": "VideoLibrary.GetMovies", "params": { "limits": { "start" : 0, "end": 1 }, "properties" : ["title", "genre", "uniqueid", "art", "rating", "thumbnail", "playcount", "file"] }, "id": "1"}'))['result']['movies']) > 0
 		self.favoriteMovie = favourites.checkForFavourites(content='movies')
 		self.favoriteTVShows = favourites.checkForFavourites(content='tvshows')
 		self.favoriteEpisodes = favourites.checkForFavourites(content='episode')
