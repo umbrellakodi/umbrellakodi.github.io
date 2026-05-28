@@ -1269,7 +1269,8 @@ def syncTVShows(): # sync all watched shows ex. [({'imdb': 'tt12571834', 'tvdb':
 					episodes = {}
 					reset_at = i.get('reset_at')
 					for s in i.get('seasons', []):
-						ep_nums = sorted(e['number'] for e in s['episodes'] if reset_at is None or e['last_watched_at'] > reset_at)
+						if s.get('number', 0) == 0: continue
+						ep_nums = sorted(e['number'] for e in s['episodes'] if e.get('last_watched_at') and (reset_at is None or e['last_watched_at'] > reset_at))
 						if ep_nums: episodes[s['number']] = _make_episode_ranges(ep_nums)
 					indicators.append((ids, aired, episodes))
 				except: pass
@@ -1292,11 +1293,13 @@ def syncTVShows(): # sync all watched shows ex. [({'imdb': 'tt12571834', 'tvdb':
 		return indicators if indicators else None
 	except: log_utils.error()
 
-def syncTVShows_delta(last_sync_at):
+def syncTVShows_delta(last_sync_at, activity_at=None):
 	"""
 	Delta sync: fetch shows with episode watches since last_sync_at via history endpoint,
 	then pull per-show /progress/watched for only those shows.
 	Returns list of (ids, aired, episodes) tuples for changed shows, [] if none, None on error.
+	If activity_at is provided and newer than the latest history entry, returns None to trigger
+	a full sync (handles the case where an unwatch occurred after the last history entry).
 	"""
 	try:
 		if not getTraktCredentialsInfo(): return None
@@ -1307,6 +1310,12 @@ def syncTVShows_delta(last_sync_at):
 		history = get_all_pages('/users/me/history/shows?start_at=%s' % date_from)
 		if history is None: return None
 		if not history: return []
+		if activity_at:
+			from resources.lib.modules import cleandate as _cleandate
+			history_latest = max((int(_cleandate.iso_2_utc(e.get('watched_at', ''))) for e in history if e.get('watched_at')), default=0)
+			if history_latest and activity_at > history_latest + 30:
+				log_utils.log('TRAKT delta: activity gap detected (history_latest=%d, activity_at=%d) — falling back to full sync' % (history_latest, activity_at), level=log_utils.LOGDEBUG)
+				return None
 		changed_shows = {}
 		for entry in history:
 			show = entry.get('show', {})
@@ -2036,11 +2045,11 @@ def sync_watched(activities=None, forced=False): # writes to traktsync.db as of 
 				log_utils.log('Trakt Watched Shows Sync Update...(local=%s, remote=%s, path=%s)' % \
 								(str(min(db_last_syncTVShows, db_last_syncSeasons)), str(episodesWatchedActivity), 'delta' if use_delta else 'full'), __name__, log_utils.LOGDEBUG)
 				if use_delta:
-					updated = syncTVShows_delta(db_last_syncTVShows)
+					updated = syncTVShows_delta(db_last_syncTVShows, activity_at=episodesWatchedActivity)
 					if updated and traktsync.merge_watched_shows(updated):
 						log_utils.log('TRAKT: shows delta merged %d show(s)' % len(updated), __name__, log_utils.LOGDEBUG)
 					else:
-						log_utils.log('TRAKT: shows delta fallback to full sync (empty=%s)' % str(updated == []), __name__, log_utils.LOGDEBUG)
+						log_utils.log('TRAKT: shows delta fallback to full sync (empty=%s, gap=%s)' % (str(updated == []), str(updated is None)), __name__, log_utils.LOGDEBUG)
 						cachesyncTVShows()
 				else:
 					cachesyncTVShows()

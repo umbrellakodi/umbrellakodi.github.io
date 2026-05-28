@@ -1,2 +1,2 @@
-[B]Update - v6.7.607 - May 27th, 2026 [/B]
---[Fix] Change made for Trakt to no longer use extended=full and switch to new api requirement of using extended=progress.
+[B]Update - v6.7.608 - May 27th, 2026 [/B]
+--[Fix] Change made for updating watch history table when an item has been marked as unwatched.

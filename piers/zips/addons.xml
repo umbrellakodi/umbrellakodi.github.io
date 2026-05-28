@@ -1,5 +1,5 @@
 <?xml version='1.0' encoding='utf-8'?>
-<addons><addon id="plugin.video.umbrella" name="Umbrella" provider-name="Umbrella" version="6.7.607">
+<addons><addon id="plugin.video.umbrella" name="Umbrella" provider-name="Umbrella" version="6.7.608">
 	<requires>
 		<import addon="xbmc.python" version="3.0.0" />
 		<import addon="script.module.requests" />
@@ -235,8 +235,8 @@
 			<screenshot>resources/screenshots/screenshot003.jpg</screenshot>
 		</assets>
 		<news>
-[B]Update - v6.7.607 - May 27th, 2026 [/B]
---[Fix] Change made for Trakt to no longer use extended=full and switch to new api requirement of using extended=progress.
+[B]Update - v6.7.608 - May 27th, 2026 [/B]
+--[Fix] Change made for updating watch history table when an item has been marked as unwatched.
 		</news>
 	</extension>
 
