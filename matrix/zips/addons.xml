@@ -1,5 +1,5 @@
 <?xml version='1.0' encoding='utf-8'?>
-<addons><addon id="plugin.video.umbrella" name="Umbrella" provider-name="Umbrella" version="6.7.611">
+<addons><addon id="plugin.video.umbrella" name="Umbrella" provider-name="Umbrella" version="6.7.612">
 	<requires>
 		<import addon="xbmc.python" version="3.0.0" />
 		<import addon="script.module.requests" />
@@ -235,8 +235,8 @@
 			<screenshot>resources/screenshots/screenshot003.jpg</screenshot>
 		</assets>
 		<news>
-[B]Update - v6.7.611 - May 28th, 2026 [/B]
---[Change] Change to help make sure trakt episodes doesn't show watched episodes.
+[B]Update - v6.7.612 - May 28th, 2026 [/B]
+--[Change] Fix for all shows being dropped in progress.
 		</news>
 	</extension>
 

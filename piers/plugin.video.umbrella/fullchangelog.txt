@@ -1,4 +1,7 @@
 
+[B]Update - v6.7.612 - May 28th, 2026 [/B]
+--[Change] Fix for all shows being dropped in progress.
+
 [B]Update - v6.7.611 - May 28th, 2026 [/B]
 --[Change] Change to help make sure trakt episodes doesn't show watched episodes.
 
