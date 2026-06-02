@@ -878,6 +878,8 @@ def manager(name, imdb=None, tvdb=None, season=None, episode=None, refresh=True,
 				if items[select][1] == '/sync/collection/remove':
 					if media_type == 'Movie': traktsync.delete_collection_items([imdb], 'movies_collection', 'imdb')
 					else: traktsync.delete_collection_items([tvdb], 'shows_collection', 'tvdb')
+				if '/users/me/lists/' in items[select][1] and items[select][1].endswith('/remove'):
+					control.homeWindow.setProperty('umbrella.trakt.userlist.modified', 'true')
 
 				control.hide()
 				#list = re.search('\[B](.+?)\[/B]', items[select][0]).group(1)

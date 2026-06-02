@@ -1359,7 +1359,10 @@ class TVshows:
 					
 					log_utils.error()
 			return self.list
-		self.list = cache.get(userList_totalItems, self.traktuserlist_hours, url.split('?')[0] + '?extended=full')
+		_force_fresh = control.homeWindow.getProperty('umbrella.trakt.userlist.modified') == 'true'
+		if _force_fresh:
+			control.homeWindow.clearProperty('umbrella.trakt.userlist.modified')
+		self.list = cache.get(userList_totalItems, 0 if _force_fresh else self.traktuserlist_hours, url.split('?')[0] + '?extended=full')
 		if not self.list: return
 		self.sort() # sort before local pagination
 		total_pages = 1

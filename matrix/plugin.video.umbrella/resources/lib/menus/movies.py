@@ -1646,7 +1646,10 @@ class Movies:
 					from resources.lib.modules import log_utils
 					log_utils.error()
 			return self.list
-		self.list = cache.get(userList_totalItems, self.traktuserlist_hours, url.split('?')[0] + '?extended=full')
+		_force_fresh = control.homeWindow.getProperty('umbrella.trakt.userlist.modified') == 'true'
+		if _force_fresh:
+			control.homeWindow.clearProperty('umbrella.trakt.userlist.modified')
+		self.list = cache.get(userList_totalItems, 0 if _force_fresh else self.traktuserlist_hours, url.split('?')[0] + '?extended=full')
 		if not self.list: return
 		if int(getSetting('sort.movies.type') or '0') == 6:
 			watched_dates = trakt.getWatchedMoviesLastWatchedDates()
