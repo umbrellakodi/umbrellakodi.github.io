@@ -1,4 +1,7 @@
 
+[B]Update - v6.7.614 - June 2nd, 2026 [/B]
+--[Change] MDBList episodes in progress no longer uses cache when reloading after watching an episode.
+
 [B]Update - v6.7.613 - June 2nd, 2026 [/B]
 --[Change] Added window property to refresh trakt list after an item removal instead of getting from cache.
 

@@ -6,7 +6,7 @@
 from hashlib import md5
 from threading import Thread
 from json import dumps as jsdumps, loads as jsloads
-from sys import argv, exit as sysexit
+from sys import argv
 from sqlite3 import dbapi2 as database
 from urllib.parse import unquote
 import xbmc
@@ -451,6 +451,8 @@ class Player(xbmc.Player):
 				if homeWindow.getProperty('umbrella.window_keep_alive') != 'true':
 					control.closeAll()
 				break
+			if self.onPlayBackStopped_ran:
+				return
 			xbmc.sleep(200)
 
 		xbmc.sleep(5000)
@@ -776,7 +778,6 @@ class Player(xbmc.Player):
 		log_utils.error()
 		log_utils.log('onPlayBackError callback', level=log_utils.LOGDEBUG)
 		#control.checkforSkin(action='off')
-		sysexit(1)
 
 	def onPlayBackPaused(self):
 		log_utils.log('onPlayBackPaused callback', level=log_utils.LOGDEBUG)

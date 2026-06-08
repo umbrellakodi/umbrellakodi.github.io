@@ -408,9 +408,8 @@ def get_list_items_for_library(url):
 
 def getWatchListedActivity(activities=None):
     try:
-        link = f"{mdblist_baseurl}/sync/last_activities"
         if activities: i = activities
-        else: i = session.get(link, timeout=20)
+        else: i = getActivities()
         if not i: return 0
         activity = []
         activity.append(i['watchlisted_at'])
@@ -758,6 +757,15 @@ def cachesyncTV(imdb, tvdb):
 			executor.submit(cachesyncSeasons, imdb, tvdb, 0)
 	except: log_utils.error()
 
+def _clr_episode_progress_cache():
+	try:
+		from resources.lib.menus.episodes import Episodes
+		from resources.lib.database import cache
+		ep = Episodes()
+		cache.remove(ep.mdblist_progress_list, '/upnext', ep.mdblist_directProgressScrape)
+		cache.remove(ep.mdblist_progress_list, 'mdbprogress', ep.mdblist_directProgressScrape)
+	except: log_utils.error()
+
 
 def _scrobble(endpoint, media_type, imdb, tmdb, tvdb, season, episode, percent):
 	try:
@@ -816,6 +824,7 @@ def scrobbleReset(imdb, tmdb='', tvdb='', season=None, episode=None, refresh=Fal
 			if episode:
 				_post_sync_watched(show_ids={'imdb': imdb, 'tmdb': tmdb, 'tvdb': tvdb},
 					seasons_dict={int(season) if season else 1: [int(episode)]})
+				_clr_episode_progress_cache()
 			elif season:
 				pass  # season-level reset clears local resume points only, no re-mark-watched
 			else:
@@ -1059,7 +1068,9 @@ def watch(content_type, name, imdb=None, tvdb=None, tmdb=None, season=None, epis
 		if success: cachesyncTV(imdb, tvdb)
 	elif content_type == 'episode':
 		success = markEpisodeAsWatched(imdb, tvdb, season, episode, tmdb or '')
-		if success: cachesyncTV(imdb, tvdb)
+		if success:
+			cachesyncTV(imdb, tvdb)
+			_clr_episode_progress_cache()
 	control.hide()
 	if refresh: control.refresh()
 	control.trigger_widget_refresh()
