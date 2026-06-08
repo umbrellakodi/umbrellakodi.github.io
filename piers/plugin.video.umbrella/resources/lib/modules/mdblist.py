@@ -965,6 +965,7 @@ def markEpisodeAsWatched(imdb, tvdb, season, episode, tmdb=''):
 		mdbsync.upsert_watched_episode(show_imdb=imdb, show_tvdb=str(tvdb), season=season, episode=episode,
 			last_watched_at=__import__('datetime').datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%S.000Z"))
 		mdbsync.cache_delete(mdbsync._hash_function(syncTVShows, ()))
+		_clr_episode_progress_cache()
 		return True
 	except: log_utils.error()
 

@@ -1,4 +1,7 @@
 
+[B]Update - v6.7.615 - June 2nd, 2026 [/B]
+--[Change] MDBList change for refereshing list on episode completion also.
+
 [B]Update - v6.7.614 - June 2nd, 2026 [/B]
 --[Change] MDBList episodes in progress no longer uses cache when reloading after watching an episode.
 
