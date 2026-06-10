@@ -5314,6 +5314,16 @@
 						<close>true</close>
 					</control>
 				</setting>
+				<setting id="tmdb.paginate.lists" type="boolean" label="32188" help="">
+					<level>0</level>
+					<default>true</default>
+					<dependencies>
+						<dependency type="visible">
+							<condition operator="!is" setting="tmdb.v4.accesstoken"></condition>
+						</dependency>
+					</dependencies>
+					<control type="toggle"/>
+				</setting>
 			</group>
 		</category>
 		<category id="library" label="32541" help="40192">

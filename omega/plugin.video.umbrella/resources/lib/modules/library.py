@@ -1574,7 +1574,9 @@ class libtvshows:
 				premiered = i.get('premiered', '')
 				if premiered:
 					lastimportshort = lastimport.split(' ')[0]
-					if datetime.strptime(premiered, '%Y-%m-%d').date() < datetime.now().date() and datetime.strptime(premiered, '%Y-%m-%d').date()> datetime.strptime(lastimportshort, '%Y-%m-%d').date():
+					premiered_d = datetime(*[int(x) for x in premiered.split('-')]).date()
+					lastimport_d = datetime(*[int(x) for x in lastimportshort.split('-')]).date()
+					if premiered_d < datetime.now().date() and premiered_d > lastimport_d:
 						return True
 				else:
 					return False
@@ -1619,7 +1621,7 @@ class libtvshows:
 							if premiered == None or premiered =='':
 								continue
 							try:
-								if datetime.strptime(premiered, '%Y-%m-%d').date() > datetime.now().date():
+								if datetime(*[int(x) for x in premiered.split('-')]).date() > datetime.now().date():
 									continue
 							except:
 								log_utils.error()

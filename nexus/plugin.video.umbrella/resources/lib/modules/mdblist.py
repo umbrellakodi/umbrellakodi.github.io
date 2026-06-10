@@ -279,7 +279,7 @@ def manager(name, imdb=None, tvdb=None, tmdb=None, watched=None, season=None, ep
                     unwatch(content_type, name, imdb=imdb, tvdb=tvdb, tmdb=tmdb, season=season, episode=episode)
                     return
                 if items[select][1] == 'scrobbleReset':
-                    scrobbleReset(imdb=imdb, tmdb=tmdb, tvdb=tvdb, season=season, episode=episode, refresh=True, clear_local=getSetting('indicators.alt') == '3')
+                    scrobbleReset(imdb=imdb, tmdb=tmdb, tvdb=tvdb, season=season, episode=episode, refresh=True, clear_local=True)
                     return
                 if not tvdb or tvdb == 'None': post = {"movies": [{"imdb": imdb}]}
                 else:
@@ -820,6 +820,14 @@ def scrobbleEpisode(tvshowtitle, year, imdb, tmdb, tvdb, season, episode, watche
 def scrobbleReset(imdb, tmdb='', tvdb='', season=None, episode=None, refresh=False, clear_local=True, already_watched=False):
 	if not getMDBListCredentialsInfo(): return
 	try:
+		if episode:
+			resume_info = mdbsync.fetch_bookmarks(imdb, tvdb=tvdb or '', season=str(season) if season else '', episode=str(episode), ret_type='resume_info')
+		else:
+			resume_info = mdbsync.fetch_bookmarks(imdb, tmdb=tmdb or '', ret_type='resume_info')
+		if resume_info and resume_info != '0':
+			resume_id = resume_info[1] if isinstance(resume_info, (list, tuple)) else None
+			if resume_id:
+				get_request('/sync/playback/%s' % resume_id, method='DELETE')
 		if not already_watched:
 			if episode:
 				_post_sync_watched(show_ids={'imdb': imdb, 'tmdb': tmdb, 'tvdb': tvdb},
@@ -829,15 +837,14 @@ def scrobbleReset(imdb, tmdb='', tvdb='', season=None, episode=None, refresh=Fal
 				pass  # season-level reset clears local resume points only, no re-mark-watched
 			else:
 				_post_sync_watched(movies=[{'imdb': imdb, 'tmdb': tmdb}])
-		if clear_local:
-			if episode:
-				mdbsync.delete_bookmark(imdb, tvdb or '', season or '', episode)
-			elif season:
-				mdbsync.delete_bookmarks_for_season(imdb, tvdb or '', season)
-			else:
-				mdbsync.delete_bookmark(imdb, tvdb or '', '', '')
-			sync_watchedProgress(forced=True)
-			control.trigger_widget_refresh()
+		if episode:
+			mdbsync.delete_bookmark(imdb, tvdb or '', season or '', episode)
+		elif season:
+			mdbsync.delete_bookmarks_for_season(imdb, tvdb or '', season)
+		else:
+			mdbsync.delete_bookmark(imdb, tvdb or '', '', '')
+		sync_watchedProgress(forced=True)
+		control.trigger_widget_refresh()
 		if refresh: control.refresh()
 		if getSetting('scrobble.notify') == 'true':
 			control.notification(title='MDBList', message='Successfully Removed MDBList playback progress')

@@ -276,16 +276,19 @@ class Movies(TMDb):
 		except: return
 		self.list = []
 		try:
+			from urllib.parse import urlsplit, parse_qsl, urlencode, urlunsplit
 			page = int(result['page'])
 			total = int(result['total_pages'])
 			if page >= total: raise Exception()
-			if 'page=' not in fetch_url: raise Exception()
-			next = '%s&page=%s' % (fetch_url.split('&page=', 1)[0], page+1)
+			parsed = urlsplit(fetch_url)
+			qs = [(k, v) for k, v in parse_qsl(parsed.query) if k != 'page']
+			qs.append(('page', str(page + 1)))
+			next = urlunsplit(parsed._replace(query=urlencode(qs)))
 		except: next = ''
 		for item in items:
 			try:
 				values = {}
-				values['next'] = next 
+				values['next'] = next
 				media_type = item.get('media_type')
 				if media_type == 'tv': continue
 				values['tmdb'] = str(item.get('id', '')) if item.get('id') else ''
@@ -714,16 +717,19 @@ class TVshows(TMDb):
 		except: return
 		self.list = []
 		try:
+			from urllib.parse import urlsplit, parse_qsl, urlencode, urlunsplit
 			page = int(result['page'])
 			total = int(result['total_pages'])
 			if page >= total: raise Exception()
-			if 'page=' not in url: raise Exception()
-			next = '%s&page=%s' % (url.split('&page=', 1)[0], page+1)
+			parsed = urlsplit(url)
+			qs = [(k, v) for k, v in parse_qsl(parsed.query) if k != 'page']
+			qs.append(('page', str(page + 1)))
+			next = urlunsplit(parsed._replace(query=urlencode(qs)))
 		except: next = ''
 		for item in items:
 			try:
 				values = {}
-				values['next'] = next 
+				values['next'] = next
 				media_type = item.get('media_type', '')
 				if media_type == 'movie': continue
 				values['tmdb'] = str(item.get('id', '')) if item.get('id') else ''

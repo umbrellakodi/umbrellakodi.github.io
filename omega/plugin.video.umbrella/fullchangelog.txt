@@ -1,4 +1,13 @@
 
+[B]Update - v6.7.617 - June 10th, 2026 [/B]
+--[Fix] Mdblist fix added to make sure when item was scrobble reset that it was also cleared from mdblist in progress.
+--[Fix] Reverted change for cloud scrapers from using startwith to in.
+--[Fix] Fixed date parsing error caused by threading with strptime.
+
+[B]Update - v6.7.616 - June 9th, 2026 [/B]
+--[Fix] Added a fix for tmdb pagination not working correctly after page 1.
+--[Change] Added setting for tmdb pagination to be enabled/disabled.
+
 [B]Update - v6.7.615 - June 2nd, 2026 [/B]
 --[Change] MDBList change for refereshing list on episode completion also.
 

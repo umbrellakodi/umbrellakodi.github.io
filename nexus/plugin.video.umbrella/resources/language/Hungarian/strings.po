@@ -3191,7 +3191,7 @@ msgid "[COLOR %s][B]Hide[/B][/COLOR] %s"
 msgstr "[COLOR %s][B]Elrejteni[/B][/COLOR] %s"
 
 msgctxt "#40076"
-msgid "[COLOR %s][B]Scrobbble Reset[/B][/COLOR] Item"
+msgid "[COLOR %s][B]Scrobble Reset[/B][/COLOR] Item"
 msgstr "[COLOR %s][B]Szolgáltatott adat törlése[/B][/COLOR][/COLOR] a tételre vonatkozóan"
 
 msgctxt "#40077"

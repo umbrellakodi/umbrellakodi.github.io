@@ -256,7 +256,20 @@ class TVshows:
 			except: pass
 			is_collection_url = '/list/' in url or '/account/' in url
 			if u in self.tmdb_link and is_collection_url:
-				self.list = cache.get(tmdb_indexer().tmdb_collections_list, 0, url)
+				if getSetting('tmdb.paginate.lists') != 'true':
+					all_items = []
+					current_url = url
+					while current_url:
+						page_items = tmdb_indexer().tmdb_collections_list(current_url) or []
+						if not page_items: break
+						next_url = page_items[0].get('next', '')
+						for item in page_items: item['next'] = ''
+						all_items.extend(page_items)
+						if not next_url: break
+						current_url = next_url
+					self.list = all_items
+				else:
+					self.list = cache.get(tmdb_indexer().tmdb_collections_list, 0, url)
 			elif u in self.tmdb_link and not is_collection_url:
 				self.list = tmdb_indexer().tmdb_list(url) # caching handled in list indexer
 			if self.list is None: self.list = []
@@ -1646,7 +1659,20 @@ class TVshows:
 	def tmdb_v4_watchlist(self, url, create_directory=True, folderName=''):
 		self.list = []
 		try:
-			self.list = tmdb_indexer().tmdb_collections_list(url)
+			if getSetting('tmdb.paginate.lists') != 'true':
+				all_items = []
+				current_url = url
+				while current_url:
+					page_items = tmdb_indexer().tmdb_collections_list(current_url) or []
+					if not page_items: break
+					next_url = page_items[0].get('next', '')
+					for item in page_items: item['next'] = ''
+					all_items.extend(page_items)
+					if not next_url: break
+					current_url = next_url
+				self.list = all_items
+			else:
+				self.list = tmdb_indexer().tmdb_collections_list(url)
 			if self.list is None: self.list = []
 			if create_directory: self.sort(type='shows.watchlist')
 			if create_directory: self.tvshowDirectory(self.list, folderName=folderName)
