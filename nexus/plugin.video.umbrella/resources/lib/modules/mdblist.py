@@ -820,6 +820,7 @@ def scrobbleEpisode(tvshowtitle, year, imdb, tmdb, tvdb, season, episode, watche
 def scrobbleReset(imdb, tmdb='', tvdb='', season=None, episode=None, refresh=False, clear_local=True, already_watched=False):
 	if not getMDBListCredentialsInfo(): return
 	try:
+		sync_playbackProgress()  # refresh local DB so resume_id matches server's current state
 		if episode:
 			resume_info = mdbsync.fetch_bookmarks(imdb, tvdb=tvdb or '', season=str(season) if season else '', episode=str(episode), ret_type='resume_info')
 		else:

@@ -1298,6 +1298,7 @@ class Bookmarks:
 				if not runtime or runtime == 'None': return offset # TMDB sometimes return None as string. duration pulled from kodi library if missing from meta
 				progress = float(fetch_bookmarks(imdb, tmdb, tvdb, season, episode))
 				offset = (progress / 100) * runtime # runtime vs. media_length can differ resulting in 10-30sec difference using Trakt scrobble, meta providers report runtime in full minutes
+				display_offset = offset * 60
 				seekable = (2 <= progress <= int(markwatched_percentage))
 				if not seekable: return '0'
 			except:
@@ -1309,6 +1310,7 @@ class Bookmarks:
 				if not runtime or runtime == 'None': return offset
 				progress = float(simklsync.fetch_bookmarks(imdb, tmdb, tvdb, season, episode))
 				offset = (progress / 100) * runtime
+				display_offset = offset * 60
 				seekable = (2 <= progress <= int(markwatched_percentage))
 				log_utils.log('Simkl Bookmarks.get: imdb=%s tmdb=%s tvdb=%s S%sE%s progress=%s offset=%s seekable=%s' % (imdb, tmdb, tvdb, season, episode, progress, offset, seekable), level=log_utils.LOGDEBUG)
 				if not seekable: return '0'
@@ -1322,6 +1324,7 @@ class Bookmarks:
 				from resources.lib.database import mdbsync
 				progress = float(mdbsync.fetch_bookmarks(imdb, tmdb, tvdb, season, episode))
 				offset = (progress / 100) * runtime
+				display_offset = offset * 60
 				seekable = (2 <= progress <= int(markwatched_percentage))
 				if not seekable: return '0'
 			except:
@@ -1345,8 +1348,9 @@ class Bookmarks:
 			#offset = str(match[1]) 
 			#changed to correct issue with resumes.
 			offset = float(match[1])
+			display_offset = offset
 		if ck: return offset
-		minutes, seconds = divmod(float(offset), 60)
+		minutes, seconds = divmod(display_offset, 60)
 		hours, minutes = divmod(minutes, 60)
 		label = '%02d:%02d:%02d' % (hours, minutes, seconds)
 		label = getLS(32502) % label
