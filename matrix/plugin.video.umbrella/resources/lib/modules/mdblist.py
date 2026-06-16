@@ -773,12 +773,11 @@ def _scrobble(endpoint, media_type, imdb, tmdb, tvdb, season, episode, percent):
 		if media_type == 'movie':
 			post = {'movie': {'ids': {'imdb': imdb, 'tmdb': int(tmdb) if tmdb else None}}, 'progress': percent}
 		else:
-			season = int('%01d' % int(season)) if season else 1
-			episode = int('%01d' % int(episode)) if episode else 1
 			post = {
 				'show': {
 					'ids': {'imdb': imdb, 'tmdb': int(tmdb) if tmdb else None, 'tvdb': int(tvdb) if tvdb else None},
-					'season': {'number': season, 'episode': {'number': episode}}
+					'season': int('%01d' % int(season)) if season else 1,
+					'episode': int('%01d' % int(episode)) if episode else 1
 				},
 				'progress': percent
 			}

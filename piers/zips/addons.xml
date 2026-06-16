@@ -1,5 +1,5 @@
 <?xml version='1.0' encoding='utf-8'?>
-<addons><addon id="plugin.video.umbrella" name="Umbrella" provider-name="Umbrella" version="6.7.618">
+<addons><addon id="plugin.video.umbrella" name="Umbrella" provider-name="Umbrella" version="6.7.619">
 	<requires>
 		<import addon="xbmc.python" version="3.0.0" />
 		<import addon="script.module.requests" />
@@ -235,9 +235,8 @@
 			<screenshot>resources/screenshots/screenshot003.jpg</screenshot>
 		</assets>
 		<news>
-[B]Update - v6.7.618 - June 15th, 2026 [/B]
---[Fix] System service changed to use daemon for users getting shutdown errors.
---[Change] Change made mdblist to allow lookup of resume id before delete sent.
+[B]Update - v6.7.619 - June 16th, 2026 [/B]
+--[Change] Added support for resume with scrobble from mdblist, simkl, and trakt.
 		</news>
 	</extension>
 

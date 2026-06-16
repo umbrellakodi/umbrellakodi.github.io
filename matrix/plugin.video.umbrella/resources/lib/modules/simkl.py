@@ -1616,9 +1616,9 @@ def scrobbleStart(media_type, title='', tvshowtitle='', year='0', imdb='', tmdb=
 	log_utils.log('Simkl Scrobble Start Called. media_type: %s imdb: %s' % (media_type, imdb), level=log_utils.LOGDEBUG)
 	try:
 		if media_type == 'movie':
-			data = {'progress': watched_percent, 'movie': {'title': title, 'year': int(year) if year else 0, 'ids': {'imdb': imdb, 'tmdb': int(tmdb) if tmdb else None}}}
+			data = {'id': 0, 'progress': watched_percent, 'movie': {'title': title, 'year': int(year) if year else 0, 'ids': {'imdb': imdb, 'tmdb': int(tmdb) if tmdb else None}}}
 		else:
-			data = {'progress': watched_percent, 'show': {'title': tvshowtitle, 'year': int(year) if year else 0, 'ids': {'imdb': imdb}}, 'episode': {'season': int('%01d' % int(season)) if season else 0, 'number': int('%01d' % int(episode)) if episode else 0}}
+			data = {'id': 0, 'progress': watched_percent, 'show': {'title': tvshowtitle, 'year': int(year) if year else 0, 'ids': {'imdb': imdb}}, 'episode': {'season': int('%01d' % int(season)) if season else 0, 'number': int('%01d' % int(episode)) if episode else 0}}
 		success = post_request('/scrobble/start', data)
 		if success:
 			log_utils.log('Simkl Scrobble Start Success: imdb: %s' % imdb, level=log_utils.LOGDEBUG)

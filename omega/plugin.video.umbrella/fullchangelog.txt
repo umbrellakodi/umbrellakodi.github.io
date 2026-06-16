@@ -1,4 +1,7 @@
 
+[B]Update - v6.7.619 - June 16th, 2026 [/B]
+--[Change] Added support for resume with scrobble from mdblist, simkl, and trakt.
+
 [B]Update - v6.7.618 - June 15th, 2026 [/B]
 --[Fix] System service changed to use daemon for users getting shutdown errors.
 --[Change] Change made mdblist to allow lookup of resume id before delete sent.
