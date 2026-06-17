@@ -1,4 +1,14 @@
 
+[B]Update - v6.7.620 - June 17th, 2026 [/B]
+--[Fix] Fix for MDBList first sync not working on fresh load.
+--[Change] Added support for Collection from MDBList. Add/Remove/View
+--[Change] Added official lists from MDBList.
+--[Fix] Fix for MDBList Watchlist and Collection pagination.
+--[Change] Added support for "dropped" in MDBList.
+
+[B]Update - v6.7.620 - June 16th, 2026 [/B]
+--[Change] Added support for pause actions on simkl and mdblist.
+
 [B]Update - v6.7.619 - June 16th, 2026 [/B]
 --[Change] Added support for resume with scrobble from mdblist, simkl, and trakt.
 

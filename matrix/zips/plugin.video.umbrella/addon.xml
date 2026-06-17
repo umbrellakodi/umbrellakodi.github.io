@@ -1,4 +1,4 @@
-<addon id="plugin.video.umbrella" name="Umbrella" provider-name="Umbrella" version="6.7.619">
+<addon id="plugin.video.umbrella" name="Umbrella" provider-name="Umbrella" version="6.7.620">
 	<requires>
 		<import addon="xbmc.python" version="3.0.0" />
 		<import addon="script.module.requests" />
@@ -234,8 +234,12 @@
 			<screenshot>resources/screenshots/screenshot003.jpg</screenshot>
 		</assets>
 		<news>
-[B]Update - v6.7.619 - June 16th, 2026 [/B]
---[Change] Added support for resume with scrobble from mdblist, simkl, and trakt.
+[B]Update - v6.7.620 - June 17th, 2026 [/B]
+--[Fix] Fix for MDBList first sync not working on fresh load.
+--[Change] Added support for Collection from MDBList. Add/Remove/View
+--[Change] Added official lists from MDBList.
+--[Fix] Fix for MDBList Watchlist and Collection pagination.
+--[Change] Added support for "dropped" in MDBList.
 		</news>
 	</extension>
 

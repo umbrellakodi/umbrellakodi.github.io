@@ -781,6 +781,23 @@ class Player(xbmc.Player):
 
 	def onPlayBackPaused(self):
 		log_utils.log('onPlayBackPaused callback', level=log_utils.LOGDEBUG)
+		try:
+			if self.watched_during_playback: return
+			total_time = self.getTotalTime()
+			if total_time <= 0: return
+			pause_percent = round((self.getTime() / total_time) * 100, 2)
+			scrobble_source = getSetting('scrobble.source')
+			if self.simklCredentials and (scrobble_source == '2' or getSetting('simkl.markwatched') == 'true'):
+				if self.media_type == 'movie':
+					simkl.scrobbleMovie(self.title, self.year, self.imdb, self.tmdb, pause_percent)
+				else:
+					simkl.scrobbleEpisode(self.title, self.year, self.imdb, self.tmdb, self.tvdb, self.season, self.episode, pause_percent)
+			if self.mdblistCredentials and (scrobble_source == '3' or getSetting('mdblist.markwatched') == 'true'):
+				if self.media_type == 'movie':
+					mdblist.scrobbleMovie(self.title, self.year, self.imdb, self.tmdb, pause_percent)
+				else:
+					mdblist.scrobbleEpisode(self.title, self.year, self.imdb, self.tmdb, self.tvdb, self.season, self.episode, pause_percent)
+		except: log_utils.error()
 
 	def onPlayBackResumed(self):
 		log_utils.log('onPlayBackResumed callback', level=log_utils.LOGDEBUG)

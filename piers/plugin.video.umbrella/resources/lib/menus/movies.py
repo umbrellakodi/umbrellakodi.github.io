@@ -164,6 +164,7 @@ class Movies:
 		self.trakt_popularLists_link = 'https://api.trakt.tv/lists/popular?limit=%s&page=1' % self.page_limit
 		self.trakt_trendingLists_link = 'https://api.trakt.tv/lists/trending?limit=%s&page=1' % self.page_limit
 		self.mbdlist_list_items = 'https://api.mdblist.com/lists/%s/items?page=1'
+		self.mbdlist_official_items = 'https://api.mdblist.com/lists/official/%s/items?mediatype=movie&page=1'
 		self.simkltrendingtoday_link = 'https://api.simkl.com/movies/trending/today?client_id=%s&extended=tmdb' % '%s'
 		self.simkltrendingweek_link = 'https://api.simkl.com/movies/trending/week?client_id=%s&extended=tmdb' % '%s'
 		self.simkltrendingmonth_link = 'https://api.simkl.com/movies/trending/month?client_id=%s&extended=tmdb'% '%s'
@@ -341,6 +342,37 @@ class Movies:
 				from resources.lib.modules import log_utils
 				log_utils.error()
 		return self.list
+	def getMDBOfficialLists(self, create_directory=True, folderName=''):
+		self.list = []
+		try:
+			self.list = cache.get(self.mbd_official_lists, self.mdblist_hours)
+			if self.list is None: self.list = []
+			if create_directory: self.addDirectory(self.list, folderName=folderName)
+			return self.list
+		except:
+			from resources.lib.modules import log_utils
+			log_utils.error()
+	def mbd_official_lists(self):
+		try:
+			listType = 'movie'
+			items = mdblist.getMDBOfficialLists(self, listType)
+			next = ''
+		except:
+			from resources.lib.modules import log_utils
+			log_utils.error()
+		for item in items:
+			try:
+				list_name = item.get('params', {}).get('list_name', '')
+				slug = item.get('unique_ids', {}).get('slug', '')
+				list_count = item.get('params', {}).get('list_count', '')
+				list_url = self.mbdlist_official_items % slug
+				label = '%s - (%s)' % (list_name, list_count)
+				self.list.append({'name': label, 'url': list_url, 'list_name': list_name, 'list_id': slug, 'context': list_url, 'next': next, 'image': 'mdblist.png', 'icon': 'mdblist.png', 'action': 'movies&folderName=%s' % quote_plus(list_name)})
+			except:
+				from resources.lib.modules import log_utils
+				log_utils.error()
+		return self.list
+
 	def getMDBUserList(self, create_directory=True, folderName='', addremove=False):
 		self.list = []
 		try:
@@ -477,6 +509,40 @@ class Movies:
 					next_page = index + 2
 					next = 'plugin://plugin.video.umbrella/?action=mdbUserWatchListMovies&url=%s&page=%s&folderName=%s' % (
 						quote_plus('mdbwatchlist?limit=%s&page=%s' % (self.page_limit, next_page)),
+						str(next_page), quote_plus(folderName))
+				except: pass
+			for i in range(len(self.list)): self.list[i]['next'] = next
+			hasNext = bool(next)
+			return self.movieDirectory(self.list, next=hasNext, folderName=folderName)
+		except:
+			from resources.lib.modules import log_utils
+			log_utils.error()
+
+	def get_mdbuser_collection(self, url=None, create_directory=True, folderName=''):
+		self.list = []
+		try:
+			try:
+				if not url or '?' not in url:
+					url = 'mdbcollection?limit=%s&page=1' % self.page_limit
+				q = dict(parse_qsl(urlsplit(url).query))
+				index = int(q.get('page', 1)) - 1
+			except:
+				index = 0
+			listType = 'movie'
+			self.list = cache.get(mdblist.get_user_collection, 0, listType)
+			if self.list is None: self.list = []
+			self.worker()
+			self.sort(type='movies.watchlist')
+			next = ''
+			if getSetting('mdblist.paginate.lists') == 'true' and self.list:
+				paginated_ids = [self.list[x:x + int(self.page_limit)] for x in range(0, len(self.list), int(self.page_limit))]
+				total_pages = len(paginated_ids)
+				self.list = paginated_ids[index] if index < total_pages else []
+				try:
+					if index + 1 >= total_pages: raise Exception()
+					next_page = index + 2
+					next = 'plugin://plugin.video.umbrella/?action=mdbUserCollectionMovies&url=%s&page=%s&folderName=%s' % (
+						quote_plus('mdbcollection?limit=%s&page=%s' % (self.page_limit, next_page)),
 						str(next_page), quote_plus(folderName))
 				except: pass
 			for i in range(len(self.list)): self.list[i]['next'] = next
@@ -929,6 +995,28 @@ class Movies:
 			del window
 			if selected_items:
 				mdblist.removeWatchlistItems('movies', selected_items)
+		except:
+			from resources.lib.modules import log_utils
+			log_utils.error()
+			control.hide()
+
+	def mdblistCollectionManager(self):
+		try:
+			from resources.lib.modules import mdblist
+			from resources.lib.database import mdbsync as _mdbsync
+			control.busy()
+			self.list = _mdbsync.fetch_collection('movies_collection')
+			for item in self.list:
+				item['trakt'] = item.get('imdb', '')
+			self.worker()
+			self.sort(type='movies.watchlist')
+			control.hide()
+			from resources.lib.windows.traktbasic_manager import TraktBasicManagerXML
+			window = TraktBasicManagerXML('traktbasic_manager.xml', control.addonPath(control.addonId()), results=self.list)
+			selected_items = window.run()
+			del window
+			if selected_items:
+				mdblist.removeCollectionItems('movies', selected_items)
 		except:
 			from resources.lib.modules import log_utils
 			log_utils.error()
@@ -2527,7 +2615,8 @@ class Movies:
 				nextColor ='[COLOR %s]' % getSetting('highlight.color')
 				nextMenu = nextColor + nextMenu + page + '[/COLOR]'
 				u = urlparse(url).netloc.lower()
-				if u not in self.tmdb_link: url = '%s?action=moviePage&url=%s&folderName=%s' % (sysaddon, quote_plus(url), quote_plus(folderName))
+				if url.startswith(sysaddon): pass  # already a plugin action URL, use as-is
+				elif u not in self.tmdb_link: url = '%s?action=moviePage&url=%s&folderName=%s' % (sysaddon, quote_plus(url), quote_plus(folderName))
 				elif u in self.tmdb_link: url = '%s?action=tmdbmoviePage&url=%s&folderName=%s' % (sysaddon, quote_plus(url), quote_plus(folderName))
 				elif u in self.mbdlist_list_items: url = '%s?action=moviePage&url=%s&folderName=%s' % (sysaddon, quote_plus(url), quote_plus(folderName))
 				item = control.item(label=nextMenu, offscreen=True)

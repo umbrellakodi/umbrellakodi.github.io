@@ -242,6 +242,16 @@ class Episodes:
 				self.list = cache.get(self.trakt_episodes_list, self.trakt_unfinished_hours, cache_key, self.trakt_user, self.lang, items)
 			if self.list is None: self.list = []
 			self.list = sorted(self.list, key=lambda k: k['paused_at'], reverse=True)
+			try:
+				dropped = mdbsync.fetch_dropped('shows_dropped')
+				if dropped:
+					dropped_tmdb = {str(i['tmdb']) for i in dropped if i.get('tmdb')}
+					dropped_imdb = {str(i['imdb']) for i in dropped if i.get('imdb')}
+					self.list = [i for i in self.list if not (
+						(i.get('tmdb') and str(i['tmdb']) in dropped_tmdb) or
+						(i.get('imdb') and str(i['imdb']) in dropped_imdb)
+					)]
+			except: pass
 			if self.list and not self.showunaired:
 				self.list = [i for i in self.list if i.get('unaired', '') != 'true']
 			if create_directory: self.episodeDirectory(self.list, unfinished=True, next=False, folderName=folderName)
@@ -569,6 +579,17 @@ class Episodes:
 			sorted_list.extend(top_items)
 			sorted_list.extend([i for i in self.list if i not in top_items])
 			self.list = sorted_list
+			try:
+				from resources.lib.database import mdbsync as _mdbsync
+				dropped = _mdbsync.fetch_dropped('shows_dropped')
+				if dropped:
+					dropped_tmdb = {str(i['tmdb']) for i in dropped if i.get('tmdb')}
+					dropped_imdb = {str(i['imdb']) for i in dropped if i.get('imdb')}
+					self.list = [i for i in self.list if not (
+						(i.get('tmdb') and str(i['tmdb']) in dropped_tmdb) or
+						(i.get('imdb') and str(i['imdb']) in dropped_imdb)
+					)]
+			except: pass
 			if self.list is None: self.list = []
 			if not self.progress_showunairedMDBList:
 				self.list = [i for i in self.list if i.get('unaired', '') != 'true']

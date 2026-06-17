@@ -592,6 +592,7 @@ class Navigator:
 			self.addDirectoryItem(40670, 'mdblistRevoke', 'mdblist.png', 'DefaultAddonService.png', isFolder=False)
 		self.addDirectoryItem(40638, 'movies_mdblistWatchlistManager', 'mdblist.png', 'DefaultAddonService.png', isFolder=False)
 		self.addDirectoryItem(40639, 'shows_mdblistWatchlistManager', 'mdblist.png', 'DefaultAddonService.png', isFolder=False)
+		self.addDirectoryItem(40714, 'shows_mdblistDroppedManager', 'mdblist.png', 'DefaultAddonService.png', isFolder=False)
 		self.addDirectoryItem(40637, 'tools_forceMDBListSync', 'mdblist.png', 'DefaultAddonService.png', isFolder=False)
 		self.endDirectory()
 

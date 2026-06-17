@@ -228,6 +228,9 @@ def router(argv2):
 	elif action == 'movies_mdblistWatchlistManager':
 		from resources.lib.menus import movies
 		movies.Movies().mdblistWatchlistManager()
+	elif action == 'movies_mdblistCollectionManager':
+		from resources.lib.menus import movies
+		movies.Movies().mdblistCollectionManager()
 	elif action == 'movies_favorites':
 		from resources.lib.modules import favourites
 		favourites.getFavouritesMoviesfromXML()
@@ -246,12 +249,24 @@ def router(argv2):
 	elif action == 'mdbUserWatchListMovies':
 		from resources.lib.menus import movies
 		movies.Movies().get_mdbuser_watchlist(url, folderName=folderName)
+	elif action == 'mdbUserCollectionMovies':
+		from resources.lib.menus import movies
+		movies.Movies().get_mdbuser_collection(url, folderName=folderName)
+	elif action == 'mdbOfficialListMovies':
+		from resources.lib.menus import movies
+		movies.Movies().getMDBOfficialLists(folderName=folderName)
 	elif action == 'mdbLikedListMovies':
 		from resources.lib.menus import movies
 		movies.Movies().getMDBLikedLists(folderName=folderName)
 	elif action == 'mdbUserWatchListTVShows':
 		from resources.lib.menus import tvshows
 		tvshows.TVshows().get_mdbuser_watchlist(url, folderName=folderName)
+	elif action == 'mdbUserCollectionTVShows':
+		from resources.lib.menus import tvshows
+		tvshows.TVshows().get_mdbuser_collection(url, folderName=folderName)
+	elif action == 'mdbOfficialListTV':
+		from resources.lib.menus import tvshows
+		tvshows.TVshows().getMDBOfficialLists(folderName=folderName)
 	elif action == 'moviesimilarFromLibrary':
 		from resources.lib.menus import movies
 		movies.Movies().similarFromLibrary(tmdb=tmdb)
@@ -408,6 +423,12 @@ def router(argv2):
 	elif action == 'shows_mdblistWatchlistManager':
 		from resources.lib.menus import tvshows
 		tvshows.TVshows().mdblistWatchlistManager()
+	elif action == 'shows_mdblistCollectionManager':
+		from resources.lib.menus import tvshows
+		tvshows.TVshows().mdblistCollectionManager()
+	elif action == 'shows_mdblistDroppedManager':
+		from resources.lib.menus import tvshows
+		tvshows.TVshows().mdblistDroppedManager()
 	elif action == 'mdbUserListTV':
 		from resources.lib.menus import tvshows
 		tvshows.TVshows().getMDBUserList(folderName=folderName)

@@ -309,6 +309,8 @@ def services_syncs():
 					if getSetting('indicators.alt') == '3':
 						mdblist.sync_watchedProgress(activities)
 					mdblist.sync_watch_list(activities)
+					mdblist.sync_collection(activities)
+					mdblist.sync_dropped(activities)
 				if not control.monitor.abortRequested():
 					if getSetting('bookmarks') == 'true' and getSetting('scrobble.source') == '3':
 						mdblist.sync_playbackProgress()

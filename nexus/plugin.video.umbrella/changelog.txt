@@ -1,3 +1,6 @@
-[B]Update - v6.7.618 - June 15th, 2026 [/B]
---[Fix] System service changed to use daemon for users getting shutdown errors.
---[Change] Change made mdblist to allow lookup of resume id before delete sent.
+[B]Update - v6.7.620 - June 17th, 2026 [/B]
+--[Fix] Fix for MDBList first sync not working on fresh load.
+--[Change] Added support for Collection from MDBList. Add/Remove/View
+--[Change] Added official lists from MDBList.
+--[Fix] Fix for MDBList Watchlist and Collection pagination.
+--[Change] Added support for "dropped" in MDBList.

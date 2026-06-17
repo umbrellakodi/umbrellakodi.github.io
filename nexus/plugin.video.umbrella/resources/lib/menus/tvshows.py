@@ -144,6 +144,7 @@ class TVshows:
 		self.tmdb_recommendations = tmdb_base+'/3/tv/%s/recommendations?api_key=%s&language=en-US&region=US&page=1'
 		self.tmdb_person_search = tmdb_base+'/3/search/person?api_key=%s&query=%s&language=en-US&page=1&include_adult=true' % ('%s','%s')
 		self.mbdlist_list_items = 'https://api.mdblist.com/lists/%s/items?page=1'
+		self.mbdlist_official_items = 'https://api.mdblist.com/lists/official/%s/items?mediatype=show&page=1'
 		self.simkltrendingtoday_link = 'https://api.simkl.com/tv/trending/today?client_id=%s&extended=tmdb' % '%s'
 		self.simkltrendingweek_link = 'https://api.simkl.com/tv/trending/week?client_id=%s&extended=tmdb' % '%s'
 		self.simkltrendingmonth_link = 'https://api.simkl.com/tv/trending/month?client_id=%s&extended=tmdb'% '%s'
@@ -247,6 +248,36 @@ class TVshows:
 			return self.list
 		except:
 			log_utils.error()
+	def getMDBOfficialLists(self, create_directory=True, folderName=''):
+		self.list = []
+		try:
+			self.list = cache.get(self.mbd_official_lists, self.mdblist_hours)
+			if self.list is None: self.list = []
+			if create_directory: self.addDirectory(self.list, folderName=folderName)
+			return self.list
+		except:
+			from resources.lib.modules import log_utils
+			log_utils.error()
+	def mbd_official_lists(self):
+		try:
+			listType = 'show'
+			items = mdblist.getMDBOfficialLists(self, listType)
+			next = ''
+		except:
+			from resources.lib.modules import log_utils
+			log_utils.error()
+		for item in items:
+			try:
+				list_name = item.get('params', {}).get('list_name', '')
+				slug = item.get('unique_ids', {}).get('slug', '')
+				list_count = item.get('params', {}).get('list_count', '')
+				list_url = self.mbdlist_official_items % slug
+				label = '%s - (%s)' % (list_name, list_count)
+				self.list.append({'name': label, 'url': list_url, 'list_name': list_name, 'list_id': slug, 'context': list_url, 'next': next, 'image': 'mdblist.png', 'icon': 'mdblist.png', 'action': 'tvshows&folderName=%s' % quote_plus(list_name)})
+			except:
+				from resources.lib.modules import log_utils
+				log_utils.error()
+		return self.list
 	def getTMDb(self, url, create_directory=True, folderName=''):
 		self.list = []
 		try:
@@ -554,6 +585,53 @@ class TVshows:
 			if selected_items:
 				mdblist.removeWatchlistItems('shows', selected_items)
 		except:
+			log_utils.error()
+			control.hide()
+
+	def mdblistCollectionManager(self):
+		try:
+			from resources.lib.modules import mdblist
+			from resources.lib.database import mdbsync as _mdbsync
+			control.busy()
+			self.list = _mdbsync.fetch_collection('shows_collection')
+			for item in self.list:
+				item['trakt'] = item.get('imdb', '')
+			self.worker()
+			self.sort(type='shows.watchlist')
+			control.hide()
+			from resources.lib.windows.traktbasic_manager import TraktBasicManagerXML
+			window = TraktBasicManagerXML('traktbasic_manager.xml', control.addonPath(control.addonId()), results=self.list)
+			selected_items = window.run()
+			del window
+			if selected_items:
+				mdblist.removeCollectionItems('shows', selected_items)
+		except:
+			from resources.lib.modules import log_utils
+			log_utils.error()
+			control.hide()
+
+	def mdblistDroppedManager(self):
+		try:
+			from resources.lib.modules import mdblist
+			from resources.lib.database import mdbsync as _mdbsync
+			control.busy()
+			self.list = _mdbsync.fetch_dropped('shows_dropped')
+			if not self.list:
+				self.list = mdblist.get_user_dropped() or []
+				if self.list: _mdbsync.insert_dropped(self.list, 'shows_dropped')
+			for item in self.list:
+				item['trakt'] = item.get('imdb', '')
+			self.worker()
+			self.sort(type='shows.watchlist')
+			control.hide()
+			from resources.lib.windows.traktbasic_manager import TraktBasicManagerXML
+			window = TraktBasicManagerXML('traktbasic_manager.xml', control.addonPath(control.addonId()), results=self.list)
+			selected_items = window.run()
+			del window
+			if selected_items:
+				mdblist.removeDroppedItems(selected_items)
+		except:
+			from resources.lib.modules import log_utils
 			log_utils.error()
 			control.hide()
 
@@ -1714,6 +1792,40 @@ class TVshows:
 			from resources.lib.modules import log_utils
 			log_utils.error()
 
+	def get_mdbuser_collection(self, url=None, create_directory=True, folderName=''):
+		self.list = []
+		try:
+			try:
+				if not url or '?' not in url:
+					url = 'mdbcollection?limit=%s&page=1' % self.page_limit
+				q = dict(parse_qsl(urlsplit(url).query))
+				index = int(q.get('page', 1)) - 1
+			except:
+				index = 0
+			listType = 'tvshow'
+			self.list = cache.get(mdblist.get_user_collection, 0, listType)
+			if self.list is None: self.list = []
+			self.worker()
+			self.sort(type='shows.watchlist')
+			next = ''
+			if getSetting('mdblist.paginate.lists') == 'true' and self.list:
+				paginated_ids = [self.list[x:x + int(self.page_limit)] for x in range(0, len(self.list), int(self.page_limit))]
+				total_pages = len(paginated_ids)
+				self.list = paginated_ids[index] if index < total_pages else []
+				try:
+					if index + 1 >= total_pages: raise Exception()
+					next_page = index + 2
+					next = 'plugin://plugin.video.umbrella/?action=mdbUserCollectionTVShows&url=%s&page=%s&folderName=%s' % (
+						quote_plus('mdbcollection?limit=%s&page=%s' % (self.page_limit, next_page)),
+						str(next_page), quote_plus(folderName))
+				except: pass
+			for i in range(len(self.list)): self.list[i]['next'] = next
+			hasNext = bool(next)
+			return self.tvshowDirectory(self.list, next=hasNext, folderName=folderName)
+		except:
+			from resources.lib.modules import log_utils
+			log_utils.error()
+
 	def imdb_list(self, url, isRatinglink=False, folderName=''):
 		list = [] ; items = [] ; dupes = []
 		try:
@@ -2041,6 +2153,13 @@ class TVshows:
 				except: log_utils.error()
 			self.worker()
 			if self.list is None: self.list = []
+			try:
+				from resources.lib.database import mdbsync as _mdbsync
+				dropped = _mdbsync.fetch_dropped('shows_dropped')
+				if dropped:
+					dropped_tmdb = {str(i['tmdb']) for i in dropped if i.get('tmdb')}
+					self.list = [i for i in self.list if not (i.get('tmdb') and str(i['tmdb']) in dropped_tmdb)]
+			except: pass
 		except:
 			log_utils.error()
 		return self.list
