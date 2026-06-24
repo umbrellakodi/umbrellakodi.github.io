@@ -1,6 +1,3 @@
-[B]Update - v6.7.620 - June 17th, 2026 [/B]
---[Fix] Fix for MDBList first sync not working on fresh load.
---[Change] Added support for Collection from MDBList. Add/Remove/View
---[Change] Added official lists from MDBList.
---[Fix] Fix for MDBList Watchlist and Collection pagination.
---[Change] Added support for "dropped" in MDBList.
+[B]Update - v6.7.621 - June 24th, 2026 [/B]
+--[Change] Changes made for resetting scrobbles.
+--[Fix] Made changes where if using trakt and changing percentage to mark watched to higher percentage it no longer shows an error. Trakt auto marks as watched anything above 80%

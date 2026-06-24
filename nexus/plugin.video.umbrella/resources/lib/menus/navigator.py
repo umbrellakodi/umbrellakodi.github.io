@@ -47,7 +47,7 @@ class Navigator:
 			self.favoriteTVShows = False
 			self.favoriteEpisodes = False
 			return
-		self.hasLibMovies = len(jsloads(control.jsonrpc('{"jsonrpc": "2.0", "method": "VideoLibrary.GetMovies", "params": { "limits": { "start" : 0, "end": 1 }, "properties" : ["title", "genre", "uniqueid", "art", "rating", "thumbnail", "playcount", "file"] }, "id": "1"}'))['result']['movies']) > 0
+		self.hasLibMovies = len(jsloads(control.jsonrpc('{"jsonrpc": "2.0", "method": "VideoLibrary.GetMovies", "params": { "limits": { "start" : 0, "end": 1 }, "properties" : ["title", "genre", "uniqueid", "art", "rating", "thumbnail", "playcount", "file"] }, "id": "1"}')).get('result', {}).get('movies', [])) > 0
 		self.favoriteMovie = favourites.checkForFavourites(content='movies')
 		self.favoriteTVShows = favourites.checkForFavourites(content='tvshows')
 		self.favoriteEpisodes = favourites.checkForFavourites(content='episode')

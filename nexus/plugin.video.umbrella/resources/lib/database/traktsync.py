@@ -46,16 +46,19 @@ def fetch_bookmarks(imdb, tmdb='', tvdb='', season=None, episode=None, ret_all=N
 						else: progress = match[12]
 					except: pass
 			else:
+				# Normalize to strings — insert_bookmarks stores TEXT, but callers like manager() pass int
+				season = str(season) if season is not None else ''
+				episode = str(episode) if episode is not None else ''
 				try: # Lookup both IMDb and TVDb first for more accurate episode match.
 					match = dbcur.execute('''SELECT * FROM bookmarks WHERE (imdb=? AND tvdb=? AND season=? AND episode=? AND NOT imdb='' AND NOT tvdb='')''', (imdb, tvdb, season, episode)).fetchone()
-					if ret_type == 'resume_info': 
+					if ret_type == 'resume_info':
 						progress = (match[0], match[2])
 						log_utils.log('Getting resume from database imdb. Match: %s' % (str(match)),1)
 					else: progress = match[12]
 				except:
 					try:
 						match = dbcur.execute('''SELECT * FROM bookmarks WHERE (tvdb=? AND season=? AND episode=? AND NOT tvdb='')''', (tvdb, season, episode)).fetchone()
-						if ret_type == 'resume_info': 
+						if ret_type == 'resume_info':
 							progress = (match[0], match[2])
 							log_utils.log('Getting resume from database tvdb. Match: %s' % (str(match)),1)
 						else: progress = match[12]

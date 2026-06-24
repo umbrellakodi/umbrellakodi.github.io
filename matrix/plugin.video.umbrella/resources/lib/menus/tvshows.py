@@ -9,7 +9,7 @@ from json import dumps as jsdumps
 import re
 import xbmc
 from threading import Thread
-from urllib.parse import quote_plus, urlencode, parse_qsl, urlparse, urlsplit
+from urllib.parse import quote_plus, urlencode, parse_qsl, urlparse, urlsplit, urlunparse
 from resources.lib.database import cache, metacache, fanarttv_cache, traktsync, simklsync
 from resources.lib.indexers.tmdb import TVshows as tmdb_indexer
 from resources.lib.indexers.fanarttv import FanartTv
@@ -1322,7 +1322,12 @@ class TVshows:
 		if ',return' in url: url = url.split(',return')[0]
 		if getSetting('trakt.paginate.lists') != 'true':
 			if '/trending' in url or '/popular' in url:
-				items = trakt.getTraktAsJson(url)
+				parsed = urlparse(url)
+				params = dict(parse_qsl(parsed.query))
+				params['limit'] = '200'
+				params['page'] = '1'
+				modified_url = urlunparse(parsed._replace(query=urlencode(params)))
+				items = trakt.getTraktAsJson(modified_url)
 			else:
 				items = trakt.get_all_pages(url, silent=True)
 			next = ''

@@ -96,7 +96,9 @@ def getTrakt(url, post=None, extended=False, silent=False, reauth_attempts=0):
 					control.notification(title=32315, message='Trakt Throttling Applied, Sleeping for %s seconds' % throttleTime) # message lang code 33674
 				control.sleep((int(throttleTime) + 1) * 1000)
 				return getTrakt(url, extended=extended, silent=silent, reauth_attempts=reauth_attempts)
-		else: return None
+		else:
+			log_utils.log('TRAKT: %s returned status %s for %s' % ('POST' if post else 'GET', status_code, url), level=log_utils.LOGWARNING)
+			return None
 	except:
 		try: log_utils.error('getTrakt Error: ')
 		except: pass
@@ -847,7 +849,7 @@ def manager(name, imdb=None, tvdb=None, season=None, episode=None, refresh=True,
 			elif items[select][1] == 'unfinishedMovieManager':
 				control.execute('RunPlugin(plugin://plugin.video.umbrella/?action=movies_traktUnfinishedManager)')
 			elif items[select][1] == 'scrobbleReset':
-				scrobbleReset(imdb=imdb, tmdb='', tvdb=tvdb, season=season, episode=episode, widgetRefresh=True, clear_local=getSetting('indicators.alt') == '1')
+				scrobbleReset(imdb=imdb, tmdb='', tvdb=tvdb, season=season, episode=episode, tvshowtitle=name, widgetRefresh=True, clear_local=getSetting('indicators.alt') == '1')
 			else:
 				if not tvdb: post = {"movies": [{"ids": {"imdb": imdb}}]}
 				else:
@@ -1296,13 +1298,6 @@ def syncTVShows(): # sync all watched shows ex. [({'imdb': 'tt12571834', 'tvdb':
 	except: log_utils.error()
 
 def syncTVShows_delta(last_sync_at, activity_at=None):
-	"""
-	Delta sync: fetch shows with episode watches since last_sync_at via history endpoint,
-	then pull per-show /progress/watched for only those shows.
-	Returns list of (ids, aired, episodes) tuples for changed shows, [] if none, None on error.
-	If activity_at is provided and newer than the latest history entry, returns None to trigger
-	a full sync (handles the case where an unwatch occurred after the last history entry).
-	"""
 	try:
 		if not getTraktCredentialsInfo(): return None
 		from datetime import datetime as _dt
@@ -1785,28 +1780,49 @@ def scrobbleMovie(imdb, tmdb, watched_percent):
 	log_utils.log('Trakt Scrobble Movie Called. Received: imdb: %s tmdb: %s watched_percent: %s' % (imdb, tmdb, watched_percent), level=log_utils.LOGDEBUG)
 	try:
 		if not imdb.startswith('tt'): imdb = 'tt' + imdb
-		success = getTrakt('/scrobble/pause', {"movie": {"ids": {"imdb": imdb}}, "progress": watched_percent})
+		success = getTrakt('/scrobble/stop', {"movie": {"ids": {"imdb": imdb}}, "progress": watched_percent})
 		if success:
 			log_utils.log('Trakt Scrobble Movie Success: imdb: %s s' % (imdb), level=log_utils.LOGDEBUG)
 			if getSetting('scrobble.notify') == 'true': control.notification(message=32088)
 			control.sleep(1000)
 			sync_playbackProgress(forced=True)
 			control.trigger_widget_refresh()
-		else: control.notification(message=32130)
+		else:
+			log_utils.log('Trakt Scrobble Movie Failed: imdb=%s progress=%s' % (imdb, watched_percent), level=log_utils.LOGWARNING)
+			if watched_percent >= 80:
+				if markMovieAsWatched(imdb):
+					if getSetting('scrobble.notify') == 'true': control.notification(message=32088)
+					control.sleep(1000)
+					sync_playbackProgress(forced=True)
+					control.trigger_widget_refresh()
+				else:
+					control.notification(message=32130)
 	except: log_utils.error()
 
 def scrobbleEpisode(imdb, tmdb, tvdb, season, episode, watched_percent):
 	#log_utils.log('Trakt Scrobble Episode Called. Received: imdb: %s tmdb: %s season: %s episode: %s watched_percent: %s' % (imdb, tmdb, season, episode, watched_percent), level=log_utils.LOGDEBUG)
 	try:
 		season, episode = int('%01d' % int(season)), int('%01d' % int(episode))
-		success = getTrakt('/scrobble/pause', {"show": {"ids": {"tvdb": tvdb}}, "episode": {"season": season, "number": episode}, "progress": watched_percent})
+		_show_ids = {}
+		if tvdb: _show_ids['tvdb'] = int(tvdb)
+		if imdb: _show_ids['imdb'] = imdb
+		success = getTrakt('/scrobble/stop', {"show": {"ids": _show_ids}, "episode": {"season": season, "number": episode}, "progress": watched_percent})
 		if success:
 			log_utils.log('Trakt Scrobble Episode Success: imdb: %s s' % (imdb), level=log_utils.LOGDEBUG)
 			if getSetting('scrobble.notify') == 'true': control.notification(message=32088)
 			control.sleep(1000)
 			sync_playbackProgress(forced=True)
 			control.trigger_widget_refresh()
-		else: control.notification(message=32130)
+		else:
+			log_utils.log('Trakt Scrobble Episode Failed: tvdb=%s S%sE%s progress=%s' % (tvdb, season, episode, watched_percent), level=log_utils.LOGWARNING)
+			if watched_percent >= 80:
+				if markEpisodeAsWatched(imdb, tvdb, season, episode):
+					if getSetting('scrobble.notify') == 'true': control.notification(message=32088)
+					control.sleep(1000)
+					sync_playbackProgress(forced=True)
+					control.trigger_widget_refresh()
+				else:
+					control.notification(message=32130)
 	except: log_utils.error()
 
 def scrobbleStart(media_type, title='', tvshowtitle='', year='0', imdb='', tmdb='', tvdb='', season='', episode='', watched_percent=0):
@@ -1824,13 +1840,32 @@ def scrobbleStart(media_type, title='', tvshowtitle='', year='0', imdb='', tmdb=
 		getTrakt('/scrobble/start', post)
 	except: log_utils.error()
 
-def scrobbleReset(imdb, tmdb=None, tvdb=None, season=None, episode=None, refresh=True, widgetRefresh=False, clear_local=True):
+def scrobbleReset(imdb, tmdb=None, tvdb=None, season=None, episode=None, tvshowtitle=None, refresh=True, widgetRefresh=False, clear_local=True):
 	if not getTraktCredentialsInfo(): return
 	if not control.player.isPlaying(): control.busy()
 	success = False
 	try:
 		content_type = 'movie' if not episode else 'episode'
 		resume_info = traktsync.fetch_bookmarks(imdb, tmdb, tvdb, season, episode, ret_type='resume_info')
+		_show_title = (resume_info[0] if resume_info != '0' else None) or tvshowtitle
+		if content_type == 'episode' and _show_title and season and episode:
+			try:
+				import sqlite3 as _sqlite3
+				_bm_name = '%s S%02dE%02d' % (_show_title, int(season), int(episode))
+				_dbcon = _sqlite3.connect(control.bookmarksFile)
+				_dbcon.execute('DELETE FROM bookmark WHERE Name=?', (_bm_name,))
+				_dbcon.commit()
+				_dbcon.close()
+			except: pass
+		try:
+			from resources.lib.database import mdbsync as _mdbsync, watchedcache as _wc
+			if content_type == 'episode':
+				_mdbsync.delete_bookmark(imdb, tvdb, season, episode)
+				_wc.delete_progress('episode', imdb, season=season, episode=episode)
+			else:
+				_mdbsync.delete_bookmark(imdb)
+				_wc.delete_progress('movie', imdb)
+		except: pass
 		if resume_info == '0': return control.hide() # returns string "0" if no data in db
 		headers['Authorization'] = 'Bearer %s' % trakt_token
 		headers['trakt-api-key'] = traktClientID()
