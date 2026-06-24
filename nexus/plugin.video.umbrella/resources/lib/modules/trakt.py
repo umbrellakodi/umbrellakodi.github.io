@@ -1857,6 +1857,14 @@ def scrobbleReset(imdb, tmdb=None, tvdb=None, season=None, episode=None, tvshowt
 				_dbcon.commit()
 				_dbcon.close()
 			except: pass
+		elif content_type == 'movie' and tvshowtitle:
+			try:
+				import sqlite3 as _sqlite3
+				_dbcon = _sqlite3.connect(control.bookmarksFile)
+				_dbcon.execute('DELETE FROM bookmark WHERE Name LIKE ?', (tvshowtitle + ' (%',))
+				_dbcon.commit()
+				_dbcon.close()
+			except: pass
 		try:
 			from resources.lib.database import mdbsync as _mdbsync, watchedcache as _wc
 			if content_type == 'episode':
@@ -1866,7 +1874,11 @@ def scrobbleReset(imdb, tmdb=None, tvdb=None, season=None, episode=None, tvshowt
 				_mdbsync.delete_bookmark(imdb)
 				_wc.delete_progress('movie', imdb)
 		except: pass
-		if resume_info == '0': return control.hide() # returns string "0" if no data in db
+		if resume_info == '0':
+			control.hide()
+			if widgetRefresh: control.trigger_widget_refresh()
+			if refresh: control.refresh()
+			return
 		headers['Authorization'] = 'Bearer %s' % trakt_token
 		headers['trakt-api-key'] = traktClientID()
 		success = session.delete('https://api.trakt.tv/sync/playback/%s' % resume_info[1], headers=headers).status_code == 204

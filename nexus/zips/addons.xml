@@ -1,5 +1,5 @@
 <?xml version='1.0' encoding='utf-8'?>
-<addons><addon id="plugin.video.umbrella" name="Umbrella" provider-name="Umbrella" version="6.7.621">
+<addons><addon id="plugin.video.umbrella" name="Umbrella" provider-name="Umbrella" version="6.7.622">
 	<requires>
 		<import addon="xbmc.python" version="3.0.0" />
 		<import addon="script.module.requests" />
@@ -235,9 +235,9 @@
 			<screenshot>resources/screenshots/screenshot003.jpg</screenshot>
 		</assets>
 		<news>
-[B]Update - v6.7.621 - June 24th, 2026 [/B]
+[B]Update - v6.7.622 - June 24th, 2026 [/B]
 --[Change] Changes made for resetting scrobbles.
---[Fix] Made changes where if using trakt and changing percentage to mark watched to higher percentage it no longer shows an error. Trakt auto marks as watched anything above 80%
+--[Fix] Fixed issue for incorrect time format causing double scrapes.
 		</news>
 	</extension>
 

@@ -1,3 +1,3 @@
-[B]Update - v6.7.621 - June 24th, 2026 [/B]
+[B]Update - v6.7.622 - June 24th, 2026 [/B]
 --[Change] Changes made for resetting scrobbles.
---[Fix] Made changes where if using trakt and changing percentage to mark watched to higher percentage it no longer shows an error. Trakt auto marks as watched anything above 80%
+--[Fix] Fixed issue for incorrect time format causing double scrapes.

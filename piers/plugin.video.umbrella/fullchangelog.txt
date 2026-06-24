@@ -1,3 +1,6 @@
+[B]Update - v6.7.622 - June 24th, 2026 [/B]
+--[Change] Changes made for resetting scrobbles.
+--[Fix] Fixed issue for incorrect time format causing double scrapes.
 
 [B]Update - v6.7.621 - June 24th, 2026 [/B]
 --[Change] Changes made for resetting scrobbles.
