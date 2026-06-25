@@ -376,29 +376,6 @@ def clear_local_bookmark(url): # clear all item specific bookmarks from kodi dat
 		try: dbcon.close()
 		except: pass
 
-def clear_local_bookmark_for_item(imdb='', season='', episode=''):
-	try:
-		dbcon = db.connect(get_video_database_path())
-		dbcur = dbcon.cursor()
-		if season and episode:
-			sql = 'SELECT * FROM files WHERE strFilename LIKE "%%plugin.video.umbrella%%" AND strFilename LIKE "%%imdb=%s%%" AND strFilename LIKE "%%season=%s%%" AND strFilename LIKE "%%episode=%s%%"' % (imdb, int(season), int(episode))
-		else:
-			sql = 'SELECT * FROM files WHERE strFilename LIKE "%%plugin.video.umbrella%%" AND strFilename LIKE "%%imdb=%s%%"' % imdb
-		dbcur.execute(sql)
-		file_ids = [str(i[0]) for i in dbcur.fetchall()]
-		if not file_ids: return
-		for table in ('bookmark', 'streamdetails', 'files'):
-			dbcur.execute('DELETE FROM {} WHERE idFile IN ({})'.format(table, ','.join(file_ids)))
-		dbcur.connection.commit()
-	except:
-		from resources.lib.modules import log_utils
-		log_utils.error()
-	finally:
-		try: dbcur.close()
-		except: pass
-		try: dbcon.close()
-		except: pass
-
 def get_video_database_path():
 	databaseFound = False
 	try:

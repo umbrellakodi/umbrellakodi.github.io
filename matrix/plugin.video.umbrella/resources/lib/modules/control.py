@@ -614,7 +614,7 @@ def set_info(item, meta, setUniqueIDs=None, resumetime='', fileNameandPath=None)
 			info_tag.setDirectors(to_list(meta_get('director', [])))
 			if setUniqueIDs:
 				info_tag.setIMDBNumber(setUniqueIDs.get('imdb'))
-			if resumetime and float(resumetime) > 0: info_tag.setResumePoint(float(resumetime), float(meta.get('duration') or 2700))
+			if resumetime: info_tag.setResumePoint(float(resumetime), float(meta.get('duration') or 2700))
 			if meta_get('mediatype') in ['tvshow', 'season']:
 				info_tag.setTvShowTitle(meta_get('tvshowtitle'))
 				info_tag.setTvShowStatus(meta_get('status'))
@@ -634,7 +634,7 @@ def set_info(item, meta, setUniqueIDs=None, resumetime='', fileNameandPath=None)
 		try: meta.pop('cast')
 		except: pass
 		item.setInfo('video', meta)
-		if resumetime and float(resumetime) > 0:
+		if resumetime:
 			item.setProperties({'ResumeTime': resumetime, 'TotalTime': str(meta.get('duration', 2700))})
 	return item
 

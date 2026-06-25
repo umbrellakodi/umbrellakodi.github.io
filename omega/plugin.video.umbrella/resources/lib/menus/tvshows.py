@@ -9,7 +9,7 @@ from json import dumps as jsdumps
 import re
 import xbmc
 from threading import Thread
-from urllib.parse import quote_plus, urlencode, parse_qsl, urlparse, urlsplit, urlunparse
+from urllib.parse import quote_plus, urlencode, parse_qsl, urlparse, urlsplit
 from resources.lib.database import cache, metacache, fanarttv_cache, traktsync, simklsync
 from resources.lib.indexers.tmdb import TVshows as tmdb_indexer
 from resources.lib.indexers.fanarttv import FanartTv
@@ -669,7 +669,15 @@ class TVshows:
 							log_utils.log('TVShow Last Played Blank Title: %' % self.list[i]['title'], 1)
 					#self.list = sorted(self.list, key=lambda k: k['lastplayed'], reverse=reverse)
 					if self.list:
-						self.list = sorted(self.list, key=lambda k: time.strptime(k['lastplayed'], "%Y-%m-%dT%H:%M:%S.%fZ" if '.' in k['lastplayed'] else "%Y-%m-%dT%H:%M:%SZ") if k.get('lastplayed') else time.gmtime(0), reverse=reverse)
+						def _parse_lastplayed(k):
+							lp = k.get('lastplayed')
+							if not lp:
+								return time.gmtime(0)
+							try:
+								return time.strptime(lp, "%Y-%m-%dT%H:%M:%S.%fZ")
+							except ValueError:
+								return time.strptime(lp, "%Y-%m-%dT%H:%M:%SZ")
+						self.list = sorted(self.list, key=_parse_lastplayed, reverse=reverse)
 			elif reverse:
 				self.list = list(reversed(self.list))
 		except:
@@ -1322,12 +1330,7 @@ class TVshows:
 		if ',return' in url: url = url.split(',return')[0]
 		if getSetting('trakt.paginate.lists') != 'true':
 			if '/trending' in url or '/popular' in url:
-				parsed = urlparse(url)
-				params = dict(parse_qsl(parsed.query))
-				params['limit'] = '200'
-				params['page'] = '1'
-				modified_url = urlunparse(parsed._replace(query=urlencode(params)))
-				items = trakt.getTraktAsJson(modified_url)
+				items = trakt.getTraktAsJson(url)
 			else:
 				items = trakt.get_all_pages(url, silent=True)
 			next = ''

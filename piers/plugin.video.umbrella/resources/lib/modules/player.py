@@ -617,27 +617,24 @@ class Player(xbmc.Player):
 				if _indicators_alt == '2' and self.simklCredentials: _resume_source = '2'
 				elif _indicators_alt == '1' and self.traktCredentials: _resume_source = '1'
 				elif _indicators_alt == '3' and self.mdblistCredentials: _resume_source = '3'
-			if self.traktCredentials and _resume_source == '1': # re-adjust using actual stream duration when available; offset is already in seconds as fallback
+			if self.traktCredentials and _resume_source == '1': # re-adjust the resume point since dialog is based on meta runtime vs. getTotalTime() and inaccurate
 				try:
 					total_time = self.getTotalTime()
 					progress = float(fetch_bookmarks(self.imdb, self.tmdb, self.tvdb, self.season, self.episode))
-					if total_time > 0 and progress > 0:
-						self.offset = (progress / 100) * total_time
+					self.offset = (progress / 100) * total_time
 				except: pass
 			elif self.simklCredentials and _resume_source == '2':
 				try:
 					total_time = self.getTotalTime()
 					progress = float(simklsync.fetch_bookmarks(self.imdb, self.tmdb, self.tvdb, self.season, self.episode))
-					if total_time > 0 and progress > 0:
-						self.offset = (progress / 100) * total_time
+					self.offset = (progress / 100) * total_time
 				except: pass
 			elif self.mdblistCredentials and _resume_source == '3':
 				try:
 					from resources.lib.database import mdbsync
 					total_time = self.getTotalTime()
 					progress = float(mdbsync.fetch_bookmarks(self.imdb, self.tmdb, self.tvdb, self.season, self.episode))
-					if total_time > 0 and progress > 0:
-						self.offset = (progress / 100) * total_time
+					self.offset = (progress / 100) * total_time
 				except: pass
 			try:
 				self.seekTime(self.offset)
@@ -1333,27 +1330,10 @@ class Bookmarks:
 			try:
 				if not runtime or runtime == 'None': return offset # TMDB sometimes return None as string. duration pulled from kodi library if missing from meta
 				progress = float(fetch_bookmarks(imdb, tmdb, tvdb, season, episode))
-				offset = (progress / 100) * runtime * 60 # runtime from meta is in minutes; convert to seconds so seekTime() gets the right unit
-				display_offset = offset
+				offset = (progress / 100) * runtime # runtime vs. media_length can differ resulting in 10-30sec difference using Trakt scrobble, meta providers report runtime in full minutes
+				display_offset = offset * 60
 				seekable = (2 <= progress <= int(markwatched_percentage))
-				if not seekable:
-					try:
-						dbcon = database.connect(control.bookmarksFile)
-						dbcur = dbcon.cursor()
-						dbcur.execute('''CREATE TABLE IF NOT EXISTS bookmark (idFile TEXT, timeInSeconds TEXT, Name TEXT, year TEXT, UNIQUE(idFile));''')
-						if not year or year == 'None': return offset
-						years = [str(year), str(int(year)+1), str(int(year)-1)]
-						_ph = ','.join('?' * len(years))
-						match = dbcur.execute('SELECT * FROM bookmark WHERE Name=? AND year IN (%s)' % _ph, [name] + years).fetchone()
-					except:
-						log_utils.error()
-						return offset
-					finally:
-						dbcur.close() ; dbcon.close()
-					if not match: return '0'
-					offset = float(match[1])
-					display_offset = offset
-					scrobbble = 'Local Bookmark'
+				if not seekable: return '0'
 			except:
 				log_utils.error()
 				return '0'
@@ -1362,8 +1342,8 @@ class Bookmarks:
 			try:
 				if not runtime or runtime == 'None': return offset
 				progress = float(simklsync.fetch_bookmarks(imdb, tmdb, tvdb, season, episode))
-				offset = (progress / 100) * runtime * 60
-				display_offset = offset
+				offset = (progress / 100) * runtime
+				display_offset = offset * 60
 				seekable = (2 <= progress <= int(markwatched_percentage))
 				log_utils.log('Simkl Bookmarks.get: imdb=%s tmdb=%s tvdb=%s S%sE%s progress=%s offset=%s seekable=%s' % (imdb, tmdb, tvdb, season, episode, progress, offset, seekable), level=log_utils.LOGDEBUG)
 				if not seekable: return '0'
@@ -1376,8 +1356,8 @@ class Bookmarks:
 				if not runtime or runtime == 'None': return offset
 				from resources.lib.database import mdbsync
 				progress = float(mdbsync.fetch_bookmarks(imdb, tmdb, tvdb, season, episode))
-				offset = (progress / 100) * runtime * 60
-				display_offset = offset
+				offset = (progress / 100) * runtime
+				display_offset = offset * 60
 				seekable = (2 <= progress <= int(markwatched_percentage))
 				if not seekable: return '0'
 			except:
