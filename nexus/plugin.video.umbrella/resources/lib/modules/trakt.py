@@ -1847,6 +1847,13 @@ def scrobbleReset(imdb, tmdb=None, tvdb=None, season=None, episode=None, tvshowt
 	try:
 		content_type = 'movie' if not episode else 'episode'
 		resume_info = traktsync.fetch_bookmarks(imdb, tmdb, tvdb, season, episode, ret_type='resume_info')
+		if resume_info == '0':
+			try:
+				live = get_all_pages('/sync/playback/?extended=full', silent=True)
+				if live:
+					traktsync.insert_bookmarks(live)
+					resume_info = traktsync.fetch_bookmarks(imdb, tmdb, tvdb, season, episode, ret_type='resume_info')
+			except: pass
 		_show_title = (resume_info[0] if resume_info != '0' else None) or tvshowtitle
 		if content_type == 'episode' and _show_title and season and episode:
 			try:
@@ -1866,6 +1873,10 @@ def scrobbleReset(imdb, tmdb=None, tvdb=None, season=None, episode=None, tvshowt
 				_dbcon.close()
 			except: pass
 		try:
+			from resources.lib.database.cache import clear_local_bookmark_for_item as _clbfi
+			_clbfi(imdb=imdb, season=season, episode=episode)
+		except: pass
+		try:
 			from resources.lib.database import mdbsync as _mdbsync, watchedcache as _wc
 			if content_type == 'episode':
 				_mdbsync.delete_bookmark(imdb, tvdb, season, episode)
@@ -1876,6 +1887,9 @@ def scrobbleReset(imdb, tmdb=None, tvdb=None, season=None, episode=None, tvshowt
 		except: pass
 		if resume_info == '0':
 			control.hide()
+			if getSetting('scrobble.notify') == 'true' and _show_title:
+				_notif_label = '%s S%02dE%02d' % (_show_title, int(season), int(episode)) if content_type == 'episode' and season and episode else _show_title
+				control.notification(title=32315, message='Successfuly Removed playback progress:  [COLOR %s]%s[/COLOR]' % (highlight_color, _notif_label))
 			if widgetRefresh: control.trigger_widget_refresh()
 			if refresh: control.refresh()
 			return
