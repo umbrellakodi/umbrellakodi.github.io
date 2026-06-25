@@ -1832,7 +1832,9 @@ class Episodes:
 					resumetime = Bookmarks().get(name=blabel, imdb=imdb, tmdb=tmdb, tvdb=tvdb, season=season, episode=episode, year=str(year), runtime=runtime, ck=True)
 					# item.setProperty('TotalTime', str(runtime)) # Adding this property causes the Kodi bookmark CM items to be added
 					#item.setProperty('ResumeTime', str(resumetime))
-					try: item.setProperty('WatchedProgress', str(int(float(resumetime) / float(runtime) * 100))) # resumetime and runtime are both in minutes
+					try:
+						if resumetime and float(resumetime) > 0:
+							item.setProperty('WatchedProgress', str(int(float(resumetime) / float(runtime) * 100))) # resumetime and runtime are both in minutes
 					except: pass
 				else:
 					resumetime = ''  # reset so unaired episodes don't inherit resume point from previous iteration

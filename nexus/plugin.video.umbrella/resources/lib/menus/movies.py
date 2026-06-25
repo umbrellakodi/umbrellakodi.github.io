@@ -2583,7 +2583,9 @@ class Movies:
 					resumetime = Bookmarks().get(name=label, imdb=imdb, tmdb=tmdb, year=str(year), runtime=runtime, ck=True)
 					# item.setProperty('TotalTime', str(meta['duration'])) # Adding this property causes the Kodi bookmark CM items to be added
 					#item.setProperty('ResumeTime', str(resumetime))
-					try: item.setProperty('WatchedProgress', str(int(float(resumetime) / float(runtime) * 100)))
+					try:
+						if resumetime and float(resumetime) > 0:
+							item.setProperty('WatchedProgress', str(int(float(resumetime) / float(runtime) * 100)))
 					except: pass
 				#item.setInfo(type='video', infoLabels=control.metadataClean(meta))
 				if unfinished: item.setProperty('unfinished', 'true') 
