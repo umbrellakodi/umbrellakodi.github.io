@@ -181,20 +181,13 @@ def get_all_pages(url, silent=False):
 
 			log_utils.log('TRAKT: get_all_pages page %d: %d items from %s' % (page, items_count, url), level=log_utils.LOGDEBUG)
 
-			# If we got fewer items than the limit, we've reached the last page
-			if items_this_page < limit:
-				break
-			# If the API returned more items than the limit, it returned everything in one shot
-			if items_this_page > limit:
-				break
-
-			# Check pagination headers if available
+			# Check pagination headers first — they are authoritative even when Trakt caps
+			# the page size below the requested limit (e.g. returns 100 of 250 requested).
 			if hasattr(response, 'headers'):
 				total_pages = response.headers.get('X-Pagination-Page-Count')
 				if total_pages:
 					try:
-						total_pages = int(total_pages)
-						if page >= total_pages:
+						if page >= int(total_pages):
 							break
 					except (ValueError, TypeError):
 						pass
@@ -205,6 +198,12 @@ def get_all_pages(url, silent=False):
 							break
 					except (ValueError, TypeError):
 						pass
+
+			# Fall back to item-count heuristic only when headers are absent
+			if items_this_page < limit:
+				break
+			if items_this_page > limit:
+				break
 
 			page += 1
 
@@ -367,9 +366,13 @@ def traktAuth(fromSettings=0):
 
 def traktRevoke(fromSettings=0):
 		data = {"token": control.setting('trakt.user.token')}
-		try: 
+		try:
 			getTrakt('oauth/revoke', post=data)
 		except: pass
+		# Capture before clearing so we can invalidate the correct cache entries below
+		_revoke_user = getSetting('trakt.user.name').strip()
+		_revoke_lang = control.apiLanguage()['tmdb']
+		_revoke_direct = getSetting('trakt.directProgress.scrape') == 'true'
 		control.homeWindow.setProperty('umbrella.updateSettings', 'false')
 		control.setSetting('trakt.user.name', '')
 		control.setSetting('trakt.token.expires', '')
@@ -387,6 +390,19 @@ def traktRevoke(fromSettings=0):
 			cleared = traktsync.delete_tables(clr_traktSync)
 			if cleared:
 				log_utils.log('Trakt tables cleared after revoke.', level=log_utils.LOGINFO)
+			# Invalidate progress list cache so the next service sync is forced to rebuild it.
+			# Without this, sync_watchedProgress skips the rebuild when Trakt timestamps haven't
+			# changed since the last cache fill, leaving the stale list in place.
+			try:
+				from resources.lib.menus import episodes as _ep_mod
+				from resources.lib.database import cache as _cache_mod
+				_ep = _ep_mod.Episodes()
+				_progress_url = 'https://api.trakt.tv/users/me/watched/shows'
+				for _direct in (False, True):
+					_cache_mod.remove(_ep.trakt_progress_list, _progress_url, _revoke_user, _revoke_lang, _direct)
+					_cache_mod.remove(_ep.trakt_progress_list, _progress_url, _revoke_user, _revoke_lang, _direct, True)
+				log_utils.log('Trakt progress list cache invalidated after revoke.', level=log_utils.LOGINFO)
+			except: log_utils.error()
 			if getSetting('indicators.alt') == '1':
 				control.setSetting('indicators.alt', '0')
 				control.setSetting('indicators', 'Local')
@@ -1277,7 +1293,6 @@ def syncTVShows(): # sync all watched shows ex. [({'imdb': 'tt12571834', 'tvdb':
 					indicators.append((ids, aired, episodes))
 				except: pass
 			log_utils.log('TRAKT: syncTVShows page %d: %d shows fetched' % (page, len(page_results)), level=log_utils.LOGDEBUG)
-			if len(page_results) < limit: break
 			if hasattr(response, 'headers'):
 				total_pages = response.headers.get('X-Pagination-Page-Count')
 				if total_pages:
@@ -1289,6 +1304,7 @@ def syncTVShows(): # sync all watched shows ex. [({'imdb': 'tt12571834', 'tvdb':
 					try:
 						if len(indicators) >= int(total_items): break
 					except: pass
+			if len(page_results) < limit: break
 			page += 1
 			if page > 400: break
 		log_utils.log('TRAKT: syncTVShows complete: %d shows in %.1fs' % (len(indicators) if indicators else 0, time.time() - _start), level=log_utils.LOGINFO)
@@ -1921,12 +1937,12 @@ def trakt_service_sync():
 			activities = getTraktAsJson('/sync/last_activities', silent=True)
 			if getSetting('bookmarks') == 'true' and getSetting('resume.source') == '1':
 				sync_playbackProgress(activities)
+			sync_hidden_progress(activities)  # must run before sync_watchedProgress so display-time filtering is current
 			sync_watchedProgress(activities)
 			if getSetting('indicators.alt') == '1':
 				sync_watched(activities) # writes to traktsync.db as of 1-19-2022
 			sync_user_lists(activities)
 			sync_liked_lists(activities)
-			sync_hidden_progress(activities)
 			sync_collection(activities)
 			sync_watch_list(activities)
 			sync_popular_lists()

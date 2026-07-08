@@ -1,20 +1,8 @@
+[B]Update - v6.7.626 - July 8th, 2026 [/B]
+--[Fix] Possible fix for Trakt Episode progress giving reduced amount of items.
 
-[B]Update - v6.7.625 - June 25th, 2026 [/B]
---[Change] All changes for Trakt and over 80% reverted.
-
-[B]Update - v6.7.624 - June 25th, 2026 [/B]
---[Change] More bs for scrobble reset.
-
-[B]Update - v6.7.623 - June 25th, 2026 [/B]
---[Change] Bullshit trakt scrobble fixes.
-
-[B]Update - v6.7.622 - June 24th, 2026 [/B]
---[Change] Changes made for resetting scrobbles.
+[B]Update - v6.7.79 - June 29th, 2026 [/B]
 --[Fix] Fixed issue for incorrect time format causing double scrapes.
-
-[B]Update - v6.7.621 - June 24th, 2026 [/B]
---[Change] Changes made for resetting scrobbles.
---[Fix] Made changes where if using trakt and changing percentage to mark watched to higher percentage it no longer shows an error. Trakt auto marks as watched anything above 80%
 
 [B]Update - v6.7.78 - June 22nd, 2026 [/B]
 --[Change] Added support for Collection from MDBList. Add/Remove/View
