@@ -1,2 +1,2 @@
-[B]Update - v6.7.628 - July 9th, 2026 [/B]
---[Fix] More changes for Trakt api and in-progress episodes.
+[B]Update - v6.7.629 - July 9th, 2026 [/B]
+--[Fix] Changes for logging and Trakt episode progress reverted.

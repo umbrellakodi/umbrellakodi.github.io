@@ -187,7 +187,6 @@ def get_all_pages(url, silent=False):
 			if hasattr(response, 'headers'):
 				_hdr_page_count = response.headers.get('X-Pagination-Page-Count')
 				_hdr_item_count = response.headers.get('X-Pagination-Item-Count')
-				log_utils.log('TRAKT: get_all_pages page %d headers — X-Page-Count: %s  X-Item-Count: %s' % (page, _hdr_page_count, _hdr_item_count), level=log_utils.LOGDEBUG)
 				if _hdr_page_count:
 					try:
 						if page >= int(_hdr_page_count):
