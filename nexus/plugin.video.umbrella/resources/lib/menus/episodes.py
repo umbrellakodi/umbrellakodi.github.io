@@ -950,6 +950,7 @@ class Episodes:
 		from resources.lib.modules import log_utils as _trakt_log
 		_trakt_log.log('TRAKT: trakt_progress_list fetched %d shows' % len(result), level=_trakt_log.LOGDEBUG)
 		items = []
+		_dbg = getSetting('debug.level') == '1'
 		# progress_showunaired = getSetting('trakt.progress.showunaired') == 'true'
 		for item in result:
 			try:
@@ -986,9 +987,11 @@ class Episodes:
 					values['airtime'] = airs.get('time', '')[:5] # Trakt rarely, but does, include seconds in it's airtime.
 					values['airzone'] = airs.get('timezone', '')
 				except: pass
+				values['_seasons_raw'] = item.get('seasons', [])
 				items.append(values)
 
 			except: pass
+		if _dbg: _trakt_log.log('TRAKT: trakt_progress_list passed Phase 1: %d shows' % len(items), level=_trakt_log.LOGDEBUG)
 		def items_list(i):
 			values = i
 			imdb, tmdb, tvdb = i.get('imdb'), i.get('tmdb'), i.get('tvdb')
@@ -997,30 +1000,51 @@ class Episodes:
 					result = cache.get(tmdb_indexer().IdLookup, 96, imdb, tvdb)
 					values['tmdb'] = str(result.get('id', '')) if result.get('id') else ''
 				except:
-					if getSetting('debug.level') == '1':
+					if _dbg:
 						from resources.lib.modules import log_utils
 						return log_utils.log('tvshowtitle: (%s) missing tmdb_id: ids={imdb: %s, tmdb: %s, tvdb: %s}' % (i['tvshowtitle'], imdb, tmdb, tvdb), __name__, log_utils.LOGDEBUG) # log TMDb shows that they do not have
 			try:
 				showSeasons = cache.get(tmdb_indexer().get_showSeasons_meta, 96, tmdb)
-				if not showSeasons: return
-				key = i['snum'] - 1 if showSeasons['seasons'][0]['season_number'] != 0 else i['snum']
-				try: next_episode_num = i['enum'] + 1 if showSeasons['seasons'][key]['episode_count'] > i['enum'] else 1
-				except: return
-				next_season_num = i['snum'] if next_episode_num == i['enum'] + 1 else i['snum'] + 1
-				if next_season_num > showSeasons['total_seasons']: return
+				if not showSeasons:
+					if _dbg: _trakt_log.log('TRAKT progress DROP [no TMDb seasons]: %s (tmdb=%s)' % (i.get('tvshowtitle'), tmdb), level=_trakt_log.LOGDEBUG)
+					return
+				season_data = next((s for s in showSeasons.get('seasons', []) if s.get('season_number') == i['snum']), None)
+				if not season_data:
+					if _dbg: _trakt_log.log('TRAKT progress DROP [snum %s not in TMDb seasons]: %s' % (i.get('snum'), i.get('tvshowtitle')), level=_trakt_log.LOGDEBUG)
+					return
+				season_ep_count = season_data.get('episode_count', 0)
+				watched_in_snum = set(
+					e['number'] for e in next(
+						(s['episodes'] for s in i.get('_seasons_raw', []) if s.get('number') == i['snum']), []
+					) if 'number' in e
+				)
+				next_episode_num = next((ep for ep in range(1, season_ep_count + 1) if ep not in watched_in_snum), None)
+				if next_episode_num is None:
+					next_episode_num = 1
+					next_season_num = i['snum'] + 1
+				else:
+					next_season_num = i['snum']
+				if _dbg: _trakt_log.log('TRAKT progress: %s → next S%sE%s (snum_ep_count=%s, watched=%s)' % (i.get('tvshowtitle'), next_season_num, next_episode_num, season_ep_count, sorted(watched_in_snum)), level=_trakt_log.LOGDEBUG)
+				if next_season_num > showSeasons['total_seasons']:
+					if _dbg: _trakt_log.log('TRAKT progress DROP [S%s > total_seasons %s]: %s' % (next_season_num, showSeasons['total_seasons'], i.get('tvshowtitle')), level=_trakt_log.LOGDEBUG)
+					return
 				if not self.showspecials and next_season_num == 0: return
 				seasonEpisodes = cache.get(tmdb_indexer().get_seasonEpisodes_meta, 96, tmdb, next_season_num)
-				if not seasonEpisodes: return
+				if not seasonEpisodes:
+					if _dbg: _trakt_log.log('TRAKT progress DROP [no TMDb episode list for S%s]: %s' % (next_season_num, i.get('tvshowtitle')), level=_trakt_log.LOGDEBUG)
+					return
 				seasonEpisodes = dict((k,v) for k, v in iter(seasonEpisodes.items()) if v is not None and v != '') # remove empty keys so .update() doesn't over-write good meta with empty values.
 				try: episode_meta = [x for x in seasonEpisodes.get('episodes') if x.get('episode') == next_episode_num][0] # to pull just the episode meta we need
-				except: return
+				except:
+					if _dbg: _trakt_log.log('TRAKT progress DROP [E%s not in TMDb episode list for S%s]: %s' % (next_episode_num, next_season_num, i.get('tvshowtitle')), level=_trakt_log.LOGDEBUG)
+					return
 				if not episode_meta['plot']: episode_meta['plot'] = showSeasons['plot'] # some plots missing for eps so use season level plot
 				values.update(showSeasons)
 				values.update(seasonEpisodes)
 				values.update(episode_meta)
 				# if not self.trakt_progressFlatten or self.trakt_directProgressScrape:
 					# for k in ('seasons', 'episodes', 'snum', 'enum'): values.pop(k, None) # pop() keys from showSeasons and seasonEpisodes that are not needed anymore
-				for k in ('episodes', 'snum', 'enum'): values.pop(k, None) # pop() keys from showSeasons and seasonEpisodes that are not needed anymore
+				for k in ('episodes', 'snum', 'enum', '_seasons_raw'): values.pop(k, None) # pop() keys from showSeasons and seasonEpisodes that are not needed anymore
 
 				try:
 					if values.get('premiered') and i.get('airtime'): combined = '%sT%s' % (values['premiered'], values['airtime'])
@@ -1070,6 +1094,7 @@ class Episodes:
 				if self.enable_fanarttv:
 					extended_art = fanarttv_cache.get(FanartTv().get_tvshow_art, 336, tvdb)
 					if extended_art: values.update(extended_art)
+				if _dbg: _trakt_log.log('TRAKT progress OK: %s → S%sE%s' % (values.get('tvshowtitle'), values.get('season'), values.get('episode')), level=_trakt_log.LOGDEBUG)
 				self.list.append(values)
 			except:
 				from resources.lib.modules import log_utils

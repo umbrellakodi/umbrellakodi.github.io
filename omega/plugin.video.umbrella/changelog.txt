@@ -1,2 +1,2 @@
-[B]Update - v6.7.626 - July 8th, 2026 [/B]
---[Fix] Possible fix for Trakt Episode progress giving reduced amount of items.
+[B]Update - v6.7.627 - July 9th, 2026 [/B]
+--[Fix] Changes made to way season data is contructed when getting in progress episodes.

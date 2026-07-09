@@ -1,5 +1,5 @@
 <?xml version='1.0' encoding='utf-8'?>
-<addons><addon id="plugin.video.umbrella" name="Umbrella" provider-name="Umbrella" version="6.7.626">
+<addons><addon id="plugin.video.umbrella" name="Umbrella" provider-name="Umbrella" version="6.7.627">
 	<requires>
 		<import addon="xbmc.python" version="3.0.0" />
 		<import addon="script.module.requests" />
@@ -235,8 +235,8 @@
 			<screenshot>resources/screenshots/screenshot003.jpg</screenshot>
 		</assets>
 		<news>
-[B]Update - v6.7.626 - July 8th, 2026 [/B]
---[Fix] Possible fix for Trakt Episode progress giving reduced amount of items.
+[B]Update - v6.7.627 - July 9th, 2026 [/B]
+--[Fix] Changes made to way season data is contructed when getting in progress episodes.
 		</news>
 	</extension>
 
