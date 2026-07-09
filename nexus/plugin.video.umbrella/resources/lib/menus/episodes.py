@@ -951,6 +951,7 @@ class Episodes:
 		_trakt_log.log('TRAKT: trakt_progress_list fetched %d shows' % len(result), level=_trakt_log.LOGDEBUG)
 		items = []
 		_dbg = getSetting('debug.level') == '1'
+		if _dbg: _trakt_log.log('TRAKT: API shows [%d total]: %s' % (len(result), ', '.join(item.get('show', {}).get('title', '?') for item in result)), level=_trakt_log.LOGDEBUG)
 		# progress_showunaired = getSetting('trakt.progress.showunaired') == 'true'
 		for item in result:
 			try:
@@ -990,7 +991,12 @@ class Episodes:
 				values['_seasons_raw'] = item.get('seasons', [])
 				items.append(values)
 
-			except: pass
+			except Exception as _e:
+				if _dbg:
+					try:
+						_title = item.get('show', {}).get('title', 'UNKNOWN')
+						_trakt_log.log('TRAKT progress Phase 1 DROP [exception: %s]: %s' % (str(_e), _title), level=_trakt_log.LOGDEBUG)
+					except: pass
 		if _dbg: _trakt_log.log('TRAKT: trakt_progress_list passed Phase 1: %d shows' % len(items), level=_trakt_log.LOGDEBUG)
 		def items_list(i):
 			values = i

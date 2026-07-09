@@ -1,3 +1,6 @@
+[B]Update - v6.7.628 - July 9th, 2026 [/B]
+--[Fix] More changes for Trakt api and in-progress episodes.
+
 [B]Update - v6.7.627 - July 9th, 2026 [/B]
 --[Fix] Changes made to way season data is contructed when getting in progress episodes.
 

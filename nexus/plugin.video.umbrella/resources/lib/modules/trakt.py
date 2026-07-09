@@ -183,27 +183,36 @@ def get_all_pages(url, silent=False):
 
 			# Check pagination headers first — they are authoritative even when Trakt caps
 			# the page size below the requested limit (e.g. returns 100 of 250 requested).
+			_continue_by_headers = False
 			if hasattr(response, 'headers'):
-				total_pages = response.headers.get('X-Pagination-Page-Count')
-				if total_pages:
+				_hdr_page_count = response.headers.get('X-Pagination-Page-Count')
+				_hdr_item_count = response.headers.get('X-Pagination-Item-Count')
+				log_utils.log('TRAKT: get_all_pages page %d headers — X-Page-Count: %s  X-Item-Count: %s' % (page, _hdr_page_count, _hdr_item_count), level=log_utils.LOGDEBUG)
+				if _hdr_page_count:
 					try:
-						if page >= int(total_pages):
+						if page >= int(_hdr_page_count):
 							break
+						else:
+							_continue_by_headers = True  # headers confirm more pages exist
 					except (ValueError, TypeError):
 						pass
-				total_items = response.headers.get('X-Pagination-Item-Count')
-				if total_items:
+				if _hdr_item_count:
 					try:
-						if len(results) >= int(total_items):
+						if len(results) >= int(_hdr_item_count):
 							break
+						else:
+							_continue_by_headers = True  # headers confirm more items exist
 					except (ValueError, TypeError):
 						pass
 
-			# Fall back to item-count heuristic only when headers are absent
-			if items_this_page < limit:
-				break
-			if items_this_page > limit:
-				break
+			# Fall back to item-count heuristic ONLY when headers were absent or inconclusive.
+			# Without this guard, a Trakt server-side page cap (e.g. 100 items returned despite
+			# limit=250) would incorrectly stop pagination even when X-Page-Count says more pages exist.
+			if not _continue_by_headers:
+				if items_this_page < limit:
+					break
+				if items_this_page > limit:
+					break
 
 			page += 1
 
