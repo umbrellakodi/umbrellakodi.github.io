@@ -10,7 +10,6 @@ import xbmcaddon
 import xbmcgui
 import xbmcplugin
 import xbmcvfs
-import xml.etree.ElementTree as ET
 from threading import Thread
 from urllib.parse import unquote_plus
 from re import sub as re_sub
@@ -129,7 +128,8 @@ def getProgressWindow(heading='', icon=None, qr=0, artwork=0):
 	Thread(target=window.run).start()
 	return window
 
-_settings_cache = None
+_UNSET = object()
+_settings_cache = _UNSET
 _settings_cache_raw = None
 
 def setting(id, fallback=None):
@@ -141,7 +141,9 @@ def setting(id, fallback=None):
 		try: settings_dict = jsloads(raw) if raw else None
 		except Exception: settings_dict = None
 		if settings_dict is None:
-			settings_dict = _settings_cache if _settings_cache is not None else make_settings_dict()
+			# make_settings_dict() itself may legitimately return None (parse failure) — only
+			# retry it once per process (on the first-ever miss), never on every single call.
+			settings_dict = make_settings_dict() if _settings_cache is _UNSET else _settings_cache
 		_settings_cache, _settings_cache_raw = settings_dict, raw
 	if settings_dict is None: settings_dict = settings_fallback(id)
 	value = settings_dict.get(id, '')
@@ -159,16 +161,17 @@ def setSetting(id, value):
 	xbmcaddon.Addon().setSetting(id, value)
 
 def make_settings_dict(): # service runs upon a setting change
+	from xml.dom.minidom import parse as mdParse # ET.parse() is unreliable on Apple platforms (tvOS/iOS); minidom is not, see clean_settings.py
 	settings_dict = None
 	for attempt in range(2):
 		try:
-			root = ET.parse(settingsFile).getroot()
+			root = mdParse(settingsFile)
 			settings_dict = {}
-			for item in root.iter('setting'):
-				setting_id = item.get('id')
-				setting_value = item.text
-				if setting_value is None: setting_value = ''
-				settings_dict.update({setting_id: setting_value})
+			for item in root.getElementsByTagName('setting'):
+				setting_id = item.getAttribute('id')
+				try: setting_value = item.firstChild.data
+				except Exception: setting_value = ''
+				settings_dict[setting_id] = setting_value
 			break
 		except:
 			if attempt < 1: xbmc.sleep(1000)

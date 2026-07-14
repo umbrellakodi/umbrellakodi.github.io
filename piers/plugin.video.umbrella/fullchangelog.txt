@@ -1,3 +1,6 @@
+[B]Update - v6.7.633 - July 14th, 2026 [/B]
+--[Fix] Changed settings_dict back to minidom from element tree.
+
 [B]Update - v6.7.632 - July 14th, 2026 [/B]
 --[Fix] Change for settings reads for apple devices.
 
