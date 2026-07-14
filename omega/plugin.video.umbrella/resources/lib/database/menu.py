@@ -187,6 +187,28 @@ _ALT_LABEL_MAP = {
 }
 
 
+_session_defaults_synced = False
+_defaults_version_file = control.joinPath(control.dataPath, 'menu_defaults.v')
+
+
+def _read_synced_version():
+	try:
+		with open(_defaults_version_file, 'r') as f:
+			return f.read().strip()
+	except Exception:
+		return None
+
+
+def _write_synced_version(version):
+	try:
+		if not control.existsPath(control.dataPath):
+			control.makeFile(control.dataPath)
+		with open(_defaults_version_file, 'w') as f:
+			f.write(version)
+	except Exception:
+		pass
+
+
 def _get_connection():
 	if not control.existsPath(control.dataPath):
 		control.makeFile(control.dataPath)
@@ -209,26 +231,10 @@ def _populate_defaults(dbcon, menu_name):
 	dbcon.commit()
 
 
-def initialize(menu_name='root'):
-	dbcon = _get_connection()
-	dbcon.execute('''CREATE TABLE IF NOT EXISTS menu_items (
-		id            INTEGER PRIMARY KEY AUTOINCREMENT,
-		menu_name     TEXT NOT NULL,
-		item_id       TEXT NOT NULL,
-		label         TEXT NOT NULL,
-		action        TEXT NOT NULL,
-		icon          TEXT NOT NULL,
-		poster        TEXT NOT NULL,
-		is_folder     INTEGER NOT NULL DEFAULT 1,
-		is_action     INTEGER NOT NULL DEFAULT 1,
-		enabled       INTEGER NOT NULL DEFAULT 1,
-		sort_order    INTEGER NOT NULL,
-		is_custom     INTEGER NOT NULL DEFAULT 0,
-		condition_key TEXT,
-		queue         INTEGER NOT NULL DEFAULT 0,
-		UNIQUE(menu_name, item_id)
-	)''')
-	dbcon.commit()
+def _sync_defaults(dbcon):
+	# Schema migrations + full defaults resync. Expensive (a per-row UPDATE for every
+	# known default item across all menus), so only run once per addon version — see
+	# the version-marker gate in initialize().
 	for col_def in [
 		('condition_key', 'TEXT'),
 		('queue',         'INTEGER NOT NULL DEFAULT 0'),
@@ -253,18 +259,6 @@ def initialize(menu_name='root'):
 			(label, icon, poster, alt_label, item_id)
 		)
 	dbcon.commit()
-	dbcon.execute('''CREATE TABLE IF NOT EXISTS custom_folders (
-		id          INTEGER PRIMARY KEY AUTOINCREMENT,
-		folder_id   TEXT NOT NULL UNIQUE,
-		folder_name TEXT NOT NULL,
-		sort_order  INTEGER NOT NULL DEFAULT 0
-	)''')
-	dbcon.commit()
-	cur = dbcon.cursor()
-	cur.execute('SELECT COUNT(*) as cnt FROM menu_items WHERE menu_name=?', (menu_name,))
-	cnt = cur.fetchone()['cnt']
-	if cnt < len(MENU_DEFAULTS.get(menu_name, [])):
-		_populate_defaults(dbcon, menu_name)
 	# Insert items added after initial release for existing users (idempotent — OR IGNORE skips duplicates)
 	_NEW_DEFAULT_ITEMS = [
 		('mymovies',  'mymv_mdb_unfinished',  '40686',  'mdblistMoviesUnfinished',          'mdblist.png', 'mdblist.png', 1, 1, 1, 99, 0, 'mdblist_with_indicators', 1, '35308'),
@@ -283,6 +277,45 @@ def initialize(menu_name='root'):
 			'VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)', row
 		)
 	dbcon.commit()
+
+
+def initialize(menu_name='root'):
+	global _session_defaults_synced
+	dbcon = _get_connection()
+	dbcon.execute('''CREATE TABLE IF NOT EXISTS menu_items (
+		id            INTEGER PRIMARY KEY AUTOINCREMENT,
+		menu_name     TEXT NOT NULL,
+		item_id       TEXT NOT NULL,
+		label         TEXT NOT NULL,
+		action        TEXT NOT NULL,
+		icon          TEXT NOT NULL,
+		poster        TEXT NOT NULL,
+		is_folder     INTEGER NOT NULL DEFAULT 1,
+		is_action     INTEGER NOT NULL DEFAULT 1,
+		enabled       INTEGER NOT NULL DEFAULT 1,
+		sort_order    INTEGER NOT NULL,
+		is_custom     INTEGER NOT NULL DEFAULT 0,
+		condition_key TEXT,
+		queue         INTEGER NOT NULL DEFAULT 0,
+		UNIQUE(menu_name, item_id)
+	)''')
+	dbcon.execute('''CREATE TABLE IF NOT EXISTS custom_folders (
+		id          INTEGER PRIMARY KEY AUTOINCREMENT,
+		folder_id   TEXT NOT NULL UNIQUE,
+		folder_name TEXT NOT NULL,
+		sort_order  INTEGER NOT NULL DEFAULT 0
+	)''')
+	dbcon.commit()
+	cur = dbcon.cursor()
+	cur.execute('SELECT COUNT(*) as cnt FROM menu_items WHERE menu_name=?', (menu_name,))
+	cnt = cur.fetchone()['cnt']
+	if cnt < len(MENU_DEFAULTS.get(menu_name, [])):
+		_populate_defaults(dbcon, menu_name)
+	if not _session_defaults_synced:
+		if _read_synced_version() != control.addonVersion:
+			_sync_defaults(dbcon)
+			_write_synced_version(control.addonVersion)
+		_session_defaults_synced = True
 	dbcon.close()
 
 

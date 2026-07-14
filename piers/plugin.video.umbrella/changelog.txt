@@ -1,2 +1,2 @@
-[B]Update - v6.7.631 - July 13th, 2026 [/B]
---[Fix] Bullshit "fix" for runtimes.
+[B]Update - v6.7.632 - July 14th, 2026 [/B]
+--[Fix] Change for settings reads for apple devices.

@@ -129,9 +129,20 @@ def getProgressWindow(heading='', icon=None, qr=0, artwork=0):
 	Thread(target=window.run).start()
 	return window
 
+_settings_cache = None
+_settings_cache_raw = None
+
 def setting(id, fallback=None):
-	try: settings_dict = jsloads(homeWindow.getProperty('umbrella_settings'))
-	except: settings_dict = make_settings_dict()
+	global _settings_cache, _settings_cache_raw
+	raw = homeWindow.getProperty('umbrella_settings')
+	if raw and raw == _settings_cache_raw:
+		settings_dict = _settings_cache
+	else:
+		try: settings_dict = jsloads(raw) if raw else None
+		except Exception: settings_dict = None
+		if settings_dict is None:
+			settings_dict = _settings_cache if _settings_cache is not None else make_settings_dict()
+		_settings_cache, _settings_cache_raw = settings_dict, raw
 	if settings_dict is None: settings_dict = settings_fallback(id)
 	value = settings_dict.get(id, '')
 	if fallback is None: return value
