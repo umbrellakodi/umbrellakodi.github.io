@@ -78,6 +78,10 @@ def getTrakt(url, post=None, extended=False, silent=False, reauth_attempts=0):
 		if response and status_code in ('200', '201'):
 			if extended: return response, response.headers
 			else: return response
+		elif status_code == '409': # Item already scrobbled/exists - not a real failure
+			log_utils.log('TRAKT: 409 Conflict (item already scrobbled/exists): %s' % url, level=log_utils.LOGINFO)
+			if extended: return response, response.headers
+			else: return response
 		elif status_code == '401': # Re-Auth token
 			if response.headers.get('x-private-user') == 'true':
 				#log_utils.log('URL:%s Has a Private User Header:Ignoring' % url, level=log_utils.LOGWARNING)

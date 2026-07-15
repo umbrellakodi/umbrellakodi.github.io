@@ -1,4 +1,4 @@
-<addon id="plugin.video.umbrella" name="Umbrella" provider-name="Umbrella" version="6.7.633">
+<addon id="plugin.video.umbrella" name="Umbrella" provider-name="Umbrella" version="6.7.634">
 	<requires>
 		<import addon="xbmc.python" version="3.0.0" />
 		<import addon="script.module.requests" />
@@ -234,8 +234,8 @@
 			<screenshot>resources/screenshots/screenshot003.jpg</screenshot>
 		</assets>
 		<news>
-[B]Update - v6.7.633 - July 14th, 2026 [/B]
---[Fix] Changed settings_dict back to minidom from element tree.
+[B]Update - v6.7.634 - July 15th, 2026 [/B]
+--[Fix] Added case for a 409 result from Trakt to show as success.
 		</news>
 	</extension>
 
