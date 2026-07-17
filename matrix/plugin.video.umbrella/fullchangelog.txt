@@ -1,3 +1,6 @@
+[B]Update - v6.7.635 - July 17th, 2026 [/B]
+--[Fix] Change in the way database for menu is constructed on first run.
+
 [B]Update - v6.7.634 - July 15th, 2026 [/B]
 --[Fix] Added case for a 409 result from Trakt to show as success.
 

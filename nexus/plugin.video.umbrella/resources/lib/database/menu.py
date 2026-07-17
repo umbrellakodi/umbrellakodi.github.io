@@ -231,10 +231,11 @@ def _populate_defaults(dbcon, menu_name):
 	dbcon.commit()
 
 
-def _sync_defaults(dbcon):
-	# Schema migrations + full defaults resync. Expensive (a per-row UPDATE for every
-	# known default item across all menus), so only run once per addon version — see
-	# the version-marker gate in initialize().
+def _migrate_schema(dbcon):
+	# Add columns introduced after the original schema to pre-existing databases.
+	# MUST run before _populate_defaults(), which inserts into these columns — otherwise
+	# an older DB (created before a column existed) raises "no column named ..." on insert.
+	# Idempotent: ALTER fails harmlessly once the column is present.
 	for col_def in [
 		('condition_key', 'TEXT'),
 		('queue',         'INTEGER NOT NULL DEFAULT 0'),
@@ -245,6 +246,12 @@ def _sync_defaults(dbcon):
 		except db.OperationalError:
 			pass
 	dbcon.commit()
+
+
+def _sync_defaults(dbcon):
+	# Full defaults resync. Expensive (a per-row UPDATE for every known default item
+	# across all menus), so only run once per addon version — see the version-marker
+	# gate in initialize(). Schema column migrations live in _migrate_schema().
 	# Sync label, icon, poster, alt_label for all non-custom items to match current defaults.
 	# This ensures changes to defaults (e.g. new alt_labels, corrected icons) always propagate
 	# to existing databases, not just new installs.
@@ -297,6 +304,7 @@ def initialize(menu_name='root'):
 		is_custom     INTEGER NOT NULL DEFAULT 0,
 		condition_key TEXT,
 		queue         INTEGER NOT NULL DEFAULT 0,
+		alt_label     TEXT,
 		UNIQUE(menu_name, item_id)
 	)''')
 	dbcon.execute('''CREATE TABLE IF NOT EXISTS custom_folders (
@@ -306,6 +314,10 @@ def initialize(menu_name='root'):
 		sort_order  INTEGER NOT NULL DEFAULT 0
 	)''')
 	dbcon.commit()
+	# Add any columns missing from pre-existing databases BEFORE inserting defaults,
+	# since _populate_defaults() writes to columns (e.g. alt_label) added after the
+	# original schema. Cheap and idempotent, so it runs every call.
+	_migrate_schema(dbcon)
 	cur = dbcon.cursor()
 	cur.execute('SELECT COUNT(*) as cnt FROM menu_items WHERE menu_name=?', (menu_name,))
 	cnt = cur.fetchone()['cnt']
