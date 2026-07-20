@@ -1,2 +1,2 @@
-[B]Update - v6.7.635 - July 17th, 2026 [/B]
---[Fix] Change in the way database for menu is constructed on first run.
+[B]Update - v6.7.636 - July 20th, 2026 [/B]
+--[Fix] Made sure scrobble fails no longer show when scrobble notifications are disabled.

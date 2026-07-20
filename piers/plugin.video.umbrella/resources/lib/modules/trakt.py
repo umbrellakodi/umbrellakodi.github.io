@@ -100,8 +100,12 @@ def getTrakt(url, post=None, extended=False, silent=False, reauth_attempts=0):
 					control.notification(title=32315, message='Trakt Throttling Applied, Sleeping for %s seconds' % throttleTime) # message lang code 33674
 				control.sleep((int(throttleTime) + 1) * 1000)
 				return getTrakt(url, extended=extended, silent=silent, reauth_attempts=reauth_attempts)
-		else: return None
-	except:
+		else:
+			response_text = response.text[:300] if hasattr(response, 'text') else str(response)[:300]
+			log_utils.log_force('TRAKT: request failed url=%s status=%s response=%s' % (url, status_code, response_text), level=log_utils.LOGWARNING)
+			return None
+	except Exception as e:
+		log_utils.log_force('TRAKT: getTrakt exception url=%s error=%s' % (url, e), level=log_utils.LOGWARNING)
 		try: log_utils.error('getTrakt Error: ')
 		except: pass
 	return None
@@ -1813,7 +1817,9 @@ def scrobbleMovie(imdb, tmdb, watched_percent):
 			control.sleep(1000)
 			sync_playbackProgress(forced=True)
 			control.trigger_widget_refresh()
-		else: control.notification(message=32130)
+		else:
+			log_utils.log_force('Trakt Scrobble Failed: imdb=%s tmdb=%s percent=%s' % (imdb, tmdb, watched_percent), level=log_utils.LOGWARNING)
+			if getSetting('scrobble.notify') == 'true': control.notification(message=32130)
 	except: log_utils.error()
 
 def scrobbleEpisode(imdb, tmdb, tvdb, season, episode, watched_percent):
@@ -1827,7 +1833,9 @@ def scrobbleEpisode(imdb, tmdb, tvdb, season, episode, watched_percent):
 			control.sleep(1000)
 			sync_playbackProgress(forced=True)
 			control.trigger_widget_refresh()
-		else: control.notification(message=32130)
+		else:
+			log_utils.log_force('Trakt Scrobble Failed: imdb=%s tvdb=%s season=%s episode=%s percent=%s' % (imdb, tvdb, season, episode, watched_percent), level=log_utils.LOGWARNING)
+			if getSetting('scrobble.notify') == 'true': control.notification(message=32130)
 	except: log_utils.error()
 
 def scrobbleStart(media_type, title='', tvshowtitle='', year='0', imdb='', tmdb='', tvdb='', season='', episode='', watched_percent=0):

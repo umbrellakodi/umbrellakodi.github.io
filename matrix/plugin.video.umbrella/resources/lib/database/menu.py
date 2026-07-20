@@ -233,9 +233,6 @@ def _populate_defaults(dbcon, menu_name):
 
 def _migrate_schema(dbcon):
 	# Add columns introduced after the original schema to pre-existing databases.
-	# MUST run before _populate_defaults(), which inserts into these columns — otherwise
-	# an older DB (created before a column existed) raises "no column named ..." on insert.
-	# Idempotent: ALTER fails harmlessly once the column is present.
 	for col_def in [
 		('condition_key', 'TEXT'),
 		('queue',         'INTEGER NOT NULL DEFAULT 0'),
@@ -249,12 +246,7 @@ def _migrate_schema(dbcon):
 
 
 def _sync_defaults(dbcon):
-	# Full defaults resync. Expensive (a per-row UPDATE for every known default item
-	# across all menus), so only run once per addon version — see the version-marker
-	# gate in initialize(). Schema column migrations live in _migrate_schema().
-	# Sync label, icon, poster, alt_label for all non-custom items to match current defaults.
-	# This ensures changes to defaults (e.g. new alt_labels, corrected icons) always propagate
-	# to existing databases, not just new installs.
+	# Full defaults resync.
 	_field_sync = {
 		row[0]: (row[1], row[3], row[4], row[12])
 		for defaults in MENU_DEFAULTS.values()
@@ -266,7 +258,7 @@ def _sync_defaults(dbcon):
 			(label, icon, poster, alt_label, item_id)
 		)
 	dbcon.commit()
-	# Insert items added after initial release for existing users (idempotent — OR IGNORE skips duplicates)
+	# Insert items added after initial release for existing users
 	_NEW_DEFAULT_ITEMS = [
 		('mymovies',  'mymv_mdb_unfinished',  '40686',  'mdblistMoviesUnfinished',          'mdblist.png', 'mdblist.png', 1, 1, 1, 99, 0, 'mdblist_with_indicators', 1, '35308'),
 		('mytvshows', 'mytv_mdb_unfinished',  '40686',  'mdblistEpisodesUnfinished',         'mdblist.png', 'mdblist.png', 1, 1, 1, 99, 0, 'mdblist_with_indicators', 1, '35308'),
@@ -314,9 +306,7 @@ def initialize(menu_name='root'):
 		sort_order  INTEGER NOT NULL DEFAULT 0
 	)''')
 	dbcon.commit()
-	# Add any columns missing from pre-existing databases BEFORE inserting defaults,
-	# since _populate_defaults() writes to columns (e.g. alt_label) added after the
-	# original schema. Cheap and idempotent, so it runs every call.
+	# Add any columns missing from pre-existing databases BEFORE inserting defaults
 	_migrate_schema(dbcon)
 	cur = dbcon.cursor()
 	cur.execute('SELECT COUNT(*) as cnt FROM menu_items WHERE menu_name=?', (menu_name,))
