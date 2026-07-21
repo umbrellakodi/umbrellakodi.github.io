@@ -447,8 +447,7 @@ def post_request(url, data=None):
 
 def markMovieAsWatched(imdb):
 	try:
-		timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-		data = {"movies": [{"watched_at": timestamp,"ids": {"imdb": imdb}}]}
+		data = {"movies": [{"ids": {"imdb": imdb}}]}
 		from resources.lib.modules import simkl
 		result = simkl.post_request('/sync/history', data)
 		if not result: return False

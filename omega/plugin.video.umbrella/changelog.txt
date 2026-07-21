@@ -1,2 +1,2 @@
-[B]Update - v6.7.636 - July 20th, 2026 [/B]
---[Fix] Made sure scrobble fails no longer show when scrobble notifications are disabled.
+[B]Update - v6.7.637 - July 21st, 2026 [/B]
+--[Fix] Removed timestamp from Simkl scrobble.
