@@ -2300,6 +2300,43 @@ class TVshows:
 			log_utils.error()
 		return self.list
 
+	def mdblist_tvshow_watched(self, url, folderName=''):
+		self.list = []
+		try:
+			cache.get(self.mdblist_watched_shows_fetch, 0, folderName)
+			self.sort(type='watched')
+			if self.list is None: self.list = []
+			self.tvshowDirectory(self.list, next=False, isProgress=False, isWatched=True, folderName=folderName)
+			return self.list
+		except:
+			log_utils.error()
+			if not self.list:
+				control.hide()
+				if self.notifications and self.is_widget != True: control.notification(title=32326, message=33049)
+
+	def mdblist_watched_shows_fetch(self, create_directory=True, folderName=''):
+		self.list = []
+		try:
+			shows = mdblist.watchedShows()
+			if not shows: return self.list
+			for show in shows:
+				try:
+					ids = show.get('ids', {})
+					values = {}
+					values['next'] = ''
+					values['imdb'] = str(ids.get('imdb', '')) if ids.get('imdb') else ''
+					values['tmdb'] = str(ids.get('tmdb', '')) if ids.get('tmdb') else ''
+					values['tvdb'] = str(ids.get('tvdb', '')) if ids.get('tvdb') else ''
+					values['lastplayed'] = show.get('last_watched_at', '') or ''
+					values['mediatype'] = 'tvshows'
+					self.list.append(values)
+				except: log_utils.error()
+			self.worker()
+			if self.list is None: self.list = []
+		except:
+			log_utils.error()
+		return self.list
+
 	def worker(self):
 		try:
 			if not self.list: return

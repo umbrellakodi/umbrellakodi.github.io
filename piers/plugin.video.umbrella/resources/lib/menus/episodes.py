@@ -704,6 +704,125 @@ class Episodes:
 		[i.join() for i in threads]
 		return self.list
 
+	def mdblist_upcoming_calendar(self, url, folderName=''):
+		self.list = []
+		try:
+			self.list = cache.get(self.mdblist_upcoming_calendar_list, self.mdblist_hours)
+			if self.list is None: self.list = []
+			self.episodeDirectory(self.list, unfinished=False, next=False, folderName=folderName)
+			return self.list
+		except:
+			from resources.lib.modules import log_utils
+			log_utils.error()
+			if not self.list:
+				control.hide()
+				if self.notifications: control.notification(title=32326, message=33049)
+
+	def mdblist_upcoming_calendar_list(self):
+		self.list = []
+		try:
+			shows = {}
+			try:
+				for i in (mdblist.get_user_watchlist('tvshow') or []):
+					imdb = i.get('imdb', '') or ''
+					tmdb = str(i.get('tmdb', '') or '')
+					key = imdb or tmdb
+					if not key: continue
+					shows.setdefault(key, {'imdb': imdb, 'tmdb': tmdb, 'tvdb': ''})
+			except: pass
+			try:
+				for i in (mdblist.get_user_collection('tvshow') or []):
+					imdb = i.get('imdb', '') or ''
+					tmdb = str(i.get('tmdb', '') or '')
+					key = imdb or tmdb
+					if not key: continue
+					entry = shows.setdefault(key, {'imdb': imdb, 'tmdb': tmdb, 'tvdb': ''})
+					if not entry.get('tmdb') and tmdb: entry['tmdb'] = tmdb
+			except: pass
+			try:
+				for i in (mdblist.watchedShows() or []):
+					ids = i.get('ids', {})
+					imdb = str(ids.get('imdb', '') or '')
+					tmdb = str(ids.get('tmdb', '') or '')
+					tvdb = str(ids.get('tvdb', '') or '')
+					key = imdb or tmdb
+					if not key: continue
+					entry = shows.setdefault(key, {'imdb': imdb, 'tmdb': tmdb, 'tvdb': tvdb})
+					if not entry.get('tmdb') and tmdb: entry['tmdb'] = tmdb
+					if not entry.get('tvdb') and tvdb: entry['tvdb'] = tvdb
+			except: pass
+			if not shows: return self.list
+
+			today_int = int(re.sub(r'[^0-9]', '', str(self.today_date)))
+			window_end = int(re.sub(r'[^0-9]', '', (self.date_time + timedelta(days=33)).strftime('%Y-%m-%d')))
+
+			def items_list(show):
+				try:
+					imdb, tmdb, tvdb = show.get('imdb', ''), show.get('tmdb', ''), show.get('tvdb', '')
+					if not tmdb and imdb:
+						try:
+							result = cache.get(tmdb_indexer().IdLookup, 96, imdb, tvdb)
+							tmdb = str(result.get('id')) if result.get('id') else ''
+						except: tmdb = ''
+					if not tmdb: return
+					showSeasons = cache.get(tmdb_indexer().get_showSeasons_meta, 96, tmdb)
+					if not showSeasons: return
+					next_ep = showSeasons.get('next_episode_to_air')
+					if not next_ep: return
+					season_num = next_ep.get('season_number')
+					episode_num = next_ep.get('episode_number')
+					if season_num is None or episode_num is None: return
+					if not self.showspecials and season_num == 0: return
+					seasonEpisodes = tmdb_indexer().get_seasonEpisodes_meta_checked(tmdb, season_num)
+					if not seasonEpisodes: return
+					seasonEpisodes = dict((k, v) for k, v in iter(seasonEpisodes.items()) if v is not None and v != '')
+					for ep in seasonEpisodes.get('episodes', []):
+						try:
+							if ep.get('episode') is None or int(ep['episode']) < int(episode_num): continue
+							premiered = ep.get('premiered', '')
+							if not premiered: continue
+							premiered_int = int(re.sub(r'[^0-9]', '', str(premiered).split('T')[0]))
+							if premiered_int < today_int or premiered_int > window_end: continue
+							values = {}
+							values.update(showSeasons)
+							values.update(seasonEpisodes)
+							values.update(ep)
+							values.pop('episodes', None)
+							if not values.get('plot'): values['plot'] = showSeasons.get('plot', '')
+							values['imdb'] = imdb
+							values['tmdb'] = tmdb
+							values['tvdb'] = tvdb
+							duration = values.get('duration')
+							if duration:
+								try: values['duration'] = int(duration) * 60
+								except: pass
+							values['unaired'] = 'true'
+							values['calendar_unaired'] = True
+							values['next'] = ''
+							if self.enable_fanarttv:
+								extended_art = fanarttv_cache.get(FanartTv().get_tvshow_art, 336, tvdb)
+								if extended_art: values.update(extended_art)
+							self.list.append(values)
+						except: pass
+				except:
+					from resources.lib.modules import log_utils
+					log_utils.error()
+
+			threads = []
+			for show in shows.values():
+				threads.append(Thread(target=items_list, args=(show,)))
+			[i.start() for i in threads]
+			[i.join() for i in threads]
+			if self.list:
+				for i in range(len(self.list)):
+					if 'premiered' not in self.list[i]: self.list[i]['premiered'] = ''
+				self.list = sorted(self.list, key=lambda k: k['premiered'])
+			return self.list
+		except:
+			from resources.lib.modules import log_utils
+			log_utils.error()
+		return self.list
+
 	def local_calendar(self, url, folderName=''):
 		self.list = []
 		try:

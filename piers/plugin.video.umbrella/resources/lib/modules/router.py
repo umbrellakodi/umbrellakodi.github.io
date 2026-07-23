@@ -180,6 +180,9 @@ def router(argv2):
 	elif action == 'mdblistMoviesUnfinished':
 		from resources.lib.menus import movies
 		movies.Movies().mdblist_unfinished(url, folderName=folderName)
+	elif action == 'mdblist_movies_watched':
+		from resources.lib.menus import movies
+		movies.Movies().mdblist_watched(url, folderName=folderName)
 	elif action == 'movieUserlists':
 		from resources.lib.menus import movies
 		movies.Movies().userlists(folderName=folderName, create_directory=True)
@@ -447,6 +450,9 @@ def router(argv2):
 	elif action == 'mdblist_shows_progress':
 		from resources.lib.menus import tvshows
 		tvshows.TVshows().mdblist_progress(url, folderName=folderName)
+	elif action == 'mdblist_shows_watched':
+		from resources.lib.menus import tvshows
+		tvshows.TVshows().mdblist_tvshow_watched(url, folderName=folderName)
 	elif action == 'local_shows_progress':
 		from resources.lib.menus import tvshows
 		tvshows.TVshows().local_progress(url, folderName=folderName)
@@ -537,6 +543,9 @@ def router(argv2):
 	elif action == 'mdblist_calendar':
 		from resources.lib.menus import episodes
 		episodes.Episodes().mdblist_calendar(url, folderName=folderName)
+	elif action == 'mdblist_calendar_upcoming':
+		from resources.lib.menus import episodes
+		episodes.Episodes().mdblist_upcoming_calendar(url, folderName=folderName)
 	elif action == 'local_calendar':
 		from resources.lib.menus import episodes
 		episodes.Episodes().local_calendar(url, folderName=folderName)

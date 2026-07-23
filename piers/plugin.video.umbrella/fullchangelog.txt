@@ -1,3 +1,6 @@
+[B]Update - v6.7.638 - July 21st, 2026 [/B]
+--[Change] Added more mdblist lists for tv and movies like watched.
+
 [B]Update - v6.7.637 - July 21st, 2026 [/B]
 --[Fix] Removed timestamp from Simkl scrobble.
 

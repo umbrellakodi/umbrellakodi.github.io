@@ -886,6 +886,33 @@ class Movies:
 			from resources.lib.modules import log_utils
 			log_utils.error()
 
+	def mdblist_watched(self, url=None, idx=True, create_directory=True, folderName=''):
+		self.list = []
+		try:
+			rows = mdblist.watchedMovies()
+			if not rows: return self.list
+			for (imdb, tmdb, title, year, last_watched_at) in rows:
+				try:
+					values = {}
+					values['imdb'] = imdb or ''
+					values['tmdb'] = tmdb or ''
+					values['title'] = title or ''
+					values['year'] = year or ''
+					values['lastplayed'] = last_watched_at or ''
+					values['mediatype'] = 'movies'
+					self.list.append(values)
+				except:
+					from resources.lib.modules import log_utils
+					log_utils.error()
+			if idx: self.worker()
+			self.sort(type='watched')
+			if self.list is None: self.list = []
+			if create_directory: self.movieDirectory(self.list, next=False, folderName=folderName)
+			return self.list
+		except:
+			from resources.lib.modules import log_utils
+			log_utils.error()
+
 	def local_finish_watching(self, url='', folderName=''):
 		self.list = []
 		try:

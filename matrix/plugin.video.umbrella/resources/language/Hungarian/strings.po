@@ -5985,3 +5985,15 @@ msgstr ""
 msgctxt "#40714"
 msgid "[COLOR %s][B]Dropped Manager - Shows[/B][/COLOR]"
 msgstr ""
+
+msgctxt "#40715"
+msgid "Watched Shows (MDBList)"
+msgstr ""
+
+msgctxt "#40716"
+msgid "Watched Movies (MDBList)"
+msgstr ""
+
+msgctxt "#40717"
+msgid "Upcoming Episodes (MDBList)"
+msgstr ""
