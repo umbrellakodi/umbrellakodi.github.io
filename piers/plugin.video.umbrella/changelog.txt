@@ -1,2 +1,2 @@
-[B]Update - v6.7.638 - July 21st, 2026 [/B]
---[Change] Added more mdblist lists for tv and movies like watched.
+[B]Update - v6.7.639 - July 24th, 2026 [/B]
+--[Change] Added ability to use self-hosted trakt clones. There is a lot to be done still this is just testing.

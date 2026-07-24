@@ -183,6 +183,12 @@ def router(argv2):
 	elif action == 'mdblist_movies_watched':
 		from resources.lib.menus import movies
 		movies.Movies().mdblist_watched(url, folderName=folderName)
+	elif action == 'custom_movies_unfinished':
+		from resources.lib.menus import movies
+		movies.Movies().custom_unfinished(url, folderName=folderName)
+	elif action == 'custom_movies_watched':
+		from resources.lib.menus import movies
+		movies.Movies().customWatched(url, folderName=folderName)
 	elif action == 'movieUserlists':
 		from resources.lib.menus import movies
 		movies.Movies().userlists(folderName=folderName, create_directory=True)
@@ -201,6 +207,12 @@ def router(argv2):
 	elif action == 'mdblistRevoke':
 		from resources.lib.modules import mdblist
 		mdblist.mdblistRevoke(fromSettings=1)
+	elif action == 'customAuth':
+		from resources.lib.modules import customtrakt
+		customtrakt.customAuth(fromSettings=1)
+	elif action == 'customRevoke':
+		from resources.lib.modules import customtrakt
+		customtrakt.customRevoke(fromSettings=1)
 	elif action == 'traktAccountInfo':
 		from resources.lib.modules import trakt as Trakt
 		Trakt.getTraktAccountInfo()
@@ -255,6 +267,12 @@ def router(argv2):
 	elif action == 'mdbUserCollectionMovies':
 		from resources.lib.menus import movies
 		movies.Movies().get_mdbuser_collection(url, folderName=folderName)
+	elif action == 'custom_movies_watchlist':
+		from resources.lib.menus import movies
+		movies.Movies().customWatchlist(url, folderName=folderName)
+	elif action == 'custom_movies_collection':
+		from resources.lib.menus import movies
+		movies.Movies().customCollection(url, folderName=folderName)
 	elif action == 'mdbOfficialListMovies':
 		from resources.lib.menus import movies
 		movies.Movies().getMDBOfficialLists(folderName=folderName)
@@ -267,6 +285,12 @@ def router(argv2):
 	elif action == 'mdbUserCollectionTVShows':
 		from resources.lib.menus import tvshows
 		tvshows.TVshows().get_mdbuser_collection(url, folderName=folderName)
+	elif action == 'custom_shows_watchlist':
+		from resources.lib.menus import tvshows
+		tvshows.TVshows().customWatchlist(url, folderName=folderName)
+	elif action == 'custom_shows_collection':
+		from resources.lib.menus import tvshows
+		tvshows.TVshows().customCollection(url, folderName=folderName)
 	elif action == 'mdbOfficialListTV':
 		from resources.lib.menus import tvshows
 		tvshows.TVshows().getMDBOfficialLists(folderName=folderName)
@@ -453,6 +477,12 @@ def router(argv2):
 	elif action == 'mdblist_shows_watched':
 		from resources.lib.menus import tvshows
 		tvshows.TVshows().mdblist_tvshow_watched(url, folderName=folderName)
+	elif action == 'custom_shows_progress':
+		from resources.lib.menus import tvshows
+		tvshows.TVshows().custom_progress(url, folderName=folderName)
+	elif action == 'custom_shows_watched':
+		from resources.lib.menus import tvshows
+		tvshows.TVshows().custom_tvshow_watched(url, folderName=folderName)
 	elif action == 'local_shows_progress':
 		from resources.lib.menus import tvshows
 		tvshows.TVshows().local_progress(url, folderName=folderName)
@@ -534,6 +564,9 @@ def router(argv2):
 	elif action == 'mdblistEpisodesUnfinished':
 		from resources.lib.menus import episodes
 		episodes.Episodes().mdblist_unfinished(url=url, folderName=folderName)
+	elif action == 'customEpisodesUnfinished':
+		from resources.lib.menus import episodes
+		episodes.Episodes().custom_unfinished(url=url, folderName=folderName)
 	elif action == 'episodes_traktUnfinishedManager':
 		from resources.lib.menus import episodes
 		episodes.Episodes().unfinishedManager()
@@ -546,6 +579,21 @@ def router(argv2):
 	elif action == 'mdblist_calendar_upcoming':
 		from resources.lib.menus import episodes
 		episodes.Episodes().mdblist_upcoming_calendar(url, folderName=folderName)
+	elif action == 'custom_episodes_progress':
+		from resources.lib.menus import episodes
+		episodes.Episodes().custom_calendar(url, folderName=folderName)
+	elif action == 'custom_upcoming_progress':
+		from resources.lib.menus import episodes
+		episodes.Episodes().custom_upcoming_progress(url, folderName=folderName)
+	elif action == 'custom_calendar_recent':
+		from resources.lib.menus import episodes
+		episodes.Episodes().custom_calendar_recent(url, folderName=folderName)
+	elif action == 'custom_calendar_upcoming':
+		from resources.lib.menus import episodes
+		episodes.Episodes().custom_calendar_upcoming(url, folderName=folderName)
+	elif action == 'custom_calendar_premieres':
+		from resources.lib.menus import episodes
+		episodes.Episodes().custom_calendar_premieres(url, folderName=folderName)
 	elif action == 'local_calendar':
 		from resources.lib.menus import episodes
 		episodes.Episodes().local_calendar(url, folderName=folderName)
@@ -1041,6 +1089,9 @@ def router(argv2):
 		elif action == 'tools_mdblistToolsNavigator':
 			from resources.lib.menus import navigator
 			navigator.Navigator().mdblistTools(folderName=folderName)
+		elif action == 'tools_customToolsNavigator':
+			from resources.lib.menus import navigator
+			navigator.Navigator().customTools(folderName=folderName)
 		elif action == 'tools_searchNavigator':
 			from resources.lib.menus import navigator
 			navigator.Navigator().search(folderName=folderName)
@@ -1093,6 +1144,12 @@ def router(argv2):
 			tvshow = (params.get('tvshow') == 'tvshow')
 			from resources.lib.modules import simkl
 			simkl.manager(name, imdb, tvdb, season, episode, watched=watched, unfinished=unfinished,tvshow=tvshow)
+		elif action == 'tools_customManager':
+			watched = (params.get('watched') == 'True') if params.get('watched') else None
+			unfinished = (params.get('unfinished') == 'True') if params.get('unfinished') else False
+			tvshow = (params.get('tvshow') == 'tvshow')
+			from resources.lib.modules import customtrakt
+			customtrakt.manager(name, imdb, tvdb, tmdb=tmdb, season=season, episode=episode, watched=watched, unfinished=unfinished, tvshow=tvshow)
 		elif action == 'tools_likeList':
 			from resources.lib.modules import trakt
 			trakt.like_list(params.get('list_owner'), params.get('list_name'), params.get('list_id'))
@@ -1111,6 +1168,9 @@ def router(argv2):
 		elif action == 'tools_forceMDBListSync':
 			from resources.lib.modules import mdblist
 			mdblist.force_mdblistSync()
+		elif action == 'tools_forceCustomSync':
+			from resources.lib.modules import customtrakt
+			customtrakt.force_customSync()
 		elif action == 'tools_clearLogFile':
 			from resources.lib.modules import log_utils
 			cleared = log_utils.clear_logFile()

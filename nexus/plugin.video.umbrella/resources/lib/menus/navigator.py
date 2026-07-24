@@ -9,6 +9,7 @@ from resources.lib.modules import control
 from resources.lib.modules.trakt import getTraktCredentialsInfo, getTraktIndicatorsInfo
 from resources.lib.modules import simkl
 from resources.lib.modules import mdblist
+from resources.lib.modules import customtrakt
 from resources.lib.modules.tmdb4 import getTMDbV4CredentialsInfo
 from resources.lib.modules import favourites
 from json import loads as jsloads
@@ -26,9 +27,11 @@ class Navigator:
 		self.traktCredentials = getTraktCredentialsInfo()
 		self.simklCredentials = simkl.getSimKLCredentialsInfo()
 		self.mdblistCredentials = mdblist.getMDBListCredentialsInfo()
+		self.customCredentials = customtrakt.getCustomCredentialsInfo()
 		self.traktIndicators = getTraktIndicatorsInfo()
 		self.simklIndicators = simkl.getSimKLIndicatorsInfo()
 		self.mdblistIndicators = mdblist.getMDBListIndicatorsInfo()
+		self.customIndicators = customtrakt.getCustomIndicatorsInfo()
 		self.tmdbCredentials = getTMDbV4CredentialsInfo()
 		self.simkltoken = getSetting('simkltoken') != ''
 		self.alldebridCredentials = getSetting('alldebridtoken') != ''
@@ -94,6 +97,9 @@ class Navigator:
 		if key == 'mdblist_token':           return bool(getSetting('mdblist.token'))
 		if key == 'mdblist_credentials':     return bool(self.mdblistCredentials)
 		if key == 'mdblist_with_indicators': return bool(self.mdblistCredentials and (self.mdblistIndicators or getSetting('mdblist.markwatched') == 'true'))
+		if key == 'custom_token':            return bool(getSetting('custom.user.token'))
+		if key == 'custom_credentials':      return bool(self.customCredentials)
+		if key == 'custom_with_indicators':  return bool(self.customCredentials and (self.customIndicators or getSetting('custom.markwatched') == 'true'))
 		if key == 'tmdb_v4_token':           return bool(getSetting('tmdb.v4.accesstoken'))
 		if key == 'has_lib_movies':          return bool(self.hasLibMovies)
 		if key == 'favorite_movie':          return bool(self.favoriteMovie)
@@ -114,6 +120,11 @@ class Navigator:
 			if not self.indexLabels and item.get('alt_label'):
 				raw_label = item['alt_label']
 			label = getLS(int(raw_label)) if raw_label.isdigit() else raw_label
+			if item['item_id'].startswith(('mytv_custom_', 'mymv_custom_')):
+				from resources.lib.modules import customtrakt
+				custom_name = customtrakt.getCustomServiceName()
+				if custom_name != 'Custom':
+					label = label.replace('Custom', custom_name)
 			icon_file = item['icon'] if self.iconLogos else item['poster']
 			action = '%s&folderName=%s' % (item['action'], quote_plus(label)) if item['is_folder'] else item['action']
 			self.addDirectoryItem(label, action, icon_file, icon_file,
@@ -537,6 +548,9 @@ class Navigator:
 		if self.simklCredentials: self.addDirectoryItem(40551, 'tools_simklToolsNavigator&folderName=%s' % quote_plus(getLS(40552)), 'tools.png', 'DefaultAddonService.png', isFolder=True)
 		if self.traktCredentials: self.addDirectoryItem(35057, 'tools_traktToolsNavigator&folderName=%s' % quote_plus(getLS(40461)), 'tools.png', 'DefaultAddonService.png', isFolder=True)
 		if self.mdblistCredentials: self.addDirectoryItem(40635, 'tools_mdblistToolsNavigator&folderName=%s' % quote_plus(getLS(40636)), 'tools.png', 'DefaultAddonService.png', isFolder=True)
+		if self.customCredentials:
+			_custom_tools_label = '%s Management Tools' % customtrakt.getCustomServiceName()
+			self.addDirectoryItem('[B]%s[/B]' % _custom_tools_label, 'tools_customToolsNavigator&folderName=%s' % quote_plus(_custom_tools_label), 'tools.png', 'DefaultAddonService.png', isFolder=True)
 		#-- Playback - 2
 		self.addDirectoryItem(32045, 'tools_openSettings&query=2.0', 'tools.png', 'DefaultAddonService.png', isFolder=False)
 		#-- Downloads - 10
@@ -594,6 +608,11 @@ class Navigator:
 		self.addDirectoryItem(40639, 'shows_mdblistWatchlistManager', 'mdblist.png', 'DefaultAddonService.png', isFolder=False)
 		self.addDirectoryItem(40714, 'shows_mdblistDroppedManager', 'mdblist.png', 'DefaultAddonService.png', isFolder=False)
 		self.addDirectoryItem(40637, 'tools_forceMDBListSync', 'mdblist.png', 'DefaultAddonService.png', isFolder=False)
+		self.endDirectory()
+
+	def customTools(self, folderName=''):
+		if self.useContainerTitles: control.setContainerName(folderName)
+		self.addDirectoryItem('[COLOR %%s][B]Force %s Sync to local database[/B][/COLOR]' % customtrakt.getCustomServiceName(), 'tools_forceCustomSync', 'icon.png', 'DefaultAddonService.png', isFolder=False)
 		self.endDirectory()
 
 	def loggingNavigator(self, folderName=''):

@@ -2725,6 +2725,7 @@
 							<option label="32315">1</option>
 							<option label="40342">2</option>
 							<option label="40621">3</option>
+							<option label="40718">4</option>
 						</options>
 					</constraints>
 					<dependencies>
@@ -2765,6 +2766,7 @@
 							<option label="32315">1</option>
 							<option label="40342">2</option>
 							<option label="40621">3</option>
+							<option label="40718">4</option>
 						</options>
 					</constraints>
 					<dependencies>
@@ -2784,6 +2786,7 @@
 								<condition operator="is" setting="trakt.markwatched">true</condition>
 								<condition operator="is" setting="simkl.markwatched">true</condition>
 								<condition operator="is" setting="mdblist.markwatched">true</condition>
+								<condition operator="is" setting="custom.markwatched">true</condition>
 							</or>
 						</dependency>
 					</dependencies>
@@ -2823,6 +2826,19 @@
 							<and>
 								<condition operator="!is" setting="mdblist.token"/>
 								<condition operator="!is" setting="indicators.alt">3</condition>
+							</and>
+						</dependency>
+					</dependencies>
+					<control type="toggle"/>
+				</setting>
+				<setting id="custom.markwatched" type="boolean" label="40723" help="">
+					<level>0</level>
+					<default>false</default>
+					<dependencies>
+						<dependency type="visible">
+							<and>
+								<condition operator="!is" setting="custom.user.token"/>
+								<condition operator="!is" setting="indicators.alt">4</condition>
 							</and>
 						</dependency>
 					</dependencies>
@@ -3667,6 +3683,265 @@
 								<or>
 									<condition operator="is" setting="indicators.alt">3</condition>
 									<condition operator="is" setting="mdblist.markwatched">true</condition>
+								</or>
+							</and>
+						</dependency>
+					</dependencies>
+					<control type="toggle"/>
+				</setting>
+			</group>
+			<group id="5" label="40718">
+				<setting id="custom.servicename" type="string" label="40751" help="">
+					<level>0</level>
+					<default/>
+					<constraints>
+						<allowempty>true</allowempty>
+					</constraints>
+					<control type="edit" format="string">
+						<heading>40751</heading>
+					</control>
+				</setting>
+				<setting id="custom.baseurl" type="string" label="40719" help="">
+					<level>0</level>
+					<default/>
+					<constraints>
+						<allowempty>true</allowempty>
+					</constraints>
+					<control type="edit" format="string">
+						<heading>40719</heading>
+					</control>
+				</setting>
+				<setting id="custom.clientid" type="string" label="40720" help="">
+					<level>0</level>
+					<default/>
+					<constraints>
+						<allowempty>true</allowempty>
+					</constraints>
+					<control type="edit" format="string">
+						<heading>40720</heading>
+					</control>
+				</setting>
+				<setting id="custom.clientsecret" type="string" label="40721" help="">
+					<level>0</level>
+					<default/>
+					<constraints>
+						<allowempty>true</allowempty>
+					</constraints>
+					<control type="edit" format="string">
+						<heading>40721</heading>
+						<hidden>true</hidden>
+					</control>
+				</setting>
+				<setting id="custom.user.token" type="string" label="" help="">
+					<level>0</level>
+					<default/>
+					<constraints>
+						<allowempty>true</allowempty>
+					</constraints>
+					<dependencies>
+						<dependency type="visible">
+							<condition on="property" name="InfoBool">false</condition>
+						</dependency>
+					</dependencies>
+					<control type="edit" format="string">
+						<heading/>
+					</control>
+				</setting>
+				<setting id="custom.user.name" type="string" label="40722" help="">
+					<level>0</level>
+					<default/>
+					<constraints>
+						<allowempty>true</allowempty>
+					</constraints>
+					<dependencies>
+						<dependency type="enable">
+							<condition on="property" name="InfoBool">false</condition>
+						</dependency>
+						<dependency type="visible">
+							<condition operator="!is" setting="custom.user.token"/>
+						</dependency>
+					</dependencies>
+					<control type="edit" format="string">
+						<heading>40722</heading>
+					</control>
+				</setting>
+				<setting id="showCustomAuth" type="action" label="32306" help="">
+					<level>0</level>
+					<data>RunPlugin(plugin://plugin.video.umbrella/?action=customAuth)</data>
+					<constraints>
+						<allowempty>true</allowempty>
+					</constraints>
+					<dependencies>
+						<dependency type="visible">
+							<condition operator="is" setting="custom.user.token"/>
+						</dependency>
+					</dependencies>
+					<control type="button" format="action">
+						<close>true</close>
+					</control>
+				</setting>
+				<setting id="showCustomRevoke" type="action" label="40724" help="">
+					<level>0</level>
+					<data>RunPlugin(plugin://plugin.video.umbrella/?action=customRevoke)</data>
+					<constraints>
+						<allowempty>true</allowempty>
+					</constraints>
+					<dependencies>
+						<dependency type="visible">
+							<condition operator="!is" setting="custom.user.token"/>
+						</dependency>
+					</dependencies>
+					<control type="button" format="action">
+						<close>true</close>
+					</control>
+				</setting>
+				<setting id="custom.token.expires" type="string" label="" help="">
+					<level>0</level>
+					<default/>
+					<constraints>
+						<allowempty>true</allowempty>
+					</constraints>
+					<dependencies>
+						<dependency type="visible">
+							<condition on="property" name="InfoBool">false</condition>
+						</dependency>
+					</dependencies>
+					<control type="edit" format="string">
+						<heading/>
+					</control>
+				</setting>
+				<setting id="custom.refreshtoken" type="string" label="" help="">
+					<level>0</level>
+					<default/>
+					<constraints>
+						<allowempty>true</allowempty>
+					</constraints>
+					<dependencies>
+						<dependency type="visible">
+							<condition on="property" name="InfoBool">false</condition>
+						</dependency>
+					</dependencies>
+					<control type="edit" format="string">
+						<heading/>
+					</control>
+				</setting>
+				<setting id="custom.isauthed" type="string" label="" help="">
+					<level>0</level>
+					<default/>
+					<constraints>
+						<allowempty>true</allowempty>
+					</constraints>
+					<dependencies>
+						<dependency type="visible">
+							<condition on="property" name="InfoBool">false</condition>
+						</dependency>
+					</dependencies>
+					<control type="edit" format="string">
+						<heading/>
+					</control>
+				</setting>
+				<setting id="custom.general.notifications" type="boolean" label="40644" help="">
+					<level>0</level>
+					<default>true</default>
+					<dependencies>
+						<dependency type="visible">
+							<condition operator="!is" setting="custom.user.token"/>
+						</dependency>
+					</dependencies>
+					<control type="toggle"/>
+				</setting>
+				<setting id="custom.service.syncInterval" type="integer" label="40726" help="">
+					<level>0</level>
+					<default>30</default>
+					<constraints>
+						<minimum>5</minimum>
+						<maximum>120</maximum>
+					</constraints>
+					<dependencies>
+						<dependency type="visible">
+							<condition operator="!is" setting="custom.user.token"/>
+						</dependency>
+					</dependencies>
+					<control type="slider" format="integer">
+						<popup>false</popup>
+					</control>
+				</setting>
+				<setting id="custom.directProgress.scrape" type="boolean" label="35492" help="">
+					<level>0</level>
+					<default>false</default>
+					<dependencies>
+						<dependency type="visible">
+							<condition operator="!is" setting="custom.user.token"/>
+						</dependency>
+					</dependencies>
+					<control type="toggle"/>
+				</setting>
+				<setting id="custom.progressFlatten" type="boolean" label="32017" help="">
+					<level>0</level>
+					<default>true</default>
+					<dependencies>
+						<dependency type="visible">
+							<condition operator="!is" setting="custom.user.token"/>
+						</dependency>
+					</dependencies>
+					<control type="toggle"/>
+				</setting>
+				<setting id="custom.paginate.lists" type="boolean" label="32188" help="">
+					<level>0</level>
+					<default>true</default>
+					<dependencies>
+						<dependency type="visible">
+							<condition operator="!is" setting="custom.user.token"/>
+						</dependency>
+					</dependencies>
+					<control type="toggle"/>
+				</setting>
+				<setting id="custom.progress.showunaired" type="boolean" label="40727" help="">
+					<level>0</level>
+					<default>false</default>
+					<dependencies>
+						<dependency type="visible">
+							<condition operator="!is" setting="custom.user.token"/>
+						</dependency>
+					</dependencies>
+					<control type="toggle"/>
+				</setting>
+				<setting id="custom.UpcomingProgress.prependDate" type="boolean" label="40728" help="">
+					<level>0</level>
+					<default>true</default>
+					<dependencies>
+						<dependency type="visible">
+							<condition operator="!is" setting="custom.user.token"/>
+						</dependency>
+					</dependencies>
+					<control type="toggle"/>
+				</setting>
+				<setting id="custom.progress.episodes" type="boolean" label="40653" help="">
+					<level>0</level>
+					<default>true</default>
+					<dependencies>
+						<dependency type="visible">
+							<and>
+								<condition operator="!is" setting="custom.user.token"/>
+								<or>
+									<condition operator="is" setting="indicators.alt">4</condition>
+									<condition operator="is" setting="custom.markwatched">true</condition>
+								</or>
+							</and>
+						</dependency>
+					</dependencies>
+					<control type="toggle"/>
+				</setting>
+				<setting id="custom.progress.shows" type="boolean" label="40654" help="">
+					<level>0</level>
+					<default>true</default>
+					<dependencies>
+						<dependency type="visible">
+							<and>
+								<condition operator="!is" setting="custom.user.token"/>
+								<or>
+									<condition operator="is" setting="indicators.alt">4</condition>
+									<condition operator="is" setting="custom.markwatched">true</condition>
 								</or>
 							</and>
 						</dependency>
@@ -6204,6 +6479,11 @@
 					<control type="toggle"/>
 				</setting>
 				<setting id="context.umbrella.simklManager" type="boolean" label="40576" help="">
+					<level>0</level>
+					<default>true</default>
+					<control type="toggle"/>
+				</setting>
+				<setting id="context.umbrella.customManager" type="boolean" label="40750" help="">
 					<level>0</level>
 					<default>true</default>
 					<control type="toggle"/>

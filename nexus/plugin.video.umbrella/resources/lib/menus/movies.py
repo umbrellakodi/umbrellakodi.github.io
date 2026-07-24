@@ -12,7 +12,7 @@ import xbmc
 #from threading import Thread
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from urllib.parse import quote_plus, urlencode, parse_qsl, urlparse, urlsplit
-from resources.lib.database import cache, metacache, fanarttv_cache, traktsync, simklsync
+from resources.lib.database import cache, metacache, fanarttv_cache, traktsync, simklsync, customtraktsync
 from resources.lib.indexers.tmdb import Movies as tmdb_indexer
 from resources.lib.indexers.fanarttv import FanartTv
 from resources.lib.modules import simkl
@@ -24,6 +24,7 @@ from resources.lib.modules import tools, log_utils
 from resources.lib.modules import trakt
 from resources.lib.modules import views
 from resources.lib.modules import mdblist
+from resources.lib.modules import customtrakt
 from resources.lib.database import artwork as customArtwork
 from sqlite3 import dbapi2 as database
 from json import loads as jsloads
@@ -189,6 +190,7 @@ class Movies:
 		self.prefer_fanArt = getSetting('prefer.fanarttv') == 'true'
 		self.simklCredentials = simkl.getSimKLCredentialsInfo()
 		self.mdblist_authed = getSetting('mdblist.token') != ''
+		self.customCredentials = customtrakt.getCustomCredentialsInfo()
 		from resources.lib.modules import tmdb4
 		self.tmdbv4Credentials = tmdb4.getTMDbV4CredentialsInfo()
 
@@ -1526,6 +1528,116 @@ class Movies:
 			from resources.lib.modules import log_utils
 			log_utils.error()
 
+	def customCollection(self, url, create_directory=True, folderName=''):
+		self.list = []
+		try:
+			try:
+				q = dict(parse_qsl(urlsplit(url).query))
+				index = int(q['page']) - 1
+			except:
+				q = dict(parse_qsl(urlsplit(url).query))
+				index = 0
+			self.list = customtraktsync.fetch_collection('movies_collection')
+			useNext = True
+			if create_directory:
+				self.sort()
+				if getSetting('custom.paginate.lists') == 'true' and self.list:
+					if len(self.list) == int(self.page_limit):
+						useNext = False
+					paginated_ids = [self.list[x:x + int(self.page_limit)] for x in range(0, len(self.list), int(self.page_limit))]
+					self.list = paginated_ids[index]
+			try:
+				if useNext == False: raise Exception()
+				if int(q['limit']) != len(self.list): raise Exception()
+				q.update({'page': str(int(q['page']) + 1)})
+				q = (urlencode(q)).replace('%2C', ',')
+				next = url.replace('?' + urlparse(url).query, '') + '?' + q
+				next = next + '&folderName=%s' % quote_plus(folderName)
+			except: next = ''
+			for i in range(len(self.list)): self.list[i]['next'] = next
+			self.worker()
+			if self.list is None: self.list = []
+			if create_directory: self.movieDirectory(self.list, isCollection=True, folderName=folderName)
+			return self.list
+		except:
+			from resources.lib.modules import log_utils
+			log_utils.error()
+
+	def customWatchlist(self, url, create_directory=True, folderName=''):
+		self.list = []
+		try:
+			try:
+				q = dict(parse_qsl(urlsplit(url).query))
+				index = int(q['page']) - 1
+			except:
+				q = dict(parse_qsl(urlsplit(url).query))
+				index = 0
+			self.list = customtraktsync.fetch_watch_list('movies_watchlist')
+			useNext = True
+			if create_directory:
+				self.sort(type='movies.watchlist')
+				if getSetting('custom.paginate.lists') == 'true' and self.list:
+					if len(self.list) == int(self.page_limit):
+						useNext = False
+					paginated_ids = [self.list[x:x + int(self.page_limit)] for x in range(0, len(self.list), int(self.page_limit))]
+					self.list = paginated_ids[index]
+			try:
+				if useNext == False: raise Exception()
+				if int(q['limit']) != len(self.list): raise Exception()
+				q.update({'page': str(int(q['page']) + 1)})
+				q = (urlencode(q)).replace('%2C', ',')
+				next = url.replace('?' + urlparse(url).query, '') + '?' + q
+				next = next + '&folderName=%s' % quote_plus(folderName)
+			except: next = ''
+			for i in range(len(self.list)): self.list[i]['next'] = next
+			self.worker()
+			if self.list is None: self.list = []
+			if create_directory: self.movieDirectory(self.list, folderName=folderName)
+			return self.list
+		except:
+			from resources.lib.modules import log_utils
+			log_utils.error()
+
+	def customWatched(self, url=None, idx=True, create_directory=True, folderName=''):
+		self.list = []
+		try:
+			rows = customtrakt.watchedMovies()
+			if not rows: return self.list
+			for (imdb, tmdb, title, year, last_watched_at) in rows:
+				try:
+					values = {}
+					values['imdb'] = imdb or ''
+					values['tmdb'] = tmdb or ''
+					values['title'] = title or ''
+					values['year'] = year or ''
+					values['lastplayed'] = last_watched_at or ''
+					values['mediatype'] = 'movies'
+					self.list.append(values)
+				except:
+					from resources.lib.modules import log_utils
+					log_utils.error()
+			if idx: self.worker()
+			self.sort(type='watched')
+			if self.list is None: self.list = []
+			if create_directory: self.movieDirectory(self.list, next=False, folderName=folderName)
+			return self.list
+		except:
+			from resources.lib.modules import log_utils
+			log_utils.error()
+
+	def custom_unfinished(self, url=None, idx=True, create_directory=True, folderName=''):
+		self.list = []
+		try:
+			self.list = customtraktsync.fetch_bookmarks(imdb='', ret_all=True, ret_type='movies')
+			if idx: self.worker()
+			self.list = sorted(self.list, key=lambda k: k['paused_at'], reverse=True)
+			if self.list is None: self.list = []
+			if create_directory: self.movieDirectory(self.list, unfinished=True, next=False, folderName=folderName)
+			return self.list
+		except:
+			from resources.lib.modules import log_utils
+			log_utils.error()
+
 	def simklPlantowatch(self, url, create_directory=True, folderName=''):
 		self.list = []
 		try:
@@ -2433,6 +2545,7 @@ class Movies:
 		rescrapeMenu, findSimilarMenu = getLS(32185), getLS(32184)
 		simklManagerMenu = getLS(40577) % self.highlight_color
 		mdblistManagerMenu = '[COLOR %s]MDBList Manager[/COLOR]' % self.highlight_color
+		customManagerMenu = '[COLOR %s]%s Manager[/COLOR]' % (self.highlight_color, customtrakt.getCustomServiceName())
 		from resources.lib.modules import favourites
 		favoriteItems = favourites.getFavourites(content='movies')
 		favoriteItems = [x[1].get('imdb') for x in favoriteItems]
@@ -2540,6 +2653,8 @@ class Movies:
 						cm.append((simklManagerMenu, 'RunPlugin(%s?action=tools_simklManager&name=%s&imdb=%s&watched=%s&unfinished=%s)' % (sysaddon, sysname, imdb, watched, unfinished)))
 					if self.mdblist_authed:
 						cm.append((mdblistManagerMenu, 'RunPlugin(%s?action=tools_mdbWatchlist&name=%s&imdb=%s&watched=%s)' % (sysaddon, sysname, imdb, watched)))
+					if self.customCredentials:
+						cm.append((customManagerMenu, 'RunPlugin(%s?action=tools_customManager&name=%s&imdb=%s&watched=%s&unfinished=%s)' % (sysaddon, sysname, imdb, watched, unfinished)))
 					if self.tmdbv4Credentials:
 						cm.append((getLS(40606) if getLS(40606) else 'TMDB List Manager', 'RunPlugin(%s?action=tools_tmdbListManager&name=%s&tmdb=%s&mediatype=movie)' % (sysaddon, sysname, tmdb)))
 						if tmdb:

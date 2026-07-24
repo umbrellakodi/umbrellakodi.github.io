@@ -1,4 +1,4 @@
-<addon id="plugin.video.umbrella" name="Umbrella" provider-name="Umbrella" version="6.7.638">
+<addon id="plugin.video.umbrella" name="Umbrella" provider-name="Umbrella" version="6.7.639">
 	<requires>
 		<import addon="xbmc.python" version="3.0.0" />
 		<import addon="script.module.requests" />
@@ -76,6 +76,15 @@
 				<label>$INFO[Window(home).Property(context.umbrella.showUmbrella)]SimKL Manager</label>
 				<visible>
 					!String.IsEmpty(Window(home).Property(context.umbrella.simklManager)) +
+					String.StartsWith(ListItem.path,plugin://plugin.video.umbrella/) +
+					String.IsEqual(ListItem.Property(isUmbrella_widget),true) +
+					[String.IsEqual(ListItem.dbtype,episode) | String.IsEqual(ListItem.dbtype,tvshow) | String.IsEqual(ListItem.dbtype,season) | String.IsEqual(ListItem.dbtype,movie)]
+				</visible>
+			</item>
+			<item library="resources\lib\context\customManager.py">
+				<label>$INFO[Window(home).Property(context.umbrella.showUmbrella)]Custom Manager</label>
+				<visible>
+					!String.IsEmpty(Window(home).Property(context.umbrella.customManager)) +
 					String.StartsWith(ListItem.path,plugin://plugin.video.umbrella/) +
 					String.IsEqual(ListItem.Property(isUmbrella_widget),true) +
 					[String.IsEqual(ListItem.dbtype,episode) | String.IsEqual(ListItem.dbtype,tvshow) | String.IsEqual(ListItem.dbtype,season) | String.IsEqual(ListItem.dbtype,movie)]
@@ -234,8 +243,8 @@
 			<screenshot>resources/screenshots/screenshot003.jpg</screenshot>
 		</assets>
 		<news>
-[B]Update - v6.7.638 - July 21st, 2026 [/B]
---[Change] Added more mdblist lists for tv and movies like watched.
+[B]Update - v6.7.639 - July 24th, 2026 [/B]
+--[Change] Added ability to use self-hosted trakt clones. There is a lot to be done still this is just testing.
 		</news>
 	</extension>
 

@@ -89,6 +89,7 @@ cacheFile = joinPath(dataPath, 'cache.db')
 traktSyncFile = joinPath(dataPath, 'traktSync.db')
 mdbSyncFile = joinPath(dataPath, 'mdbSync.db')
 simKLSyncFile = joinPath(dataPath, 'simKLSync.db')
+customTraktSyncFile = joinPath(dataPath, 'customTraktSync.db')
 subsFile = joinPath(dataPath, 'substitute.db')
 fanarttvCacheFile = joinPath(dataPath, 'fanarttv.db')
 metaInternalCacheFile = joinPath(dataPath, 'video_cache.db')
@@ -552,6 +553,7 @@ def refresh_contextProperties():
 		'context.umbrella.traktManager',
 		'context.umbrella.mdblistManager',
 		'context.umbrella.simklManager',
+		'context.umbrella.customManager',
 		'context.umbrella.tmdbListManager',
 		'context.umbrella.tmdbWatchlist',
 		'context.umbrella.clearProviders',
