@@ -1,2 +1,4 @@
-[B]Update - v6.7.639 - July 24th, 2026 [/B]
---[Change] Added ability to use self-hosted trakt clones. There is a lot to be done still this is just testing.
+[B]Update - v6.7.642 - July 30th, 2026 [/B]
+--[Change] Added support for Yamtrack Fork. (https://github.com/dannyvfilms/Yamtrack)
+--[Fix] Made changes to the way counts are done when using Simkl
+--[Change] Menus changed to group lists from services together. 

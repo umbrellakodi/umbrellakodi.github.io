@@ -2726,6 +2726,7 @@
 							<option label="40342">2</option>
 							<option label="40621">3</option>
 							<option label="40718">4</option>
+							<option label="40754">5</option>
 						</options>
 					</constraints>
 					<dependencies>
@@ -2767,6 +2768,7 @@
 							<option label="40342">2</option>
 							<option label="40621">3</option>
 							<option label="40718">4</option>
+							<option label="40754">5</option>
 						</options>
 					</constraints>
 					<dependencies>
@@ -2787,6 +2789,7 @@
 								<condition operator="is" setting="simkl.markwatched">true</condition>
 								<condition operator="is" setting="mdblist.markwatched">true</condition>
 								<condition operator="is" setting="custom.markwatched">true</condition>
+								<condition operator="is" setting="yamtrack.markwatched">true</condition>
 							</or>
 						</dependency>
 					</dependencies>
@@ -2839,6 +2842,19 @@
 							<and>
 								<condition operator="!is" setting="custom.user.token"/>
 								<condition operator="!is" setting="indicators.alt">4</condition>
+							</and>
+						</dependency>
+					</dependencies>
+					<control type="toggle"/>
+				</setting>
+				<setting id="yamtrack.markwatched" type="boolean" label="40762" help="">
+					<level>0</level>
+					<default>false</default>
+					<dependencies>
+						<dependency type="visible">
+							<and>
+								<condition operator="!is" setting="yamtrack.token"/>
+								<condition operator="!is" setting="indicators.alt">5</condition>
 							</and>
 						</dependency>
 					</dependencies>
@@ -3947,6 +3963,105 @@
 						</dependency>
 					</dependencies>
 					<control type="toggle"/>
+				</setting>
+			</group>
+			<group id="6" label="40754">
+				<setting id="yamtrack.baseurl" type="string" label="40755" help="">
+					<level>0</level>
+					<default/>
+					<constraints>
+						<allowempty>true</allowempty>
+					</constraints>
+					<control type="edit" format="string">
+						<heading>40755</heading>
+					</control>
+				</setting>
+				<setting id="yamtrack.token" type="string" label="40756" help="">
+					<level>0</level>
+					<default/>
+					<constraints>
+						<allowempty>true</allowempty>
+					</constraints>
+					<control type="edit" format="string">
+						<heading>40756</heading>
+						<hidden>true</hidden>
+					</control>
+				</setting>
+				<setting id="yamtrack.user.name" type="string" label="40757" help="">
+					<level>0</level>
+					<default/>
+					<constraints>
+						<allowempty>true</allowempty>
+					</constraints>
+					<control type="edit" format="string">
+						<heading>40757</heading>
+					</control>
+				</setting>
+				<setting id="showYamtrackAuth" type="action" label="40758" help="">
+					<level>0</level>
+					<data>RunPlugin(plugin://plugin.video.umbrella/?action=yamtrackAuth)</data>
+					<constraints>
+						<allowempty>true</allowempty>
+					</constraints>
+					<control type="button" format="action">
+						<close>true</close>
+					</control>
+				</setting>
+				<setting id="showYamtrackRevoke" type="action" label="40759" help="">
+					<level>0</level>
+					<data>RunPlugin(plugin://plugin.video.umbrella/?action=yamtrackRevoke)</data>
+					<constraints>
+						<allowempty>true</allowempty>
+					</constraints>
+					<dependencies>
+						<dependency type="visible">
+							<condition operator="!is" setting="yamtrack.token"/>
+						</dependency>
+					</dependencies>
+					<control type="button" format="action">
+						<close>true</close>
+					</control>
+				</setting>
+				<setting id="yamtrack.isauthed" type="string" label="" help="">
+					<level>0</level>
+					<default/>
+					<constraints>
+						<allowempty>true</allowempty>
+					</constraints>
+					<dependencies>
+						<dependency type="visible">
+							<condition on="property" name="InfoBool">false</condition>
+						</dependency>
+					</dependencies>
+					<control type="edit" format="string">
+						<heading/>
+					</control>
+				</setting>
+				<setting id="yamtrack.general.notifications" type="boolean" label="40760" help="">
+					<level>0</level>
+					<default>true</default>
+					<dependencies>
+						<dependency type="visible">
+							<condition operator="!is" setting="yamtrack.token"/>
+						</dependency>
+					</dependencies>
+					<control type="toggle"/>
+				</setting>
+				<setting id="yamtrack.service.syncInterval" type="integer" label="40761" help="">
+					<level>0</level>
+					<default>30</default>
+					<constraints>
+						<minimum>5</minimum>
+						<maximum>120</maximum>
+					</constraints>
+					<dependencies>
+						<dependency type="visible">
+							<condition operator="!is" setting="yamtrack.token"/>
+						</dependency>
+					</dependencies>
+					<control type="slider" format="integer">
+						<popup>false</popup>
+					</control>
 				</setting>
 			</group>
 		</category>
@@ -6484,6 +6599,11 @@
 					<control type="toggle"/>
 				</setting>
 				<setting id="context.umbrella.customManager" type="boolean" label="40750" help="">
+					<level>0</level>
+					<default>true</default>
+					<control type="toggle"/>
+				</setting>
+				<setting id="context.umbrella.yamtrackManager" type="boolean" label="40763" help="">
 					<level>0</level>
 					<default>true</default>
 					<control type="toggle"/>

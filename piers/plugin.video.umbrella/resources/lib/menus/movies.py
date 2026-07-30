@@ -12,7 +12,7 @@ import xbmc
 #from threading import Thread
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from urllib.parse import quote_plus, urlencode, parse_qsl, urlparse, urlsplit
-from resources.lib.database import cache, metacache, fanarttv_cache, traktsync, simklsync, customtraktsync
+from resources.lib.database import cache, metacache, fanarttv_cache, traktsync, simklsync, customtraktsync, yamtracksync
 from resources.lib.indexers.tmdb import Movies as tmdb_indexer
 from resources.lib.indexers.fanarttv import FanartTv
 from resources.lib.modules import simkl
@@ -25,6 +25,7 @@ from resources.lib.modules import trakt
 from resources.lib.modules import views
 from resources.lib.modules import mdblist
 from resources.lib.modules import customtrakt
+from resources.lib.modules import yamtrack
 from resources.lib.database import artwork as customArtwork
 from sqlite3 import dbapi2 as database
 from json import loads as jsloads
@@ -191,6 +192,7 @@ class Movies:
 		self.simklCredentials = simkl.getSimKLCredentialsInfo()
 		self.mdblist_authed = getSetting('mdblist.token') != ''
 		self.customCredentials = customtrakt.getCustomCredentialsInfo()
+		self.yamtrackCredentials = yamtrack.getYamtrackCredentialsInfo()
 		from resources.lib.modules import tmdb4
 		self.tmdbv4Credentials = tmdb4.getTMDbV4CredentialsInfo()
 
@@ -1542,17 +1544,22 @@ class Movies:
 			if create_directory:
 				self.sort()
 				if getSetting('custom.paginate.lists') == 'true' and self.list:
-					if len(self.list) == int(self.page_limit):
+					if len(self.list) <= int(self.page_limit):
 						useNext = False
 					paginated_ids = [self.list[x:x + int(self.page_limit)] for x in range(0, len(self.list), int(self.page_limit))]
 					self.list = paginated_ids[index]
 			try:
 				if useNext == False: raise Exception()
-				if int(q['limit']) != len(self.list): raise Exception()
-				q.update({'page': str(int(q['page']) + 1)})
+				if len(self.list) < int(self.page_limit): raise Exception()
+				q.update({'page': str(index + 2), 'limit': str(self.page_limit)})
 				q = (urlencode(q)).replace('%2C', ',')
-				next = url.replace('?' + urlparse(url).query, '') + '?' + q
-				next = next + '&folderName=%s' % quote_plus(folderName)
+				continuation = url.replace('?' + urlparse(url).query, '') + '?' + q
+				# Custom's Collection/Watchlist pagination is a local slice of an
+				# already-fully-synced list, not a live remote fetch, so the
+				# continuation has no real domain — build a full plugin:// action URL
+				# so movieDirectory()'s domain-sniffing next-page logic (which treats
+				# an empty netloc as an accidental substring match) doesn't mis-route it.
+				next = 'plugin://plugin.video.umbrella/?action=custom_movies_collection&url=%s&folderName=%s' % (quote_plus(continuation), quote_plus(folderName))
 			except: next = ''
 			for i in range(len(self.list)): self.list[i]['next'] = next
 			self.worker()
@@ -1577,22 +1584,62 @@ class Movies:
 			if create_directory:
 				self.sort(type='movies.watchlist')
 				if getSetting('custom.paginate.lists') == 'true' and self.list:
-					if len(self.list) == int(self.page_limit):
+					if len(self.list) <= int(self.page_limit):
 						useNext = False
 					paginated_ids = [self.list[x:x + int(self.page_limit)] for x in range(0, len(self.list), int(self.page_limit))]
 					self.list = paginated_ids[index]
 			try:
 				if useNext == False: raise Exception()
-				if int(q['limit']) != len(self.list): raise Exception()
-				q.update({'page': str(int(q['page']) + 1)})
+				if len(self.list) < int(self.page_limit): raise Exception()
+				q.update({'page': str(index + 2), 'limit': str(self.page_limit)})
 				q = (urlencode(q)).replace('%2C', ',')
-				next = url.replace('?' + urlparse(url).query, '') + '?' + q
-				next = next + '&folderName=%s' % quote_plus(folderName)
+				continuation = url.replace('?' + urlparse(url).query, '') + '?' + q
+				# See customCollection() above for why this must be a full plugin://
+				# action URL rather than a bare continuation token.
+				next = 'plugin://plugin.video.umbrella/?action=custom_movies_watchlist&url=%s&folderName=%s' % (quote_plus(continuation), quote_plus(folderName))
 			except: next = ''
 			for i in range(len(self.list)): self.list[i]['next'] = next
 			self.worker()
 			if self.list is None: self.list = []
 			if create_directory: self.movieDirectory(self.list, folderName=folderName)
+			return self.list
+		except:
+			from resources.lib.modules import log_utils
+			log_utils.error()
+
+	def yamtrackList(self, url, table, action, isCollection=False, create_directory=True, folderName=''):
+		# Generic Watchlist/Watching/On Hold/Completed/Dropped/Collection list, mirroring
+		# customWatchlist()/customCollection() above — Yamtrack's unified status model
+		# means all 6 lists share the same local-db-backed pagination shape.
+		self.list = []
+		try:
+			try:
+				q = dict(parse_qsl(urlsplit(url).query))
+				index = int(q['page']) - 1
+			except:
+				q = dict(parse_qsl(urlsplit(url).query))
+				index = 0
+			self.list = yamtracksync.fetch_status_list(table)
+			useNext = True
+			if create_directory:
+				self.sort(type='movies.collection' if isCollection else 'movies.watchlist')
+				if self.list:
+					if len(self.list) <= int(self.page_limit):
+						useNext = False
+					paginated_ids = [self.list[x:x + int(self.page_limit)] for x in range(0, len(self.list), int(self.page_limit))]
+					self.list = paginated_ids[index]
+			try:
+				if useNext == False: raise Exception()
+				if len(self.list) < int(self.page_limit): raise Exception()
+				q.update({'page': str(index + 2), 'limit': str(self.page_limit)})
+				q = (urlencode(q)).replace('%2C', ',')
+				continuation = url.replace('?' + urlparse(url).query, '') + '?' + q
+				next = 'plugin://plugin.video.umbrella/?action=%s&url=%s&folderName=%s' % (action, quote_plus(continuation), quote_plus(folderName))
+			except: next = ''
+			for i in range(len(self.list)): self.list[i]['next'] = next
+			self.worker()
+			if self.list is None: self.list = []
+			if create_directory: self.movieDirectory(self.list, isCollection=isCollection, folderName=folderName)
 			return self.list
 		except:
 			from resources.lib.modules import log_utils
@@ -2546,6 +2593,7 @@ class Movies:
 		simklManagerMenu = getLS(40577) % self.highlight_color
 		mdblistManagerMenu = '[COLOR %s]MDBList Manager[/COLOR]' % self.highlight_color
 		customManagerMenu = '[COLOR %s]%s Manager[/COLOR]' % (self.highlight_color, customtrakt.getCustomServiceName())
+		yamtrackManagerMenu = '[COLOR %s]Yamtrack Manager[/COLOR]' % self.highlight_color
 		from resources.lib.modules import favourites
 		favoriteItems = favourites.getFavourites(content='movies')
 		favoriteItems = [x[1].get('imdb') for x in favoriteItems]
@@ -2655,6 +2703,8 @@ class Movies:
 						cm.append((mdblistManagerMenu, 'RunPlugin(%s?action=tools_mdbWatchlist&name=%s&imdb=%s&watched=%s)' % (sysaddon, sysname, imdb, watched)))
 					if self.customCredentials:
 						cm.append((customManagerMenu, 'RunPlugin(%s?action=tools_customManager&name=%s&imdb=%s&watched=%s&unfinished=%s)' % (sysaddon, sysname, imdb, watched, unfinished)))
+					if self.yamtrackCredentials:
+						cm.append((yamtrackManagerMenu, 'RunPlugin(%s?action=tools_yamtrackManager&name=%s&imdb=%s&watched=%s&unfinished=%s)' % (sysaddon, sysname, imdb, watched, unfinished)))
 					if self.tmdbv4Credentials:
 						cm.append((getLS(40606) if getLS(40606) else 'TMDB List Manager', 'RunPlugin(%s?action=tools_tmdbListManager&name=%s&tmdb=%s&mediatype=movie)' % (sysaddon, sysname, tmdb)))
 						if tmdb:

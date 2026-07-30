@@ -8,6 +8,7 @@ from resources.lib.modules import trakt
 from resources.lib.modules import simkl
 from resources.lib.modules import mdblist
 from resources.lib.modules import customtrakt
+from resources.lib.modules import yamtrack
 tmdb_api_key = 'edde6b5e41246ab79a2697cd125e1781'
 omdb_api_key = 'd4daa2b'
 tvdb_api_key = '06cff30690f9b9622957044f2159ffae'
@@ -15,10 +16,12 @@ traktIndicators = trakt.getTraktIndicatorsInfo()
 simklIndicators = simkl.getSimKLIndicatorsInfo()
 mdblistIndicators = mdblist.getMDBListIndicatorsInfo()
 customIndicators = customtrakt.getCustomIndicatorsInfo()
+yamtrackIndicators = yamtrack.getYamtrackIndicatorsInfo()
 traktCredentials = trakt.getTraktCredentialsInfo()
 simklCredentials = simkl.getSimKLCredentialsInfo()
 mdblistCredentials = mdblist.getMDBListCredentialsInfo()
 customCredentials = customtrakt.getCustomCredentialsInfo()
+yamtrackCredentials = yamtrack.getYamtrackCredentialsInfo()
 #if not traktIndicators:
 #	try:
 #		if not condVisibility('System.HasAddon(script.module.metahandler)'): execute('InstallAddon(script.module.metahandler)', wait=True)
@@ -50,6 +53,12 @@ def getMovieIndicators(refresh=False):
 			elif customtrakt.getMoviesWatchedActivity() < customtrakt.timeoutsyncMovies(): timeout = 720
 			else: timeout = 0
 			indicators = customtrakt.cachesyncMovies(timeout=timeout)
+			return indicators
+		elif yamtrackIndicators:
+			if not refresh: timeout = 720
+			elif yamtrack.getMoviesWatchedActivity() < yamtrack.timeoutsyncMovies(): timeout = 720
+			else: timeout = 0
+			indicators = yamtrack.cachesyncMovies(timeout=timeout)
 			return indicators
 		else:
 #			from metahandler import metahandlers
@@ -86,6 +95,12 @@ def getTVShowIndicators(refresh=False):
 			elif customtrakt.getEpisodesWatchedActivity() < customtrakt.timeoutsyncTVShows(): timeout = 720
 			else: timeout = 0
 			indicators = customtrakt.cachesyncTVShows(timeout=timeout)
+			return indicators
+		elif yamtrackIndicators:
+			if not refresh: timeout = 720
+			elif yamtrack.getEpisodesWatchedActivity() < yamtrack.timeoutsyncTVShows(): timeout = 720
+			else: timeout = 0
+			indicators = yamtrack.cachesyncTVShows(timeout=timeout)
 			return indicators
 		else:
 #			from metahandler import metahandlers
@@ -182,6 +197,26 @@ def getSeasonIndicators(imdb, tvdb, refresh=False, has_next_episode=False, tmdb_
 						from resources.lib.modules import log_utils
 						log_utils.error()
 			return indicators
+		elif yamtrackIndicators:
+			# syncSeasons derives totals from TMDb season meta (96h cache) — always fetch fresh from local DB
+			indicators = yamtrack.cachesyncSeasons(imdb, tvdb, timeout=0)
+			counts = indicators[1] if indicators and len(indicators) > 1 else {}
+			cached_total = sum(v.get('total', 0) for v in counts.values()) if counts else 0
+			stale = has_next_episode or (tmdb_total_aired and int(tmdb_total_aired) > cached_total)
+			if stale and indicators:
+				if counts and sum(v.get('watched', 0) for v in counts.values()) == cached_total:
+					try:
+						from resources.lib.database import cache as _cache
+						from resources.lib.indexers import tmdb as _tmdb
+						tmdb_result = _cache.get(_tmdb.TVshows().IdLookup, 96, imdb, tvdb)
+						tmdb_id = str(tmdb_result.get('id', '')) if tmdb_result else ''
+						if tmdb_id:
+							_cache.get(_tmdb.TVshows().get_showSeasons_meta, 0, tmdb_id)  # force fresh, updates cache
+							indicators = yamtrack.cachesyncSeasons(imdb, tvdb, timeout=0)  # re-run with fresh totals
+					except:
+						from resources.lib.modules import log_utils
+						log_utils.error()
+			return indicators
 		else:
 			from resources.lib.database import watchedcache
 			return [watchedcache, watchedcache]
@@ -200,7 +235,7 @@ def getMovieOverlay(indicators, imdb):
 			playcount = [i for i in indicators if i == imdb]
 			playcount = '5' if len(playcount) > 0 else '4'
 			return playcount
-		elif mdblistIndicators or customIndicators:
+		elif mdblistIndicators or customIndicators or yamtrackIndicators:
 			playcount = [i for i in indicators if i == imdb]
 			playcount = '5' if len(playcount) > 0 else '4'
 			return playcount
@@ -229,7 +264,7 @@ def getTVShowOverlay(indicators, imdb, tvdb): # tvdb no longer used
 				playcount['watched'] += value['watched']
 			playcount = '5' if playcount['total'] == playcount['watched'] else '4'
 			return playcount
-		elif mdblistIndicators or customIndicators:
+		elif mdblistIndicators or customIndicators or yamtrackIndicators:
 			playcount = {'total': 0, 'watched': 0}
 			for key, value in iter(indicators.items()):
 				playcount['total'] += value['total']
@@ -255,7 +290,7 @@ def getSeasonOverlay(indicators, imdb, tvdb, season): # tvdb no longer used
 			playcount = [i for i in indicators if int(season) == int(i)]
 			playcount = '5' if len(playcount) > 0 else '4'
 			return playcount
-		elif mdblistIndicators or customIndicators:
+		elif mdblistIndicators or customIndicators or yamtrackIndicators:
 			playcount = [i for i in indicators if int(season) == int(i)]
 			playcount = '5' if len(playcount) > 0 else '4'
 			return playcount
@@ -270,7 +305,7 @@ def getSeasonOverlay(indicators, imdb, tvdb, season): # tvdb no longer used
 def getEpisodeOverlay(indicators, imdb, tvdb, season, episode):
 	if not indicators: return '4'
 	try:
-		if traktIndicators or simklIndicators or mdblistIndicators or customIndicators:
+		if traktIndicators or simklIndicators or mdblistIndicators or customIndicators or yamtrackIndicators:
 			eps_data = [i[2] for i in indicators if (i[0].get('imdb') == imdb or str(i[0].get('tvdb')) == tvdb)]
 			eps_data = eps_data[0] if eps_data else []
 			if isinstance(eps_data, dict): # range format: {season: [(start_ep, end_ep), ...]}
@@ -305,7 +340,7 @@ def getShowCount(indicators, imdb, tvdb): # ID's currently not used. totals from
 				result['watched'] += value['watched']
 				result['unwatched'] += value['unwatched']
 			return result
-		elif mdblistIndicators or customIndicators:
+		elif mdblistIndicators or customIndicators or yamtrackIndicators:
 			if not indicators: return None
 			result = {'total': 0, 'watched': 0, 'unwatched': 0}
 			for key, value in iter(indicators.items()):
@@ -343,6 +378,7 @@ def getSeasonCount(imdb, tvdb, season=None):
 		elif simklIndicators: result = simkl.seasonCount(imdb, tvdb)
 		elif mdblistIndicators: result = mdblist.seasonCount(imdb, tvdb)
 		elif customIndicators: result = customtrakt.seasonCount(imdb, tvdb)
+		elif yamtrackIndicators: result = yamtrack.seasonCount(imdb, tvdb)
 		else:
 			try:
 				from resources.lib.database import watchedcache as wc
@@ -394,6 +430,10 @@ def markMovieDuringPlayback(imdb, watched):
 			if int(watched) == 5: customtrakt.markMovieAsWatched(imdb)
 			else: customtrakt.markMovieAsNotWatched(imdb)
 			if customIndicators: customtrakt.cachesyncMovies()
+		elif watch_history_service == '5' and yamtrackCredentials:
+			if int(watched) == 5: yamtrack.markMovieAsWatched(imdb)
+			else: yamtrack.markMovieAsNotWatched(imdb)
+			if yamtrackIndicators: yamtrack.cachesyncMovies()
 		else:
 			from resources.lib.database import watchedcache
 			watchedcache.change_watched('movie', imdb, '', watched=int(watched))
@@ -409,6 +449,9 @@ def markMovieDuringPlayback(imdb, watched):
 		if watch_history_service != '4' and getSetting('custom.markwatched') == 'true' and customCredentials:
 			if int(watched) == 5: customtrakt.markMovieAsWatched(imdb)
 			else: customtrakt.markMovieAsNotWatched(imdb)
+		if watch_history_service != '5' and getSetting('yamtrack.markwatched') == 'true' and yamtrackCredentials:
+			if int(watched) == 5: yamtrack.markMovieAsWatched(imdb)
+			else: yamtrack.markMovieAsNotWatched(imdb)
 	except:
 		from resources.lib.modules import log_utils
 		log_utils.error()
@@ -432,6 +475,10 @@ def markEpisodeDuringPlayback(imdb, tvdb, season, episode, watched):
 			if int(watched) == 5: customtrakt.markEpisodeAsWatched(imdb, tvdb, season, episode)
 			else: customtrakt.markEpisodeAsNotWatched(imdb, tvdb, season, episode)
 			if customIndicators: customtrakt.cachesyncTV(imdb, tvdb)
+		elif watch_history_service == '5' and yamtrackCredentials:
+			if int(watched) == 5: yamtrack.markEpisodeAsWatched(imdb, tvdb, season, episode)
+			else: yamtrack.markEpisodeAsNotWatched(imdb, tvdb, season, episode)
+			if yamtrackIndicators: yamtrack.cachesyncTV(imdb, tvdb)
 		else:
 			from resources.lib.database import watchedcache
 			watchedcache.change_watched('episode', imdb, '', season=season, episode=episode, watched=int(watched))
@@ -447,6 +494,9 @@ def markEpisodeDuringPlayback(imdb, tvdb, season, episode, watched):
 		if watch_history_service != '4' and getSetting('custom.markwatched') == 'true' and customCredentials:
 			if int(watched) == 5: customtrakt.markEpisodeAsWatched(imdb, tvdb, season, episode)
 			else: customtrakt.markEpisodeAsNotWatched(imdb, tvdb, season, episode)
+		if watch_history_service != '5' and getSetting('yamtrack.markwatched') == 'true' and yamtrackCredentials:
+			if int(watched) == 5: yamtrack.markEpisodeAsWatched(imdb, tvdb, season, episode)
+			else: yamtrack.markEpisodeAsNotWatched(imdb, tvdb, season, episode)
 	except:
 		from resources.lib.modules import log_utils
 		log_utils.error()
@@ -466,6 +516,9 @@ def movies(name, imdb, watched):
 		elif watch_history_service == '4' and customCredentials:
 			if int(watched) == 5: customtrakt.watch(content_type='movie', name=name, imdb=imdb, refresh=True)
 			else: customtrakt.unwatch(content_type='movie', name=name, imdb=imdb, refresh=True)
+		elif watch_history_service == '5' and yamtrackCredentials:
+			if int(watched) == 5: yamtrack.watch(content_type='movie', name=name, imdb=imdb, refresh=True)
+			else: yamtrack.unwatch(content_type='movie', name=name, imdb=imdb, refresh=True)
 		else:
 			from resources.lib.database import watchedcache
 			watchedcache.change_watched('movie', imdb, '', title=name, watched=int(watched))
@@ -482,6 +535,9 @@ def movies(name, imdb, watched):
 		if watch_history_service != '4' and getSetting('custom.markwatched') == 'true' and customCredentials:
 			if int(watched) == 5: customtrakt.watch(content_type='movie', name=name, imdb=imdb, refresh=False)
 			else: customtrakt.unwatch(content_type='movie', name=name, imdb=imdb, refresh=False)
+		if watch_history_service != '5' and getSetting('yamtrack.markwatched') == 'true' and yamtrackCredentials:
+			if int(watched) == 5: yamtrack.watch(content_type='movie', name=name, imdb=imdb, refresh=False)
+			else: yamtrack.unwatch(content_type='movie', name=name, imdb=imdb, refresh=False)
 	except:
 		from resources.lib.modules import log_utils
 		log_utils.error()
@@ -502,6 +558,9 @@ def tvshows(tvshowtitle, imdb, tvdb, season, watched):
 		elif watch_history_service == '4' and customCredentials:
 			if int(watched) == 5: customtrakt.watch(content_type=content_type, name=tvshowtitle, imdb=imdb, tvdb=tvdb, season=season, refresh=True)
 			else: customtrakt.unwatch(content_type=content_type, name=tvshowtitle, imdb=imdb, tvdb=tvdb, season=season, refresh=True)
+		elif watch_history_service == '5' and yamtrackCredentials:
+			if int(watched) == 5: yamtrack.watch(content_type=content_type, name=tvshowtitle, imdb=imdb, tvdb=tvdb, season=season, refresh=True)
+			else: yamtrack.unwatch(content_type=content_type, name=tvshowtitle, imdb=imdb, tvdb=tvdb, season=season, refresh=True)
 		else:
 			from resources.lib.database import watchedcache as wc
 			from resources.lib.indexers import tmdb as tmdb_indexer
@@ -535,7 +594,10 @@ def tvshows(tvshowtitle, imdb, tvdb, season, watched):
 		if watch_history_service != '4' and getSetting('custom.markwatched') == 'true' and customCredentials:
 			if int(watched) == 5: customtrakt.watch(content_type=content_type, name=tvshowtitle, imdb=imdb, tvdb=tvdb, season=season, refresh=False)
 			else: customtrakt.unwatch(content_type=content_type, name=tvshowtitle, imdb=imdb, tvdb=tvdb, season=season, refresh=False)
-		if watch_history_service != '0' and not (traktCredentials or simklCredentials or mdblistCredentials or customCredentials):
+		if watch_history_service != '5' and getSetting('yamtrack.markwatched') == 'true' and yamtrackCredentials:
+			if int(watched) == 5: yamtrack.watch(content_type=content_type, name=tvshowtitle, imdb=imdb, tvdb=tvdb, season=season, refresh=False)
+			else: yamtrack.unwatch(content_type=content_type, name=tvshowtitle, imdb=imdb, tvdb=tvdb, season=season, refresh=False)
+		if watch_history_service != '0' and not (traktCredentials or simklCredentials or mdblistCredentials or customCredentials or yamtrackCredentials):
 			from metahandler import metahandlers
 			from resources.lib.menus import episodes
 			from sys import exit as sysexit
@@ -590,6 +652,9 @@ def episodes(name, imdb, tvdb, season, episode, watched):
 		elif watch_history_service == '4' and customCredentials:
 			if int(watched) == 5: customtrakt.watch(content_type='episode', name=name, imdb=imdb, tvdb=tvdb, season=season, episode=episode, refresh=True)
 			else: customtrakt.unwatch(content_type='episode', name=name, imdb=imdb, tvdb=tvdb, season=season, episode=episode, refresh=True)
+		elif watch_history_service == '5' and yamtrackCredentials:
+			if int(watched) == 5: yamtrack.watch(content_type='episode', name=name, imdb=imdb, tvdb=tvdb, season=season, episode=episode, refresh=True)
+			else: yamtrack.unwatch(content_type='episode', name=name, imdb=imdb, tvdb=tvdb, season=season, episode=episode, refresh=True)
 		else:
 			from resources.lib.database import watchedcache
 			watchedcache.change_watched('episode', imdb, '', season=season, episode=episode, title=name, watched=int(watched))
@@ -606,6 +671,9 @@ def episodes(name, imdb, tvdb, season, episode, watched):
 		if watch_history_service != '4' and getSetting('custom.markwatched') == 'true' and customCredentials:
 			if int(watched) == 5: customtrakt.watch(content_type='episode', name=name, imdb=imdb, tvdb=tvdb, season=season, episode=episode, refresh=False)
 			else: customtrakt.unwatch(content_type='episode', name=name, imdb=imdb, tvdb=tvdb, season=season, episode=episode, refresh=False)
+		if watch_history_service != '5' and getSetting('yamtrack.markwatched') == 'true' and yamtrackCredentials:
+			if int(watched) == 5: yamtrack.watch(content_type='episode', name=name, imdb=imdb, tvdb=tvdb, season=season, episode=episode, refresh=False)
+			else: yamtrack.unwatch(content_type='episode', name=name, imdb=imdb, tvdb=tvdb, season=season, episode=episode, refresh=False)
 	except:
 		from resources.lib.modules import log_utils
 		log_utils.error()
@@ -616,6 +684,7 @@ def tvshowsUpdate(imdb, tvdb):
 		if simklCredentials: return
 		if mdblistCredentials: return
 		if customCredentials: return
+		if yamtrackCredentials: return
 		from metahandler import metahandlers
 		from resources.lib.menus import seasons, episodes
 		from resources.lib.indexers import tmdb as tmdb_indexer

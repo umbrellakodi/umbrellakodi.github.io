@@ -3,10 +3,6 @@
 	Umbrella Add-on
 """
 # Local cache DB for the "Custom" service (a self-hosted Trakt-protocol clone).
-# Structurally mirrors resources/lib/database/mdbsync.py, since Custom's server
-# has no aggregated "watched" endpoint either (only raw /sync/history events),
-# so watched-status is built the same way: aggregate history client-side into
-# custom_watched_movies / custom_watched_episodes.
 
 import os
 import json

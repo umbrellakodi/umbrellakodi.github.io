@@ -818,6 +818,26 @@ def syncSeasons(imdb, tvdb, simkl_id=None, data=None): # season indicators and c
 		else:
 			results = data
 		show_data = results
+		# Cap per-season totals at TMDb's last-aired boundary — Simkl sometimes files
+		# placeholder episode rows for an announced-but-unreleased future season (no
+		# titles, TBA air date) under the show's 'seasons' list with no air-date flag
+		# to distinguish them, which otherwise inflates 'total' past what's actually
+		# aired (e.g. 19 aired + 8 phantom season-4 placeholders = 27). Mirrors the
+		# same TMDb-boundary approach mdblist.py's syncSeasons() already uses.
+		last_aired_sn, last_aired_ep, ended = 0, 0, False
+		try:
+			from resources.lib.indexers import tmdb as _tmdb
+			tmdb_result = cache.get(_tmdb.TVshows().IdLookup, 96, imdb, tvdb)
+			tmdb_id = str(tmdb_result.get('id', '')) if tmdb_result else ''
+			if tmdb_id:
+				meta = cache.get(_tmdb.TVshows().get_showSeasons_meta, 96, tmdb_id)
+				if meta:
+					status = (meta.get('status') or '').lower()
+					ended = status in ('ended', 'canceled', 'cancelled')
+					last_ep = meta.get('last_episode_to_air') or {}
+					last_aired_sn = int(last_ep.get('season_number', 0)) if last_ep else 0
+					last_aired_ep = int(last_ep.get('episode_number', 0)) if last_ep else 0
+		except: pass
 		for show in show_data:
 			show_imdb = show.get('imdb')
 			show_tvdb = str(show.get('tvdb', ''))
@@ -832,8 +852,12 @@ def syncSeasons(imdb, tvdb, simkl_id=None, data=None): # season indicators and c
 			counts = {}
 			for season in seasons:
 				s_num = season['number']
+				if last_aired_sn and not ended and s_num > last_aired_sn:
+					continue # future/unannounced season — Simkl's episode rows for it aren't real yet
 				eps = season.get('episodes', [])
 				total = season.get('episodes_aired', len(eps))
+				if last_aired_sn and not ended and s_num == last_aired_sn and last_aired_ep:
+					total = min(total, last_aired_ep) if total else last_aired_ep
 				watched_ct = season.get('episodes_watched', sum(1 for ep in eps if ep.get('watched')))
 				counts[s_num] = {
 					'total': total,

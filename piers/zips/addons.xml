@@ -1,5 +1,5 @@
 <?xml version='1.0' encoding='utf-8'?>
-<addons><addon id="plugin.video.umbrella" name="Umbrella" provider-name="Umbrella" version="6.7.639">
+<addons><addon id="plugin.video.umbrella" name="Umbrella" provider-name="Umbrella" version="6.7.642">
 	<requires>
 		<import addon="xbmc.python" version="3.0.0" />
 		<import addon="script.module.requests" />
@@ -86,6 +86,15 @@
 				<label>$INFO[Window(home).Property(context.umbrella.showUmbrella)]Custom Manager</label>
 				<visible>
 					!String.IsEmpty(Window(home).Property(context.umbrella.customManager)) +
+					String.StartsWith(ListItem.path,plugin://plugin.video.umbrella/) +
+					String.IsEqual(ListItem.Property(isUmbrella_widget),true) +
+					[String.IsEqual(ListItem.dbtype,episode) | String.IsEqual(ListItem.dbtype,tvshow) | String.IsEqual(ListItem.dbtype,season) | String.IsEqual(ListItem.dbtype,movie)]
+				</visible>
+			</item>
+			<item library="resources\lib\context\yamtrackManager.py">
+				<label>$INFO[Window(home).Property(context.umbrella.showUmbrella)]Yamtrack Manager</label>
+				<visible>
+					!String.IsEmpty(Window(home).Property(context.umbrella.yamtrackManager)) +
 					String.StartsWith(ListItem.path,plugin://plugin.video.umbrella/) +
 					String.IsEqual(ListItem.Property(isUmbrella_widget),true) +
 					[String.IsEqual(ListItem.dbtype,episode) | String.IsEqual(ListItem.dbtype,tvshow) | String.IsEqual(ListItem.dbtype,season) | String.IsEqual(ListItem.dbtype,movie)]
@@ -244,8 +253,10 @@
 			<screenshot>resources/screenshots/screenshot003.jpg</screenshot>
 		</assets>
 		<news>
-[B]Update - v6.7.639 - July 24th, 2026 [/B]
---[Change] Added ability to use self-hosted trakt clones. There is a lot to be done still this is just testing.
+[B]Update - v6.7.642 - July 30th, 2026 [/B]
+--[Change] Added support for Yamtrack Fork. (https://github.com/dannyvfilms/Yamtrack)
+--[Fix] Made changes to the way counts are done when using Simkl
+--[Change] Menus changed to group lists from services together. 
 		</news>
 	</extension>
 

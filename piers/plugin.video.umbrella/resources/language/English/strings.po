@@ -5943,3 +5943,43 @@ msgstr ""
 msgctxt "#40753"
 msgid "Upcoming Progress (Custom)"
 msgstr ""
+
+msgctxt "#40754"
+msgid "Yamtrack"
+msgstr ""
+
+msgctxt "#40755"
+msgid "Yamtrack Server URL"
+msgstr ""
+
+msgctxt "#40756"
+msgid "Yamtrack API Token"
+msgstr ""
+
+msgctxt "#40757"
+msgid "Yamtrack Username (optional)"
+msgstr ""
+
+msgctxt "#40758"
+msgid "Test Yamtrack Connection"
+msgstr ""
+
+msgctxt "#40759"
+msgid "Revoke Yamtrack Credentials"
+msgstr ""
+
+msgctxt "#40760"
+msgid "Yamtrack Notifications"
+msgstr ""
+
+msgctxt "#40761"
+msgid "Yamtrack Sync Interval (Minutes)"
+msgstr ""
+
+msgctxt "#40762"
+msgid "Also mark watched on Yamtrack"
+msgstr ""
+
+msgctxt "#40763"
+msgid "Yamtrack Manager"
+msgstr ""

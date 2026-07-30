@@ -171,7 +171,6 @@ def get_all_pages(url, silent=False):
 				if page == 1: return page_results if page_results is not None else []
 				break
 			results.extend(page_results)
-			if len(page_results) < limit: break
 			page += 1
 			if page > 400:
 				log_utils.log('CUSTOM: get_all_pages reached safety limit of 400 pages for URL: %s' % url, level=log_utils.LOGWARNING)

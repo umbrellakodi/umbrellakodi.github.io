@@ -20,6 +20,7 @@ from resources.lib.modules import trakt
 from resources.lib.modules import simkl
 from resources.lib.modules import mdblist
 from resources.lib.modules import customtrakt
+from resources.lib.modules import yamtrack
 from resources.lib.modules import views
 from resources.lib.modules.playcount import getTVShowIndicators, getEpisodeOverlay, getShowCount, getSeasonIndicators
 from resources.lib.modules.player import Bookmarks
@@ -54,6 +55,7 @@ class Episodes:
 		self.simklCredentials = simkl.getSimKLCredentialsInfo()
 		self.mdblist_authed = getSetting('mdblist.token') != ''
 		self.customCredentials = customtrakt.getCustomCredentialsInfo()
+		self.yamtrackCredentials = yamtrack.getYamtrackCredentialsInfo()
 		self.trakt_directProgressScrape = getSetting('trakt.directProgress.scrape') == 'true'
 		self.simkl_directProgressScrape = getSetting('simkl.directProgress.scrape') == 'true'
 		self.mdblist_directProgressScrape = getSetting('mdblist.directProgress.scrape') == 'true'
@@ -1940,6 +1942,7 @@ class Episodes:
 		simklManagerMenu = '[COLOR %s]Simkl Manager[/COLOR]' % self.highlight_color
 		mdblistManagerMenu = '[COLOR %s]MDBList Manager[/COLOR]' % self.highlight_color
 		customManagerMenu = '[COLOR %s]%s Manager[/COLOR]' % (self.highlight_color, customtrakt.getCustomServiceName())
+		yamtrackManagerMenu = '[COLOR %s]Yamtrack Manager[/COLOR]' % self.highlight_color
 		tvshowBrowserMenu, addToLibrary, addToFavourites, removeFromFavourites = getLS(32071), getLS(32551), getLS(40463), getLS(40468)
 		clearSourcesMenu, rescrapeMenu, progressRefreshMenu = getLS(32611), getLS(32185), getLS(32194)
 		trailerMenu = getLS(40431)
@@ -2123,6 +2126,8 @@ class Episodes:
 						cm.append((mdblistManagerMenu, 'RunPlugin(%s?action=tools_mdbWatchlist&name=%s&imdb=%s&tvdb=%s&tmdb=%s&season=%s&episode=%s&watched=%s)' % (sysaddon, systvshowtitle, imdb, tvdb, tmdb, season, episode, watched)))
 					if self.customCredentials:
 						cm.append((customManagerMenu, 'RunPlugin(%s?action=tools_customManager&name=%s&imdb=%s&tvdb=%s&tmdb=%s&season=%s&episode=%s&watched=%s&unfinished=%s)' % (sysaddon, systvshowtitle, imdb, tvdb, tmdb, season, episode, watched, unfinished)))
+					if self.yamtrackCredentials:
+						cm.append((yamtrackManagerMenu, 'RunPlugin(%s?action=tools_yamtrackManager&name=%s&imdb=%s&tvdb=%s&tmdb=%s&season=%s&episode=%s&watched=%s&unfinished=%s)' % (sysaddon, systvshowtitle, imdb, tvdb, tmdb, season, episode, watched, unfinished)))
 					if watched:
 						meta.update({'playcount': 1, 'overlay': 5})
 						cm.append((unwatchedMenu, 'RunPlugin(%s?action=playcount_Episode&name=%s&imdb=%s&tvdb=%s&season=%s&episode=%s&query=4)' % (sysaddon, systvshowtitle, imdb, tvdb, season, episode)))
