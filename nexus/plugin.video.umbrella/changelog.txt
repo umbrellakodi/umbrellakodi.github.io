@@ -1,2 +1,4 @@
-[B]Update - v6.7.638 - July 21st, 2026 [/B]
---[Change] Added more mdblist lists for tv and movies like watched.
+[B]Update - v6.7.642 - July 30th, 2026 [/B]
+--[Change] Added support for Yamtrack Fork. (https://github.com/dannyvfilms/Yamtrack)
+--[Fix] Made changes to the way counts are done when using Simkl
+--[Change] Menus changed to group lists from services together. 

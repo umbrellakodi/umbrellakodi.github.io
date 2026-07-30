@@ -9,6 +9,8 @@ from resources.lib.modules import control
 from resources.lib.modules.trakt import getTraktCredentialsInfo, getTraktIndicatorsInfo
 from resources.lib.modules import simkl
 from resources.lib.modules import mdblist
+from resources.lib.modules import customtrakt
+from resources.lib.modules import yamtrack
 from resources.lib.modules.tmdb4 import getTMDbV4CredentialsInfo
 from resources.lib.modules import favourites
 from json import loads as jsloads
@@ -26,9 +28,13 @@ class Navigator:
 		self.traktCredentials = getTraktCredentialsInfo()
 		self.simklCredentials = simkl.getSimKLCredentialsInfo()
 		self.mdblistCredentials = mdblist.getMDBListCredentialsInfo()
+		self.customCredentials = customtrakt.getCustomCredentialsInfo()
+		self.yamtrackCredentials = yamtrack.getYamtrackCredentialsInfo()
 		self.traktIndicators = getTraktIndicatorsInfo()
 		self.simklIndicators = simkl.getSimKLIndicatorsInfo()
 		self.mdblistIndicators = mdblist.getMDBListIndicatorsInfo()
+		self.customIndicators = customtrakt.getCustomIndicatorsInfo()
+		self.yamtrackIndicators = yamtrack.getYamtrackIndicatorsInfo()
 		self.tmdbCredentials = getTMDbV4CredentialsInfo()
 		self.simkltoken = getSetting('simkltoken') != ''
 		self.alldebridCredentials = getSetting('alldebridtoken') != ''
@@ -94,6 +100,12 @@ class Navigator:
 		if key == 'mdblist_token':           return bool(getSetting('mdblist.token'))
 		if key == 'mdblist_credentials':     return bool(self.mdblistCredentials)
 		if key == 'mdblist_with_indicators': return bool(self.mdblistCredentials and (self.mdblistIndicators or getSetting('mdblist.markwatched') == 'true'))
+		if key == 'custom_token':            return bool(getSetting('custom.user.token'))
+		if key == 'custom_credentials':      return bool(self.customCredentials)
+		if key == 'custom_with_indicators':  return bool(self.customCredentials and (self.customIndicators or getSetting('custom.markwatched') == 'true'))
+		if key == 'yamtrack_token':          return bool(getSetting('yamtrack.token'))
+		if key == 'yamtrack_credentials':    return bool(self.yamtrackCredentials)
+		if key == 'yamtrack_with_indicators':return bool(self.yamtrackCredentials and (self.yamtrackIndicators or getSetting('yamtrack.markwatched') == 'true'))
 		if key == 'tmdb_v4_token':           return bool(getSetting('tmdb.v4.accesstoken'))
 		if key == 'has_lib_movies':          return bool(self.hasLibMovies)
 		if key == 'favorite_movie':          return bool(self.favoriteMovie)
@@ -114,6 +126,11 @@ class Navigator:
 			if not self.indexLabels and item.get('alt_label'):
 				raw_label = item['alt_label']
 			label = getLS(int(raw_label)) if raw_label.isdigit() else raw_label
+			if item['item_id'].startswith(('mytv_custom_', 'mymv_custom_')):
+				from resources.lib.modules import customtrakt
+				custom_name = customtrakt.getCustomServiceName()
+				if custom_name != 'Custom':
+					label = label.replace('Custom', custom_name)
 			icon_file = item['icon'] if self.iconLogos else item['poster']
 			action = '%s&folderName=%s' % (item['action'], quote_plus(label)) if item['is_folder'] else item['action']
 			self.addDirectoryItem(label, action, icon_file, icon_file,
@@ -133,6 +150,18 @@ class Navigator:
 		'mymovies':  'Edit My Movies Menu',
 		'tvshows':   'Edit TV Shows Menu',
 		'mytvshows': 'Edit My TV Shows Menu',
+		'mymovies_mdblist':  'Edit My Movies: MDBList',
+		'mymovies_custom':   'Edit My Movies: Custom',
+		'mymovies_tmdb':     'Edit My Movies: TMDb',
+		'mymovies_simkl':    'Edit My Movies: Simkl',
+		'mymovies_trakt':    'Edit My Movies: Trakt',
+		'mymovies_yamtrack': 'Edit My Movies: Yamtrack',
+		'mytvshows_mdblist':  'Edit My TV Shows: MDBList',
+		'mytvshows_custom':   'Edit My TV Shows: Custom',
+		'mytvshows_tmdb':     'Edit My TV Shows: TMDb',
+		'mytvshows_simkl':    'Edit My TV Shows: Simkl',
+		'mytvshows_trakt':    'Edit My TV Shows: Trakt',
+		'mytvshows_yamtrack': 'Edit My TV Shows: Yamtrack',
 	}
 
 	def mainMenuEditor(self, menu_name='root'):
@@ -379,12 +408,48 @@ class Navigator:
 		self.accountCheck()
 		self._renderDbMenu('mymovies', 'myMoviesNavigatorEditor', 'Edit My Movies Menu', lite=lite, folderName=folderName)
 
+	def mymovies_mdblist(self, folderName=''):
+		self._renderDbMenu('mymovies_mdblist', 'myMoviesNavigatorEditor', 'Edit My Movies Menu', folderName=folderName)
+
+	def mymovies_custom(self, folderName=''):
+		self._renderDbMenu('mymovies_custom', 'myMoviesNavigatorEditor', 'Edit My Movies Menu', folderName=folderName)
+
+	def mymovies_tmdb(self, folderName=''):
+		self._renderDbMenu('mymovies_tmdb', 'myMoviesNavigatorEditor', 'Edit My Movies Menu', folderName=folderName)
+
+	def mymovies_simkl(self, folderName=''):
+		self._renderDbMenu('mymovies_simkl', 'myMoviesNavigatorEditor', 'Edit My Movies Menu', folderName=folderName)
+
+	def mymovies_trakt(self, folderName=''):
+		self._renderDbMenu('mymovies_trakt', 'myMoviesNavigatorEditor', 'Edit My Movies Menu', folderName=folderName)
+
+	def mymovies_yamtrack(self, folderName=''):
+		self._renderDbMenu('mymovies_yamtrack', 'myMoviesNavigatorEditor', 'Edit My Movies Menu', folderName=folderName)
+
 	def tvshows(self, lite=False, folderName=''):
 		self._renderDbMenu('tvshows', 'tvNavigatorEditor', 'Edit TV Shows Menu', lite=lite, folderName=folderName)
 
 	def mytvshows(self, lite=False, folderName=''):
 		self.accountCheck()
 		self._renderDbMenu('mytvshows', 'myTVShowsNavigatorEditor', 'Edit My TV Shows Menu', lite=lite, folderName=folderName)
+
+	def mytvshows_mdblist(self, folderName=''):
+		self._renderDbMenu('mytvshows_mdblist', 'myTVShowsNavigatorEditor', 'Edit My TV Shows Menu', folderName=folderName)
+
+	def mytvshows_custom(self, folderName=''):
+		self._renderDbMenu('mytvshows_custom', 'myTVShowsNavigatorEditor', 'Edit My TV Shows Menu', folderName=folderName)
+
+	def mytvshows_tmdb(self, folderName=''):
+		self._renderDbMenu('mytvshows_tmdb', 'myTVShowsNavigatorEditor', 'Edit My TV Shows Menu', folderName=folderName)
+
+	def mytvshows_simkl(self, folderName=''):
+		self._renderDbMenu('mytvshows_simkl', 'myTVShowsNavigatorEditor', 'Edit My TV Shows Menu', folderName=folderName)
+
+	def mytvshows_trakt(self, folderName=''):
+		self._renderDbMenu('mytvshows_trakt', 'myTVShowsNavigatorEditor', 'Edit My TV Shows Menu', folderName=folderName)
+
+	def mytvshows_yamtrack(self, folderName=''):
+		self._renderDbMenu('mytvshows_yamtrack', 'myTVShowsNavigatorEditor', 'Edit My TV Shows Menu', folderName=folderName)
 
 	def anime(self, lite=False, folderName=''):
 		self.addDirectoryItem(32001, 'anime_Movies&url=anime&folderName=%s' % quote_plus(getLS(32001)), 'movies.png', 'DefaultMovies.png')
@@ -537,6 +602,10 @@ class Navigator:
 		if self.simklCredentials: self.addDirectoryItem(40551, 'tools_simklToolsNavigator&folderName=%s' % quote_plus(getLS(40552)), 'tools.png', 'DefaultAddonService.png', isFolder=True)
 		if self.traktCredentials: self.addDirectoryItem(35057, 'tools_traktToolsNavigator&folderName=%s' % quote_plus(getLS(40461)), 'tools.png', 'DefaultAddonService.png', isFolder=True)
 		if self.mdblistCredentials: self.addDirectoryItem(40635, 'tools_mdblistToolsNavigator&folderName=%s' % quote_plus(getLS(40636)), 'tools.png', 'DefaultAddonService.png', isFolder=True)
+		if self.customCredentials:
+			_custom_tools_label = '%s Management Tools' % customtrakt.getCustomServiceName()
+			self.addDirectoryItem('[B]%s[/B]' % _custom_tools_label, 'tools_customToolsNavigator&folderName=%s' % quote_plus(_custom_tools_label), 'tools.png', 'DefaultAddonService.png', isFolder=True)
+		if self.yamtrackCredentials: self.addDirectoryItem('Yamtrack Management Tools', 'tools_yamtrackToolsNavigator&folderName=%s' % quote_plus('Yamtrack Management Tools'), 'tools.png', 'DefaultAddonService.png', isFolder=True)
 		#-- Playback - 2
 		self.addDirectoryItem(32045, 'tools_openSettings&query=2.0', 'tools.png', 'DefaultAddonService.png', isFolder=False)
 		#-- Downloads - 10
@@ -594,6 +663,20 @@ class Navigator:
 		self.addDirectoryItem(40639, 'shows_mdblistWatchlistManager', 'mdblist.png', 'DefaultAddonService.png', isFolder=False)
 		self.addDirectoryItem(40714, 'shows_mdblistDroppedManager', 'mdblist.png', 'DefaultAddonService.png', isFolder=False)
 		self.addDirectoryItem(40637, 'tools_forceMDBListSync', 'mdblist.png', 'DefaultAddonService.png', isFolder=False)
+		self.endDirectory()
+
+	def customTools(self, folderName=''):
+		if self.useContainerTitles: control.setContainerName(folderName)
+		self.addDirectoryItem('[COLOR %%s][B]Force %s Sync to local database[/B][/COLOR]' % customtrakt.getCustomServiceName(), 'tools_forceCustomSync', 'icon.png', 'DefaultAddonService.png', isFolder=False)
+		self.endDirectory()
+
+	def yamtrackTools(self, folderName=''):
+		if self.useContainerTitles: control.setContainerName(folderName)
+		if not self.yamtrackCredentials:
+			self.addDirectoryItem('Authorize Yamtrack', 'yamtrackAuth', 'yamtrack.png', 'DefaultAddonService.png', isFolder=False)
+		else:
+			self.addDirectoryItem('Revoke Yamtrack', 'yamtrackRevoke', 'yamtrack.png', 'DefaultAddonService.png', isFolder=False)
+		self.addDirectoryItem('Force Yamtrack Sync', 'tools_forceYamtrackSync', 'yamtrack.png', 'DefaultAddonService.png', isFolder=False)
 		self.endDirectory()
 
 	def loggingNavigator(self, folderName=''):
