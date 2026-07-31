@@ -10,7 +10,7 @@ from resources.lib.modules.trakt import getTraktCredentialsInfo, getTraktIndicat
 from resources.lib.modules import simkl
 from resources.lib.modules import mdblist
 from resources.lib.modules import customtrakt
-from resources.lib.modules import yamtrack
+from resources.lib.modules import floppy
 from resources.lib.modules.tmdb4 import getTMDbV4CredentialsInfo
 from resources.lib.modules import favourites
 from json import loads as jsloads
@@ -29,12 +29,12 @@ class Navigator:
 		self.simklCredentials = simkl.getSimKLCredentialsInfo()
 		self.mdblistCredentials = mdblist.getMDBListCredentialsInfo()
 		self.customCredentials = customtrakt.getCustomCredentialsInfo()
-		self.yamtrackCredentials = yamtrack.getYamtrackCredentialsInfo()
+		self.floppyCredentials = floppy.getFloppyCredentialsInfo()
 		self.traktIndicators = getTraktIndicatorsInfo()
 		self.simklIndicators = simkl.getSimKLIndicatorsInfo()
 		self.mdblistIndicators = mdblist.getMDBListIndicatorsInfo()
 		self.customIndicators = customtrakt.getCustomIndicatorsInfo()
-		self.yamtrackIndicators = yamtrack.getYamtrackIndicatorsInfo()
+		self.floppyIndicators = floppy.getFloppyIndicatorsInfo()
 		self.tmdbCredentials = getTMDbV4CredentialsInfo()
 		self.simkltoken = getSetting('simkltoken') != ''
 		self.alldebridCredentials = getSetting('alldebridtoken') != ''
@@ -103,9 +103,9 @@ class Navigator:
 		if key == 'custom_token':            return bool(getSetting('custom.user.token'))
 		if key == 'custom_credentials':      return bool(self.customCredentials)
 		if key == 'custom_with_indicators':  return bool(self.customCredentials and (self.customIndicators or getSetting('custom.markwatched') == 'true'))
-		if key == 'yamtrack_token':          return bool(getSetting('yamtrack.token'))
-		if key == 'yamtrack_credentials':    return bool(self.yamtrackCredentials)
-		if key == 'yamtrack_with_indicators':return bool(self.yamtrackCredentials and (self.yamtrackIndicators or getSetting('yamtrack.markwatched') == 'true'))
+		if key == 'floppy_token':          return bool(getSetting('floppy.token'))
+		if key == 'floppy_credentials':    return bool(self.floppyCredentials)
+		if key == 'floppy_with_indicators':return bool(self.floppyCredentials and (self.floppyIndicators or getSetting('floppy.markwatched') == 'true'))
 		if key == 'tmdb_v4_token':           return bool(getSetting('tmdb.v4.accesstoken'))
 		if key == 'has_lib_movies':          return bool(self.hasLibMovies)
 		if key == 'favorite_movie':          return bool(self.favoriteMovie)
@@ -155,13 +155,13 @@ class Navigator:
 		'mymovies_tmdb':     'Edit My Movies: TMDb',
 		'mymovies_simkl':    'Edit My Movies: Simkl',
 		'mymovies_trakt':    'Edit My Movies: Trakt',
-		'mymovies_yamtrack': 'Edit My Movies: Yamtrack',
+		'mymovies_floppy': 'Edit My Movies: Floppy',
 		'mytvshows_mdblist':  'Edit My TV Shows: MDBList',
 		'mytvshows_custom':   'Edit My TV Shows: Custom',
 		'mytvshows_tmdb':     'Edit My TV Shows: TMDb',
 		'mytvshows_simkl':    'Edit My TV Shows: Simkl',
 		'mytvshows_trakt':    'Edit My TV Shows: Trakt',
-		'mytvshows_yamtrack': 'Edit My TV Shows: Yamtrack',
+		'mytvshows_floppy': 'Edit My TV Shows: Floppy',
 	}
 
 	def mainMenuEditor(self, menu_name='root'):
@@ -423,8 +423,8 @@ class Navigator:
 	def mymovies_trakt(self, folderName=''):
 		self._renderDbMenu('mymovies_trakt', 'myMoviesNavigatorEditor', 'Edit My Movies Menu', folderName=folderName)
 
-	def mymovies_yamtrack(self, folderName=''):
-		self._renderDbMenu('mymovies_yamtrack', 'myMoviesNavigatorEditor', 'Edit My Movies Menu', folderName=folderName)
+	def mymovies_floppy(self, folderName=''):
+		self._renderDbMenu('mymovies_floppy', 'myMoviesNavigatorEditor', 'Edit My Movies Menu', folderName=folderName)
 
 	def tvshows(self, lite=False, folderName=''):
 		self._renderDbMenu('tvshows', 'tvNavigatorEditor', 'Edit TV Shows Menu', lite=lite, folderName=folderName)
@@ -448,8 +448,8 @@ class Navigator:
 	def mytvshows_trakt(self, folderName=''):
 		self._renderDbMenu('mytvshows_trakt', 'myTVShowsNavigatorEditor', 'Edit My TV Shows Menu', folderName=folderName)
 
-	def mytvshows_yamtrack(self, folderName=''):
-		self._renderDbMenu('mytvshows_yamtrack', 'myTVShowsNavigatorEditor', 'Edit My TV Shows Menu', folderName=folderName)
+	def mytvshows_floppy(self, folderName=''):
+		self._renderDbMenu('mytvshows_floppy', 'myTVShowsNavigatorEditor', 'Edit My TV Shows Menu', folderName=folderName)
 
 	def anime(self, lite=False, folderName=''):
 		self.addDirectoryItem(32001, 'anime_Movies&url=anime&folderName=%s' % quote_plus(getLS(32001)), 'movies.png', 'DefaultMovies.png')
@@ -605,7 +605,7 @@ class Navigator:
 		if self.customCredentials:
 			_custom_tools_label = '%s Management Tools' % customtrakt.getCustomServiceName()
 			self.addDirectoryItem('[B]%s[/B]' % _custom_tools_label, 'tools_customToolsNavigator&folderName=%s' % quote_plus(_custom_tools_label), 'tools.png', 'DefaultAddonService.png', isFolder=True)
-		if self.yamtrackCredentials: self.addDirectoryItem('Yamtrack Management Tools', 'tools_yamtrackToolsNavigator&folderName=%s' % quote_plus('Yamtrack Management Tools'), 'tools.png', 'DefaultAddonService.png', isFolder=True)
+		if self.floppyCredentials: self.addDirectoryItem('[B]Floppy Management Tools[/B]', 'tools_floppyToolsNavigator&folderName=%s' % quote_plus('Floppy Management Tools'), 'tools.png', 'DefaultAddonService.png', isFolder=True)
 		#-- Playback - 2
 		self.addDirectoryItem(32045, 'tools_openSettings&query=2.0', 'tools.png', 'DefaultAddonService.png', isFolder=False)
 		#-- Downloads - 10
@@ -670,13 +670,13 @@ class Navigator:
 		self.addDirectoryItem('[COLOR %%s][B]Force %s Sync to local database[/B][/COLOR]' % customtrakt.getCustomServiceName(), 'tools_forceCustomSync', 'icon.png', 'DefaultAddonService.png', isFolder=False)
 		self.endDirectory()
 
-	def yamtrackTools(self, folderName=''):
+	def floppyTools(self, folderName=''):
 		if self.useContainerTitles: control.setContainerName(folderName)
-		if not self.yamtrackCredentials:
-			self.addDirectoryItem('Authorize Yamtrack', 'yamtrackAuth', 'yamtrack.png', 'DefaultAddonService.png', isFolder=False)
+		if not self.floppyCredentials:
+			self.addDirectoryItem('Authorize Floppy', 'floppyAuth', 'floppy.png', 'DefaultAddonService.png', isFolder=False)
 		else:
-			self.addDirectoryItem('Revoke Yamtrack', 'yamtrackRevoke', 'yamtrack.png', 'DefaultAddonService.png', isFolder=False)
-		self.addDirectoryItem('Force Yamtrack Sync', 'tools_forceYamtrackSync', 'yamtrack.png', 'DefaultAddonService.png', isFolder=False)
+			self.addDirectoryItem('Revoke Floppy', 'floppyRevoke', 'floppy.png', 'DefaultAddonService.png', isFolder=False)
+		self.addDirectoryItem('Force Floppy Sync', 'tools_forceFloppySync', 'floppy.png', 'DefaultAddonService.png', isFolder=False)
 		self.endDirectory()
 
 	def loggingNavigator(self, folderName=''):

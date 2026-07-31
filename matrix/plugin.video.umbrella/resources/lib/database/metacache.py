@@ -73,8 +73,8 @@ def fetch(items, lang='en', user=''):
 									from resources.lib.database.customtraktsync import cache_existing
 									from resources.lib.modules.customtrakt import syncTVShows
 								elif getSetting('indicators.alt') == '5':
-									from resources.lib.database.yamtracksync import cache_existing
-									from resources.lib.modules.yamtrack import syncTVShows
+									from resources.lib.database.floppysync import cache_existing
+									from resources.lib.modules.floppy import syncTVShows
 								else:
 									continue
 								imdb = item.get('imdb', '')
@@ -94,8 +94,8 @@ def fetch(items, lang='en', user=''):
 										from resources.lib.modules.customtrakt import cachesyncSeasons
 										cachesyncSeasons(imdb, timeout=int(getSetting('custom.service.syncInterval') or 30) / 60)
 									elif getSetting('indicators.alt') == '5':
-										from resources.lib.modules.yamtrack import cachesyncSeasons
-										cachesyncSeasons(imdb, timeout=int(getSetting('yamtrack.service.syncInterval') or 30) / 60)
+										from resources.lib.modules.floppy import cachesyncSeasons
+										cachesyncSeasons(imdb, timeout=int(getSetting('floppy.service.syncInterval') or 30) / 60)
 								continue
 				item = dict((k, v) for k, v in iter(item.items()) if v is not None and v != '')
 				items[i].update(item)

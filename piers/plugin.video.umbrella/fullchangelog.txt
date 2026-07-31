@@ -1,3 +1,8 @@
+[B]Update - v6.7.644 - July 31st, 2026 [/B]
+--[Change] Made changes to Yamtrack to be Floppy.
+--[Change] Added pagination for shows progress in custom and Floppy.
+--[Fix] Fixed custom Recent Episodes.
+
 [B]Update - v6.7.643 - July 30th, 2026 [/B]
 --[Change] Made changes to Yamtrack episode watched tracking.
 --[Change] Added pagination to custom server history.

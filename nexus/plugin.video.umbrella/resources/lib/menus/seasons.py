@@ -13,7 +13,7 @@ from resources.lib.indexers.fanarttv import FanartTv
 from resources.lib.modules import cleangenre
 from resources.lib.modules import control
 from resources.lib.modules.playcount import getSeasonIndicators, getSeasonOverlay, getSeasonCount
-from resources.lib.modules import trakt, simkl, customtrakt, yamtrack
+from resources.lib.modules import trakt, simkl, customtrakt, floppy
 from resources.lib.modules import views
 from resources.lib.database import artwork as customArtwork
 
@@ -35,7 +35,7 @@ class Seasons:
 		self.simklCredentials = simkl.getSimKLCredentialsInfo()
 		self.mdblist_authed = getSetting('mdblist.token') != ''
 		self.customCredentials = customtrakt.getCustomCredentialsInfo()
-		self.yamtrackCredentials = yamtrack.getYamtrackCredentialsInfo()
+		self.floppyCredentials = floppy.getFloppyCredentialsInfo()
 		self.showunaired = getSetting('showunaired') == 'true'
 		self.unairedcolor = getSetting('unaired.identify')
 		self.showspecials = getSetting('tv.specials') == 'true'
@@ -167,7 +167,7 @@ class Seasons:
 		simklManagerMenu = '[COLOR %s]Simkl Manager[/COLOR]' % self.highlight_color
 		mdblistManagerMenu = '[COLOR %s]MDBList Manager[/COLOR]' % self.highlight_color
 		customManagerMenu = '[COLOR %s]%s Manager[/COLOR]' % (self.highlight_color, customtrakt.getCustomServiceName())
-		yamtrackManagerMenu = '[COLOR %s]Yamtrack Manager[/COLOR]' % self.highlight_color
+		floppyManagerMenu = '[COLOR %s]Floppy Manager[/COLOR]' % self.highlight_color
 		showPlaylistMenu, clearPlaylistMenu = getLS(35517), getLS(35516)
 		labelMenu, playRandom = getLS(32055), getLS(32535)
 		addToLibrary = getLS(32551)
@@ -246,8 +246,8 @@ class Seasons:
 						cm.append((mdblistManagerMenu, 'RunPlugin(%s?action=tools_mdbWatchlist&name=%s&imdb=%s&tvdb=%s&tmdb=%s&season=%s&watched=%s)' % (sysaddon, systitle, imdb, tvdb, tmdb, season, watched)))
 					if self.customCredentials:
 						cm.append((customManagerMenu, 'RunPlugin(%s?action=tools_customManager&name=%s&imdb=%s&tvdb=%s&season=%s&watched=%s)' % (sysaddon, systitle, imdb, tvdb, season, watched)))
-					if self.yamtrackCredentials:
-						cm.append((yamtrackManagerMenu, 'RunPlugin(%s?action=tools_yamtrackManager&name=%s&imdb=%s&tvdb=%s&season=%s&watched=%s)' % (sysaddon, systitle, imdb, tvdb, season, watched)))
+					if self.floppyCredentials:
+						cm.append((floppyManagerMenu, 'RunPlugin(%s?action=tools_floppyManager&name=%s&imdb=%s&tvdb=%s&season=%s&watched=%s)' % (sysaddon, systitle, imdb, tvdb, season, watched)))
 					if watched:
 						meta.update({'playcount': 1, 'overlay': 5})
 						cm.append((unwatchedMenu, 'RunPlugin(%s?action=playcount_TVShow&name=%s&imdb=%s&tvdb=%s&season=%s&query=4)' % (sysaddon, systitle, imdb, tvdb, season)))

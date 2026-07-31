@@ -15,7 +15,7 @@ from resources.lib.modules import trakt
 from resources.lib.modules import simkl
 from resources.lib.modules import mdblist
 from resources.lib.modules import customtrakt
-from resources.lib.modules import yamtrack
+from resources.lib.modules import floppy
 from resources.lib.database import traktsync
 
 ZoneUtc = 'utc'
@@ -28,7 +28,7 @@ service_syncInterval = int(getSetting('background.service.syncInterval')) if get
 simkl_syncInterval = int(getSetting('simkl.service.syncInterval')) if getSetting('simkl.service.syncInterval') else 30
 mdblist_syncInterval = int(getSetting('mdblist.service.syncInterval')) if getSetting('mdblist.service.syncInterval') else 30
 custom_syncInterval = int(getSetting('custom.service.syncInterval')) if getSetting('custom.service.syncInterval') else 30
-yamtrack_syncInterval = int(getSetting('yamtrack.service.syncInterval')) if getSetting('yamtrack.service.syncInterval') else 30
+floppy_syncInterval = int(getSetting('floppy.service.syncInterval')) if getSetting('floppy.service.syncInterval') else 30
 
 # def datetime_from_string(self, string, format=FormatDateTime):
 	# try:
@@ -191,8 +191,8 @@ def setIndicatorService():
 			service_map.append(('MDBList', control.joinPath(art, 'mdblist.png'), '3'))
 		if customtrakt.getCustomCredentialsInfo():
 			service_map.append((customtrakt.getCustomServiceName(), control.joinPath(art, 'icon.png'), '4'))
-		if yamtrack.getYamtrackCredentialsInfo():
-			service_map.append(('Yamtrack', control.joinPath(art, 'yamtrack.png'), '5'))
+		if floppy.getFloppyCredentialsInfo():
+			service_map.append(('Floppy', control.joinPath(art, 'floppy.png'), '5'))
 		current_index = next((i for i, (_, _, v) in enumerate(service_map) if v == currentSetting), -1)
 		items = []
 		for i, (label, icon, _) in enumerate(service_map):
@@ -211,7 +211,7 @@ def setIndicatorService():
 			if optionVal == '4':
 				customtrakt.sync_watched(forced=True)
 			if optionVal == '5':
-				yamtrack.sync_watched(forced=True)
+				floppy.sync_watched(forced=True)
 		control.homeWindow.setProperty('umbrella.updateSettings', 'false')
 		control.setSetting('indicators.alt', optionVal)
 		control.homeWindow.setProperty('umbrella.updateSettings', 'true')
@@ -235,8 +235,8 @@ def setScrobbleService():
 			service_map.append(('MDBList', control.joinPath(art, 'mdblist.png'), '3'))
 		if customtrakt.getCustomCredentialsInfo():
 			service_map.append((customtrakt.getCustomServiceName(), control.joinPath(art, 'icon.png'), '4'))
-		if yamtrack.getYamtrackCredentialsInfo():
-			service_map.append(('Yamtrack', control.joinPath(art, 'yamtrack.png'), '5'))
+		if floppy.getFloppyCredentialsInfo():
+			service_map.append(('Floppy', control.joinPath(art, 'floppy.png'), '5'))
 		current_index = next((i for i, (_, _, v) in enumerate(service_map) if v == currentSetting), -1)
 		items = []
 		for i, (label, icon, _) in enumerate(service_map):
@@ -259,7 +259,7 @@ def services_syncs():
 	last_simkl_sync = 0
 	last_mdblist_sync = 0
 	last_custom_sync = 0
-	last_yamtrack_sync = 0
+	last_floppy_sync = 0
 	while not control.monitor.abortRequested():
 		control.sleep(5000) # wait 5sec in case of device wake from sleep
 		try:
@@ -349,17 +349,17 @@ def services_syncs():
 					customtrakt.sync_collection(activities, forced=True)
 				last_custom_sync = current_time
 		if control.monitor.abortRequested(): break
-		if internets and yamtrack.getYamtrackCredentialsInfo():
+		if internets and floppy.getFloppyCredentialsInfo():
 			current_time = time.time()
-			if (current_time - last_yamtrack_sync) >= (60 * yamtrack_syncInterval):
+			if (current_time - last_floppy_sync) >= (60 * floppy_syncInterval):
 				from resources.lib.modules import log_utils
-				log_utils.log('Yamtrack Service Sync is running.', 1)
+				log_utils.log('Floppy Service Sync is running.', 1)
 				if not control.monitor.abortRequested():
-					yamtrack.sync_watchedProgress(forced=True)
+					floppy.sync_watchedProgress(forced=True)
 				if not control.monitor.abortRequested():
-					yamtrack.sync_watch_list(forced=True)
-					yamtrack.sync_collection(forced=True)
-				last_yamtrack_sync = current_time
+					floppy.sync_watch_list(forced=True)
+					floppy.sync_collection(forced=True)
+				last_floppy_sync = current_time
 		if control.monitor.waitForAbort(60*service_syncInterval): break
 
 def originCountry_Select():

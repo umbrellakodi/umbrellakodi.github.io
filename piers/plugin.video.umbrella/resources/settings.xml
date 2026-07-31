@@ -2789,7 +2789,7 @@
 								<condition operator="is" setting="simkl.markwatched">true</condition>
 								<condition operator="is" setting="mdblist.markwatched">true</condition>
 								<condition operator="is" setting="custom.markwatched">true</condition>
-								<condition operator="is" setting="yamtrack.markwatched">true</condition>
+								<condition operator="is" setting="floppy.markwatched">true</condition>
 							</or>
 						</dependency>
 					</dependencies>
@@ -2847,13 +2847,13 @@
 					</dependencies>
 					<control type="toggle"/>
 				</setting>
-				<setting id="yamtrack.markwatched" type="boolean" label="40762" help="">
+				<setting id="floppy.markwatched" type="boolean" label="40762" help="">
 					<level>0</level>
 					<default>false</default>
 					<dependencies>
 						<dependency type="visible">
 							<and>
-								<condition operator="!is" setting="yamtrack.token"/>
+								<condition operator="!is" setting="floppy.token"/>
 								<condition operator="!is" setting="indicators.alt">5</condition>
 							</and>
 						</dependency>
@@ -3966,7 +3966,7 @@
 				</setting>
 			</group>
 			<group id="6" label="40754">
-				<setting id="yamtrack.baseurl" type="string" label="40755" help="">
+				<setting id="floppy.baseurl" type="string" label="40755" help="">
 					<level>0</level>
 					<default/>
 					<constraints>
@@ -3976,7 +3976,7 @@
 						<heading>40755</heading>
 					</control>
 				</setting>
-				<setting id="yamtrack.token" type="string" label="40756" help="">
+				<setting id="floppy.token" type="string" label="40756" help="">
 					<level>0</level>
 					<default/>
 					<constraints>
@@ -3987,7 +3987,7 @@
 						<hidden>true</hidden>
 					</control>
 				</setting>
-				<setting id="yamtrack.user.name" type="string" label="40757" help="">
+				<setting id="floppy.user.name" type="string" label="40757" help="">
 					<level>0</level>
 					<default/>
 					<constraints>
@@ -3997,9 +3997,9 @@
 						<heading>40757</heading>
 					</control>
 				</setting>
-				<setting id="showYamtrackAuth" type="action" label="40758" help="">
+				<setting id="showFloppyAuth" type="action" label="40758" help="">
 					<level>0</level>
-					<data>RunPlugin(plugin://plugin.video.umbrella/?action=yamtrackAuth)</data>
+					<data>RunPlugin(plugin://plugin.video.umbrella/?action=floppyAuth)</data>
 					<constraints>
 						<allowempty>true</allowempty>
 					</constraints>
@@ -4007,22 +4007,22 @@
 						<close>true</close>
 					</control>
 				</setting>
-				<setting id="showYamtrackRevoke" type="action" label="40759" help="">
+				<setting id="showFloppyRevoke" type="action" label="40759" help="">
 					<level>0</level>
-					<data>RunPlugin(plugin://plugin.video.umbrella/?action=yamtrackRevoke)</data>
+					<data>RunPlugin(plugin://plugin.video.umbrella/?action=floppyRevoke)</data>
 					<constraints>
 						<allowempty>true</allowempty>
 					</constraints>
 					<dependencies>
 						<dependency type="visible">
-							<condition operator="!is" setting="yamtrack.token"/>
+							<condition operator="!is" setting="floppy.token"/>
 						</dependency>
 					</dependencies>
 					<control type="button" format="action">
 						<close>true</close>
 					</control>
 				</setting>
-				<setting id="yamtrack.isauthed" type="string" label="" help="">
+				<setting id="floppy.isauthed" type="string" label="" help="">
 					<level>0</level>
 					<default/>
 					<constraints>
@@ -4037,17 +4037,17 @@
 						<heading/>
 					</control>
 				</setting>
-				<setting id="yamtrack.general.notifications" type="boolean" label="40760" help="">
+				<setting id="floppy.general.notifications" type="boolean" label="40760" help="">
 					<level>0</level>
 					<default>true</default>
 					<dependencies>
 						<dependency type="visible">
-							<condition operator="!is" setting="yamtrack.token"/>
+							<condition operator="!is" setting="floppy.token"/>
 						</dependency>
 					</dependencies>
 					<control type="toggle"/>
 				</setting>
-				<setting id="yamtrack.service.syncInterval" type="integer" label="40761" help="">
+				<setting id="floppy.service.syncInterval" type="integer" label="40761" help="">
 					<level>0</level>
 					<default>30</default>
 					<constraints>
@@ -4056,12 +4056,32 @@
 					</constraints>
 					<dependencies>
 						<dependency type="visible">
-							<condition operator="!is" setting="yamtrack.token"/>
+							<condition operator="!is" setting="floppy.token"/>
 						</dependency>
 					</dependencies>
 					<control type="slider" format="integer">
 						<popup>false</popup>
 					</control>
+				</setting>
+				<setting id="floppy.progress.showunaired" type="boolean" label="40764" help="">
+					<level>0</level>
+					<default>false</default>
+					<dependencies>
+						<dependency type="visible">
+							<condition operator="!is" setting="floppy.token"/>
+						</dependency>
+					</dependencies>
+					<control type="toggle"/>
+				</setting>
+				<setting id="floppy.UpcomingProgress.prependDate" type="boolean" label="40765" help="">
+					<level>0</level>
+					<default>true</default>
+					<dependencies>
+						<dependency type="visible">
+							<condition operator="!is" setting="floppy.token"/>
+						</dependency>
+					</dependencies>
+					<control type="toggle"/>
 				</setting>
 			</group>
 		</category>
@@ -6603,7 +6623,7 @@
 					<default>true</default>
 					<control type="toggle"/>
 				</setting>
-				<setting id="context.umbrella.yamtrackManager" type="boolean" label="40763" help="">
+				<setting id="context.umbrella.floppyManager" type="boolean" label="40763" help="">
 					<level>0</level>
 					<default>true</default>
 					<control type="toggle"/>

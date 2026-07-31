@@ -21,7 +21,7 @@ from resources.lib.modules import trakt
 from resources.lib.modules import simkl
 from resources.lib.modules import mdblist
 from resources.lib.modules import customtrakt
-from resources.lib.modules import yamtrack
+from resources.lib.modules import floppy
 from resources.lib.modules import opensubs
 from difflib import SequenceMatcher
 from resources.lib.modules.source_utils import seas_ep_filter
@@ -60,7 +60,7 @@ class Player(xbmc.Player):
 		self.simklCredentials = simkl.getSimKLCredentialsInfo()
 		self.mdblistCredentials = mdblist.getMDBListCredentialsInfo()
 		self.customCredentials = customtrakt.getCustomCredentialsInfo()
-		self.yamtrackCredentials = yamtrack.getYamtrackCredentialsInfo()
+		self.floppyCredentials = floppy.getFloppyCredentialsInfo()
 		self.prefer_tmdbArt = getSetting('prefer.tmdbArt') == 'true'
 		self.subtitletime = None
 		self.debuglog = getSetting('debug.level') == '1'
@@ -622,7 +622,7 @@ class Player(xbmc.Player):
 				elif _indicators_alt == '1' and self.traktCredentials: _resume_source = '1'
 				elif _indicators_alt == '3' and self.mdblistCredentials: _resume_source = '3'
 				elif _indicators_alt == '4' and self.customCredentials: _resume_source = '4'
-				elif _indicators_alt == '5' and self.yamtrackCredentials: _resume_source = '5'
+				elif _indicators_alt == '5' and self.floppyCredentials: _resume_source = '5'
 			if self.traktCredentials and _resume_source == '1': # re-adjust the resume point since dialog is based on meta runtime vs. getTotalTime() and inaccurate
 				try:
 					total_time = self.getTotalTime()
@@ -649,11 +649,11 @@ class Player(xbmc.Player):
 					progress = float(customtraktsync.fetch_bookmarks(self.imdb, self.tmdb, self.tvdb, self.season, self.episode))
 					self.offset = (progress / 100) * total_time
 				except: pass
-			elif self.yamtrackCredentials and _resume_source == '5':
+			elif self.floppyCredentials and _resume_source == '5':
 				try:
-					from resources.lib.database import yamtracksync
+					from resources.lib.database import floppysync
 					total_time = self.getTotalTime()
-					progress = float(yamtracksync.fetch_bookmarks(self.imdb, self.tmdb, self.tvdb, self.season, self.episode))
+					progress = float(floppysync.fetch_bookmarks(self.imdb, self.tmdb, self.tvdb, self.season, self.episode))
 					self.offset = (progress / 100) * total_time
 				except: pass
 			try:
@@ -676,9 +676,9 @@ class Player(xbmc.Player):
 		if self.customCredentials and (scrobble_source == '4' or getSetting('custom.markwatched') == 'true'):
 			customtrakt.scrobbleReset(imdb=self.imdb, tmdb=self.tmdb, tvdb=self.tvdb, season=self.season, episode=self.episode, refresh=False)
 			customtrakt.scrobbleStart(media_type=self.media_type, title=self.title, tvshowtitle=self.title, year=self.year, imdb=self.imdb, tmdb=self.tmdb, tvdb=self.tvdb, season=self.season, episode=self.episode, watched_percent=_start_percent)
-		if self.yamtrackCredentials and (scrobble_source == '5' or getSetting('yamtrack.markwatched') == 'true'):
-			yamtrack.scrobbleReset(imdb=self.imdb, tmdb=self.tmdb, tvdb=self.tvdb, season=self.season, episode=self.episode, refresh=False)
-			yamtrack.scrobbleStart(media_type=self.media_type, title=self.title, tvshowtitle=self.title, year=self.year, imdb=self.imdb, tmdb=self.tmdb, tvdb=self.tvdb, season=self.season, episode=self.episode, watched_percent=_start_percent)
+		if self.floppyCredentials and (scrobble_source == '5' or getSetting('floppy.markwatched') == 'true'):
+			floppy.scrobbleReset(imdb=self.imdb, tmdb=self.tmdb, tvdb=self.tvdb, season=self.season, episode=self.episode, refresh=False)
+			floppy.scrobbleStart(media_type=self.media_type, title=self.title, tvshowtitle=self.title, year=self.year, imdb=self.imdb, tmdb=self.tmdb, tvdb=self.tvdb, season=self.season, episode=self.episode, watched_percent=_start_percent)
 		log_utils.log('onAVStarted callback', level=log_utils.LOGDEBUG)
 
 	def onPlayBackStarted(self):
@@ -714,7 +714,7 @@ class Player(xbmc.Player):
 					elif _indicators_alt == '2' and self.simklCredentials: _scrobble_source = '2'
 					elif _indicators_alt == '3' and self.mdblistCredentials: _scrobble_source = '3'
 					elif _indicators_alt == '4' and self.customCredentials: _scrobble_source = '4'
-					elif _indicators_alt == '5' and self.yamtrackCredentials: _scrobble_source = '5'
+					elif _indicators_alt == '5' and self.floppyCredentials: _scrobble_source = '5'
 				if self.traktCredentials and (_scrobble_source == '1' or getSetting('trakt.markwatched') == 'true'):
 					Bookmarks().set_scrobble(self.current_time, self.media_length, self.media_type, self.imdb, self.tmdb, self.tvdb, self.season, self.episode, already_watched=self.watched_during_playback)
 				if self.simklCredentials and (_scrobble_source == '2' or getSetting('simkl.markwatched') == 'true'):
@@ -723,8 +723,8 @@ class Player(xbmc.Player):
 					Bookmarks().set_scrobble(self.current_time, self.media_length, self.media_type, self.imdb, self.tmdb, self.tvdb, self.season, self.episode, service='mdblist', title=self.title, tvshowtitle=self.title, year=self.year, already_watched=self.watched_during_playback)
 				if self.customCredentials and (_scrobble_source == '4' or getSetting('custom.markwatched') == 'true'):
 					Bookmarks().set_scrobble(self.current_time, self.media_length, self.media_type, self.imdb, self.tmdb, self.tvdb, self.season, self.episode, service='custom', title=self.title, tvshowtitle=self.title, year=self.year, already_watched=self.watched_during_playback)
-				if self.yamtrackCredentials and (_scrobble_source == '5' or getSetting('yamtrack.markwatched') == 'true'):
-					Bookmarks().set_scrobble(self.current_time, self.media_length, self.media_type, self.imdb, self.tmdb, self.tvdb, self.season, self.episode, service='yamtrack', title=self.title, tvshowtitle=self.title, year=self.year, already_watched=self.watched_during_playback)
+				if self.floppyCredentials and (_scrobble_source == '5' or getSetting('floppy.markwatched') == 'true'):
+					Bookmarks().set_scrobble(self.current_time, self.media_length, self.media_type, self.imdb, self.tmdb, self.tvdb, self.season, self.episode, service='floppy', title=self.title, tvshowtitle=self.title, year=self.year, already_watched=self.watched_during_playback)
 				self.scrobble_sent = True
 				watcher = self.getWatchedPercent()
 				seekable = (int(self.current_time) > 180 and (watcher < int(self.markwatched_percentage)))
@@ -770,7 +770,7 @@ class Player(xbmc.Player):
 				elif _indicators_alt == '2' and self.simklCredentials: _scrobble_source = '2'
 				elif _indicators_alt == '3' and self.mdblistCredentials: _scrobble_source = '3'
 				elif _indicators_alt == '4' and self.customCredentials: _scrobble_source = '4'
-				elif _indicators_alt == '5' and self.yamtrackCredentials: _scrobble_source = '5'
+				elif _indicators_alt == '5' and self.floppyCredentials: _scrobble_source = '5'
 			if not self.scrobble_sent:
 				if self.traktCredentials and (_scrobble_source == '1' or getSetting('trakt.markwatched') == 'true'):
 					Bookmarks().set_scrobble(self.current_time, self.media_length, self.media_type, self.imdb, self.tmdb, self.tvdb, self.season, self.episode, already_watched=self.watched_during_playback)
@@ -780,8 +780,8 @@ class Player(xbmc.Player):
 					Bookmarks().set_scrobble(self.current_time, self.media_length, self.media_type, self.imdb, self.tmdb, self.tvdb, self.season, self.episode, service='mdblist', title=self.title, tvshowtitle=self.title, year=self.year, already_watched=self.watched_during_playback)
 				if self.customCredentials and (_scrobble_source == '4' or getSetting('custom.markwatched') == 'true'):
 					Bookmarks().set_scrobble(self.current_time, self.media_length, self.media_type, self.imdb, self.tmdb, self.tvdb, self.season, self.episode, service='custom', title=self.title, tvshowtitle=self.title, year=self.year, already_watched=self.watched_during_playback)
-				if self.yamtrackCredentials and (_scrobble_source == '5' or getSetting('yamtrack.markwatched') == 'true'):
-					Bookmarks().set_scrobble(self.current_time, self.media_length, self.media_type, self.imdb, self.tmdb, self.tvdb, self.season, self.episode, service='yamtrack', title=self.title, tvshowtitle=self.title, year=self.year, already_watched=self.watched_during_playback)
+				if self.floppyCredentials and (_scrobble_source == '5' or getSetting('floppy.markwatched') == 'true'):
+					Bookmarks().set_scrobble(self.current_time, self.media_length, self.media_type, self.imdb, self.tmdb, self.tvdb, self.season, self.episode, service='floppy', title=self.title, tvshowtitle=self.title, year=self.year, already_watched=self.watched_during_playback)
 			self.scrobble_sent = True
 			if _scrobble_source == '0':
 				if getSetting('localnotify') == 'true': control.notification(title=self.title, message=getLS(35510))
@@ -835,11 +835,11 @@ class Player(xbmc.Player):
 					mdblist.scrobbleMovie(self.title, self.year, self.imdb, self.tmdb, pause_percent)
 				else:
 					mdblist.scrobbleEpisode(self.title, self.year, self.imdb, self.tmdb, self.tvdb, self.season, self.episode, pause_percent)
-			if self.yamtrackCredentials and (scrobble_source == '5' or getSetting('yamtrack.markwatched') == 'true'):
+			if self.floppyCredentials and (scrobble_source == '5' or getSetting('floppy.markwatched') == 'true'):
 				if self.media_type == 'movie':
-					yamtrack.scrobbleMovie(self.imdb, self.tmdb, pause_percent)
+					floppy.scrobbleMovie(self.imdb, self.tmdb, pause_percent)
 				else:
-					yamtrack.scrobbleEpisode(self.imdb, self.tmdb, self.tvdb, self.season, self.episode, pause_percent)
+					floppy.scrobbleEpisode(self.imdb, self.tmdb, self.tvdb, self.season, self.episode, pause_percent)
 		except: log_utils.error()
 
 	def onPlayBackResumed(self):
@@ -858,8 +858,8 @@ class Player(xbmc.Player):
 				mdblist.scrobbleStart(media_type=self.media_type, title=self.title, tvshowtitle=self.title, year=self.year, imdb=self.imdb, tmdb=self.tmdb, tvdb=self.tvdb, season=self.season, episode=self.episode, watched_percent=resume_percent)
 			if self.customCredentials and (scrobble_source == '4' or getSetting('custom.markwatched') == 'true'):
 				customtrakt.scrobbleStart(media_type=self.media_type, title=self.title, tvshowtitle=self.title, year=self.year, imdb=self.imdb, tmdb=self.tmdb, tvdb=self.tvdb, season=self.season, episode=self.episode, watched_percent=resume_percent)
-			if self.yamtrackCredentials and (scrobble_source == '5' or getSetting('yamtrack.markwatched') == 'true'):
-				yamtrack.scrobbleStart(media_type=self.media_type, title=self.title, tvshowtitle=self.title, year=self.year, imdb=self.imdb, tmdb=self.tmdb, tvdb=self.tvdb, season=self.season, episode=self.episode, watched_percent=resume_percent)
+			if self.floppyCredentials and (scrobble_source == '5' or getSetting('floppy.markwatched') == 'true'):
+				floppy.scrobbleStart(media_type=self.media_type, title=self.title, tvshowtitle=self.title, year=self.year, imdb=self.imdb, tmdb=self.tmdb, tvdb=self.tvdb, season=self.season, episode=self.episode, watched_percent=resume_percent)
 		except: log_utils.error()
 
 class PlayNext(xbmc.Player):
@@ -1357,7 +1357,7 @@ class Bookmarks:
 		self.simklCredentials = simkl.getSimKLCredentialsInfo()
 		self.mdblistCredentials = mdblist.getMDBListCredentialsInfo()
 		self.customCredentials = customtrakt.getCustomCredentialsInfo()
-		self.yamtrackCredentials = yamtrack.getYamtrackCredentialsInfo()
+		self.floppyCredentials = floppy.getFloppyCredentialsInfo()
 	def get(self, name, imdb=None, tmdb=None, tvdb=None, season=None, episode=None, year='0', runtime=None, ck=False):
 		markwatched_percentage = int(getSetting('markwatched.percent')) or 85
 		offset = '0'
@@ -1376,7 +1376,7 @@ class Bookmarks:
 				resume_source = '3'
 			elif indicators_alt == '4' and self.customCredentials:
 				resume_source = '4'
-			elif indicators_alt == '5' and self.yamtrackCredentials:
+			elif indicators_alt == '5' and self.floppyCredentials:
 				resume_source = '5'
 		if self.traktCredentials and resume_source == '1':
 			scrobbble = 'Trakt Resume Point'
@@ -1429,12 +1429,12 @@ class Bookmarks:
 			except:
 				log_utils.error()
 				return '0'
-		elif self.yamtrackCredentials and resume_source == '5':
-			scrobbble = 'Yamtrack Resume Point'
+		elif self.floppyCredentials and resume_source == '5':
+			scrobbble = 'Floppy Resume Point'
 			try:
 				if not runtime or runtime == 'None': return offset
-				from resources.lib.database import yamtracksync
-				progress = float(yamtracksync.fetch_bookmarks(imdb, tmdb, tvdb, season, episode))
+				from resources.lib.database import floppysync
+				progress = float(floppysync.fetch_bookmarks(imdb, tmdb, tvdb, season, episode))
 				offset = (progress / 100) * runtime
 				display_offset = offset * 60
 				seekable = (2 <= progress <= int(markwatched_percentage))
@@ -1542,16 +1542,16 @@ class Bookmarks:
 						# in the background so the local cache (and indicators) converge without waiting
 						# for the next scheduled sync.
 						Thread(target=customtrakt.sync_watchedProgress, kwargs={'forced': True}).start()
-			elif service == 'yamtrack':
-				# Mirrors the 'custom' branch above — Yamtrack's real scrobble endpoint
+			elif service == 'floppy':
+				# Mirrors the 'custom' branch above — Floppy's real scrobble endpoint
 				# still has no aggregated "watched" re-query, so a background full sync
 				# is kicked off on completion the same way, to converge indicators.
 				if not skip_scrobble and (seekable or percent >= int(markwatched_percentage)):
-					yamtrack.scrobbleMovie(imdb, tmdb, percent) if media_type == 'movie' else yamtrack.scrobbleEpisode(imdb, tmdb, tvdb, season, episode, percent)
+					floppy.scrobbleMovie(imdb, tmdb, percent) if media_type == 'movie' else floppy.scrobbleEpisode(imdb, tmdb, tvdb, season, episode, percent)
 				if percent >= int(markwatched_percentage):
-					yamtrack.scrobbleReset(imdb, tmdb, tvdb, season, episode, refresh=False)
+					floppy.scrobbleReset(imdb, tmdb, tvdb, season, episode, refresh=False)
 					if not already_watched:
-						Thread(target=yamtrack.sync_watchedProgress, kwargs={'forced': True}).start()
+						Thread(target=floppy.sync_watchedProgress, kwargs={'forced': True}).start()
 			else:
 				# No skip_scrobble "close at 0%" call — Trakt's API rejects /scrobble/pause
 				# below 1% progress (HTTP 422: "Progress should be at least 1.0% to pause."),

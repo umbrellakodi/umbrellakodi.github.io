@@ -102,9 +102,9 @@ def router(argv2):
 	elif action == 'mymovies_traktNavigator':
 		from resources.lib.menus import navigator
 		navigator.Navigator().mymovies_trakt(folderName=folderName)
-	elif action == 'mymovies_yamtrackNavigator':
+	elif action == 'mymovies_floppyNavigator':
 		from resources.lib.menus import navigator
-		navigator.Navigator().mymovies_yamtrack(folderName=folderName)
+		navigator.Navigator().mymovies_floppy(folderName=folderName)
 	elif action == 'movies':
 		from resources.lib.menus import movies
 		movies.Movies().get(url, folderName=folderName)
@@ -231,12 +231,12 @@ def router(argv2):
 	elif action == 'customRevoke':
 		from resources.lib.modules import customtrakt
 		customtrakt.customRevoke(fromSettings=1)
-	elif action == 'yamtrackAuth':
-		from resources.lib.modules import yamtrack
-		yamtrack.yamtrackAuth(fromSettings=1)
-	elif action == 'yamtrackRevoke':
-		from resources.lib.modules import yamtrack
-		yamtrack.yamtrackRevoke(fromSettings=1)
+	elif action == 'floppyAuth':
+		from resources.lib.modules import floppy
+		floppy.floppyAuth(fromSettings=1)
+	elif action == 'floppyRevoke':
+		from resources.lib.modules import floppy
+		floppy.floppyRevoke(fromSettings=1)
 	elif action == 'traktAccountInfo':
 		from resources.lib.modules import trakt as Trakt
 		Trakt.getTraktAccountInfo()
@@ -297,24 +297,24 @@ def router(argv2):
 	elif action == 'custom_movies_collection':
 		from resources.lib.menus import movies
 		movies.Movies().customCollection(url, folderName=folderName)
-	elif action == 'yamtrack_movies_watching':
+	elif action == 'floppy_movies_watching':
 		from resources.lib.menus import movies
-		movies.Movies().yamtrackList(url, 'movies_watching', 'yamtrack_movies_watching', folderName=folderName)
-	elif action == 'yamtrack_movies_watchlist':
+		movies.Movies().floppyList(url, 'movies_watching', 'floppy_movies_watching', folderName=folderName)
+	elif action == 'floppy_movies_watchlist':
 		from resources.lib.menus import movies
-		movies.Movies().yamtrackList(url, 'movies_plantowatch', 'yamtrack_movies_watchlist', folderName=folderName)
-	elif action == 'yamtrack_movies_onhold':
+		movies.Movies().floppyList(url, 'movies_plantowatch', 'floppy_movies_watchlist', folderName=folderName)
+	elif action == 'floppy_movies_onhold':
 		from resources.lib.menus import movies
-		movies.Movies().yamtrackList(url, 'movies_hold', 'yamtrack_movies_onhold', folderName=folderName)
-	elif action == 'yamtrack_movies_completed':
+		movies.Movies().floppyList(url, 'movies_hold', 'floppy_movies_onhold', folderName=folderName)
+	elif action == 'floppy_movies_completed':
 		from resources.lib.menus import movies
-		movies.Movies().yamtrackList(url, 'movies_completed', 'yamtrack_movies_completed', folderName=folderName)
-	elif action == 'yamtrack_movies_dropped':
+		movies.Movies().floppyList(url, 'movies_completed', 'floppy_movies_completed', folderName=folderName)
+	elif action == 'floppy_movies_dropped':
 		from resources.lib.menus import movies
-		movies.Movies().yamtrackList(url, 'movies_dropped', 'yamtrack_movies_dropped', folderName=folderName)
-	elif action == 'yamtrack_movies_collection':
+		movies.Movies().floppyList(url, 'movies_dropped', 'floppy_movies_dropped', folderName=folderName)
+	elif action == 'floppy_movies_collection':
 		from resources.lib.menus import movies
-		movies.Movies().yamtrackList(url, 'movies_collection', 'yamtrack_movies_collection', isCollection=True, folderName=folderName)
+		movies.Movies().floppyList(url, 'movies_collection', 'floppy_movies_collection', isCollection=True, folderName=folderName)
 	elif action == 'mdbOfficialListMovies':
 		from resources.lib.menus import movies
 		movies.Movies().getMDBOfficialLists(folderName=folderName)
@@ -333,27 +333,27 @@ def router(argv2):
 	elif action == 'custom_shows_collection':
 		from resources.lib.menus import tvshows
 		tvshows.TVshows().customCollection(url, folderName=folderName)
-	elif action == 'yamtrack_shows_watching':
+	elif action == 'floppy_shows_watching':
 		from resources.lib.menus import tvshows
-		tvshows.TVshows().yamtrackList(url, 'shows_watching', 'yamtrack_shows_watching', folderName=folderName)
-	elif action == 'yamtrack_shows_progress':
+		tvshows.TVshows().floppyList(url, 'shows_watching', 'floppy_shows_watching', folderName=folderName)
+	elif action == 'floppy_shows_progress':
 		from resources.lib.menus import tvshows
-		tvshows.TVshows().yamtrack_progress(url, folderName=folderName)
-	elif action == 'yamtrack_shows_watchlist':
+		tvshows.TVshows().floppy_progress(url, folderName=folderName)
+	elif action == 'floppy_shows_watchlist':
 		from resources.lib.menus import tvshows
-		tvshows.TVshows().yamtrackList(url, 'shows_plantowatch', 'yamtrack_shows_watchlist', folderName=folderName)
-	elif action == 'yamtrack_shows_onhold':
+		tvshows.TVshows().floppyList(url, 'shows_plantowatch', 'floppy_shows_watchlist', folderName=folderName)
+	elif action == 'floppy_shows_onhold':
 		from resources.lib.menus import tvshows
-		tvshows.TVshows().yamtrackList(url, 'shows_hold', 'yamtrack_shows_onhold', folderName=folderName)
-	elif action == 'yamtrack_shows_completed':
+		tvshows.TVshows().floppyList(url, 'shows_hold', 'floppy_shows_onhold', folderName=folderName)
+	elif action == 'floppy_shows_completed':
 		from resources.lib.menus import tvshows
-		tvshows.TVshows().yamtrackList(url, 'shows_completed', 'yamtrack_shows_completed', folderName=folderName)
-	elif action == 'yamtrack_shows_dropped':
+		tvshows.TVshows().floppyList(url, 'shows_completed', 'floppy_shows_completed', folderName=folderName)
+	elif action == 'floppy_shows_dropped':
 		from resources.lib.menus import tvshows
-		tvshows.TVshows().yamtrackList(url, 'shows_dropped', 'yamtrack_shows_dropped', folderName=folderName)
-	elif action == 'yamtrack_shows_collection':
+		tvshows.TVshows().floppyList(url, 'shows_dropped', 'floppy_shows_dropped', folderName=folderName)
+	elif action == 'floppy_shows_collection':
 		from resources.lib.menus import tvshows
-		tvshows.TVshows().yamtrackList(url, 'shows_collection', 'yamtrack_shows_collection', isCollection=True, folderName=folderName)
+		tvshows.TVshows().floppyList(url, 'shows_collection', 'floppy_shows_collection', isCollection=True, folderName=folderName)
 	elif action == 'mdbOfficialListTV':
 		from resources.lib.menus import tvshows
 		tvshows.TVshows().getMDBOfficialLists(folderName=folderName)
@@ -432,9 +432,9 @@ def router(argv2):
 	elif action == 'mytvshows_traktNavigator':
 		from resources.lib.menus import navigator
 		navigator.Navigator().mytvshows_trakt(folderName=folderName)
-	elif action == 'mytvshows_yamtrackNavigator':
+	elif action == 'mytvshows_floppyNavigator':
 		from resources.lib.menus import navigator
-		navigator.Navigator().mytvshows_yamtrack(folderName=folderName)
+		navigator.Navigator().mytvshows_floppy(folderName=folderName)
 	elif action == 'tvshows':
 		from resources.lib.menus import tvshows
 		tvshows.TVshows().get(url, folderName=folderName)
@@ -675,6 +675,12 @@ def router(argv2):
 	elif action == 'custom_calendar_premieres':
 		from resources.lib.menus import episodes
 		episodes.Episodes().custom_calendar_premieres(url, folderName=folderName)
+	elif action == 'floppy_episodes_progress':
+		from resources.lib.menus import episodes
+		episodes.Episodes().floppy_calendar(url, folderName=folderName)
+	elif action == 'floppy_upcoming_progress':
+		from resources.lib.menus import episodes
+		episodes.Episodes().floppy_upcoming_progress(url, folderName=folderName)
 	elif action == 'local_calendar':
 		from resources.lib.menus import episodes
 		episodes.Episodes().local_calendar(url, folderName=folderName)
@@ -1173,9 +1179,9 @@ def router(argv2):
 		elif action == 'tools_customToolsNavigator':
 			from resources.lib.menus import navigator
 			navigator.Navigator().customTools(folderName=folderName)
-		elif action == 'tools_yamtrackToolsNavigator':
+		elif action == 'tools_floppyToolsNavigator':
 			from resources.lib.menus import navigator
-			navigator.Navigator().yamtrackTools(folderName=folderName)
+			navigator.Navigator().floppyTools(folderName=folderName)
 		elif action == 'tools_searchNavigator':
 			from resources.lib.menus import navigator
 			navigator.Navigator().search(folderName=folderName)
@@ -1234,12 +1240,12 @@ def router(argv2):
 			tvshow = (params.get('tvshow') == 'tvshow')
 			from resources.lib.modules import customtrakt
 			customtrakt.manager(name, imdb, tvdb, tmdb=tmdb, season=season, episode=episode, watched=watched, unfinished=unfinished, tvshow=tvshow)
-		elif action == 'tools_yamtrackManager':
+		elif action == 'tools_floppyManager':
 			watched = (params.get('watched') == 'True') if params.get('watched') else None
 			unfinished = (params.get('unfinished') == 'True') if params.get('unfinished') else False
 			tvshow = (params.get('tvshow') == 'tvshow')
-			from resources.lib.modules import yamtrack
-			yamtrack.manager(name, imdb, tvdb, tmdb=tmdb, season=season, episode=episode, watched=watched, unfinished=unfinished, tvshow=tvshow)
+			from resources.lib.modules import floppy
+			floppy.manager(name, imdb, tvdb, tmdb=tmdb, season=season, episode=episode, watched=watched, unfinished=unfinished, tvshow=tvshow)
 		elif action == 'tools_likeList':
 			from resources.lib.modules import trakt
 			trakt.like_list(params.get('list_owner'), params.get('list_name'), params.get('list_id'))
@@ -1261,9 +1267,9 @@ def router(argv2):
 		elif action == 'tools_forceCustomSync':
 			from resources.lib.modules import customtrakt
 			customtrakt.force_customSync()
-		elif action == 'tools_forceYamtrackSync':
-			from resources.lib.modules import yamtrack
-			yamtrack.force_yamtrackSync()
+		elif action == 'tools_forceFloppySync':
+			from resources.lib.modules import floppy
+			floppy.force_floppySync()
 		elif action == 'tools_clearLogFile':
 			from resources.lib.modules import log_utils
 			cleared = log_utils.clear_logFile()

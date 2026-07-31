@@ -115,7 +115,7 @@ _MYMOVIES_DEFAULTS = [
 	('mymv_tmdb_folder',      'TMDb',     'mymovies_tmdbNavigator',                        'tmdb.png',      'tmdb.png',      1, 1, 1,  4, 0, 'tmdb_v4_token',        0, None),
 	('mymv_simkl_folder',     'Simkl',    'mymovies_simklNavigator',                       'simkl.png',     'simkl.png',     1, 1, 1,  5, 0, 'simkl_token',          0, None),
 	('mymv_trakt_folder',     'Trakt',    'mymovies_traktNavigator',                       'trakt.png',     'trakt.png',     1, 1, 1,  6, 0, 'trakt_credentials',    0, None),
-	('mymv_yamtrack_folder',  'Yamtrack', 'mymovies_yamtrackNavigator',                    'yamtrack.png',  'yamtrack.png',  1, 1, 1,  7, 0, 'yamtrack_credentials', 0, None),
+	('mymv_floppy_folder',  'Floppy', 'mymovies_floppyNavigator',                    'floppy.png',  'floppy.png',  1, 1, 1,  7, 0, 'floppy_credentials', 0, None),
 	('mymv_local_finish',     'Local: Finish Watching', 'local_finish_watching_movies',       'icon.png',      'icon.png',      1, 1, 1,  8, 0, 'local_scrobble',       1, None),
 	('mymv_movies_menu',      '32031', 'movieliteNavigator',                               'movies.png',    'movies.png',    1, 1, 1,  9, 0, 'not_lite',             0, None),
 	('mymv_person_search',    '33044', 'moviePerson',                                      'imdb.png',      'people-search.png', 0, 1, 1, 10, 0, 'not_lite',         0, None),
@@ -157,13 +157,13 @@ _MYMOVIES_TRAKT_DEFAULTS = [
 	('mymv_trakt_liked',      '40698', 'movies_LikedLists',                               'trakt.png',     'trakt.png',     1, 1, 1,  4, 0, 'trakt_credentials',     1, 'My Liked Lists'),
 ]
 
-_MYMOVIES_YAMTRACK_DEFAULTS = [
-	('mymv_yamtrack_watching',   'Yamtrack Watching',   'yamtrack_movies_watching&url=yamtrackmovieswatching',     'yamtrack.png', 'yamtrack.png', 1, 1, 1,  0, 0, 'yamtrack_credentials', 0, None),
-	('mymv_yamtrack_watchlist',  'Yamtrack Watchlist',  'yamtrack_movies_watchlist&url=yamtrackmovieswatchlist',   'yamtrack.png', 'yamtrack.png', 1, 1, 1,  1, 0, 'yamtrack_credentials', 0, None),
-	('mymv_yamtrack_onhold',     'Yamtrack On Hold',    'yamtrack_movies_onhold&url=yamtrackmoviesonhold',         'yamtrack.png', 'yamtrack.png', 1, 1, 1,  2, 0, 'yamtrack_credentials', 0, None),
-	('mymv_yamtrack_completed',  'Yamtrack Completed',  'yamtrack_movies_completed&url=yamtrackmoviescompleted',   'yamtrack.png', 'yamtrack.png', 1, 1, 1,  3, 0, 'yamtrack_credentials', 0, None),
-	('mymv_yamtrack_dropped',    'Yamtrack Dropped',    'yamtrack_movies_dropped&url=yamtrackmoviesdropped',       'yamtrack.png', 'yamtrack.png', 1, 1, 1,  4, 0, 'yamtrack_credentials', 0, None),
-	('mymv_yamtrack_collection', 'Yamtrack Collection', 'yamtrack_movies_collection&url=yamtrackmoviescollection', 'yamtrack.png', 'yamtrack.png', 1, 1, 1,  5, 0, 'yamtrack_credentials', 0, None),
+_MYMOVIES_FLOPPY_DEFAULTS = [
+	('mymv_floppy_watching',   'Floppy Watching',   'floppy_movies_watching&url=floppymovieswatching',     'floppy.png', 'floppy.png', 1, 1, 1,  0, 0, 'floppy_credentials', 0, None),
+	('mymv_floppy_watchlist',  'Floppy Watchlist',  'floppy_movies_watchlist&url=floppymovieswatchlist',   'floppy.png', 'floppy.png', 1, 1, 1,  1, 0, 'floppy_credentials', 0, None),
+	('mymv_floppy_onhold',     'Floppy On Hold',    'floppy_movies_onhold&url=floppymoviesonhold',         'floppy.png', 'floppy.png', 1, 1, 1,  2, 0, 'floppy_credentials', 0, None),
+	('mymv_floppy_completed',  'Floppy Completed',  'floppy_movies_completed&url=floppymoviescompleted',   'floppy.png', 'floppy.png', 1, 1, 1,  3, 0, 'floppy_credentials', 0, None),
+	('mymv_floppy_dropped',    'Floppy Dropped',    'floppy_movies_dropped&url=floppymoviesdropped',       'floppy.png', 'floppy.png', 1, 1, 1,  4, 0, 'floppy_credentials', 0, None),
+	('mymv_floppy_collection', 'Floppy Collection', 'floppy_movies_collection&url=floppymoviescollection', 'floppy.png', 'floppy.png', 1, 1, 1,  5, 0, 'floppy_credentials', 0, None),
 ]
 
 _MYTVSHOWS_DEFAULTS = [
@@ -178,7 +178,7 @@ _MYTVSHOWS_DEFAULTS = [
 	('mytv_tmdb_folder',       'TMDb',     'mytvshows_tmdbNavigator',                           'tmdb.png',      'tmdb.png',      1, 1, 1,  8, 0, 'tmdb_v4_token',         0, None),
 	('mytv_simkl_folder',      'Simkl',    'mytvshows_simklNavigator',                          'simkl.png',     'simkl.png',     1, 1, 1,  9, 0, 'simkl_credentials',     0, None),
 	('mytv_trakt_folder',      'Trakt',    'mytvshows_traktNavigator',                          'trakt.png',     'trakt.png',     1, 1, 1, 10, 0, 'trakt_credentials',     0, None),
-	('mytv_yamtrack_folder',   'Yamtrack', 'mytvshows_yamtrackNavigator',                       'yamtrack.png',  'yamtrack.png',  1, 1, 1, 11, 0, 'yamtrack_credentials',  0, None),
+	('mytv_floppy_folder',   'Floppy', 'mytvshows_floppyNavigator',                       'floppy.png',  'floppy.png',  1, 1, 1, 11, 0, 'floppy_credentials',  0, None),
 	('mytv_tv_menu',           '32031', 'tvliteNavigator',                                     'tvshows.png',   'tvshows.png',   1, 1, 1, 12, 0, 'not_lite',              0, None),
 	('mytv_person_search',     '33045', 'tvPerson',                                            'imdb.png',      'people-search.png', 0, 1, 1, 13, 0, 'not_lite',          0, None),
 	('mytv_tv_search',         '33043', 'tvSearch',                                            'trakt.png',     'search.png',    1, 1, 1, 14, 0, 'not_lite',              0, None),
@@ -238,14 +238,16 @@ _MYTVSHOWS_TRAKT_DEFAULTS = [
 	('mytv_trakt_liked',       '40698', 'shows_LikedLists',                                    'trakt.png',     'trakt.png',     1, 1, 1, 11, 0, 'trakt_credentials',      1, 'My Liked Lists'),
 ]
 
-_MYTVSHOWS_YAMTRACK_DEFAULTS = [
-	('mytv_yamtrack_watching',   'Yamtrack Watching',   'yamtrack_shows_watching&url=yamtrackshowswatching',     'yamtrack.png', 'yamtrack.png', 1, 1, 1,  0, 0, 'yamtrack_credentials', 0, None),
-	('mytv_yamtrack_watchlist',  'Yamtrack Watchlist',  'yamtrack_shows_watchlist&url=yamtrackshowswatchlist',   'yamtrack.png', 'yamtrack.png', 1, 1, 1,  1, 0, 'yamtrack_credentials', 0, None),
-	('mytv_yamtrack_onhold',     'Yamtrack On Hold',    'yamtrack_shows_onhold&url=yamtrackshowsonhold',         'yamtrack.png', 'yamtrack.png', 1, 1, 1,  2, 0, 'yamtrack_credentials', 0, None),
-	('mytv_yamtrack_completed',  'Yamtrack Completed',  'yamtrack_shows_completed&url=yamtrackshowscompleted',   'yamtrack.png', 'yamtrack.png', 1, 1, 1,  3, 0, 'yamtrack_credentials', 0, None),
-	('mytv_yamtrack_dropped',    'Yamtrack Dropped',    'yamtrack_shows_dropped&url=yamtrackshowsdropped',       'yamtrack.png', 'yamtrack.png', 1, 1, 1,  4, 0, 'yamtrack_credentials', 0, None),
-	('mytv_yamtrack_collection', 'Yamtrack Collection', 'yamtrack_shows_collection&url=yamtrackshowscollection', 'yamtrack.png', 'yamtrack.png', 1, 1, 1,  5, 0, 'yamtrack_credentials', 0, None),
-	('mytv_yamtrack_show_prog',  'Yamtrack Show Progress', 'yamtrack_shows_progress&url=yamtrackshowsprogress',   'yamtrack.png', 'yamtrack.png', 1, 1, 1,  6, 0, 'yamtrack_with_indicators', 1, None),
+_MYTVSHOWS_FLOPPY_DEFAULTS = [
+	('mytv_floppy_watching',   'Floppy Watching',   'floppy_shows_watching&url=floppyshowswatching',     'floppy.png', 'floppy.png', 1, 1, 1,  0, 0, 'floppy_credentials', 0, None),
+	('mytv_floppy_watchlist',  'Floppy Watchlist',  'floppy_shows_watchlist&url=floppyshowswatchlist',   'floppy.png', 'floppy.png', 1, 1, 1,  1, 0, 'floppy_credentials', 0, None),
+	('mytv_floppy_onhold',     'Floppy On Hold',    'floppy_shows_onhold&url=floppyshowsonhold',         'floppy.png', 'floppy.png', 1, 1, 1,  2, 0, 'floppy_credentials', 0, None),
+	('mytv_floppy_completed',  'Floppy Completed',  'floppy_shows_completed&url=floppyshowscompleted',   'floppy.png', 'floppy.png', 1, 1, 1,  3, 0, 'floppy_credentials', 0, None),
+	('mytv_floppy_dropped',    'Floppy Dropped',    'floppy_shows_dropped&url=floppyshowsdropped',       'floppy.png', 'floppy.png', 1, 1, 1,  4, 0, 'floppy_credentials', 0, None),
+	('mytv_floppy_collection', 'Floppy Collection', 'floppy_shows_collection&url=floppyshowscollection', 'floppy.png', 'floppy.png', 1, 1, 1,  5, 0, 'floppy_credentials', 0, None),
+	('mytv_floppy_show_prog',  'Floppy Show Progress', 'floppy_shows_progress&url=floppyshowsprogress',   'floppy.png', 'floppy.png', 1, 1, 1,  6, 0, 'floppy_with_indicators', 1, None),
+	('mytv_floppy_ep_prog',    'Floppy Progress Episodes', 'floppy_episodes_progress&url=floppyepisodesprogress', 'floppy.png', 'floppy.png', 1, 1, 1,  7, 0, 'floppy_with_indicators', 1, None),
+	('mytv_floppy_upcoming',   'Floppy Upcoming Progress', 'floppy_upcoming_progress&url=floppyupcomingprogress', 'floppy.png', 'floppy.png', 1, 1, 1,  8, 0, 'floppy_with_indicators', 1, None),
 ]
 
 MENU_DEFAULTS = {
@@ -259,13 +261,13 @@ MENU_DEFAULTS = {
 	'mymovies_tmdb':     _MYMOVIES_TMDB_DEFAULTS,
 	'mymovies_simkl':    _MYMOVIES_SIMKL_DEFAULTS,
 	'mymovies_trakt':    _MYMOVIES_TRAKT_DEFAULTS,
-	'mymovies_yamtrack': _MYMOVIES_YAMTRACK_DEFAULTS,
+	'mymovies_floppy': _MYMOVIES_FLOPPY_DEFAULTS,
 	'mytvshows_mdblist':  _MYTVSHOWS_MDBLIST_DEFAULTS,
 	'mytvshows_custom':   _MYTVSHOWS_CUSTOM_DEFAULTS,
 	'mytvshows_tmdb':     _MYTVSHOWS_TMDB_DEFAULTS,
 	'mytvshows_simkl':    _MYTVSHOWS_SIMKL_DEFAULTS,
 	'mytvshows_trakt':    _MYTVSHOWS_TRAKT_DEFAULTS,
-	'mytvshows_yamtrack': _MYTVSHOWS_YAMTRACK_DEFAULTS,
+	'mytvshows_floppy': _MYTVSHOWS_FLOPPY_DEFAULTS,
 }
 
 # item_id -> alt_label for migrating existing DB rows
@@ -283,7 +285,7 @@ _defaults_version_file = control.joinPath(control.dataPath, 'menu_defaults.v')
 # regardless of addon version (e.g. to fix a migration bug) — the on-disk marker below
 # is keyed on addonVersion+this, not addonVersion alone, so incrementing it forces one
 # more sync pass even for users already marked up to date on the current addon version.
-_MENU_SCHEMA_REVISION = '2'
+_MENU_SCHEMA_REVISION = '3'
 
 
 def _read_synced_version():
@@ -434,6 +436,15 @@ def _sync_defaults(dbcon):
 			(old_menu, item_id)
 		)
 	dbcon.commit()
+	# The Yamtrack fork this integration targets was renamed to "Floppy" by its
+	# developer, so every yamtrack_* item_id/menu_name/condition_key was renamed to
+	# floppy_* to match. Old rows under the pre-rename names are dead weight (nothing
+	# renders menu_name='mymovies_yamtrack'/'mytvshows_yamtrack' anymore, and
+	# condition_key='yamtrack_credentials' is no longer recognized) — drop them so
+	# the fresh floppy_* defaults populate cleanly instead of leaving orphans behind.
+	dbcon.execute("DELETE FROM menu_items WHERE menu_name IN ('mymovies_yamtrack', 'mytvshows_yamtrack') AND is_custom=0")
+	dbcon.execute("DELETE FROM menu_items WHERE item_id IN ('mymv_yamtrack_folder', 'mytv_yamtrack_folder') AND is_custom=0")
+	dbcon.commit()
 	# Insert items added after initial release for existing users
 	_NEW_DEFAULT_ITEMS = [
 		('mymovies', 'mymv_mdblist_folder',  'MDBList',  'mymovies_mdblistNavigator',  'mdblist.png',  'mdblist.png',  1, 1, 1, 2, 0, 'mdblist_token',        0, None),
@@ -441,13 +452,13 @@ def _sync_defaults(dbcon):
 		('mymovies', 'mymv_tmdb_folder',     'TMDb',     'mymovies_tmdbNavigator',     'tmdb.png',     'tmdb.png',     1, 1, 1, 4, 0, 'tmdb_v4_token',        0, None),
 		('mymovies', 'mymv_simkl_folder',    'Simkl',    'mymovies_simklNavigator',    'simkl.png',    'simkl.png',    1, 1, 1, 5, 0, 'simkl_token',          0, None),
 		('mymovies', 'mymv_trakt_folder',    'Trakt',    'mymovies_traktNavigator',    'trakt.png',    'trakt.png',    1, 1, 1, 6, 0, 'trakt_credentials',    0, None),
-		('mymovies', 'mymv_yamtrack_folder', 'Yamtrack', 'mymovies_yamtrackNavigator', 'yamtrack.png', 'yamtrack.png', 1, 1, 1, 7, 0, 'yamtrack_credentials', 0, None),
+		('mymovies', 'mymv_floppy_folder', 'Floppy', 'mymovies_floppyNavigator', 'floppy.png', 'floppy.png', 1, 1, 1, 7, 0, 'floppy_credentials', 0, None),
 		('mytvshows', 'mytv_mdblist_folder',  'MDBList',  'mytvshows_mdblistNavigator',  'mdblist.png',  'mdblist.png',  1, 1, 1, 3,  0, 'mdblist_token',        0, None),
 		('mytvshows', 'mytv_custom_folder',   'Custom',   'mytvshows_customNavigator',   'icon.png',     'icon.png',     1, 1, 1, 4,  0, 'custom_token',         0, None),
 		('mytvshows', 'mytv_tmdb_folder',     'TMDb',     'mytvshows_tmdbNavigator',     'tmdb.png',     'tmdb.png',     1, 1, 1, 8,  0, 'tmdb_v4_token',        0, None),
 		('mytvshows', 'mytv_simkl_folder',    'Simkl',    'mytvshows_simklNavigator',    'simkl.png',    'simkl.png',    1, 1, 1, 9,  0, 'simkl_credentials',    0, None),
 		('mytvshows', 'mytv_trakt_folder',    'Trakt',    'mytvshows_traktNavigator',    'trakt.png',    'trakt.png',    1, 1, 1, 10, 0, 'trakt_credentials',    0, None),
-		('mytvshows', 'mytv_yamtrack_folder', 'Yamtrack', 'mytvshows_yamtrackNavigator', 'yamtrack.png', 'yamtrack.png', 1, 1, 1, 11, 0, 'yamtrack_credentials', 0, None),
+		('mytvshows', 'mytv_floppy_folder', 'Floppy', 'mytvshows_floppyNavigator', 'floppy.png', 'floppy.png', 1, 1, 1, 11, 0, 'floppy_credentials', 0, None),
 		('mymovies_mdblist',  'mymv_mdb_unfinished',  '40686',  'mdblistMoviesUnfinished',          'mdblist.png', 'mdblist.png', 1, 1, 1, 99, 0, 'mdblist_with_indicators', 1, '35308'),
 		('mytvshows_mdblist', 'mytv_mdb_unfinished',  '40686',  'mdblistEpisodesUnfinished',         'mdblist.png', 'mdblist.png', 1, 1, 1, 99, 0, 'mdblist_with_indicators', 1, '35308'),
 		('mymovies',  'mymv_local_finish',    'Local: Finish Watching', 'local_finish_watching_movies',   'icon.png',    'icon.png',    1, 1, 1, 99, 0, 'local_scrobble',          1, None),

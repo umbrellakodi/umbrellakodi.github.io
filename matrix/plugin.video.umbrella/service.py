@@ -57,6 +57,39 @@ class CheckSettingsFile:
 		except Exception:
 			log_utils.error()
 
+class MigrateFloppyRename:
+	# One-time migration: the Yamtrack fork this integration targets was renamed to
+	# "Floppy" by its developer, so all yamtrack.* setting ids and the sync db were
+	# renamed to floppy.* to match. Without this, an already-authenticated user would
+	# lose their saved base URL/token and synced watch history on upgrade.
+	def run(self):
+		try:
+			if control.setting('floppy.token'): return  # already migrated, or a fresh install
+			old_token = control.setting('yamtrack.token')
+			if not old_token: return  # never used the old Yamtrack integration
+			control.log('[ plugin.video.umbrella ]  Migrating Yamtrack settings to Floppy naming...', LOGINFO)
+			setting_map = [
+				('yamtrack.baseurl', 'floppy.baseurl'),
+				('yamtrack.token', 'floppy.token'),
+				('yamtrack.user.name', 'floppy.user.name'),
+				('yamtrack.general.notifications', 'floppy.general.notifications'),
+				('yamtrack.service.syncInterval', 'floppy.service.syncInterval'),
+				('yamtrack.markwatched', 'floppy.markwatched'),
+				('yamtrack.progress.showunaired', 'floppy.progress.showunaired'),
+				('yamtrack.UpcomingProgress.prependDate', 'floppy.UpcomingProgress.prependDate'),
+			]
+			for old_id, new_id in setting_map:
+				value = control.setting(old_id)
+				if value: control.setSetting(new_id, value)
+			old_db = control.joinPath(control.dataPath, 'yamtrackSync.db')
+			if control.existsPath(old_db) and not control.existsPath(control.floppySyncFile):
+				import shutil
+				shutil.copy(old_db, control.floppySyncFile)
+				control.log('[ plugin.video.umbrella ]  Migrated Floppy sync database', LOGINFO)
+			control.log('[ plugin.video.umbrella ]  Finished migrating Yamtrack settings to Floppy naming', LOGINFO)
+		except Exception:
+			log_utils.error()
+
 class SettingsMonitor(control.monitor_class):
 	def __init__ (self):
 		control.monitor_class.__init__(self)
@@ -282,12 +315,12 @@ try:
 	testUmbrella = False
 	if control.setting('indicators') == '0':
 		control.setSetting('indicators', 'Local') #fix for making this setting a string.
-	_alt_map = {'0': 'Local', '1': 'Trakt', '2': 'Simkl', '3': 'MDBList', '4': 'Custom', '5': 'Yamtrack'}
+	_alt_map = {'0': 'Local', '1': 'Trakt', '2': 'Simkl', '3': 'MDBList', '4': 'Custom', '5': 'Floppy'}
 	_alt_val = control.setting('indicators.alt')
 	_ind_val = control.setting('indicators')
 	if _alt_val in _alt_map and _ind_val != _alt_map[_alt_val]:
 		control.setSetting('indicators', _alt_map[_alt_val]) # sync display label with backing integer on upgrade
-	_scrobble_map = {'0': 'Local', '1': 'Trakt', '2': 'Simkl', '3': 'MDBList', '4': 'Custom', '5': 'Yamtrack'}
+	_scrobble_map = {'0': 'Local', '1': 'Trakt', '2': 'Simkl', '3': 'MDBList', '4': 'Custom', '5': 'Floppy'}
 	_scrobble_val = control.setting('scrobble.source')
 	_scrobble_disp = control.setting('scrobble')
 	if _scrobble_val in _scrobble_map and _scrobble_disp != _scrobble_map[_scrobble_val]:
@@ -320,21 +353,21 @@ except Exception:
 
 try:
 	_custom_name = control.setting('custom.servicename').strip() or 'Custom'
-	_ind_map = {'0': 'Local Only', '1': 'Trakt', '2': 'Simkl', '3': 'MDBList', '4': _custom_name, '5': 'Yamtrack'}
-	_scr_map = {'0': 'Off', '1': 'Trakt', '2': 'Simkl', '3': 'MDBList', '4': _custom_name, '5': 'Yamtrack'}
+	_ind_map = {'0': 'Local Only', '1': 'Trakt', '2': 'Simkl', '3': 'MDBList', '4': _custom_name, '5': 'Floppy'}
+	_scr_map = {'0': 'Off', '1': 'Trakt', '2': 'Simkl', '3': 'MDBList', '4': _custom_name, '5': 'Floppy'}
 	_ind = control.setting('indicators.alt')
 	_scr = control.setting('scrobble.source')
 	_trakt_authed = bool(control.setting('trakt.user.token') and control.setting('trakt.refreshtoken') and control.setting('trakt.user.name'))
 	_simkl_authed = bool(control.setting('simkltoken'))
 	_mdb_authed = bool(control.setting('mdblist.token'))
 	_custom_authed = bool(control.setting('custom.user.token') and control.setting('custom.refreshtoken') and control.setting('custom.user.name'))
-	_yamtrack_authed = bool(control.setting('yamtrack.baseurl') and control.setting('yamtrack.token'))
+	_floppy_authed = bool(control.setting('floppy.baseurl') and control.setting('floppy.token'))
 	_trakt_user = control.setting('trakt.user.name') or 'N/A'
 	_trakt_custom_id = bool(control.setting('trakt.clientid'))
 	_custom_user = control.setting('custom.user.name') or 'N/A'
 	_custom_baseurl = control.setting('custom.baseurl') or 'N/A'
-	_yamtrack_user = control.setting('yamtrack.user.name') or 'N/A'
-	_yamtrack_baseurl = control.setting('yamtrack.baseurl') or 'N/A'
+	_floppy_user = control.setting('floppy.user.name') or 'N/A'
+	_floppy_baseurl = control.setting('floppy.baseurl') or 'N/A'
 	log_utils.log('########   UMBRELLA SERVICE CONFIGURATION   ########', level=LOGINFO)
 	log_utils.log('##   [Service Selection]', level=LOGINFO)
 	log_utils.log('##   Primary Indicators/Watch History: %s' % _ind_map.get(_ind, _ind), level=LOGINFO)
@@ -345,27 +378,27 @@ try:
 	log_utils.log('##   Simkl Mark-Watched: %s' % control.setting('simkl.markwatched'), level=LOGINFO)
 	log_utils.log('##   MDBList Mark-Watched: %s' % control.setting('mdblist.markwatched'), level=LOGINFO)
 	log_utils.log('##   %s Mark-Watched: %s' % (_custom_name, control.setting('custom.markwatched')), level=LOGINFO)
-	log_utils.log('##   Yamtrack Mark-Watched: %s' % control.setting('yamtrack.markwatched'), level=LOGINFO)
+	log_utils.log('##   Floppy Mark-Watched: %s' % control.setting('floppy.markwatched'), level=LOGINFO)
 	log_utils.log('##   [Credentials]', level=LOGINFO)
 	log_utils.log('##   Trakt Authenticated: %s%s' % (_trakt_authed, ' (user: %s)' % _trakt_user if _trakt_authed else ''), level=LOGINFO)
 	log_utils.log('##   Trakt Custom Client ID: %s' % _trakt_custom_id, level=LOGINFO)
 	log_utils.log('##   Simkl Authenticated: %s' % _simkl_authed, level=LOGINFO)
 	log_utils.log('##   MDBList Authenticated: %s' % _mdb_authed, level=LOGINFO)
 	log_utils.log('##   %s Service Authenticated: %s%s (url: %s)' % (_custom_name, _custom_authed, ' (user: %s)' % _custom_user if _custom_authed else '', _custom_baseurl), level=LOGINFO)
-	log_utils.log('##   Yamtrack Service Authenticated: %s%s (url: %s)' % (_yamtrack_authed, ' (user: %s)' % _yamtrack_user if _yamtrack_authed else '', _yamtrack_baseurl), level=LOGINFO)
+	log_utils.log('##   Floppy Service Authenticated: %s%s (url: %s)' % (_floppy_authed, ' (user: %s)' % _floppy_user if _floppy_authed else '', _floppy_baseurl), level=LOGINFO)
 	log_utils.log('##   [Sync Intervals]', level=LOGINFO)
 	log_utils.log('##   Service Loop Interval: %s min' % control.setting('background.service.syncInterval'), level=LOGINFO)
 	log_utils.log('##   Simkl Sync Interval: %s min' % control.setting('simkl.service.syncInterval'), level=LOGINFO)
 	log_utils.log('##   MDBList Sync Interval: %s min' % control.setting('mdblist.service.syncInterval'), level=LOGINFO)
 	log_utils.log('##   %s Sync Interval: %s min' % (_custom_name, control.setting('custom.service.syncInterval')), level=LOGINFO)
-	log_utils.log('##   Yamtrack Sync Interval: %s min' % control.setting('yamtrack.service.syncInterval'), level=LOGINFO)
+	log_utils.log('##   Floppy Sync Interval: %s min' % control.setting('floppy.service.syncInterval'), level=LOGINFO)
 	log_utils.log('##   [Notifications]', level=LOGINFO)
 	log_utils.log('##   Scrobble Notify: %s' % control.setting('scrobble.notify'), level=LOGINFO)
 	log_utils.log('##   Trakt Notifications: %s' % control.setting('trakt.general.notifications'), level=LOGINFO)
 	log_utils.log('##   Simkl Notifications: %s' % control.setting('simkl.general.notifications'), level=LOGINFO)
 	log_utils.log('##   MDBList Notifications: %s' % control.setting('mdblist.general.notifications'), level=LOGINFO)
 	log_utils.log('##   %s Notifications: %s' % (_custom_name, control.setting('custom.general.notifications')), level=LOGINFO)
-	log_utils.log('##   Yamtrack Notifications: %s' % control.setting('yamtrack.general.notifications'), level=LOGINFO)
+	log_utils.log('##   Floppy Notifications: %s' % control.setting('floppy.general.notifications'), level=LOGINFO)
 	log_utils.log('####################################################', level=LOGINFO)
 except Exception:
 	log_utils.log('## ERROR logging service configuration', level=LOGINFO)
@@ -454,6 +487,7 @@ def main():
 		schedTrakt = None
 		libraryService = None
 		CheckSettingsFile().run()
+		MigrateFloppyRename().run()
 		SyncMyAccounts().run()
 		PremAccntNotification().run()
 		ReuseLanguageInvokerCheck().run()

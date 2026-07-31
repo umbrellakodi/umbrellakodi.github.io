@@ -1,5 +1,5 @@
 <?xml version='1.0' encoding='utf-8'?>
-<addons><addon id="plugin.video.umbrella" name="Umbrella" provider-name="Umbrella" version="6.7.643">
+<addons><addon id="plugin.video.umbrella" name="Umbrella" provider-name="Umbrella" version="6.7.644">
 	<requires>
 		<import addon="xbmc.python" version="3.0.0" />
 		<import addon="script.module.requests" />
@@ -91,10 +91,10 @@
 					[String.IsEqual(ListItem.dbtype,episode) | String.IsEqual(ListItem.dbtype,tvshow) | String.IsEqual(ListItem.dbtype,season) | String.IsEqual(ListItem.dbtype,movie)]
 				</visible>
 			</item>
-			<item library="resources\lib\context\yamtrackManager.py">
-				<label>$INFO[Window(home).Property(context.umbrella.showUmbrella)]Yamtrack Manager</label>
+			<item library="resources\lib\context\floppyManager.py">
+				<label>$INFO[Window(home).Property(context.umbrella.showUmbrella)]Floppy Manager</label>
 				<visible>
-					!String.IsEmpty(Window(home).Property(context.umbrella.yamtrackManager)) +
+					!String.IsEmpty(Window(home).Property(context.umbrella.floppyManager)) +
 					String.StartsWith(ListItem.path,plugin://plugin.video.umbrella/) +
 					String.IsEqual(ListItem.Property(isUmbrella_widget),true) +
 					[String.IsEqual(ListItem.dbtype,episode) | String.IsEqual(ListItem.dbtype,tvshow) | String.IsEqual(ListItem.dbtype,season) | String.IsEqual(ListItem.dbtype,movie)]
@@ -253,10 +253,10 @@
 			<screenshot>resources/screenshots/screenshot003.jpg</screenshot>
 		</assets>
 		<news>
-[B]Update - v6.7.643 - July 30th, 2026 [/B]
---[Change] Made changes to Yamtrack episode watched tracking.
---[Change] Added pagination to custom server history.
---[Fix] Fixed some logging issues causing errors.
+[B]Update - v6.7.644 - July 31st, 2026 [/B]
+--[Change] Made changes to Yamtrack to be Floppy.
+--[Change] Added pagination for shows progress in custom and Floppy.
+--[Fix] Fixed custom Recent Episodes.
 		</news>
 	</extension>
 

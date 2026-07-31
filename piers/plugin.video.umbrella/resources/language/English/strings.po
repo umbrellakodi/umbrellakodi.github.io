@@ -5945,41 +5945,49 @@ msgid "Upcoming Progress (Custom)"
 msgstr ""
 
 msgctxt "#40754"
-msgid "Yamtrack"
+msgid "Floppy"
 msgstr ""
 
 msgctxt "#40755"
-msgid "Yamtrack Server URL"
+msgid "Floppy Server URL"
 msgstr ""
 
 msgctxt "#40756"
-msgid "Yamtrack API Token"
+msgid "Floppy API Token"
 msgstr ""
 
 msgctxt "#40757"
-msgid "Yamtrack Username (optional)"
+msgid "Floppy Username (optional)"
 msgstr ""
 
 msgctxt "#40758"
-msgid "Test Yamtrack Connection"
+msgid "Test Floppy Connection"
 msgstr ""
 
 msgctxt "#40759"
-msgid "Revoke Yamtrack Credentials"
+msgid "Revoke Floppy Credentials"
 msgstr ""
 
 msgctxt "#40760"
-msgid "Yamtrack Notifications"
+msgid "Floppy Notifications"
 msgstr ""
 
 msgctxt "#40761"
-msgid "Yamtrack Sync Interval (Minutes)"
+msgid "Floppy Sync Interval (Minutes)"
 msgstr ""
 
 msgctxt "#40762"
-msgid "Also mark watched on Yamtrack"
+msgid "Also mark watched on Floppy"
 msgstr ""
 
 msgctxt "#40763"
-msgid "Yamtrack Manager"
+msgid "Floppy Manager"
+msgstr ""
+
+msgctxt "#40764"
+msgid "Floppy Progress Show unaired episodes"
+msgstr ""
+
+msgctxt "#40765"
+msgid "Floppy Upcoming Progress prepend date"
 msgstr ""

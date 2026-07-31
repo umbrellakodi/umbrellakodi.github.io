@@ -10,7 +10,7 @@ import re
 import xbmc
 from threading import Thread
 from urllib.parse import quote_plus, urlencode, parse_qsl, urlparse, urlsplit
-from resources.lib.database import cache, metacache, fanarttv_cache, traktsync, simklsync, customtraktsync, yamtracksync
+from resources.lib.database import cache, metacache, fanarttv_cache, traktsync, simklsync, customtraktsync, floppysync
 from resources.lib.indexers.tmdb import TVshows as tmdb_indexer
 from resources.lib.indexers.fanarttv import FanartTv
 from resources.lib.modules import cleangenre, log_utils
@@ -22,7 +22,7 @@ from resources.lib.modules import views
 from resources.lib.modules import mdblist
 from resources.lib.modules import simkl
 from resources.lib.modules import customtrakt
-from resources.lib.modules import yamtrack
+from resources.lib.modules import floppy
 from resources.lib.database import artwork as customArtwork
 
 getLS = control.lang
@@ -171,7 +171,7 @@ class TVshows:
 		self.prefer_fanArt = getSetting('prefer.fanarttv') == 'true'
 		self.mdblist_authed = getSetting('mdblist.token') != ''
 		self.customCredentials = customtrakt.getCustomCredentialsInfo()
-		self.yamtrackCredentials = yamtrack.getYamtrackCredentialsInfo()
+		self.floppyCredentials = floppy.getFloppyCredentialsInfo()
 		from resources.lib.modules import tmdb4
 		self.tmdbv4Credentials = tmdb4.getTMDbV4CredentialsInfo()
 
@@ -1179,7 +1179,7 @@ class TVshows:
 		except:
 			log_utils.error()
 
-	def yamtrackList(self, url, table, action, isCollection=False, create_directory=True, folderName=''):
+	def floppyList(self, url, table, action, isCollection=False, create_directory=True, folderName=''):
 		# Generic Watchlist/Watching/On Hold/Completed/Dropped/Collection list, mirroring
 		# customWatchlist()/customCollection() above.
 		self.list = []
@@ -1190,7 +1190,7 @@ class TVshows:
 			except:
 				q = dict(parse_qsl(urlsplit(url).query))
 				index = 0
-			self.list = yamtracksync.fetch_status_list(table)
+			self.list = floppysync.fetch_status_list(table)
 			useNext = True
 			if create_directory:
 				self.sort()
@@ -2350,12 +2350,37 @@ class TVshows:
 		return self.list
 
 	def custom_progress(self, url, folderName=''):
+		# Paginated the same way Trakt's/MDBList's Show Progress lists are — this was
+		# unconditionally rendering every in-progress show on one screen (next=False),
+		# unlike every other provider's progress list.
 		self.list = []
 		try:
+			try:
+				if '?' not in url:
+					url = 'customshowsprogress?limit=%s&page=1' % self.page_limit
+				q = dict(parse_qsl(urlsplit(url).query))
+				index = int(q.get('page', 1)) - 1
+			except:
+				q = {'limit': self.page_limit, 'page': '1'}
+				index = 0
 			cache.get(self.custom_tvshow_progress, 0, folderName)
 			self.sort(type='progress')
 			if self.list is None: self.list = []
-			self.tvshowDirectory(self.list, next=False, isProgress=True, folderName=folderName)
+			next = ''
+			if getSetting('custom.paginate.lists') == 'true' and self.list:
+				paginated_ids = [self.list[x:x + int(self.page_limit)] for x in range(0, len(self.list), int(self.page_limit))]
+				total_pages = len(paginated_ids)
+				self.list = paginated_ids[index] if index < total_pages else []
+				try:
+					if index + 1 >= total_pages: raise Exception()
+					next_page = index + 2
+					next = 'plugin://plugin.video.umbrella/?action=custom_shows_progress&url=%s&page=%s&folderName=%s' % (
+						quote_plus('customshowsprogress?limit=%s&page=%s' % (self.page_limit, next_page)),
+						str(next_page), quote_plus(folderName))
+				except: pass
+			for i in range(len(self.list)): self.list[i]['next'] = next
+			hasNext = bool(next)
+			self.tvshowDirectory(self.list, next=hasNext, isProgress=True, folderName=folderName)
 			return self.list
 		except:
 			log_utils.error()
@@ -2424,13 +2449,38 @@ class TVshows:
 			log_utils.error()
 		return self.list
 
-	def yamtrack_progress(self, url, folderName=''):
+	def floppy_progress(self, url, folderName=''):
+		# Paginated the same way Trakt's/MDBList's Show Progress lists are (and the same
+		# way floppyList() already paginates Floppy's other lists) — this was
+		# unconditionally rendering every in-progress show on one screen (next=False).
 		self.list = []
 		try:
-			cache.get(self.yamtrack_tvshow_progress, 0, folderName)
+			try:
+				if '?' not in url:
+					url = 'floppyshowsprogress?limit=%s&page=1' % self.page_limit
+				q = dict(parse_qsl(urlsplit(url).query))
+				index = int(q.get('page', 1)) - 1
+			except:
+				q = {'limit': self.page_limit, 'page': '1'}
+				index = 0
+			cache.get(self.floppy_tvshow_progress, 0, folderName)
 			self.sort(type='progress')
 			if self.list is None: self.list = []
-			self.tvshowDirectory(self.list, next=False, isProgress=True, folderName=folderName)
+			next = ''
+			if self.list:
+				paginated_ids = [self.list[x:x + int(self.page_limit)] for x in range(0, len(self.list), int(self.page_limit))]
+				total_pages = len(paginated_ids)
+				self.list = paginated_ids[index] if index < total_pages else []
+				try:
+					if index + 1 >= total_pages: raise Exception()
+					next_page = index + 2
+					next = 'plugin://plugin.video.umbrella/?action=floppy_shows_progress&url=%s&page=%s&folderName=%s' % (
+						quote_plus('floppyshowsprogress?limit=%s&page=%s' % (self.page_limit, next_page)),
+						str(next_page), quote_plus(folderName))
+				except: pass
+			for i in range(len(self.list)): self.list[i]['next'] = next
+			hasNext = bool(next)
+			self.tvshowDirectory(self.list, next=hasNext, isProgress=True, folderName=folderName)
 			return self.list
 		except:
 			log_utils.error()
@@ -2438,21 +2488,26 @@ class TVshows:
 				control.hide()
 				if self.notifications and self.is_widget != True: control.notification(title=32326, message=33049)
 
-	def yamtrack_tvshow_progress(self, create_directory=True, folderName=''):
-		# "In progress" shows for Yamtrack: start from the locally-known watched-episode
-		# list, then ask yamtrack.getShowProgress() per show — locally computed from TMDb
-		# season metadata capped at last_episode_to_air (see yamtrack.py), so an unaired
+	def floppy_tvshow_progress(self, create_directory=True, folderName=''):
+		# "In progress" shows for Floppy: start from the locally-known watched-episode
+		# list, then ask floppy.getShowProgress() per show — locally computed from TMDb
+		# season metadata capped at last_episode_to_air (see floppy.py), so an unaired
 		# season can't misclassify a caught-up show as "in progress" — mirroring
 		# custom_tvshow_progress()'s shape and inclusion logic above.
 		self.list = []
 		try:
-			indicators = yamtrack.syncTVShows()
+			indicators = floppy.syncTVShows()
 			if not indicators: return self.list
+			# sort(type='progress') sorts by 'lastplayed' — without setting it here every
+			# item ties at blank/epoch and the list falls back to arbitrary query order,
+			# not a real chronological sort. get_watched_shows() gives the real per-show
+			# MAX(last_watched_at) to key off, same as customtrakt's equivalent list.
+			last_watched_by_tmdb = {str(r[1]): r[3] for r in floppysync.get_watched_shows() if r[1]}
 			for (ids, watched_count, ep_ranges) in indicators:
 				try:
 					imdb, tmdb, tvdb = ids.get('imdb', ''), ids.get('tmdb', ''), ids.get('tvdb', '')
 					if not tmdb: continue
-					progress = yamtrack.getShowProgress(tmdb)
+					progress = floppy.getShowProgress(tmdb)
 					if progress and len(progress) > 1:
 						counts = progress[1] or {}
 						total = sum(v.get('total', 0) for v in counts.values())
@@ -2464,6 +2519,7 @@ class TVshows:
 					values['imdb'] = imdb
 					values['tmdb'] = tmdb
 					values['tvdb'] = tvdb
+					values['lastplayed'] = last_watched_by_tmdb.get(str(tmdb), '')
 					values['mediatype'] = 'tvshows'
 					values['has_next_episode'] = True
 					self.list.append(values)
@@ -2766,7 +2822,7 @@ class TVshows:
 		simklManagerMenu = getLS(40577) % self.highlight_color
 		mdblistManagerMenu = '[COLOR %s]MDBList Manager[/COLOR]' % self.highlight_color
 		customManagerMenu = '[COLOR %s]%s Manager[/COLOR]' % (self.highlight_color, customtrakt.getCustomServiceName())
-		yamtrackManagerMenu = '[COLOR %s]Yamtrack Manager[/COLOR]' % self.highlight_color
+		floppyManagerMenu = '[COLOR %s]Floppy Manager[/COLOR]' % self.highlight_color
 		showPlaylistMenu, clearPlaylistMenu = getLS(35517), getLS(35516)
 		playRandom, addToLibrary, addToFavourites, removeFromFavourites = getLS(32535), getLS(32551), getLS(40463), getLS(40468)
 		nextMenu, findSimilarMenu, trailerMenu = getLS(32053), getLS(32184), getLS(40431)
@@ -2893,8 +2949,8 @@ class TVshows:
 						cm.append((mdblistManagerMenu, 'RunPlugin(%s?action=tools_mdbWatchlist&name=%s&imdb=%s&tvdb=%s&tmdb=%s&watched=%s)' % (sysaddon, systitle, imdb, tvdb, tmdb, watched)))
 					if self.customCredentials:
 						cm.append((customManagerMenu, 'RunPlugin(%s?action=tools_customManager&name=%s&imdb=%s&tvdb=%s&watched=%s&tvshow=tvshow)' % (sysaddon, systitle, imdb, tvdb, watched)))
-					if self.yamtrackCredentials:
-						cm.append((yamtrackManagerMenu, 'RunPlugin(%s?action=tools_yamtrackManager&name=%s&imdb=%s&tvdb=%s&watched=%s&tvshow=tvshow)' % (sysaddon, systitle, imdb, tvdb, watched)))
+					if self.floppyCredentials:
+						cm.append((floppyManagerMenu, 'RunPlugin(%s?action=tools_floppyManager&name=%s&imdb=%s&tvdb=%s&watched=%s&tvshow=tvshow)' % (sysaddon, systitle, imdb, tvdb, watched)))
 					if watched:
 						meta.update({'playcount': 1, 'overlay': 5})
 						cm.append((unwatchedMenu, 'RunPlugin(%s?action=playcount_TVShow&name=%s&imdb=%s&tvdb=%s&query=4)' % (sysaddon, systitle, imdb, tvdb)))

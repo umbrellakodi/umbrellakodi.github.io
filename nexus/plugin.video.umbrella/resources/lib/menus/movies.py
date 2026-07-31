@@ -12,7 +12,7 @@ import xbmc
 #from threading import Thread
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from urllib.parse import quote_plus, urlencode, parse_qsl, urlparse, urlsplit
-from resources.lib.database import cache, metacache, fanarttv_cache, traktsync, simklsync, customtraktsync, yamtracksync
+from resources.lib.database import cache, metacache, fanarttv_cache, traktsync, simklsync, customtraktsync, floppysync
 from resources.lib.indexers.tmdb import Movies as tmdb_indexer
 from resources.lib.indexers.fanarttv import FanartTv
 from resources.lib.modules import simkl
@@ -25,7 +25,7 @@ from resources.lib.modules import trakt
 from resources.lib.modules import views
 from resources.lib.modules import mdblist
 from resources.lib.modules import customtrakt
-from resources.lib.modules import yamtrack
+from resources.lib.modules import floppy
 from resources.lib.database import artwork as customArtwork
 from sqlite3 import dbapi2 as database
 from json import loads as jsloads
@@ -192,7 +192,7 @@ class Movies:
 		self.simklCredentials = simkl.getSimKLCredentialsInfo()
 		self.mdblist_authed = getSetting('mdblist.token') != ''
 		self.customCredentials = customtrakt.getCustomCredentialsInfo()
-		self.yamtrackCredentials = yamtrack.getYamtrackCredentialsInfo()
+		self.floppyCredentials = floppy.getFloppyCredentialsInfo()
 		from resources.lib.modules import tmdb4
 		self.tmdbv4Credentials = tmdb4.getTMDbV4CredentialsInfo()
 
@@ -1607,9 +1607,9 @@ class Movies:
 			from resources.lib.modules import log_utils
 			log_utils.error()
 
-	def yamtrackList(self, url, table, action, isCollection=False, create_directory=True, folderName=''):
+	def floppyList(self, url, table, action, isCollection=False, create_directory=True, folderName=''):
 		# Generic Watchlist/Watching/On Hold/Completed/Dropped/Collection list, mirroring
-		# customWatchlist()/customCollection() above — Yamtrack's unified status model
+		# customWatchlist()/customCollection() above — Floppy's unified status model
 		# means all 6 lists share the same local-db-backed pagination shape.
 		self.list = []
 		try:
@@ -1619,7 +1619,7 @@ class Movies:
 			except:
 				q = dict(parse_qsl(urlsplit(url).query))
 				index = 0
-			self.list = yamtracksync.fetch_status_list(table)
+			self.list = floppysync.fetch_status_list(table)
 			useNext = True
 			if create_directory:
 				self.sort(type='movies.collection' if isCollection else 'movies.watchlist')
@@ -2621,7 +2621,7 @@ class Movies:
 		simklManagerMenu = getLS(40577) % self.highlight_color
 		mdblistManagerMenu = '[COLOR %s]MDBList Manager[/COLOR]' % self.highlight_color
 		customManagerMenu = '[COLOR %s]%s Manager[/COLOR]' % (self.highlight_color, customtrakt.getCustomServiceName())
-		yamtrackManagerMenu = '[COLOR %s]Yamtrack Manager[/COLOR]' % self.highlight_color
+		floppyManagerMenu = '[COLOR %s]Floppy Manager[/COLOR]' % self.highlight_color
 		from resources.lib.modules import favourites
 		favoriteItems = favourites.getFavourites(content='movies')
 		favoriteItems = [x[1].get('imdb') for x in favoriteItems]
@@ -2731,8 +2731,8 @@ class Movies:
 						cm.append((mdblistManagerMenu, 'RunPlugin(%s?action=tools_mdbWatchlist&name=%s&imdb=%s&watched=%s)' % (sysaddon, sysname, imdb, watched)))
 					if self.customCredentials:
 						cm.append((customManagerMenu, 'RunPlugin(%s?action=tools_customManager&name=%s&imdb=%s&watched=%s&unfinished=%s)' % (sysaddon, sysname, imdb, watched, unfinished)))
-					if self.yamtrackCredentials:
-						cm.append((yamtrackManagerMenu, 'RunPlugin(%s?action=tools_yamtrackManager&name=%s&imdb=%s&watched=%s&unfinished=%s)' % (sysaddon, sysname, imdb, watched, unfinished)))
+					if self.floppyCredentials:
+						cm.append((floppyManagerMenu, 'RunPlugin(%s?action=tools_floppyManager&name=%s&imdb=%s&watched=%s&unfinished=%s)' % (sysaddon, sysname, imdb, watched, unfinished)))
 					if self.tmdbv4Credentials:
 						cm.append((getLS(40606) if getLS(40606) else 'TMDB List Manager', 'RunPlugin(%s?action=tools_tmdbListManager&name=%s&tmdb=%s&mediatype=movie)' % (sysaddon, sysname, tmdb)))
 						if tmdb:
