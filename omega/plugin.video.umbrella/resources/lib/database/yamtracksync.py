@@ -250,7 +250,9 @@ def get_watched_movies():
 		dbcon = get_connection()
 		dbcur = get_connection_cursor(dbcon)
 		_ensure_watched_tables(dbcur)
-		rows = dbcur.execute("SELECT tmdb FROM yamtrack_watched_movies WHERE tmdb != ''").fetchall()
+		# getMovieOverlay() (playcount.py) matches this list against a real imdb id, not
+		# tmdb, so this must select imdb — even though tmdb is the table's unique key.
+		rows = dbcur.execute("SELECT imdb FROM yamtrack_watched_movies WHERE imdb != ''").fetchall()
 		result = [r[0] for r in rows]
 	except:
 		from resources.lib.modules import log_utils

@@ -667,20 +667,27 @@ class TVshows:
 				elif attribute == 6:
 					nolastPlayed = []
 					for i in range(len(self.list)):
-						if 'lastplayed' not in self.list[i]: 
+						if 'lastplayed' not in self.list[i]:
 							self.list[i]['lastplayed'] = ''
-							
-							log_utils.log('TVShow Last Played Blank Title: %' % self.list[i]['title'], 1)
+							log_utils.log('TVShow Last Played Blank Title: %s' % self.list[i].get('title', ''), 1)
 					#self.list = sorted(self.list, key=lambda k: k['lastplayed'], reverse=reverse)
 					if self.list:
 						def _parse_lastplayed(k):
 							lp = k.get('lastplayed')
 							if not lp:
 								return time.gmtime(0)
+							# Some providers' raw timestamps don't match either expected
+							# format (e.g. an unexpected double-fraction like
+							# "...25.000.000Z") — never let one bad value crash sorting
+							# for the whole list.
 							try:
 								return time.strptime(lp, "%Y-%m-%dT%H:%M:%S.%fZ")
 							except ValueError:
+								pass
+							try:
 								return time.strptime(lp, "%Y-%m-%dT%H:%M:%SZ")
+							except ValueError:
+								return time.gmtime(0)
 						self.list = sorted(self.list, key=_parse_lastplayed, reverse=reverse)
 			elif reverse:
 				self.list = list(reversed(self.list))
@@ -2417,6 +2424,56 @@ class TVshows:
 			log_utils.error()
 		return self.list
 
+	def yamtrack_progress(self, url, folderName=''):
+		self.list = []
+		try:
+			cache.get(self.yamtrack_tvshow_progress, 0, folderName)
+			self.sort(type='progress')
+			if self.list is None: self.list = []
+			self.tvshowDirectory(self.list, next=False, isProgress=True, folderName=folderName)
+			return self.list
+		except:
+			log_utils.error()
+			if not self.list:
+				control.hide()
+				if self.notifications and self.is_widget != True: control.notification(title=32326, message=33049)
+
+	def yamtrack_tvshow_progress(self, create_directory=True, folderName=''):
+		# "In progress" shows for Yamtrack: start from the locally-known watched-episode
+		# list, then ask yamtrack.getShowProgress() per show — locally computed from TMDb
+		# season metadata capped at last_episode_to_air (see yamtrack.py), so an unaired
+		# season can't misclassify a caught-up show as "in progress" — mirroring
+		# custom_tvshow_progress()'s shape and inclusion logic above.
+		self.list = []
+		try:
+			indicators = yamtrack.syncTVShows()
+			if not indicators: return self.list
+			for (ids, watched_count, ep_ranges) in indicators:
+				try:
+					imdb, tmdb, tvdb = ids.get('imdb', ''), ids.get('tmdb', ''), ids.get('tvdb', '')
+					if not tmdb: continue
+					progress = yamtrack.getShowProgress(tmdb)
+					if progress and len(progress) > 1:
+						counts = progress[1] or {}
+						total = sum(v.get('total', 0) for v in counts.values())
+						watched = sum(v.get('watched', 0) for v in counts.values())
+						if total and watched >= total: continue  # fully watched, not "in progress"
+					values = {}
+					values['next'] = ''
+					values['progress'] = ''
+					values['imdb'] = imdb
+					values['tmdb'] = tmdb
+					values['tvdb'] = tvdb
+					values['mediatype'] = 'tvshows'
+					values['has_next_episode'] = True
+					self.list.append(values)
+				except: log_utils.error()
+			self.worker()
+			if self.list is None: self.list = []
+		except:
+			log_utils.error()
+		return self.list
+
 	def simkl_list(self, url, folderName):
 		self.list = []
 		if ',return' in url: url = url.split(',return')[0]
@@ -2528,29 +2585,26 @@ class TVshows:
 		return self.list
 
 	def custom_tvshow_watched(self, url, folderName=''):
+		# Paginated the same way customWatchlist()/customCollection() are: watch history
+		# is already a fully-local list (no live remote pagination possible), but without
+		# slicing before worker() runs, a large history means running a metacache/TMDb
+		# lookup for every single watched item on every load — the actual cause of "loads
+		# several thousand items" being slow, not just the missing Next-page link.
 		self.list = []
 		try:
-			cache.get(self.custom_watched_shows_fetch, 0, folderName)
-			self.sort(type='watched')
-			if self.list is None: self.list = []
-			self.tvshowDirectory(self.list, next=False, isProgress=False, isWatched=True, folderName=folderName)
-			return self.list
-		except:
-			log_utils.error()
-			if not self.list:
-				control.hide()
-				if self.notifications and self.is_widget != True: control.notification(title=32326, message=33049)
-
-	def custom_watched_shows_fetch(self, create_directory=True, folderName=''):
-		self.list = []
-		try:
+			url = url or 'customshowswatched'
+			try:
+				q = dict(parse_qsl(urlsplit(url).query))
+				index = int(q['page']) - 1
+			except:
+				q = dict(parse_qsl(urlsplit(url).query))
+				index = 0
 			shows = customtrakt.watchedShows()
 			if not shows: return self.list
 			for show in shows:
 				try:
 					ids = show.get('ids', {})
 					values = {}
-					values['next'] = ''
 					values['imdb'] = str(ids.get('imdb', '')) if ids.get('imdb') else ''
 					values['tmdb'] = str(ids.get('tmdb', '')) if ids.get('tmdb') else ''
 					values['tvdb'] = str(ids.get('tvdb', '')) if ids.get('tvdb') else ''
@@ -2558,11 +2612,31 @@ class TVshows:
 					values['mediatype'] = 'tvshows'
 					self.list.append(values)
 				except: log_utils.error()
+			useNext = True
+			self.sort(type='watched')
+			if getSetting('custom.paginate.lists') == 'true' and self.list:
+				if len(self.list) <= int(self.page_limit):
+					useNext = False
+				paginated_ids = [self.list[x:x + int(self.page_limit)] for x in range(0, len(self.list), int(self.page_limit))]
+				self.list = paginated_ids[index]
+			try:
+				if useNext == False: raise Exception()
+				if len(self.list) < int(self.page_limit): raise Exception()
+				q.update({'page': str(index + 2), 'limit': str(self.page_limit)})
+				q = (urlencode(q)).replace('%2C', ',')
+				continuation = url.replace('?' + urlparse(url).query, '') + '?' + q
+				next = 'plugin://plugin.video.umbrella/?action=custom_shows_watched&url=%s&folderName=%s' % (quote_plus(continuation), quote_plus(folderName))
+			except: next = ''
+			for i in range(len(self.list)): self.list[i]['next'] = next
 			self.worker()
 			if self.list is None: self.list = []
+			self.tvshowDirectory(self.list, isProgress=False, isWatched=True, folderName=folderName)
+			return self.list
 		except:
 			log_utils.error()
-		return self.list
+			if not self.list:
+				control.hide()
+				if self.notifications and self.is_widget != True: control.notification(title=32326, message=33049)
 
 	def worker(self):
 		try:
@@ -2796,7 +2870,21 @@ class TVshows:
 				cm.append(('Play Trailer (Select)', 'RunPlugin(%s?action=play_Trailer_Select&type=%s&name=%s&year=%s&windowedtrailer=0)' % (sysaddon, 'show', systitle, year)))
 				try:
 					watched = (getTVShowOverlay(indicators[1], imdb, tvdb) == '5') if indicators else False
-					if watched and meta.get('has_next_episode'): watched = False
+					if watched and meta.get('has_next_episode'):
+						# A still-airing show isn't necessarily "unwatched" just because
+						# has_next_episode is true — it may mean nothing beyond "TMDb
+						# says the series is still in production," not that a specific
+						# next episode is actually out yet. Re-check with a forced-fresh
+						# indicator sync (mirrors the self-healing logic the dedicated
+						# Trakt "Show Progress" list already has) before suppressing the
+						# checkmark for real. getSeasonIndicators() already dispatches to
+						# whichever provider is the active indicators source internally.
+						watched = False
+						try:
+							re_indicators = getSeasonIndicators(imdb, tvdb, has_next_episode=True, tmdb_total_aired=meta.get('total_aired_episodes'))
+							re_count = getShowCount(re_indicators[1], imdb, tvdb) if re_indicators else None
+							if re_count and int(re_count.get('unwatched', 0)) == 0: watched = True
+						except: pass
 					if self.traktCredentials:
 						cm.append((traktManagerMenu, 'RunPlugin(%s?action=tools_traktManager&name=%s&imdb=%s&tvdb=%s&watched=%s&tvshow=tvshow)' % (sysaddon, systitle, imdb, tvdb, watched)))
 					if self.simklCredentials:

@@ -1646,8 +1646,20 @@ class Movies:
 			log_utils.error()
 
 	def customWatched(self, url=None, idx=True, create_directory=True, folderName=''):
+		# Paginated the same way customWatchlist()/customCollection() are: watch history
+		# is already a fully-local list (no live remote pagination possible), but without
+		# slicing before worker() runs, a large history means running a metacache/TMDb
+		# lookup for every single watched item on every load — the actual cause of "loads
+		# several thousand items" being slow, not just the missing Next-page link.
 		self.list = []
 		try:
+			url = url or 'custommovieswatched'
+			try:
+				q = dict(parse_qsl(urlsplit(url).query))
+				index = int(q['page']) - 1
+			except:
+				q = dict(parse_qsl(urlsplit(url).query))
+				index = 0
 			rows = customtrakt.watchedMovies()
 			if not rows: return self.list
 			for (imdb, tmdb, title, year, last_watched_at) in rows:
@@ -1663,10 +1675,26 @@ class Movies:
 				except:
 					from resources.lib.modules import log_utils
 					log_utils.error()
+			useNext = True
+			if create_directory:
+				self.sort(type='watched')
+				if getSetting('custom.paginate.lists') == 'true' and self.list:
+					if len(self.list) <= int(self.page_limit):
+						useNext = False
+					paginated_ids = [self.list[x:x + int(self.page_limit)] for x in range(0, len(self.list), int(self.page_limit))]
+					self.list = paginated_ids[index]
+			try:
+				if useNext == False: raise Exception()
+				if len(self.list) < int(self.page_limit): raise Exception()
+				q.update({'page': str(index + 2), 'limit': str(self.page_limit)})
+				q = (urlencode(q)).replace('%2C', ',')
+				continuation = url.replace('?' + urlparse(url).query, '') + '?' + q
+				next = 'plugin://plugin.video.umbrella/?action=custom_movies_watched&url=%s&folderName=%s' % (quote_plus(continuation), quote_plus(folderName))
+			except: next = ''
+			for i in range(len(self.list)): self.list[i]['next'] = next
 			if idx: self.worker()
-			self.sort(type='watched')
 			if self.list is None: self.list = []
-			if create_directory: self.movieDirectory(self.list, next=False, folderName=folderName)
+			if create_directory: self.movieDirectory(self.list, folderName=folderName)
 			return self.list
 		except:
 			from resources.lib.modules import log_utils

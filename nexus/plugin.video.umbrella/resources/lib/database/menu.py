@@ -245,6 +245,7 @@ _MYTVSHOWS_YAMTRACK_DEFAULTS = [
 	('mytv_yamtrack_completed',  'Yamtrack Completed',  'yamtrack_shows_completed&url=yamtrackshowscompleted',   'yamtrack.png', 'yamtrack.png', 1, 1, 1,  3, 0, 'yamtrack_credentials', 0, None),
 	('mytv_yamtrack_dropped',    'Yamtrack Dropped',    'yamtrack_shows_dropped&url=yamtrackshowsdropped',       'yamtrack.png', 'yamtrack.png', 1, 1, 1,  4, 0, 'yamtrack_credentials', 0, None),
 	('mytv_yamtrack_collection', 'Yamtrack Collection', 'yamtrack_shows_collection&url=yamtrackshowscollection', 'yamtrack.png', 'yamtrack.png', 1, 1, 1,  5, 0, 'yamtrack_credentials', 0, None),
+	('mytv_yamtrack_show_prog',  'Yamtrack Show Progress', 'yamtrack_shows_progress&url=yamtrackshowsprogress',   'yamtrack.png', 'yamtrack.png', 1, 1, 1,  6, 0, 'yamtrack_with_indicators', 1, None),
 ]
 
 MENU_DEFAULTS = {

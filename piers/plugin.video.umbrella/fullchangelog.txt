@@ -1,3 +1,8 @@
+[B]Update - v6.7.643 - July 30th, 2026 [/B]
+--[Change] Made changes to Yamtrack episode watched tracking.
+--[Change] Added pagination to custom server history.
+--[Fix] Fixed some logging issues causing errors.
+
 [B]Update - v6.7.642 - July 30th, 2026 [/B]
 --[Change] Added support for Yamtrack Fork. (https://github.com/dannyvfilms/Yamtrack)
 --[Fix] Made changes to the way counts are done when using Simkl

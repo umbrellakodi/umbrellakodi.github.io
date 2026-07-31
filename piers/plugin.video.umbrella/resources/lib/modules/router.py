@@ -336,6 +336,9 @@ def router(argv2):
 	elif action == 'yamtrack_shows_watching':
 		from resources.lib.menus import tvshows
 		tvshows.TVshows().yamtrackList(url, 'shows_watching', 'yamtrack_shows_watching', folderName=folderName)
+	elif action == 'yamtrack_shows_progress':
+		from resources.lib.menus import tvshows
+		tvshows.TVshows().yamtrack_progress(url, folderName=folderName)
 	elif action == 'yamtrack_shows_watchlist':
 		from resources.lib.menus import tvshows
 		tvshows.TVshows().yamtrackList(url, 'shows_plantowatch', 'yamtrack_shows_watchlist', folderName=folderName)

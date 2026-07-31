@@ -251,11 +251,15 @@ def _patch_or_create(detail_url, media_type, tmdb, body, season_number=None):
 def markMovieAsWatched(imdb, tmdb=''):
 	try:
 		if not tmdb: tmdb = _resolve_tmdb('movie', imdb=imdb)
-		if not tmdb: return False
+		if not tmdb:
+			log_utils.log('YAMTRACK: markMovieAsWatched IMDB=%s aborted — could not resolve a tmdb id' % imdb, level=log_utils.LOGWARNING)
+			return False
 		success = _patch_or_create(_movie_url(tmdb), 'movie', tmdb, {'status': STATUS_COMPLETED})
 		if success:
 			yamtracksync.upsert_watched_movie(imdb=imdb or '', tmdb=str(tmdb), last_watched_at=_now_iso())
 			yamtracksync.cache_delete(yamtracksync._hash_function(syncMovies, ()))
+		if getSetting('debug.level') == '1':
+			log_utils.log('YAMTRACK: markMovieAsWatched IMDB=%s TMDB=%s Result=%s' % (imdb, tmdb, success), level=log_utils.LOGDEBUG)
 		return success
 	except:
 		log_utils.error()
@@ -264,7 +268,9 @@ def markMovieAsWatched(imdb, tmdb=''):
 def markMovieAsNotWatched(imdb, tmdb=''):
 	try:
 		if not tmdb: tmdb = _resolve_tmdb('movie', imdb=imdb)
-		if not tmdb: return False
+		if not tmdb:
+			log_utils.log('YAMTRACK: markMovieAsNotWatched IMDB=%s aborted — could not resolve a tmdb id' % imdb, level=log_utils.LOGWARNING)
+			return False
 		# PATCH back to Planning rather than DELETE, so score/notes/dates the user
 		# set aren't destroyed by an unwatch action.
 		response = getYamtrack(_movie_url(tmdb), post={'status': STATUS_PLANNING}, method='PATCH', silent=True)
@@ -272,6 +278,8 @@ def markMovieAsNotWatched(imdb, tmdb=''):
 		if success:
 			yamtracksync.delete_watched_movie(tmdb)
 			yamtracksync.cache_delete(yamtracksync._hash_function(syncMovies, ()))
+		if getSetting('debug.level') == '1':
+			log_utils.log('YAMTRACK: markMovieAsNotWatched IMDB=%s TMDB=%s Result=%s' % (imdb, tmdb, success), level=log_utils.LOGDEBUG)
 		return success
 	except:
 		log_utils.error()
@@ -283,6 +291,9 @@ def markTVShowAsWatched(imdb, tvdb):
 		if not tmdb: return False
 		success = _patch_or_create(_tv_url(tmdb), 'tv', tmdb, {'status': STATUS_COMPLETED})
 		if success:
+			_watch_all_episodes_remote(tmdb, season=None)
+			if _sync_episode_tracking_for_show(imdb, tmdb) is None:
+				_mark_all_episodes_watched_locally(imdb, tmdb, season=None) # hard API failure fallback
 			yamtracksync.cache_delete(yamtracksync._hash_function(syncTVShows, ()))
 			yamtracksync.cache_delete(yamtracksync._hash_function(_fetchShowProgress, (tmdb,)))
 		return success
@@ -297,8 +308,14 @@ def markTVShowAsNotWatched(imdb, tvdb):
 		response = getYamtrack(_tv_url(tmdb), post={'status': STATUS_PLANNING}, method='PATCH', silent=True)
 		success = bool(response is not None and response.status_code == 200)
 		if success:
+			# PATCHing status doesn't itself untrack episodes server-side (mirrors why
+			# markTVShowAsWatched has to explicitly (un)watch every episode) — without
+			# this, the next full sync would just re-discover them as still tracked and
+			# silently undo the unwatch.
 			for (si, st, sv, s, e) in yamtracksync.get_watched_episodes():
-				if st == tmdb: yamtracksync.delete_watched_episode(st, s, e)
+				if st == tmdb:
+					getYamtrack(_episode_url(tmdb, int(s), int(e)), method='DELETE', silent=True)
+					yamtracksync.delete_watched_episode(st, s, e)
 			yamtracksync.cache_delete(yamtracksync._hash_function(syncTVShows, ()))
 			yamtracksync.cache_delete(yamtracksync._hash_function(_fetchShowProgress, (tmdb,)))
 		return success
@@ -313,6 +330,9 @@ def markSeasonAsWatched(imdb, tvdb, season):
 		season = int('%01d' % int(season))
 		success = _patch_or_create(_season_url(tmdb, season), 'season', tmdb, {'status': STATUS_COMPLETED}, season_number=season)
 		if success:
+			_watch_all_episodes_remote(tmdb, season=season)
+			if _sync_episode_tracking_for_show(imdb, tmdb) is None:
+				_mark_all_episodes_watched_locally(imdb, tmdb, season=season) # hard API failure fallback
 			yamtracksync.cache_delete(yamtracksync._hash_function(syncTVShows, ()))
 			yamtracksync.cache_delete(yamtracksync._hash_function(_fetchShowProgress, (tmdb,)))
 		return success
@@ -329,7 +349,9 @@ def markSeasonAsNotWatched(imdb, tvdb, season):
 		success = bool(response is not None and response.status_code == 200)
 		if success:
 			for (si, st, sv, s, e) in yamtracksync.get_watched_episodes():
-				if st == tmdb and int(s) == season: yamtracksync.delete_watched_episode(st, s, e)
+				if st == tmdb and int(s) == season:
+					getYamtrack(_episode_url(tmdb, int(s), int(e)), method='DELETE', silent=True)
+					yamtracksync.delete_watched_episode(st, s, e)
 			yamtracksync.cache_delete(yamtracksync._hash_function(syncTVShows, ()))
 			yamtracksync.cache_delete(yamtracksync._hash_function(_fetchShowProgress, (tmdb,)))
 		return success
@@ -348,6 +370,8 @@ def markEpisodeAsWatched(imdb, tvdb, season, episode):
 			yamtracksync.upsert_watched_episode(show_imdb=imdb or '', show_tmdb=tmdb, show_tvdb=str(tvdb or ''), season=season, episode=episode, last_watched_at=_now_iso())
 			yamtracksync.cache_delete(yamtracksync._hash_function(syncTVShows, ()))
 			yamtracksync.cache_delete(yamtracksync._hash_function(_fetchShowProgress, (tmdb,)))
+		if getSetting('debug.level') == '1':
+			log_utils.log('YAMTRACK: markEpisodeAsWatched IMDB=%s TMDB=%s S%02dE%02d Result=%s HTTP=%s' % (imdb, tmdb, season, episode, success, response.status_code if response is not None else 'None'), level=log_utils.LOGDEBUG)
 		return success
 	except:
 		log_utils.error()
@@ -364,6 +388,8 @@ def markEpisodeAsNotWatched(imdb, tvdb, season, episode):
 			yamtracksync.delete_watched_episode(tmdb, season, episode)
 			yamtracksync.cache_delete(yamtracksync._hash_function(syncTVShows, ()))
 			yamtracksync.cache_delete(yamtracksync._hash_function(_fetchShowProgress, (tmdb,)))
+		if getSetting('debug.level') == '1':
+			log_utils.log('YAMTRACK: markEpisodeAsNotWatched IMDB=%s TMDB=%s S%02dE%02d Result=%s HTTP=%s' % (imdb, tmdb, season, episode, success, response.status_code if response is not None else 'None'), level=log_utils.LOGDEBUG)
 		return success
 	except:
 		log_utils.error()
@@ -470,16 +496,171 @@ def _fetch_status_bucket(media_type, status):
 	items = get_all_pages('/media/%s/?status=%s' % (media_type, status), silent=True)
 	return items or []
 
+def _resolve_movie_imdb(tmdb):
+	# Yamtrack is TMDB-native and never hands back an imdb id directly — reverse-resolve
+	# it via TMDb so getMovieOverlay()'s imdb-keyed matching (shared with every other
+	# provider) actually finds these rows.
+	try:
+		from resources.lib.database import cache as _cache
+		from resources.lib.indexers import tmdb as _tmdb
+		result = _cache.get(_tmdb.Movies().get_external_ids, 96, tmdb, '')
+		return str(result.get('imdb_id', '') or '') if result else ''
+	except:
+		return ''
+
+def _resolve_tv_imdb(tmdb):
+	try:
+		from resources.lib.database import cache as _cache
+		from resources.lib.indexers import tmdb as _tmdb
+		result = _cache.get(_tmdb.TVshows().get_external_ids, 96, tmdb)
+		return str(result.get('imdb_id', '') or '') if result else ''
+	except:
+		return ''
+
+def _mark_all_episodes_watched_locally(imdb, tmdb, season=None):
+	# Fallback only (network/API failure) — assumes every TMDb-listed episode of the
+	# season/show was watched. NOT used as the primary path: live testing against the
+	# real server confirmed a season's own 'tracked'/'status' fields do NOT reliably
+	# reflect its episodes' real watched state (a season can show tracked=false while
+	# individual episodes underneath it are tracked=true), so _sync_episode_tracking_
+	# for_show() (real per-episode data) is used everywhere this matters.
+	try:
+		from resources.lib.database import cache as _cache
+		from resources.lib.indexers import tmdb as _tmdb
+		now = _now_iso()
+		if season is not None:
+			raw = _cache.get(_tmdb.TVshows().get_season_request, 96, tmdb, int(season))
+			for ep in (raw or {}).get('episodes', []):
+				en = int(ep.get('episode_number', 0))
+				if en > 0:
+					yamtracksync.upsert_watched_episode(show_imdb=imdb, show_tmdb=tmdb, show_tvdb='', season=int(season), episode=en, last_watched_at=now)
+		else:
+			meta = _cache.get(_tmdb.TVshows().get_showSeasons_meta, 96, tmdb)
+			for s_item in (meta or {}).get('seasons', []):
+				sn = int(s_item.get('season_number', 0))
+				ec = int(s_item.get('episode_count', 0))
+				if sn > 0 and ec > 0:
+					for en in range(1, ec + 1):
+						yamtracksync.upsert_watched_episode(show_imdb=imdb, show_tmdb=tmdb, show_tvdb='', season=sn, episode=en, last_watched_at=now)
+	except: log_utils.error()
+
+def _watch_all_episodes_remote(tmdb, season=None):
+	# Setting a show/season's 'status' to Completed does NOT itself mark its episodes
+	# tracked on the server — confirmed via live testing, episode 'tracked' is a fully
+	# separate per-episode record. So actually "watching" a whole show/season requires
+	# hitting POST .../episodes/{n}/watch/ for every one of its episodes individually,
+	# same as markEpisodeAsWatched does for a single episode. Episode numbers come from
+	# TMDb season metadata since Yamtrack has no "list all episode numbers" shortcut.
+	try:
+		from resources.lib.database import cache as _cache
+		from resources.lib.indexers import tmdb as _tmdb
+		if season is not None:
+			season_numbers = [int(season)]
+		else:
+			meta = _cache.get(_tmdb.TVshows().get_showSeasons_meta, 96, tmdb)
+			season_numbers = [int(s.get('season_number', 0)) for s in (meta or {}).get('seasons', []) if s.get('season_number', 0) > 0]
+		for sn in season_numbers:
+			raw = _cache.get(_tmdb.TVshows().get_season_request, 96, tmdb, sn)
+			for ep in (raw or {}).get('episodes', []):
+				en = ep.get('episode_number')
+				if en is None: continue
+				getYamtrack(_episode_watch_url(tmdb, sn, int(en)), post={}, method='POST', silent=True)
+	except: log_utils.error()
+
+def _sync_episode_tracking_for_show(imdb, tmdb):
+	# Confirmed against a live Yamtrack instance (real Postman testing, not guesswork):
+	# the per-episode 'tracked' flag on /media/tv/tmdb/{id}/{season}/episodes/ items is
+	# NOT reliable — it read false for every episode of a season the web UI showed as
+	# 10/10 watched. The real signal is each season's consumption HISTORY record: GET
+	# /media/tv/tmdb/{id}/{season}/history/ returns entries with an integer 'progress'
+	# field (how many episodes of that season have been watched, sequential from
+	# episode 1 — e.g. progress=6 means episodes 1-6), which matched the web UI exactly
+	# in testing (season 2 progress=6 of 9; show-level progress=16 = 10+6 across both
+	# seasons). This mirrors the same sequential-progress model already used for every
+	# other provider's season/episode indicators.
+	# Returns None on a hard API/network failure (caller should consider a fallback),
+	# or an int count of watched episodes actually written (0 is a legitimate,
+	# successful result — e.g. a show the user hasn't actually watched any of yet).
+	try:
+		detail = getYamtrackAsJson(_tv_url(tmdb), silent=True)
+		if detail is None: return None
+		seasons = (detail.get('related') or {}).get('seasons') or []
+		now = _now_iso()
+		tracked_count = 0
+		for s in seasons:
+			# Each season is independent: one season's request/parse failure (e.g. a
+			# Season 0 "Specials" entry with no real history, or any other per-season
+			# quirk) must not abort the whole show and wipe out seasons that would
+			# otherwise have synced fine.
+			try:
+				s_item = s.get('item') or {}
+				s_num = s_item.get('season_number')
+				if s_num is None: continue
+				history = get_all_pages('/media/tv/tmdb/%s/%s/history/' % (tmdb, s_num), silent=True) or []
+				if not history: continue
+				progress = max((int(h.get('progress') or 0) for h in history), default=0)
+				if progress <= 0: continue
+				last = max((h.get('progressed_at') or h.get('created') or '' for h in history), default=now) or now
+				for en in range(1, progress + 1):
+					tracked_count += 1
+					yamtracksync.upsert_watched_episode(show_imdb=imdb, show_tmdb=tmdb, show_tvdb='', season=int(s_num), episode=en, last_watched_at=last)
+			except:
+				log_utils.log('YAMTRACK: episode sync failed for TMDB=%s season=%s' % (tmdb, s.get('item', {}).get('season_number')), level=log_utils.LOGWARNING)
+				log_utils.error()
+		return tracked_count
+	except:
+		log_utils.error()
+		return None
+
+def _sync_watched_episodes_from_shows():
+	# Yamtrack has no confirmed global "episode watch history" endpoint, so this is the
+	# only way watched-episode state ever reaches Umbrella for shows tracked/marked
+	# directly through Yamtrack itself (rather than marked from within Umbrella, which
+	# already upserts individual episodes live via markEpisodeAsWatched).
+	try:
+		yamtracksync.delete_yamtrack_tables(('yamtrack_watched_episodes',))
+		# Any status besides Planning (0) can have real watch history behind it — e.g. a
+		# show paused between seasons (On Hold) or one the user stopped on (Dropped)
+		# might still have episodes actually watched. Only querying Completed/Watching
+		# meant shows sitting in any other status showed up as completely unwatched
+		# regardless of real history.
+		shows = (_fetch_status_bucket('tv', STATUS_COMPLETED) + _fetch_status_bucket('tv', STATUS_WATCHING)
+			+ _fetch_status_bucket('tv', STATUS_ONHOLD) + _fetch_status_bucket('tv', STATUS_DROPPED))
+		total_tracked, failed_shows = 0, 0
+		for i in shows:
+			item = i.get('item') or {}
+			tmdb = str(item.get('media_id') or '')
+			if not tmdb: continue
+			imdb = _resolve_tv_imdb(tmdb)
+			result = _sync_episode_tracking_for_show(imdb, tmdb)
+			if result is None:
+				failed_shows += 1
+				if i.get('status') == STATUS_COMPLETED:
+					# Hard API/network failure, not "genuinely no tracked episodes" —
+					# fall back to the TMDb-based assumption so a Completed show doesn't
+					# end up with zero local data on a transient error.
+					_mark_all_episodes_watched_locally(imdb, tmdb, season=None)
+			else:
+				total_tracked += result
+		log_utils.log('YAMTRACK: episode sync — %s shows checked, %s tracked episodes found, %s shows failed to query' % (len(shows), total_tracked, failed_shows), level=log_utils.LOGINFO)
+	except: log_utils.error()
+
 def sync_watchedProgress(activities=None, forced=False):
 	try:
 		if not getYamtrackCredentialsInfo(): return
 		items = _fetch_status_bucket('movie', STATUS_COMPLETED)
 		yamtracksync.delete_yamtrack_tables(('yamtrack_watched_movies',))
+		resolved, unresolved = 0, 0
 		for i in items:
 			item = i.get('item') or {}
 			tmdb = str(item.get('media_id') or '')
 			if not tmdb: continue
-			yamtracksync.upsert_watched_movie(tmdb=tmdb, title=item.get('title', ''), last_watched_at=i.get('progressed_at') or i.get('created_at') or _now_iso())
+			imdb = _resolve_movie_imdb(tmdb)
+			if imdb: resolved += 1
+			else: unresolved += 1
+			yamtracksync.upsert_watched_movie(imdb=imdb, tmdb=tmdb, title=item.get('title', ''), last_watched_at=i.get('progressed_at') or i.get('created_at') or _now_iso())
+		log_utils.log('YAMTRACK: movie sync — %s completed movies, %s resolved to imdb, %s could not be resolved' % (len(items), resolved, unresolved), level=log_utils.LOGINFO)
+		_sync_watched_episodes_from_shows()
 		yamtracksync.update_last_watched_at('last_history_at')
 		yamtracksync.cache_delete(yamtracksync._hash_function(syncMovies, ()))
 		yamtracksync.cache_delete(yamtracksync._hash_function(syncTVShows, ()))
@@ -596,12 +777,27 @@ def _fetchShowProgress(tmdb):
 		for (s, e) in show_eps: by_season[int(s)].append(int(e))
 		from resources.lib.database import cache as _cache
 		from resources.lib.indexers import tmdb as _tmdb
+		# Cap each season's total at TMDb's last-aired boundary — an announced-but-
+		# unreleased future season otherwise inflates 'total' past what's actually
+		# aired (same fix applied to simkl.py's syncSeasons()).
 		season_counts = {}
 		try:
 			showSeasons = _cache.get(_tmdb.TVshows().get_showSeasons_meta, 96, tmdb)
 			if showSeasons:
+				status = (showSeasons.get('status') or '').lower()
+				ended = status in ('ended', 'canceled', 'cancelled')
+				last_ep = showSeasons.get('last_episode_to_air') or {}
+				last_aired_sn = int(last_ep.get('season_number', 0)) if last_ep else 0
+				last_aired_ep = int(last_ep.get('episode_number', 0)) if last_ep else 0
 				for s in showSeasons.get('seasons', []):
-					season_counts[s.get('season_number')] = s.get('episode_count', 0)
+					sn = s.get('season_number')
+					if sn is None: continue
+					ep_count = s.get('episode_count', 0)
+					if ended or not last_aired_sn or sn < last_aired_sn:
+						season_counts[sn] = ep_count
+					elif sn == last_aired_sn:
+						season_counts[sn] = last_aired_ep if last_aired_ep > 0 else ep_count
+					# sn > last_aired_sn: future/unaired season — omit
 		except: pass
 		result_counts = {}
 		fully_watched = []
