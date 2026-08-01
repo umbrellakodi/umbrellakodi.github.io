@@ -112,11 +112,13 @@ def getTVShowIndicators(refresh=False):
 		from resources.lib.modules import log_utils
 		log_utils.error()
 
-def getSeasonIndicators(imdb, tvdb, refresh=False, has_next_episode=False, tmdb_total_aired=None):
+def getSeasonIndicators(imdb, tvdb, refresh=False, has_next_episode=False, tmdb_total_aired=None, force_lookup=False):
 	try:
 		if traktIndicators:
 			timeoutsyncSeasons = trakt.timeoutsyncSeasons(imdb, tvdb)
-			if timeoutsyncSeasons is None: return # if no entry means no completed season watched so do not make needless requests
+			if timeoutsyncSeasons is None:
+				if not force_lookup: return # if no entry means no completed season watched so do not make needless requests
+				return trakt.cachesyncSeasons(imdb, tvdb, timeout=0) # caller needs an authoritative answer (e.g. Collection hide-watched filter), do a one-off live lookup
 			if not refresh: timeout = 720
 			elif trakt.getEpisodesWatchedActivity() < timeoutsyncSeasons: timeout = 720
 			else: timeout = 0
@@ -136,7 +138,9 @@ def getSeasonIndicators(imdb, tvdb, refresh=False, has_next_episode=False, tmdb_
 			return indicators
 		elif simklIndicators:
 			timeoutsyncSeasons = simkl.timeoutsyncSeasons(imdb, tvdb)
-			if timeoutsyncSeasons is None: return # if no entry means no completed season watched so do not make needless requests
+			if timeoutsyncSeasons is None:
+				if not force_lookup: return # if no entry means no completed season watched so do not make needless requests
+				return simkl.cachesyncSeasons(imdb, tvdb, timeout=0) # caller needs an authoritative answer (e.g. Collection hide-watched filter), do a one-off live lookup
 			if not refresh: timeout = 720
 			elif simkl.getEpisodesWatchedActivity() < timeoutsyncSeasons: timeout = 720
 			else: timeout = 0

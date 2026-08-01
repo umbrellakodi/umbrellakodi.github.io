@@ -703,6 +703,10 @@ class Episodes:
 				values.update(seasonEpisodes)
 				values.update(episode_meta)
 				for k in ('episodes', 'snum', 'enum'): values.pop(k, None)
+				duration = values.get('duration')
+				if duration:
+					try: values['duration'] = int(duration) * 60
+					except: pass
 				air_date = values.get('premiered', '')
 				values['unaired'] = ''
 				try:

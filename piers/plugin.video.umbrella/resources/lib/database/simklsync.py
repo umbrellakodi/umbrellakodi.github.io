@@ -176,7 +176,7 @@ def fetch_plantowatch(table):
 			dbcur.connection.commit()
 			return list
 		try:
-			match = dbcur.execute('''SELECT * FROM %s WHERE NOT title=""''' % table).fetchall()
+			match = dbcur.execute('''SELECT * FROM %s WHERE NOT title="" ORDER BY listed_at DESC''' % table).fetchall()
 			list = [{'title': i[0], 'year': i[1], 'premiered': i[2], 'imdb': i[3], 'tmdb': i[4], 'tvdb': i[5], 'simkl': i[6], 'rating': i[7], 'votes': i[8], 'added': i[9]} for i in match]
 		except: pass
 	except:

@@ -825,6 +825,11 @@ class Player(xbmc.Player):
 			if total_time <= 0: return
 			pause_percent = round((self.getTime() / total_time) * 100, 2)
 			scrobble_source = getSetting('scrobble.source')
+			if self.traktCredentials and (scrobble_source == '1' or getSetting('trakt.markwatched') == 'true'):
+				if self.media_type == 'movie':
+					trakt.scrobbleMovie(self.imdb, self.tmdb, pause_percent)
+				else:
+					trakt.scrobbleEpisode(self.imdb, self.tmdb, self.tvdb, self.season, self.episode, pause_percent)
 			if self.simklCredentials and (scrobble_source == '2' or getSetting('simkl.markwatched') == 'true'):
 				if self.media_type == 'movie':
 					simkl.scrobbleMovie(self.title, self.year, self.imdb, self.tmdb, pause_percent)
@@ -835,6 +840,11 @@ class Player(xbmc.Player):
 					mdblist.scrobbleMovie(self.title, self.year, self.imdb, self.tmdb, pause_percent)
 				else:
 					mdblist.scrobbleEpisode(self.title, self.year, self.imdb, self.tmdb, self.tvdb, self.season, self.episode, pause_percent)
+			if self.customCredentials and (scrobble_source == '4' or getSetting('custom.markwatched') == 'true'):
+				if self.media_type == 'movie':
+					customtrakt.scrobbleMovie(self.imdb, self.tmdb, pause_percent)
+				else:
+					customtrakt.scrobbleEpisode(self.imdb, self.tmdb, self.tvdb, self.season, self.episode, pause_percent)
 			if self.floppyCredentials and (scrobble_source == '5' or getSetting('floppy.markwatched') == 'true'):
 				if self.media_type == 'movie':
 					floppy.scrobbleMovie(self.imdb, self.tmdb, pause_percent)
