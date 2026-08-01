@@ -1810,7 +1810,15 @@ def scrobbleMovie(imdb, tmdb, watched_percent):
 	log_utils.log('Trakt Scrobble Movie Called. Received: imdb: %s tmdb: %s watched_percent: %s' % (imdb, tmdb, watched_percent), level=log_utils.LOGDEBUG)
 	try:
 		if not imdb.startswith('tt'): imdb = 'tt' + imdb
-		success = getTrakt('/scrobble/pause', {"movie": {"ids": {"imdb": imdb}}, "progress": watched_percent})
+		post = {"movie": {"ids": {"imdb": imdb}}, "progress": watched_percent}
+		success = getTrakt('/scrobble/pause', post)
+		if not success:
+			# Single bounded retry — an unexpected non-timeout failure (e.g. a stray 405,
+			# likely a transient network/proxy blip) shouldn't permanently strand the
+			# remote "currently watching" progress at whatever the last successful call
+			# reported. Repeating this call with the same percent is safe/idempotent.
+			control.sleep(2000)
+			success = getTrakt('/scrobble/pause', post)
 		if success:
 			log_utils.log('Trakt Scrobble Movie Success: imdb: %s s' % (imdb), level=log_utils.LOGDEBUG)
 			if getSetting('scrobble.notify') == 'true': control.notification(message=32088)
@@ -1826,7 +1834,12 @@ def scrobbleEpisode(imdb, tmdb, tvdb, season, episode, watched_percent):
 	#log_utils.log('Trakt Scrobble Episode Called. Received: imdb: %s tmdb: %s season: %s episode: %s watched_percent: %s' % (imdb, tmdb, season, episode, watched_percent), level=log_utils.LOGDEBUG)
 	try:
 		season, episode = int('%01d' % int(season)), int('%01d' % int(episode))
-		success = getTrakt('/scrobble/pause', {"show": {"ids": {"tvdb": tvdb}}, "episode": {"season": season, "number": episode}, "progress": watched_percent})
+		post = {"show": {"ids": {"tvdb": tvdb}}, "episode": {"season": season, "number": episode}, "progress": watched_percent}
+		success = getTrakt('/scrobble/pause', post)
+		if not success:
+			# Single bounded retry — see scrobbleMovie() for rationale.
+			control.sleep(2000)
+			success = getTrakt('/scrobble/pause', post)
 		if success:
 			log_utils.log('Trakt Scrobble Episode Success: imdb: %s s' % (imdb), level=log_utils.LOGDEBUG)
 			if getSetting('scrobble.notify') == 'true': control.notification(message=32088)
@@ -1850,7 +1863,11 @@ def scrobbleStart(media_type, title='', tvshowtitle='', year='0', imdb='', tmdb=
 			        'episode': {'season': int(season) if season else 1,
 			                    'number': int(episode) if episode else 1},
 			        'progress': float(watched_percent)}
-		getTrakt('/scrobble/start', post)
+		success = getTrakt('/scrobble/start', post)
+		if not success:
+			# Single bounded retry — see scrobbleMovie() for rationale.
+			control.sleep(2000)
+			getTrakt('/scrobble/start', post)
 	except: log_utils.error()
 
 def scrobbleReset(imdb, tmdb=None, tvdb=None, season=None, episode=None, refresh=True, widgetRefresh=False, clear_local=True):

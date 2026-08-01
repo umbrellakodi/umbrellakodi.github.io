@@ -473,6 +473,39 @@ def scrobbleEpisode(imdb, tmdb, tvdb, season, episode, watched_percent):
 			control.trigger_widget_refresh()
 	except: log_utils.error()
 
+def scrobbleStopMovie(imdb, tmdb, watched_percent, completed=False):
+	try:
+		ids = {}
+		if tmdb: ids['tmdb'] = str(tmdb)
+		if imdb: ids['imdb'] = str(imdb)
+		body = {'action': 'stop', 'media_type': 'movie', 'ids': ids, 'position_seconds': int(watched_percent), 'duration_seconds': 100, 'completed': bool(completed)}
+		response = getFloppy('/scrobble/', post=body, method='POST', silent=True)
+		if response is not None and response.status_code == 200:
+			if completed:
+				floppysync.delete_bookmark(imdb or '', tvdb='', tmdb=str(tmdb or ''), season='', episode='')
+			else:
+				floppysync.upsert_bookmark(title='', resume_id='', imdb=imdb or '', tmdb=str(tmdb or ''), percent_played=str(watched_percent), paused_at=_now_iso())
+			control.trigger_widget_refresh()
+	except: log_utils.error()
+
+def scrobbleStopEpisode(imdb, tmdb, tvdb, season, episode, watched_percent, completed=False):
+	try:
+		season, episode = int('%01d' % int(season)), int('%01d' % int(episode))
+		ids = {}
+		if tmdb: ids['tmdb'] = str(tmdb)
+		if imdb: ids['imdb'] = str(imdb)
+		if tvdb: ids['tvdb'] = str(tvdb)
+		body = {'action': 'stop', 'media_type': 'episode', 'ids': ids, 'season_number': season, 'episode_number': episode,
+			'position_seconds': int(watched_percent), 'duration_seconds': 100, 'completed': bool(completed)}
+		response = getFloppy('/scrobble/', post=body, method='POST', silent=True)
+		if response is not None and response.status_code == 200:
+			if completed:
+				floppysync.delete_bookmark(imdb or '', tvdb=str(tvdb or ''), tmdb=str(tmdb or ''), season=str(season), episode=str(episode))
+			else:
+				floppysync.upsert_bookmark(tvshowtitle='x', title='', resume_id='', imdb=imdb or '', tmdb=str(tmdb or ''), tvdb=str(tvdb or ''), season=str(season), episode=str(episode), percent_played=str(watched_percent), paused_at=_now_iso())
+			control.trigger_widget_refresh()
+	except: log_utils.error()
+
 def scrobbleReset(imdb, tmdb=None, tvdb=None, season=None, episode=None, refresh=True, widgetRefresh=False, clear_local=True):
 	if not getFloppyCredentialsInfo(): return
 	try:

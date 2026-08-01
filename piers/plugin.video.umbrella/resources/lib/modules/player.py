@@ -45,6 +45,7 @@ class Player(xbmc.Player):
 		self.playback_resumed = False
 		self.onPlayBackStopped_ran = False
 		self.scrobble_sent = False
+		self.av_started_ran = False
 		self.media_type = None
 		self.DBID = None
 		self.offset = '0'
@@ -662,23 +663,34 @@ class Player(xbmc.Player):
 				log_utils.log('Exception trying to seekTime() offset: %s'% self.offset, level=log_utils.LOGDEBUG)
 			self.playback_resumed = True
 		if getSetting('subtitles') == 'true': Subtitles().get(self.title, self.year, self.imdb, self.season, self.episode)
-		scrobble_source = getSetting('scrobble.source')
-		try: _start_percent = round((float(self.offset) / self.getTotalTime()) * 100, 2) if self.playback_resumed and self.getTotalTime() > 0 else 0
-		except: _start_percent = 0
-		if self.traktCredentials and (scrobble_source == '1' or getSetting('trakt.markwatched') == 'true'):
-			trakt.scrobbleReset(imdb=self.imdb, tmdb=self.tmdb, tvdb=self.tvdb, season=self.season, episode=self.episode, refresh=False) # refresh issues container.refresh()
-			trakt.scrobbleStart(media_type=self.media_type, title=self.title, tvshowtitle=self.title, year=self.year, imdb=self.imdb, tmdb=self.tmdb, tvdb=self.tvdb, season=self.season, episode=self.episode, watched_percent=_start_percent)
-		if self.simklCredentials and (scrobble_source == '2' or getSetting('simkl.markwatched') == 'true'):
-			simkl.scrobbleReset(imdb=self.imdb, tmdb=self.tmdb, tvdb=self.tvdb, season=self.season, episode=self.episode, refresh=False)
-			simkl.scrobbleStart(media_type=self.media_type, title=self.title, tvshowtitle=self.title, year=self.year, imdb=self.imdb, tmdb=self.tmdb, tvdb=self.tvdb, season=self.season, episode=self.episode, watched_percent=_start_percent)
-		if self.mdblistCredentials and (scrobble_source == '3' or getSetting('mdblist.markwatched') == 'true'):
-			mdblist.scrobbleStart(media_type=self.media_type, title=self.title, tvshowtitle=self.title, year=self.year, imdb=self.imdb, tmdb=self.tmdb, tvdb=self.tvdb, season=self.season, episode=self.episode, watched_percent=_start_percent)
-		if self.customCredentials and (scrobble_source == '4' or getSetting('custom.markwatched') == 'true'):
-			customtrakt.scrobbleReset(imdb=self.imdb, tmdb=self.tmdb, tvdb=self.tvdb, season=self.season, episode=self.episode, refresh=False)
-			customtrakt.scrobbleStart(media_type=self.media_type, title=self.title, tvshowtitle=self.title, year=self.year, imdb=self.imdb, tmdb=self.tmdb, tvdb=self.tvdb, season=self.season, episode=self.episode, watched_percent=_start_percent)
-		if self.floppyCredentials and (scrobble_source == '5' or getSetting('floppy.markwatched') == 'true'):
-			floppy.scrobbleReset(imdb=self.imdb, tmdb=self.tmdb, tvdb=self.tvdb, season=self.season, episode=self.episode, refresh=False)
-			floppy.scrobbleStart(media_type=self.media_type, title=self.title, tvshowtitle=self.title, year=self.year, imdb=self.imdb, tmdb=self.tmdb, tvdb=self.tvdb, season=self.season, episode=self.episode, watched_percent=_start_percent)
+		# Kodi doesn't guarantee onAVStarted fires only once per playback session — some
+		# players/resolvers can re-fire it mid-session (e.g. around a pause/resume cycle
+		# that reinitializes the video pipeline). If that happens here, re-running this
+		# block would call scrobbleReset() (deleting the resume bookmark onPlayBackPaused/
+		# onPlayBackResumed just correctly established) and then scrobbleStart() with the
+		# *original* start-of-playback offset (0 for a non-resumed play), visibly
+		# resetting the remote "currently watching" progress back to the beginning. Guard
+		# it to run once per Player() instance — a genuinely new video gets a fresh
+		# instance, so this doesn't affect normal start-of-playback scrobbling.
+		if not self.av_started_ran:
+			self.av_started_ran = True
+			scrobble_source = getSetting('scrobble.source')
+			try: _start_percent = round((float(self.offset) / self.getTotalTime()) * 100, 2) if self.playback_resumed and self.getTotalTime() > 0 else 0
+			except: _start_percent = 0
+			if self.traktCredentials and (scrobble_source == '1' or getSetting('trakt.markwatched') == 'true'):
+				trakt.scrobbleReset(imdb=self.imdb, tmdb=self.tmdb, tvdb=self.tvdb, season=self.season, episode=self.episode, refresh=False) # refresh issues container.refresh()
+				trakt.scrobbleStart(media_type=self.media_type, title=self.title, tvshowtitle=self.title, year=self.year, imdb=self.imdb, tmdb=self.tmdb, tvdb=self.tvdb, season=self.season, episode=self.episode, watched_percent=_start_percent)
+			if self.simklCredentials and (scrobble_source == '2' or getSetting('simkl.markwatched') == 'true'):
+				simkl.scrobbleReset(imdb=self.imdb, tmdb=self.tmdb, tvdb=self.tvdb, season=self.season, episode=self.episode, refresh=False)
+				simkl.scrobbleStart(media_type=self.media_type, title=self.title, tvshowtitle=self.title, year=self.year, imdb=self.imdb, tmdb=self.tmdb, tvdb=self.tvdb, season=self.season, episode=self.episode, watched_percent=_start_percent)
+			if self.mdblistCredentials and (scrobble_source == '3' or getSetting('mdblist.markwatched') == 'true'):
+				mdblist.scrobbleStart(media_type=self.media_type, title=self.title, tvshowtitle=self.title, year=self.year, imdb=self.imdb, tmdb=self.tmdb, tvdb=self.tvdb, season=self.season, episode=self.episode, watched_percent=_start_percent)
+			if self.customCredentials and (scrobble_source == '4' or getSetting('custom.markwatched') == 'true'):
+				customtrakt.scrobbleReset(imdb=self.imdb, tmdb=self.tmdb, tvdb=self.tvdb, season=self.season, episode=self.episode, refresh=False)
+				customtrakt.scrobbleStart(media_type=self.media_type, title=self.title, tvshowtitle=self.title, year=self.year, imdb=self.imdb, tmdb=self.tmdb, tvdb=self.tvdb, season=self.season, episode=self.episode, watched_percent=_start_percent)
+			if self.floppyCredentials and (scrobble_source == '5' or getSetting('floppy.markwatched') == 'true'):
+				floppy.scrobbleReset(imdb=self.imdb, tmdb=self.tmdb, tvdb=self.tvdb, season=self.season, episode=self.episode, refresh=False)
+				floppy.scrobbleStart(media_type=self.media_type, title=self.title, tvshowtitle=self.title, year=self.year, imdb=self.imdb, tmdb=self.tmdb, tvdb=self.tvdb, season=self.season, episode=self.episode, watched_percent=_start_percent)
 		log_utils.log('onAVStarted callback', level=log_utils.LOGDEBUG)
 
 	def onPlayBackStarted(self):
@@ -858,7 +870,12 @@ class Player(xbmc.Player):
 			if self.watched_during_playback: return
 			total_time = self.getTotalTime()
 			if total_time <= 0: return
-			resume_percent = round((self.getTime() / total_time) * 100, 2)
+			# self.getTime() can momentarily report 0/stale right at the resume instant,
+			# before Kodi's player has caught up internally — fall back to the last known
+			# tracked position (kept current by the keepAlive() poll loop) rather than
+			# risk sending a spurious 0% progress that would reset the remote scrobble bar.
+			resume_position = self.getTime() or self.current_time
+			resume_percent = round((resume_position / total_time) * 100, 2)
 			scrobble_source = getSetting('scrobble.source')
 			if self.traktCredentials and (scrobble_source == '1' or getSetting('trakt.markwatched') == 'true'):
 				trakt.scrobbleStart(media_type=self.media_type, title=self.title, tvshowtitle=self.title, year=self.year, imdb=self.imdb, tmdb=self.tmdb, tvdb=self.tvdb, season=self.season, episode=self.episode, watched_percent=resume_percent)
@@ -1556,8 +1573,13 @@ class Bookmarks:
 				# Mirrors the 'custom' branch above — Floppy's real scrobble endpoint
 				# still has no aggregated "watched" re-query, so a background full sync
 				# is kicked off on completion the same way, to converge indicators.
-				if not skip_scrobble and (seekable or percent >= int(markwatched_percentage)):
-					floppy.scrobbleMovie(imdb, tmdb, percent) if media_type == 'movie' else floppy.scrobbleEpisode(imdb, tmdb, tvdb, season, episode, percent)
+				# Use the 'stop' action here (not 'pause' — that's for onPlayBackPaused's
+				# genuine mid-playback pauses): per Floppy's own API docs, 'pause' only
+				# updates the live Now Playing card, while 'stop' is what actually persists
+				# a durable watch/progress update and clears that card.
+				completed = percent >= int(markwatched_percentage)
+				if not skip_scrobble and (seekable or completed):
+					floppy.scrobbleStopMovie(imdb, tmdb, percent, completed=completed) if media_type == 'movie' else floppy.scrobbleStopEpisode(imdb, tmdb, tvdb, season, episode, percent, completed=completed)
 				if percent >= int(markwatched_percentage):
 					floppy.scrobbleReset(imdb, tmdb, tvdb, season, episode, refresh=False)
 					if not already_watched:

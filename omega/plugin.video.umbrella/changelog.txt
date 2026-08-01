@@ -1,4 +1,3 @@
-[B]Update - v6.7.645 - August 1st, 2026 [/B]
---[Fix] Runtime duration for mdblist fixed.
---[Fix] Fix for hiding collection items from trakt.
---[Change] Change made for Trakt scrobble on pause.
+[B]Update - v6.7.646 - August 1st, 2026 [/B]
+--[Fix] Fix for resume on trakt resetting banner to 0.
+--[Fix] Fix to send separate stop event on Floppy to remove now playing banner.
