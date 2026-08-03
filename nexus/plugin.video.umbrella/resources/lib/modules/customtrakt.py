@@ -58,12 +58,14 @@ def customClientSecret():
 
 
 def getCustomCredentialsInfo():
+	if getSetting('dev.enable.custom') != 'true': return False
 	username, token = getSetting('custom.user.name').strip(), getSetting('custom.user.token')
 	if not (customBaseUrl() and username and token): return False
 	return True
 
 
 def getCustomIndicatorsInfo():
+	if getSetting('dev.enable.custom') != 'true': return False
 	return getSetting('indicators.alt') == '4'
 
 
@@ -671,7 +673,7 @@ def sync_playbackProgress(activities=None, forced=False):
 
 #### Watched-history aggregation (no aggregated "watched" endpoint on the server) ####
 
-def sync_watchedProgress(activities=None, forced=False):
+def sync_watchedProgress(activities=None, forced=False, progress_callback=None):
 	try:
 		db_last = customtraktsync.last_sync('last_history_at')
 		api_last = getActivity(activities)
@@ -702,16 +704,19 @@ def sync_watchedProgress(activities=None, forced=False):
 						customtraktsync.upsert_watched_episode(show_imdb=show_imdb, show_tmdb=str(show_ids.get('tmdb') or ''), show_tvdb=str(show_ids.get('tvdb') or ''),
 							season=ep.get('season', 0), episode=ep.get('number', 0), last_watched_at=item.get('watched_at', ''))
 				except: pass
+			offset += len(items)
+			if progress_callback:
+				try: progress_callback('Syncing watch history', offset, None)
+				except: pass
 			if len(items) < limit: break
-			offset += limit
 		customtraktsync.update_last_watched_at('last_history_at')
 		customtraktsync.cache_delete(customtraktsync._hash_function(syncMovies, ()))
 		customtraktsync.cache_delete(customtraktsync._hash_function(syncTVShows, ()))
 		control.trigger_widget_refresh()
 	except: log_utils.error()
 
-def sync_watched(activities=None, forced=False):
-	sync_watchedProgress(activities=activities, forced=forced)
+def sync_watched(activities=None, forced=False, progress_callback=None):
+	sync_watchedProgress(activities=activities, forced=forced, progress_callback=progress_callback)
 
 def syncMovies():
 	try:

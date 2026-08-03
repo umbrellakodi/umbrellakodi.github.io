@@ -11,6 +11,7 @@ from resources.lib.modules import simkl
 from resources.lib.modules import mdblist
 from resources.lib.modules import customtrakt
 from resources.lib.modules import floppy
+from resources.lib.modules import scrob
 from resources.lib.modules.tmdb4 import getTMDbV4CredentialsInfo
 from resources.lib.modules import favourites
 from json import loads as jsloads
@@ -30,11 +31,13 @@ class Navigator:
 		self.mdblistCredentials = mdblist.getMDBListCredentialsInfo()
 		self.customCredentials = customtrakt.getCustomCredentialsInfo()
 		self.floppyCredentials = floppy.getFloppyCredentialsInfo()
+		self.scrobCredentials = scrob.getScrobCredentialsInfo()
 		self.traktIndicators = getTraktIndicatorsInfo()
 		self.simklIndicators = simkl.getSimKLIndicatorsInfo()
 		self.mdblistIndicators = mdblist.getMDBListIndicatorsInfo()
 		self.customIndicators = customtrakt.getCustomIndicatorsInfo()
 		self.floppyIndicators = floppy.getFloppyIndicatorsInfo()
+		self.scrobIndicators = scrob.getScrobIndicatorsInfo()
 		self.tmdbCredentials = getTMDbV4CredentialsInfo()
 		self.simkltoken = getSetting('simkltoken') != ''
 		self.alldebridCredentials = getSetting('alldebridtoken') != ''
@@ -100,12 +103,15 @@ class Navigator:
 		if key == 'mdblist_token':           return bool(getSetting('mdblist.token'))
 		if key == 'mdblist_credentials':     return bool(self.mdblistCredentials)
 		if key == 'mdblist_with_indicators': return bool(self.mdblistCredentials and (self.mdblistIndicators or getSetting('mdblist.markwatched') == 'true'))
-		if key == 'custom_token':            return bool(getSetting('custom.user.token'))
+		if key == 'custom_token':            return bool(getSetting('dev.enable.custom') == 'true' and getSetting('custom.user.token'))
 		if key == 'custom_credentials':      return bool(self.customCredentials)
 		if key == 'custom_with_indicators':  return bool(self.customCredentials and (self.customIndicators or getSetting('custom.markwatched') == 'true'))
 		if key == 'floppy_token':          return bool(getSetting('floppy.token'))
 		if key == 'floppy_credentials':    return bool(self.floppyCredentials)
 		if key == 'floppy_with_indicators':return bool(self.floppyCredentials and (self.floppyIndicators or getSetting('floppy.markwatched') == 'true'))
+		if key == 'scrob_apikey':          return bool(getSetting('scrob.apikey'))
+		if key == 'scrob_credentials':     return bool(self.scrobCredentials)
+		if key == 'scrob_with_indicators': return bool(self.scrobCredentials and (self.scrobIndicators or getSetting('scrob.markwatched') == 'true'))
 		if key == 'tmdb_v4_token':           return bool(getSetting('tmdb.v4.accesstoken'))
 		if key == 'has_lib_movies':          return bool(self.hasLibMovies)
 		if key == 'favorite_movie':          return bool(self.favoriteMovie)
@@ -156,12 +162,14 @@ class Navigator:
 		'mymovies_simkl':    'Edit My Movies: Simkl',
 		'mymovies_trakt':    'Edit My Movies: Trakt',
 		'mymovies_floppy': 'Edit My Movies: Floppy',
+		'mymovies_scrob': 'Edit My Movies: Scrob',
 		'mytvshows_mdblist':  'Edit My TV Shows: MDBList',
 		'mytvshows_custom':   'Edit My TV Shows: Custom',
 		'mytvshows_tmdb':     'Edit My TV Shows: TMDb',
 		'mytvshows_simkl':    'Edit My TV Shows: Simkl',
 		'mytvshows_trakt':    'Edit My TV Shows: Trakt',
 		'mytvshows_floppy': 'Edit My TV Shows: Floppy',
+		'mytvshows_scrob': 'Edit My TV Shows: Scrob',
 	}
 
 	def mainMenuEditor(self, menu_name='root'):
@@ -426,6 +434,9 @@ class Navigator:
 	def mymovies_floppy(self, folderName=''):
 		self._renderDbMenu('mymovies_floppy', 'myMoviesNavigatorEditor', 'Edit My Movies Menu', folderName=folderName)
 
+	def mymovies_scrob(self, folderName=''):
+		self._renderDbMenu('mymovies_scrob', 'myMoviesNavigatorEditor', 'Edit My Movies Menu', folderName=folderName)
+
 	def tvshows(self, lite=False, folderName=''):
 		self._renderDbMenu('tvshows', 'tvNavigatorEditor', 'Edit TV Shows Menu', lite=lite, folderName=folderName)
 
@@ -450,6 +461,9 @@ class Navigator:
 
 	def mytvshows_floppy(self, folderName=''):
 		self._renderDbMenu('mytvshows_floppy', 'myTVShowsNavigatorEditor', 'Edit My TV Shows Menu', folderName=folderName)
+
+	def mytvshows_scrob(self, folderName=''):
+		self._renderDbMenu('mytvshows_scrob', 'myTVShowsNavigatorEditor', 'Edit My TV Shows Menu', folderName=folderName)
 
 	def anime(self, lite=False, folderName=''):
 		self.addDirectoryItem(32001, 'anime_Movies&url=anime&folderName=%s' % quote_plus(getLS(32001)), 'movies.png', 'DefaultMovies.png')
@@ -606,6 +620,7 @@ class Navigator:
 			_custom_tools_label = '%s Management Tools' % customtrakt.getCustomServiceName()
 			self.addDirectoryItem('[B]%s[/B]' % _custom_tools_label, 'tools_customToolsNavigator&folderName=%s' % quote_plus(_custom_tools_label), 'tools.png', 'DefaultAddonService.png', isFolder=True)
 		if self.floppyCredentials: self.addDirectoryItem('[B]Floppy Management Tools[/B]', 'tools_floppyToolsNavigator&folderName=%s' % quote_plus('Floppy Management Tools'), 'tools.png', 'DefaultAddonService.png', isFolder=True)
+		if self.scrobCredentials: self.addDirectoryItem('[B]Scrob Management Tools[/B]', 'tools_scrobToolsNavigator&folderName=%s' % quote_plus('Scrob Management Tools'), 'tools.png', 'DefaultAddonService.png', isFolder=True)
 		#-- Playback - 2
 		self.addDirectoryItem(32045, 'tools_openSettings&query=2.0', 'tools.png', 'DefaultAddonService.png', isFolder=False)
 		#-- Downloads - 10
@@ -677,6 +692,15 @@ class Navigator:
 		else:
 			self.addDirectoryItem('Revoke Floppy', 'floppyRevoke', 'floppy.png', 'DefaultAddonService.png', isFolder=False)
 		self.addDirectoryItem('Force Floppy Sync', 'tools_forceFloppySync', 'floppy.png', 'DefaultAddonService.png', isFolder=False)
+		self.endDirectory()
+
+	def scrobTools(self, folderName=''):
+		if self.useContainerTitles: control.setContainerName(folderName)
+		if not self.scrobCredentials:
+			self.addDirectoryItem('Authorize Scrob', 'scrobAuth', 'scrob.png', 'DefaultAddonService.png', isFolder=False)
+		else:
+			self.addDirectoryItem('Revoke Scrob', 'scrobRevoke', 'scrob.png', 'DefaultAddonService.png', isFolder=False)
+		self.addDirectoryItem('Force Scrob Sync', 'tools_forceScrobSync', 'scrob.png', 'DefaultAddonService.png', isFolder=False)
 		self.endDirectory()
 
 	def loggingNavigator(self, folderName=''):
@@ -1040,8 +1064,8 @@ class Navigator:
 			if isinstance(name, int): name = getLS(name)
 			url = 'plugin://plugin.video.umbrella/?action=%s' % query if isAction else query
 			_abs = lambda p: '://' in p or p.startswith('/') or (len(p) > 1 and p[1] == ':')
-			poster = control.joinPath(self.artPath, poster) if self.artPath and not _abs(poster) else (poster or icon)
-			if not icon.startswith('Default') and not _abs(icon): icon = control.joinPath(self.artPath, icon)
+			poster = control.themedIcon(poster) if self.artPath and not _abs(poster) else (poster or icon)
+			if not icon.startswith('Default') and not _abs(icon): icon = control.themedIcon(icon)
 			cm = []
 			queueMenu = getLS(32065)
 			if queue: cm.append((queueMenu, 'RunPlugin(plugin://plugin.video.umbrella/?action=playlist_QueueItem)'))

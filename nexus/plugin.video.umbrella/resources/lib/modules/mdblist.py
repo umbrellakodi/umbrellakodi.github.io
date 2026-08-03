@@ -1021,9 +1021,7 @@ def syncSeasons(imdb, tvdb):
 		if not getMDBListCredentialsInfo(): return None
 		if not imdb and not tvdb: return None
 		episodes = mdbsync.get_watched_episodes()
-		if not episodes: return [[], {}]
-		show_eps = [(s, e) for (si, st, sv, s, e) in episodes if si == imdb or sv == tvdb]
-		if not show_eps: return [[], {}]
+		show_eps = [(s, e) for (si, st, sv, s, e) in (episodes or []) if si == imdb or sv == tvdb]
 		from collections import defaultdict
 		by_season = defaultdict(list)
 		for (s, e) in show_eps:

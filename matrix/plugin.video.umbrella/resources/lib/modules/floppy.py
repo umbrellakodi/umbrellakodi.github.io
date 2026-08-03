@@ -645,7 +645,7 @@ def _sync_episode_tracking_for_show(imdb, tmdb):
 		log_utils.error()
 		return None
 
-def _sync_watched_episodes_from_shows():
+def _sync_watched_episodes_from_shows(progress_callback=None):
 	# Floppy has no confirmed global "episode watch history" endpoint, so this is the
 	# only way watched-episode state ever reaches Umbrella for shows tracked/marked
 	# directly through Floppy itself (rather than marked from within Umbrella, which
@@ -659,49 +659,57 @@ def _sync_watched_episodes_from_shows():
 		# regardless of real history.
 		shows = (_fetch_status_bucket('tv', STATUS_COMPLETED) + _fetch_status_bucket('tv', STATUS_WATCHING)
 			+ _fetch_status_bucket('tv', STATUS_ONHOLD) + _fetch_status_bucket('tv', STATUS_DROPPED))
+		total = len(shows)
 		total_tracked, failed_shows = 0, 0
-		for i in shows:
+		for idx, i in enumerate(shows):
 			item = i.get('item') or {}
 			tmdb = str(item.get('media_id') or '')
-			if not tmdb: continue
-			imdb = _resolve_tv_imdb(tmdb)
-			result = _sync_episode_tracking_for_show(imdb, tmdb)
-			if result is None:
-				failed_shows += 1
-				if i.get('status') == STATUS_COMPLETED:
-					# Hard API/network failure, not "genuinely no tracked episodes" —
-					# fall back to the TMDb-based assumption so a Completed show doesn't
-					# end up with zero local data on a transient error.
-					_mark_all_episodes_watched_locally(imdb, tmdb, season=None)
-			else:
-				total_tracked += result
+			if tmdb:
+				imdb = _resolve_tv_imdb(tmdb)
+				result = _sync_episode_tracking_for_show(imdb, tmdb)
+				if result is None:
+					failed_shows += 1
+					if i.get('status') == STATUS_COMPLETED:
+						# Hard API/network failure, not "genuinely no tracked episodes" —
+						# fall back to the TMDb-based assumption so a Completed show doesn't
+						# end up with zero local data on a transient error.
+						_mark_all_episodes_watched_locally(imdb, tmdb, season=None)
+				else:
+					total_tracked += result
+			if progress_callback:
+				try: progress_callback('Syncing watched shows', idx + 1, total)
+				except: pass
 		log_utils.log('FLOPPY: episode sync — %s shows checked, %s tracked episodes found, %s shows failed to query' % (len(shows), total_tracked, failed_shows), level=log_utils.LOGINFO)
 	except: log_utils.error()
 
-def sync_watchedProgress(activities=None, forced=False):
+def sync_watchedProgress(activities=None, forced=False, progress_callback=None):
 	try:
 		if not getFloppyCredentialsInfo(): return
 		items = _fetch_status_bucket('movie', STATUS_COMPLETED)
 		floppysync.delete_floppy_tables(('floppy_watched_movies',))
+		total = len(items)
 		resolved, unresolved = 0, 0
-		for i in items:
+		for idx, i in enumerate(items):
 			item = i.get('item') or {}
 			tmdb = str(item.get('media_id') or '')
-			if not tmdb: continue
-			imdb = _resolve_movie_imdb(tmdb)
-			if imdb: resolved += 1
-			else: unresolved += 1
-			floppysync.upsert_watched_movie(imdb=imdb, tmdb=tmdb, title=item.get('title', ''), last_watched_at=i.get('progressed_at') or i.get('created_at') or _now_iso())
+			if tmdb:
+				imdb = _resolve_movie_imdb(tmdb)
+				if imdb: resolved += 1
+				else: unresolved += 1
+				floppysync.upsert_watched_movie(imdb=imdb, tmdb=tmdb, title=item.get('title', ''), last_watched_at=i.get('progressed_at') or i.get('created_at') or _now_iso())
+			if progress_callback:
+				try: progress_callback('Syncing watched movies', idx + 1, total)
+				except: pass
 		log_utils.log('FLOPPY: movie sync — %s completed movies, %s resolved to imdb, %s could not be resolved' % (len(items), resolved, unresolved), level=log_utils.LOGINFO)
-		_sync_watched_episodes_from_shows()
+		_sync_watched_episodes_from_shows(progress_callback=progress_callback)
 		floppysync.update_last_watched_at('last_history_at')
 		floppysync.cache_delete(floppysync._hash_function(syncMovies, ()))
 		floppysync.cache_delete(floppysync._hash_function(syncTVShows, ()))
 		control.trigger_widget_refresh()
 	except: log_utils.error()
 
-def sync_watched(activities=None, forced=False):
-	sync_watchedProgress(activities=activities, forced=forced)
+def sync_watched(activities=None, forced=False, progress_callback=None):
+	sync_watchedProgress(activities=activities, forced=forced, progress_callback=progress_callback)
 
 def sync_watch_list(activities=None, forced=False):
 	# Pulls all 5 status buckets (not just Planning) so every My Movies/My TV Shows
@@ -802,9 +810,7 @@ def _fetchShowProgress(tmdb):
 	# metadata, mirroring customtrakt.py's _local_syncSeasons fallback exactly.
 	try:
 		episodes = floppysync.get_watched_episodes()
-		if not episodes: return [[], {}]
-		show_eps = [(s, e) for (si, st, sv, s, e) in episodes if st == tmdb]
-		if not show_eps: return [[], {}]
+		show_eps = [(s, e) for (si, st, sv, s, e) in (episodes or []) if st == tmdb]
 		from collections import defaultdict
 		by_season = defaultdict(list)
 		for (s, e) in show_eps: by_season[int(s)].append(int(e))
@@ -832,6 +838,7 @@ def _fetchShowProgress(tmdb):
 						season_counts[sn] = last_aired_ep if last_aired_ep > 0 else ep_count
 					# sn > last_aired_sn: future/unaired season — omit
 		except: pass
+		if not season_counts and not by_season: return [[], {}]
 		result_counts = {}
 		fully_watched = []
 		for s, watched_eps in by_season.items():
@@ -839,6 +846,13 @@ def _fetchShowProgress(tmdb):
 			watched = len(set(watched_eps))
 			result_counts[s] = {'total': total, 'watched': watched, 'unwatched': max(total - watched, 0)}
 			if watched >= total: fully_watched.append(s)
+		# Include aired seasons with no tracked episodes at all — otherwise a show
+		# with zero watched episodes reports an empty counts dict instead of 0/total,
+		# leaving the "WatchedEpisodes" property unset (blank "/total" in the skin)
+		# where Trakt/MDBList/Custom would show "0/total".
+		for sn, total in season_counts.items():
+			if sn not in result_counts:
+				result_counts[sn] = {'total': total, 'watched': 0, 'unwatched': total}
 		return [[str(s) for s in sorted(fully_watched)], result_counts]
 	except:
 		log_utils.error()

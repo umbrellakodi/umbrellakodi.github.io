@@ -120,6 +120,7 @@ _MYMOVIES_DEFAULTS = [
 	('mymv_movies_menu',      '32031', 'movieliteNavigator',                               'movies.png',    'movies.png',    1, 1, 1,  9, 0, 'not_lite',             0, None),
 	('mymv_person_search',    '33044', 'moviePerson',                                      'imdb.png',      'people-search.png', 0, 1, 1, 10, 0, 'not_lite',         0, None),
 	('mymv_movie_search',     '33042', 'movieSearch',                                      'search.png',    'search.png',    1, 1, 1, 11, 0, 'not_lite',             0, None),
+	('mymv_scrob_folder',     'Scrob',    'mymovies_scrobNavigator',                      'scrob.png',     'scrob.png',     1, 1, 1, 12, 0, 'scrob_credentials',    0, None),
 ]
 
 _MYMOVIES_MDBLIST_DEFAULTS = [
@@ -164,6 +165,12 @@ _MYMOVIES_FLOPPY_DEFAULTS = [
 	('mymv_floppy_completed',  'Floppy Completed',  'floppy_movies_completed&url=floppymoviescompleted',   'floppy.png', 'floppy.png', 1, 1, 1,  3, 0, 'floppy_credentials', 0, None),
 	('mymv_floppy_dropped',    'Floppy Dropped',    'floppy_movies_dropped&url=floppymoviesdropped',       'floppy.png', 'floppy.png', 1, 1, 1,  4, 0, 'floppy_credentials', 0, None),
 	('mymv_floppy_collection', 'Floppy Collection', 'floppy_movies_collection&url=floppymoviescollection', 'floppy.png', 'floppy.png', 1, 1, 1,  5, 0, 'floppy_credentials', 0, None),
+	('mymv_floppy_unfinished', 'Floppy Unfinished', 'floppy_movies_unfinished&url=floppymoviesunfinished', 'floppy.png', 'floppy.png', 1, 1, 1,  6, 0, 'floppy_credentials', 1, '35308'),
+]
+
+_MYMOVIES_SCROB_DEFAULTS = [
+	('mymv_scrob_watched', 'Scrob Watched', 'scrob_movies_watched&url=scrobmovieswatched', 'scrob.png', 'scrob.png', 1, 1, 1, 0, 0, 'scrob_with_indicators', 1, None),
+	('mymv_scrob_unfinished', 'Scrob Unfinished', 'scrob_movies_unfinished&url=scrobmoviesunfinished', 'scrob.png', 'scrob.png', 1, 1, 1, 1, 0, 'scrob_credentials', 1, '35308'),
 ]
 
 _MYTVSHOWS_DEFAULTS = [
@@ -182,6 +189,7 @@ _MYTVSHOWS_DEFAULTS = [
 	('mytv_tv_menu',           '32031', 'tvliteNavigator',                                     'tvshows.png',   'tvshows.png',   1, 1, 1, 12, 0, 'not_lite',              0, None),
 	('mytv_person_search',     '33045', 'tvPerson',                                            'imdb.png',      'people-search.png', 0, 1, 1, 13, 0, 'not_lite',          0, None),
 	('mytv_tv_search',         '33043', 'tvSearch',                                            'trakt.png',     'search.png',    1, 1, 1, 14, 0, 'not_lite',              0, None),
+	('mytv_scrob_folder',      'Scrob',    'mytvshows_scrobNavigator',                         'scrob.png',     'scrob.png',     1, 1, 1, 15, 0, 'scrob_credentials',     0, None),
 ]
 
 _MYTVSHOWS_MDBLIST_DEFAULTS = [
@@ -248,6 +256,14 @@ _MYTVSHOWS_FLOPPY_DEFAULTS = [
 	('mytv_floppy_show_prog',  'Floppy Show Progress', 'floppy_shows_progress&url=floppyshowsprogress',   'floppy.png', 'floppy.png', 1, 1, 1,  6, 0, 'floppy_with_indicators', 1, None),
 	('mytv_floppy_ep_prog',    'Floppy Progress Episodes', 'floppy_episodes_progress&url=floppyepisodesprogress', 'floppy.png', 'floppy.png', 1, 1, 1,  7, 0, 'floppy_with_indicators', 1, None),
 	('mytv_floppy_upcoming',   'Floppy Upcoming Progress', 'floppy_upcoming_progress&url=floppyupcomingprogress', 'floppy.png', 'floppy.png', 1, 1, 1,  8, 0, 'floppy_with_indicators', 1, None),
+	('mytv_floppy_unfinished', 'Floppy Unfinished', 'floppy_episodes_unfinished&url=floppyepisodesunfinished', 'floppy.png', 'floppy.png', 1, 1, 1,  9, 0, 'floppy_credentials', 1, '35308'),
+]
+
+_MYTVSHOWS_SCROB_DEFAULTS = [
+	('mytv_scrob_show_prog',  'Scrob Show Progress', 'scrob_shows_progress&url=scrobshowsprogress',     'scrob.png', 'scrob.png', 1, 1, 1,  0, 0, 'scrob_with_indicators', 1, None),
+	('mytv_scrob_ep_prog',    'Scrob Progress Episodes', 'scrob_episodes_progress&url=scrobepisodesprogress', 'scrob.png', 'scrob.png', 1, 1, 1,  1, 0, 'scrob_with_indicators', 1, None),
+	('mytv_scrob_upcoming',   'Scrob Upcoming Progress', 'scrob_upcoming_progress&url=scrobupcomingprogress', 'scrob.png', 'scrob.png', 1, 1, 1,  2, 0, 'scrob_with_indicators', 1, None),
+	('mytv_scrob_unfinished', 'Scrob Unfinished', 'scrob_episodes_unfinished&url=scrobepisodesunfinished', 'scrob.png', 'scrob.png', 1, 1, 1,  3, 0, 'scrob_credentials', 1, '35308'),
 ]
 
 MENU_DEFAULTS = {
@@ -262,12 +278,14 @@ MENU_DEFAULTS = {
 	'mymovies_simkl':    _MYMOVIES_SIMKL_DEFAULTS,
 	'mymovies_trakt':    _MYMOVIES_TRAKT_DEFAULTS,
 	'mymovies_floppy': _MYMOVIES_FLOPPY_DEFAULTS,
+	'mymovies_scrob': _MYMOVIES_SCROB_DEFAULTS,
 	'mytvshows_mdblist':  _MYTVSHOWS_MDBLIST_DEFAULTS,
 	'mytvshows_custom':   _MYTVSHOWS_CUSTOM_DEFAULTS,
 	'mytvshows_tmdb':     _MYTVSHOWS_TMDB_DEFAULTS,
 	'mytvshows_simkl':    _MYTVSHOWS_SIMKL_DEFAULTS,
 	'mytvshows_trakt':    _MYTVSHOWS_TRAKT_DEFAULTS,
 	'mytvshows_floppy': _MYTVSHOWS_FLOPPY_DEFAULTS,
+	'mytvshows_scrob': _MYTVSHOWS_SCROB_DEFAULTS,
 }
 
 # item_id -> alt_label for migrating existing DB rows
@@ -285,7 +303,7 @@ _defaults_version_file = control.joinPath(control.dataPath, 'menu_defaults.v')
 # regardless of addon version (e.g. to fix a migration bug) — the on-disk marker below
 # is keyed on addonVersion+this, not addonVersion alone, so incrementing it forces one
 # more sync pass even for users already marked up to date on the current addon version.
-_MENU_SCHEMA_REVISION = '3'
+_MENU_SCHEMA_REVISION = '6'
 
 
 def _read_synced_version():
@@ -459,6 +477,12 @@ def _sync_defaults(dbcon):
 		('mytvshows', 'mytv_simkl_folder',    'Simkl',    'mytvshows_simklNavigator',    'simkl.png',    'simkl.png',    1, 1, 1, 9,  0, 'simkl_credentials',    0, None),
 		('mytvshows', 'mytv_trakt_folder',    'Trakt',    'mytvshows_traktNavigator',    'trakt.png',    'trakt.png',    1, 1, 1, 10, 0, 'trakt_credentials',    0, None),
 		('mytvshows', 'mytv_floppy_folder', 'Floppy', 'mytvshows_floppyNavigator', 'floppy.png', 'floppy.png', 1, 1, 1, 11, 0, 'floppy_credentials', 0, None),
+		('mymovies', 'mymv_scrob_folder', 'Scrob', 'mymovies_scrobNavigator', 'scrob.png', 'scrob.png', 1, 1, 1, 12, 0, 'scrob_credentials', 0, None),
+		('mytvshows', 'mytv_scrob_folder', 'Scrob', 'mytvshows_scrobNavigator', 'scrob.png', 'scrob.png', 1, 1, 1, 15, 0, 'scrob_credentials', 0, None),
+		('mymovies_scrob', 'mymv_scrob_unfinished', 'Scrob Unfinished', 'scrob_movies_unfinished&url=scrobmoviesunfinished', 'scrob.png', 'scrob.png', 1, 1, 1, 99, 0, 'scrob_credentials', 1, '35308'),
+		('mytvshows_scrob', 'mytv_scrob_unfinished', 'Scrob Unfinished', 'scrob_episodes_unfinished&url=scrobepisodesunfinished', 'scrob.png', 'scrob.png', 1, 1, 1, 99, 0, 'scrob_credentials', 1, '35308'),
+		('mymovies_floppy', 'mymv_floppy_unfinished', 'Floppy Unfinished', 'floppy_movies_unfinished&url=floppymoviesunfinished', 'floppy.png', 'floppy.png', 1, 1, 1, 99, 0, 'floppy_credentials', 1, '35308'),
+		('mytvshows_floppy', 'mytv_floppy_unfinished', 'Floppy Unfinished', 'floppy_episodes_unfinished&url=floppyepisodesunfinished', 'floppy.png', 'floppy.png', 1, 1, 1, 99, 0, 'floppy_credentials', 1, '35308'),
 		('mymovies_mdblist',  'mymv_mdb_unfinished',  '40686',  'mdblistMoviesUnfinished',          'mdblist.png', 'mdblist.png', 1, 1, 1, 99, 0, 'mdblist_with_indicators', 1, '35308'),
 		('mytvshows_mdblist', 'mytv_mdb_unfinished',  '40686',  'mdblistEpisodesUnfinished',         'mdblist.png', 'mdblist.png', 1, 1, 1, 99, 0, 'mdblist_with_indicators', 1, '35308'),
 		('mymovies',  'mymv_local_finish',    'Local: Finish Watching', 'local_finish_watching_movies',   'icon.png',    'icon.png',    1, 1, 1, 99, 0, 'local_scrobble',          1, None),
@@ -530,7 +554,13 @@ def initialize(menu_name='root'):
 	if cnt < len(MENU_DEFAULTS.get(menu_name, [])):
 		_populate_defaults(dbcon, menu_name)
 	if not _session_defaults_synced:
-		_synced_version = '%s-%s' % (control.addonVersion, _MENU_SCHEMA_REVISION)
+		# control.addonVersion is shadowed by an unrelated function of the same name
+		# elsewhere in control.py (takes a different addon as its argument) — use
+		# addonInfo('version') directly here rather than the broken bare reference,
+		# which was embedding a Python object repr (a per-process memory address)
+		# instead of the actual version string, defeating the version-marker's whole
+		# point of staying stable across restarts.
+		_synced_version = '%s-%s' % (control.addonInfo('version'), _MENU_SCHEMA_REVISION)
 		if _read_synced_version() != _synced_version:
 			_sync_defaults(dbcon)
 			_write_synced_version(_synced_version)

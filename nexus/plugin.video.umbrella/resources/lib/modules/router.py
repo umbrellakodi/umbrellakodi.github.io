@@ -105,6 +105,9 @@ def router(argv2):
 	elif action == 'mymovies_floppyNavigator':
 		from resources.lib.menus import navigator
 		navigator.Navigator().mymovies_floppy(folderName=folderName)
+	elif action == 'mymovies_scrobNavigator':
+		from resources.lib.menus import navigator
+		navigator.Navigator().mymovies_scrob(folderName=folderName)
 	elif action == 'movies':
 		from resources.lib.menus import movies
 		movies.Movies().get(url, folderName=folderName)
@@ -237,6 +240,12 @@ def router(argv2):
 	elif action == 'floppyRevoke':
 		from resources.lib.modules import floppy
 		floppy.floppyRevoke(fromSettings=1)
+	elif action == 'scrobAuth':
+		from resources.lib.modules import scrob
+		scrob.scrobAuth(fromSettings=1)
+	elif action == 'scrobRevoke':
+		from resources.lib.modules import scrob
+		scrob.scrobRevoke(fromSettings=1)
 	elif action == 'traktAccountInfo':
 		from resources.lib.modules import trakt as Trakt
 		Trakt.getTraktAccountInfo()
@@ -315,6 +324,15 @@ def router(argv2):
 	elif action == 'floppy_movies_collection':
 		from resources.lib.menus import movies
 		movies.Movies().floppyList(url, 'movies_collection', 'floppy_movies_collection', isCollection=True, folderName=folderName)
+	elif action == 'scrob_movies_watched':
+		from resources.lib.menus import movies
+		movies.Movies().scrob_movies_watched(url, folderName=folderName)
+	elif action == 'floppy_movies_unfinished':
+		from resources.lib.menus import movies
+		movies.Movies().floppy_unfinished(url, folderName=folderName)
+	elif action == 'scrob_movies_unfinished':
+		from resources.lib.menus import movies
+		movies.Movies().scrob_unfinished(url, folderName=folderName)
 	elif action == 'mdbOfficialListMovies':
 		from resources.lib.menus import movies
 		movies.Movies().getMDBOfficialLists(folderName=folderName)
@@ -354,6 +372,9 @@ def router(argv2):
 	elif action == 'floppy_shows_collection':
 		from resources.lib.menus import tvshows
 		tvshows.TVshows().floppyList(url, 'shows_collection', 'floppy_shows_collection', isCollection=True, folderName=folderName)
+	elif action == 'scrob_shows_progress':
+		from resources.lib.menus import tvshows
+		tvshows.TVshows().scrob_progress(url, folderName=folderName)
 	elif action == 'mdbOfficialListTV':
 		from resources.lib.menus import tvshows
 		tvshows.TVshows().getMDBOfficialLists(folderName=folderName)
@@ -435,6 +456,9 @@ def router(argv2):
 	elif action == 'mytvshows_floppyNavigator':
 		from resources.lib.menus import navigator
 		navigator.Navigator().mytvshows_floppy(folderName=folderName)
+	elif action == 'mytvshows_scrobNavigator':
+		from resources.lib.menus import navigator
+		navigator.Navigator().mytvshows_scrob(folderName=folderName)
 	elif action == 'tvshows':
 		from resources.lib.menus import tvshows
 		tvshows.TVshows().get(url, folderName=folderName)
@@ -681,6 +705,18 @@ def router(argv2):
 	elif action == 'floppy_upcoming_progress':
 		from resources.lib.menus import episodes
 		episodes.Episodes().floppy_upcoming_progress(url, folderName=folderName)
+	elif action == 'scrob_episodes_progress':
+		from resources.lib.menus import episodes
+		episodes.Episodes().scrob_calendar(url, folderName=folderName)
+	elif action == 'scrob_upcoming_progress':
+		from resources.lib.menus import episodes
+		episodes.Episodes().scrob_upcoming_progress(url, folderName=folderName)
+	elif action == 'floppy_episodes_unfinished':
+		from resources.lib.menus import episodes
+		episodes.Episodes().floppy_unfinished(url, folderName=folderName)
+	elif action == 'scrob_episodes_unfinished':
+		from resources.lib.menus import episodes
+		episodes.Episodes().scrob_unfinished(url, folderName=folderName)
 	elif action == 'local_calendar':
 		from resources.lib.menus import episodes
 		episodes.Episodes().local_calendar(url, folderName=folderName)
@@ -1182,6 +1218,9 @@ def router(argv2):
 		elif action == 'tools_floppyToolsNavigator':
 			from resources.lib.menus import navigator
 			navigator.Navigator().floppyTools(folderName=folderName)
+		elif action == 'tools_scrobToolsNavigator':
+			from resources.lib.menus import navigator
+			navigator.Navigator().scrobTools(folderName=folderName)
 		elif action == 'tools_searchNavigator':
 			from resources.lib.menus import navigator
 			navigator.Navigator().search(folderName=folderName)
@@ -1246,6 +1285,12 @@ def router(argv2):
 			tvshow = (params.get('tvshow') == 'tvshow')
 			from resources.lib.modules import floppy
 			floppy.manager(name, imdb, tvdb, tmdb=tmdb, season=season, episode=episode, watched=watched, unfinished=unfinished, tvshow=tvshow)
+		elif action == 'tools_scrobManager':
+			watched = (params.get('watched') == 'True') if params.get('watched') else None
+			unfinished = (params.get('unfinished') == 'True') if params.get('unfinished') else False
+			tvshow = (params.get('tvshow') == 'tvshow')
+			from resources.lib.modules import scrob
+			scrob.manager(name, imdb, tvdb, tmdb=tmdb, season=season, episode=episode, watched=watched, unfinished=unfinished, tvshow=tvshow)
 		elif action == 'tools_likeList':
 			from resources.lib.modules import trakt
 			trakt.like_list(params.get('list_owner'), params.get('list_name'), params.get('list_id'))
@@ -1270,6 +1315,9 @@ def router(argv2):
 		elif action == 'tools_forceFloppySync':
 			from resources.lib.modules import floppy
 			floppy.force_floppySync()
+		elif action == 'tools_forceScrobSync':
+			from resources.lib.modules import scrob
+			scrob.force_scrobSync()
 		elif action == 'tools_clearLogFile':
 			from resources.lib.modules import log_utils
 			cleared = log_utils.clear_logFile()

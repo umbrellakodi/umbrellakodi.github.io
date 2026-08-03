@@ -91,6 +91,7 @@ mdbSyncFile = joinPath(dataPath, 'mdbSync.db')
 simKLSyncFile = joinPath(dataPath, 'simKLSync.db')
 customTraktSyncFile = joinPath(dataPath, 'customTraktSync.db')
 floppySyncFile = joinPath(dataPath, 'floppySync.db')
+scrobSyncFile = joinPath(dataPath, 'scrobSync.db')
 subsFile = joinPath(dataPath, 'substitute.db')
 fanarttvCacheFile = joinPath(dataPath, 'fanarttv.db')
 metaInternalCacheFile = joinPath(dataPath, 'video_cache.db')
@@ -242,6 +243,19 @@ def artPath():
 	if os.path.isdir(user_path):
 		return user_path
 	return joinPath(xbmcaddon.Addon('plugin.video.umbrella').getAddonInfo('path'), 'resources', 'artwork', theme)
+
+def themedIcon(filename):
+	# A third-party icon pack (e.g. a "smallbrella"-style alternate theme, downloaded
+	# under userIconFolders()) predates whatever provider icon was added most recently
+	# to Umbrella's own bundled set and simply won't have that file — artPath() only
+	# falls back to the bundled theme when the whole pack directory is missing, not
+	# per missing file. Resolve against the active pack first, then fall back to
+	# Umbrella's own bundled "umbrella" theme (which always has every icon Umbrella
+	# itself references) so a gap in a third-party pack shows the real icon instead
+	# of a broken/blank one.
+	path = joinPath(artPath(), filename)
+	if existsPath(path): return path
+	return joinPath(iconFolders(), 'umbrella', filename)
 
 def genreIconPath():
 	theme = appearance()
@@ -556,6 +570,7 @@ def refresh_contextProperties():
 		'context.umbrella.simklManager',
 		'context.umbrella.customManager',
 		'context.umbrella.floppyManager',
+		'context.umbrella.scrobManager',
 		'context.umbrella.tmdbListManager',
 		'context.umbrella.tmdbWatchlist',
 		'context.umbrella.clearProviders',

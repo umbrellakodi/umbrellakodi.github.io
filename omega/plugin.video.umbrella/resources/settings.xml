@@ -2727,6 +2727,7 @@
 							<option label="40621">3</option>
 							<option label="40718">4</option>
 							<option label="40754">5</option>
+							<option label="40767">6</option>
 						</options>
 					</constraints>
 					<dependencies>
@@ -2769,6 +2770,7 @@
 							<option label="40621">3</option>
 							<option label="40718">4</option>
 							<option label="40754">5</option>
+							<option label="40767">6</option>
 						</options>
 					</constraints>
 					<dependencies>
@@ -2790,6 +2792,7 @@
 								<condition operator="is" setting="mdblist.markwatched">true</condition>
 								<condition operator="is" setting="custom.markwatched">true</condition>
 								<condition operator="is" setting="floppy.markwatched">true</condition>
+								<condition operator="is" setting="scrob.markwatched">true</condition>
 							</or>
 						</dependency>
 					</dependencies>
@@ -2840,6 +2843,7 @@
 					<dependencies>
 						<dependency type="visible">
 							<and>
+								<condition operator="is" setting="dev.enable.custom">true</condition>
 								<condition operator="!is" setting="custom.user.token"/>
 								<condition operator="!is" setting="indicators.alt">4</condition>
 							</and>
@@ -2855,6 +2859,19 @@
 							<and>
 								<condition operator="!is" setting="floppy.token"/>
 								<condition operator="!is" setting="indicators.alt">5</condition>
+							</and>
+						</dependency>
+					</dependencies>
+					<control type="toggle"/>
+				</setting>
+				<setting id="scrob.markwatched" type="boolean" label="40776" help="">
+					<level>0</level>
+					<default>false</default>
+					<dependencies>
+						<dependency type="visible">
+							<and>
+								<condition operator="!is" setting="scrob.apikey"/>
+								<condition operator="!is" setting="indicators.alt">6</condition>
 							</and>
 						</dependency>
 					</dependencies>
@@ -3713,6 +3730,11 @@
 					<constraints>
 						<allowempty>true</allowempty>
 					</constraints>
+					<dependencies>
+						<dependency type="visible">
+							<condition operator="is" setting="dev.enable.custom">true</condition>
+						</dependency>
+					</dependencies>
 					<control type="edit" format="string">
 						<heading>40751</heading>
 					</control>
@@ -3723,6 +3745,11 @@
 					<constraints>
 						<allowempty>true</allowempty>
 					</constraints>
+					<dependencies>
+						<dependency type="visible">
+							<condition operator="is" setting="dev.enable.custom">true</condition>
+						</dependency>
+					</dependencies>
 					<control type="edit" format="string">
 						<heading>40719</heading>
 					</control>
@@ -3733,6 +3760,11 @@
 					<constraints>
 						<allowempty>true</allowempty>
 					</constraints>
+					<dependencies>
+						<dependency type="visible">
+							<condition operator="is" setting="dev.enable.custom">true</condition>
+						</dependency>
+					</dependencies>
 					<control type="edit" format="string">
 						<heading>40720</heading>
 					</control>
@@ -3743,6 +3775,11 @@
 					<constraints>
 						<allowempty>true</allowempty>
 					</constraints>
+					<dependencies>
+						<dependency type="visible">
+							<condition operator="is" setting="dev.enable.custom">true</condition>
+						</dependency>
+					</dependencies>
 					<control type="edit" format="string">
 						<heading>40721</heading>
 						<hidden>true</hidden>
@@ -3774,7 +3811,10 @@
 							<condition on="property" name="InfoBool">false</condition>
 						</dependency>
 						<dependency type="visible">
-							<condition operator="!is" setting="custom.user.token"/>
+							<and>
+								<condition operator="is" setting="dev.enable.custom">true</condition>
+								<condition operator="!is" setting="custom.user.token"/>
+							</and>
 						</dependency>
 					</dependencies>
 					<control type="edit" format="string">
@@ -3789,7 +3829,10 @@
 					</constraints>
 					<dependencies>
 						<dependency type="visible">
-							<condition operator="is" setting="custom.user.token"/>
+							<and>
+								<condition operator="is" setting="dev.enable.custom">true</condition>
+								<condition operator="is" setting="custom.user.token"/>
+							</and>
 						</dependency>
 					</dependencies>
 					<control type="button" format="action">
@@ -3804,7 +3847,10 @@
 					</constraints>
 					<dependencies>
 						<dependency type="visible">
-							<condition operator="!is" setting="custom.user.token"/>
+							<and>
+								<condition operator="is" setting="dev.enable.custom">true</condition>
+								<condition operator="!is" setting="custom.user.token"/>
+							</and>
 						</dependency>
 					</dependencies>
 					<control type="button" format="action">
@@ -3861,7 +3907,10 @@
 					<default>true</default>
 					<dependencies>
 						<dependency type="visible">
-							<condition operator="!is" setting="custom.user.token"/>
+							<and>
+								<condition operator="is" setting="dev.enable.custom">true</condition>
+								<condition operator="!is" setting="custom.user.token"/>
+							</and>
 						</dependency>
 					</dependencies>
 					<control type="toggle"/>
@@ -3875,7 +3924,10 @@
 					</constraints>
 					<dependencies>
 						<dependency type="visible">
-							<condition operator="!is" setting="custom.user.token"/>
+							<and>
+								<condition operator="is" setting="dev.enable.custom">true</condition>
+								<condition operator="!is" setting="custom.user.token"/>
+							</and>
 						</dependency>
 					</dependencies>
 					<control type="slider" format="integer">
@@ -3887,7 +3939,10 @@
 					<default>false</default>
 					<dependencies>
 						<dependency type="visible">
-							<condition operator="!is" setting="custom.user.token"/>
+							<and>
+								<condition operator="is" setting="dev.enable.custom">true</condition>
+								<condition operator="!is" setting="custom.user.token"/>
+							</and>
 						</dependency>
 					</dependencies>
 					<control type="toggle"/>
@@ -3897,7 +3952,10 @@
 					<default>true</default>
 					<dependencies>
 						<dependency type="visible">
-							<condition operator="!is" setting="custom.user.token"/>
+							<and>
+								<condition operator="is" setting="dev.enable.custom">true</condition>
+								<condition operator="!is" setting="custom.user.token"/>
+							</and>
 						</dependency>
 					</dependencies>
 					<control type="toggle"/>
@@ -3907,7 +3965,10 @@
 					<default>true</default>
 					<dependencies>
 						<dependency type="visible">
-							<condition operator="!is" setting="custom.user.token"/>
+							<and>
+								<condition operator="is" setting="dev.enable.custom">true</condition>
+								<condition operator="!is" setting="custom.user.token"/>
+							</and>
 						</dependency>
 					</dependencies>
 					<control type="toggle"/>
@@ -3917,7 +3978,10 @@
 					<default>false</default>
 					<dependencies>
 						<dependency type="visible">
-							<condition operator="!is" setting="custom.user.token"/>
+							<and>
+								<condition operator="is" setting="dev.enable.custom">true</condition>
+								<condition operator="!is" setting="custom.user.token"/>
+							</and>
 						</dependency>
 					</dependencies>
 					<control type="toggle"/>
@@ -3927,7 +3991,10 @@
 					<default>true</default>
 					<dependencies>
 						<dependency type="visible">
-							<condition operator="!is" setting="custom.user.token"/>
+							<and>
+								<condition operator="is" setting="dev.enable.custom">true</condition>
+								<condition operator="!is" setting="custom.user.token"/>
+							</and>
 						</dependency>
 					</dependencies>
 					<control type="toggle"/>
@@ -3938,6 +4005,7 @@
 					<dependencies>
 						<dependency type="visible">
 							<and>
+								<condition operator="is" setting="dev.enable.custom">true</condition>
 								<condition operator="!is" setting="custom.user.token"/>
 								<or>
 									<condition operator="is" setting="indicators.alt">4</condition>
@@ -3954,6 +4022,7 @@
 					<dependencies>
 						<dependency type="visible">
 							<and>
+								<condition operator="is" setting="dev.enable.custom">true</condition>
 								<condition operator="!is" setting="custom.user.token"/>
 								<or>
 									<condition operator="is" setting="indicators.alt">4</condition>
@@ -4079,6 +4148,156 @@
 					<dependencies>
 						<dependency type="visible">
 							<condition operator="!is" setting="floppy.token"/>
+						</dependency>
+					</dependencies>
+					<control type="toggle"/>
+				</setting>
+			</group>
+			<group id="7" label="40767">
+				<setting id="scrob.baseurl" type="string" label="40768" help="">
+					<level>0</level>
+					<default/>
+					<constraints>
+						<allowempty>true</allowempty>
+					</constraints>
+					<control type="edit" format="string">
+						<heading>40768</heading>
+					</control>
+				</setting>
+				<setting id="scrob.apikey" type="string" label="40769" help="">
+					<level>0</level>
+					<default/>
+					<constraints>
+						<allowempty>true</allowempty>
+					</constraints>
+					<control type="edit" format="string">
+						<heading>40769</heading>
+						<hidden>true</hidden>
+					</control>
+				</setting>
+				<setting id="scrob.username" type="string" label="40770" help="">
+					<level>0</level>
+					<default/>
+					<constraints>
+						<allowempty>true</allowempty>
+					</constraints>
+					<control type="edit" format="string">
+						<heading>40770</heading>
+					</control>
+				</setting>
+				<setting id="scrob.password" type="string" label="40771" help="">
+					<level>0</level>
+					<default/>
+					<constraints>
+						<allowempty>true</allowempty>
+					</constraints>
+					<control type="edit" format="string">
+						<heading>40771</heading>
+						<hidden>true</hidden>
+					</control>
+				</setting>
+				<setting id="showScrobAuth" type="action" label="40772" help="">
+					<level>0</level>
+					<data>RunPlugin(plugin://plugin.video.umbrella/?action=scrobAuth)</data>
+					<constraints>
+						<allowempty>true</allowempty>
+					</constraints>
+					<control type="button" format="action">
+						<close>true</close>
+					</control>
+				</setting>
+				<setting id="showScrobRevoke" type="action" label="40773" help="">
+					<level>0</level>
+					<data>RunPlugin(plugin://plugin.video.umbrella/?action=scrobRevoke)</data>
+					<constraints>
+						<allowempty>true</allowempty>
+					</constraints>
+					<dependencies>
+						<dependency type="visible">
+							<condition operator="!is" setting="scrob.apikey"/>
+						</dependency>
+					</dependencies>
+					<control type="button" format="action">
+						<close>true</close>
+					</control>
+				</setting>
+				<setting id="scrob.accesstoken" type="string" label="" help="">
+					<level>0</level>
+					<default/>
+					<constraints>
+						<allowempty>true</allowempty>
+					</constraints>
+					<dependencies>
+						<dependency type="visible">
+							<condition on="property" name="InfoBool">false</condition>
+						</dependency>
+					</dependencies>
+					<control type="edit" format="string">
+						<heading/>
+					</control>
+				</setting>
+				<setting id="scrob.tokenexpiry" type="string" label="" help="">
+					<level>0</level>
+					<default/>
+					<constraints>
+						<allowempty>true</allowempty>
+					</constraints>
+					<dependencies>
+						<dependency type="visible">
+							<condition on="property" name="InfoBool">false</condition>
+						</dependency>
+					</dependencies>
+					<control type="edit" format="string">
+						<heading/>
+					</control>
+				</setting>
+				<setting id="scrob.isauthed" type="string" label="" help="">
+					<level>0</level>
+					<default/>
+					<constraints>
+						<allowempty>true</allowempty>
+					</constraints>
+					<dependencies>
+						<dependency type="visible">
+							<condition on="property" name="InfoBool">false</condition>
+						</dependency>
+					</dependencies>
+					<control type="edit" format="string">
+						<heading/>
+					</control>
+				</setting>
+				<setting id="scrob.general.notifications" type="boolean" label="40774" help="">
+					<level>0</level>
+					<default>true</default>
+					<dependencies>
+						<dependency type="visible">
+							<condition operator="!is" setting="scrob.apikey"/>
+						</dependency>
+					</dependencies>
+					<control type="toggle"/>
+				</setting>
+				<setting id="scrob.service.syncInterval" type="integer" label="40775" help="">
+					<level>0</level>
+					<default>30</default>
+					<constraints>
+						<minimum>5</minimum>
+						<maximum>120</maximum>
+					</constraints>
+					<dependencies>
+						<dependency type="visible">
+							<condition operator="!is" setting="scrob.apikey"/>
+						</dependency>
+					</dependencies>
+					<control type="slider" format="integer">
+						<popup>false</popup>
+					</control>
+				</setting>
+				<setting id="scrob.paginate.lists" type="boolean" label="32188" help="">
+					<level>0</level>
+					<default>true</default>
+					<dependencies>
+						<dependency type="visible">
+							<condition operator="!is" setting="scrob.apikey"/>
 						</dependency>
 					</dependencies>
 					<control type="toggle"/>
@@ -6628,6 +6847,11 @@
 					<default>true</default>
 					<control type="toggle"/>
 				</setting>
+				<setting id="context.umbrella.scrobManager" type="boolean" label="40777" help="">
+					<level>0</level>
+					<default>true</default>
+					<control type="toggle"/>
+				</setting>
 				<setting id="context.umbrella.tmdbListManager" type="boolean" label="40606" help="">
 					<level>0</level>
 					<default>true</default>
@@ -6831,6 +7055,16 @@
 						<allowempty>true</allowempty>
 					</constraints>
 					<control type="button" format="action"/>
+				</setting>
+				<setting id="dev.enable.custom" type="boolean" label="40766" help="">
+					<level>0</level>
+					<default>false</default>
+					<dependencies>
+						<dependency type="visible">
+							<condition operator="is" setting="dev.mode.enable">true</condition>
+						</dependency>
+					</dependencies>
+					<control type="toggle"/>
 				</setting>
 				<setting id="use.playeronly" type="boolean" label="40275" help="">
 					<level>0</level>

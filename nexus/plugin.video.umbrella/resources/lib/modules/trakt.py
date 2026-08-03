@@ -1509,7 +1509,7 @@ def update_syncMovies(imdb, remove_id=False):
 		traktsync.cache_insert(key, repr(indicators))
 	except: log_utils.error()
 
-def service_syncSeasons(): # season indicators and counts for watched shows ex. [['1', '2', '3'], {1: {'total': 8, 'watched': 8, 'unwatched': 0}, 2: {'total': 10, 'watched': 10, 'unwatched': 0}}]
+def service_syncSeasons(progress_callback=None): # season indicators and counts for watched shows ex. [['1', '2', '3'], {1: {'total': 8, 'watched': 8, 'unwatched': 0}, 2: {'total': 10, 'watched': 10, 'unwatched': 0}}]
 	def _compute_one(show_tuple):
 		try:
 			from resources.lib.indexers.tmdb import TVshows as _TMDbTVshows
@@ -1535,14 +1535,18 @@ def service_syncSeasons(): # season indicators and counts for watched shows ex. 
 		watched_data = traktsync.cache_existing(syncTVShows) # use cached data from service cachesyncTVShows() just written fresh
 		if not watched_data: return
 		threads = [Thread(target=_compute_one, args=(show_tuple,)) for show_tuple in watched_data]
+		total = len(threads)
 		_unlimited = getSetting('dev.batch.unlimited') == 'true'
 		_bs = max(int(getSetting('dev.batch.size') or '10'), 1)
-		_chunk = max(len(threads), 1) if _unlimited else _bs
-		for i in range(0, len(threads), _chunk):
+		_chunk = max(total, 1) if _unlimited else _bs
+		for i in range(0, total, _chunk):
 			if control.monitor.abortRequested(): break
 			batch = threads[i:i + _chunk]
 			[t.start() for t in batch]
 			[t.join() for t in batch]
+			if progress_callback:
+				try: progress_callback('Syncing season data', min(i + _chunk, total), total)
+				except: pass
 		traktsync.insert_syncSeasons_at()
 	except: log_utils.error()
 
@@ -2058,17 +2062,23 @@ def sync_watchedProgress(activities=None, forced=False, trigger_refresh=True):
 			if trigger_refresh: control.trigger_widget_refresh()
 	except: log_utils.error()
 
-def sync_watched(activities=None, forced=False): # writes to traktsync.db as of 1-19-2022
+def sync_watched(activities=None, forced=False, progress_callback=None): # writes to traktsync.db as of 1-19-2022
 	try:
 		FULL_SYNC_INTERVAL = 86400 # force a full resync every 24h to catch removes/resets
 		if forced:
+			if progress_callback:
+				try: progress_callback('Syncing watched movies', None, None)
+				except: pass
 			cachesyncMovies()
+			if progress_callback:
+				try: progress_callback('Syncing watched shows', None, None)
+				except: pass
 			cachesyncTVShows()
 			traktsync.insert_syncSeasons_at()
 			log_utils.log('Forced - Trakt Watched Sync Complete (movies + shows)', __name__, log_utils.LOGINFO)
 			control.sleep(5000) # avoid memory pressure on embedded hardware after heavy initial sync
 			if not control.monitor.abortRequested():
-				service_syncSeasons()
+				service_syncSeasons(progress_callback=progress_callback)
 		else:
 			moviesWatchedActivity = getMoviesWatchedActivity(activities)
 			db_movies_last_watched = timeoutsyncMovies()

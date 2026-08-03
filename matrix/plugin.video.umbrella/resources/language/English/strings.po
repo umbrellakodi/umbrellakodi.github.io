@@ -5991,3 +5991,51 @@ msgstr ""
 msgctxt "#40765"
 msgid "Floppy Upcoming Progress prepend date"
 msgstr ""
+
+msgctxt "#40766"
+msgid "Enable Custom Provider"
+msgstr ""
+
+msgctxt "#40767"
+msgid "Scrob"
+msgstr ""
+
+msgctxt "#40768"
+msgid "Scrob Server URL"
+msgstr ""
+
+msgctxt "#40769"
+msgid "Scrob API Key"
+msgstr ""
+
+msgctxt "#40770"
+msgid "Scrob Username (optional, unlocks unwatch/lists)"
+msgstr ""
+
+msgctxt "#40771"
+msgid "Scrob Password (optional, unlocks unwatch/lists)"
+msgstr ""
+
+msgctxt "#40772"
+msgid "Test Scrob Connection"
+msgstr ""
+
+msgctxt "#40773"
+msgid "Revoke Scrob Credentials"
+msgstr ""
+
+msgctxt "#40774"
+msgid "Scrob Notifications"
+msgstr ""
+
+msgctxt "#40775"
+msgid "Scrob Sync Interval (Minutes)"
+msgstr ""
+
+msgctxt "#40776"
+msgid "Also mark watched on Scrob"
+msgstr ""
+
+msgctxt "#40777"
+msgid "Scrob Manager"
+msgstr ""

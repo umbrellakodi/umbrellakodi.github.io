@@ -75,6 +75,9 @@ def fetch(items, lang='en', user=''):
 								elif getSetting('indicators.alt') == '5':
 									from resources.lib.database.floppysync import cache_existing
 									from resources.lib.modules.floppy import syncTVShows
+								elif getSetting('indicators.alt') == '6':
+									from resources.lib.database.scrobsync import cache_existing
+									from resources.lib.modules.scrob import syncTVShows
 								else:
 									continue
 								imdb = item.get('imdb', '')
@@ -96,6 +99,9 @@ def fetch(items, lang='en', user=''):
 									elif getSetting('indicators.alt') == '5':
 										from resources.lib.modules.floppy import cachesyncSeasons
 										cachesyncSeasons(imdb, timeout=int(getSetting('floppy.service.syncInterval') or 30) / 60)
+									elif getSetting('indicators.alt') == '6':
+										from resources.lib.modules.scrob import cachesyncSeasons
+										cachesyncSeasons(imdb, timeout=int(getSetting('scrob.service.syncInterval') or 30) / 60)
 								continue
 				item = dict((k, v) for k, v in iter(item.items()) if v is not None and v != '')
 				items[i].update(item)
