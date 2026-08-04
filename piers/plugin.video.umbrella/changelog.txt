@@ -1,5 +1,2 @@
-[B]Update - v6.7.647 - August 3rd, 2026 [/B]
---[Change] Moved custom trakt provider behind developer options.
---[Fix] Added pagination to MDBList History.
---[Fix] Added progress for sync when changing watch indicators.
---[Change] Added initial support for Scrob.
+[B]Update - v6.7.649 - August 4th, 2026 [/B]
+--[Change] Made changes for stop on Floppy and Scrob.

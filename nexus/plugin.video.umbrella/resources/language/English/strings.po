@@ -6039,3 +6039,15 @@ msgstr ""
 msgctxt "#40777"
 msgid "Scrob Manager"
 msgstr ""
+
+msgctxt "#40778"
+msgid "Recent Episodes (MDBList)"
+msgstr ""
+
+msgctxt "#40779"
+msgid "Upcoming Episodes (MDBList)"
+msgstr ""
+
+msgctxt "#40780"
+msgid "Season Premieres (MDBList)"
+msgstr ""

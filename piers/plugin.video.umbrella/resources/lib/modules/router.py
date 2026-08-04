@@ -699,6 +699,15 @@ def router(argv2):
 	elif action == 'custom_calendar_premieres':
 		from resources.lib.menus import episodes
 		episodes.Episodes().custom_calendar_premieres(url, folderName=folderName)
+	elif action == 'mdblist_events_recent':
+		from resources.lib.menus import episodes
+		episodes.Episodes().mdblist_calendar_recent(url, folderName=folderName)
+	elif action == 'mdblist_events_upcoming':
+		from resources.lib.menus import episodes
+		episodes.Episodes().mdblist_calendar_upcoming(url, folderName=folderName)
+	elif action == 'mdblist_events_premieres':
+		from resources.lib.menus import episodes
+		episodes.Episodes().mdblist_calendar_premieres(url, folderName=folderName)
 	elif action == 'floppy_episodes_progress':
 		from resources.lib.menus import episodes
 		episodes.Episodes().floppy_calendar(url, folderName=folderName)

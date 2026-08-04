@@ -1,3 +1,14 @@
+[B]Update - v6.7.649 - August 4th, 2026 [/B]
+--[Change] Made changes for stop on Floppy and Scrob.
+
+[B]Update - v6.7.648 - August 4th, 2026 [/B]
+--[Change] MdbList Calendar added.
+--[Fix] Added update call for Scrob to update the now playing banner.
+--[Fix] Changes made to fix Scrob resume.
+--[Fix] Changes made for scrobble for Floppy and Scrob.
+--[Fix] Fixed issue with Simkl sync.
+--[Fix] Changes made for scrob and floppy to clear cache on full history sync to avoid stale progress indicators.
+
 [B]Update - v6.7.647 - August 3rd, 2026 [/B]
 --[Change] Moved custom trakt provider behind developer options.
 --[Fix] Added pagination to MDBList History.

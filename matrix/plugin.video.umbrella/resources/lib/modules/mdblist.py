@@ -881,6 +881,20 @@ def get_up_next():
 	except: log_utils.error()
 	return []
 
+def get_calendar(start, end):
+	# MDBList's own /calendar/events — personalized to the user's watchlist/tracked
+	# shows, confirmed live (real response shape: {'events': [{'type': 'episode'|'movie',
+	# 'title': <show title>, 'episode_title':, 'show_tmdb':, 'season_number':,
+	# 'episode_number':, 'start': 'YYYY-MM-DD', ...}]}). Distinct from get_up_next()'s
+	# /upnext endpoint (per-show "next episode" only, unreliable for out-of-order
+	# watching — see mdblist_progress_list()'s local reconstruction for that case).
+	try:
+		result = get_request('/calendar/events?limit=1000&start=%s&end=%s' % (start, end))
+		if not result: return []
+		return result.get('events') or []
+	except: log_utils.error()
+	return []
+
 def getWatchedActivity(activities=None):
 	try:
 		i = activities if activities else getActivities()

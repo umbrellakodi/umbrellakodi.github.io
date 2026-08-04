@@ -225,7 +225,7 @@ def setIndicatorService():
 				if optionVal == '1':
 					trakt.sync_watched(forced=True, progress_callback=_progress)
 				if optionVal == '2':
-					simkl.sync_watched(forced=True)
+					simkl.sync_watched(forced=True, progress_callback=_progress)
 				if optionVal == '4':
 					customtrakt.sync_watched(forced=True, progress_callback=_progress)
 				if optionVal == '5':

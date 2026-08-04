@@ -146,6 +146,48 @@ def upsert_watched_episode(show_imdb='', show_tmdb='', show_tvdb='', season=0, e
 		try: dbcon.close()
 		except: pass
 
+def bulk_upsert_watched_movies(rows):
+	# rows: list of (imdb, tmdb, title, year, last_watched_at) tuples. A full sync can
+	# involve thousands of rows — upsert_watched_movie() above opens and closes a
+	# fresh sqlite connection per call, which is fine for one-off writes but is the
+	# actual bottleneck on a full resync (confirmed: on a resource-constrained device,
+	# ~14,000 individual connection cycles for a large watched-episode history caused
+	# the sync to never finish). Batch the whole set into one connection/transaction.
+	if not rows: return
+	try:
+		dbcon = get_connection()
+		dbcur = get_connection_cursor(dbcon)
+		_ensure_watched_tables(dbcur)
+		dbcur.executemany('''INSERT OR REPLACE INTO scrob_watched_movies Values (?, ?, ?, ?, ?)''', rows)
+		dbcur.connection.commit()
+	except:
+		from resources.lib.modules import log_utils
+		log_utils.error()
+	finally:
+		try: dbcur.close()
+		except: pass
+		try: dbcon.close()
+		except: pass
+
+def bulk_upsert_watched_episodes(rows):
+	# rows: list of (show_imdb, show_tmdb, show_tvdb, season, episode, last_watched_at)
+	# tuples. Same rationale as bulk_upsert_watched_movies() above.
+	if not rows: return
+	try:
+		dbcon = get_connection()
+		dbcur = get_connection_cursor(dbcon)
+		_ensure_watched_tables(dbcur)
+		dbcur.executemany('''INSERT OR REPLACE INTO scrob_watched_episodes Values (?, ?, ?, ?, ?, ?)''', rows)
+		dbcur.connection.commit()
+	except:
+		from resources.lib.modules import log_utils
+		log_utils.error()
+	finally:
+		try: dbcur.close()
+		except: pass
+		try: dbcon.close()
+		except: pass
+
 def delete_watched_movie(tmdb):
 	try:
 		dbcon = get_connection()
@@ -302,6 +344,26 @@ def cache_delete(key):
 		ck = dbcur.execute('''SELECT * FROM sqlite_master WHERE type='table' AND name='watched';''').fetchone()
 		if ck:
 			dbcur.execute('''DELETE FROM watched WHERE key=?''', (key,))
+			dbcur.connection.commit()
+	except:
+		from resources.lib.modules import log_utils
+		log_utils.error()
+	finally:
+		try: dbcur.close()
+		except: pass
+		try: dbcon.close()
+		except: pass
+
+def clear_cache():
+	# Truncates the whole cache table without touching the service-timestamp table —
+	# delete_scrob_tables() also resets last_history_at to epoch as a side effect, which
+	# would fight a just-written update_last_watched_at() call if reused for this.
+	try:
+		dbcon = get_connection()
+		dbcur = get_connection_cursor(dbcon)
+		ck = dbcur.execute('''SELECT * FROM sqlite_master WHERE type='table' AND name='watched';''').fetchone()
+		if ck:
+			dbcur.execute('''DELETE FROM watched''')
 			dbcur.connection.commit()
 	except:
 		from resources.lib.modules import log_utils

@@ -764,16 +764,31 @@ def chunked_iterator(iterable, size):
     while chunk := list(islice(iterator, size)):
         yield chunk
 
-def batchCacheSyncSeason(data):
+def batchCacheSyncSeason(data, progress_callback=None):
     #Process all items in data in chunks because simkl api had limit of 100 items per request
     extended_param = 'full,specials' if getSetting('tv.specials') == 'true' else 'full'
 
+    total = len(data)
+    done = 0
     for chunk in chunked_iterator(data, 100):  # Process chunks sequentially to avoid request bursts
         formatted_data = [show for show in chunk]
         results = post_request(f'/sync/watched?extended={extended_param}', data=formatted_data)
+        done += len(chunk)
+        if progress_callback:
+            try: progress_callback('Syncing season progress', done, total)
+            except: pass
         if not results:
             continue
-        with ThreadPoolExecutor() as executor:  # Parallel cache writes only (no API calls)
+        # cachesyncSeasons()->syncSeasons() also does a TMDb lookup + cache write per show
+        # (last-aired-boundary capping, added after this was written) — no longer "cache
+        # writes only" as the comment used to say. An unbounded default ThreadPoolExecutor
+        # (up to 32 workers) means up to 100 concurrent TMDb HTTP requests plus concurrent
+        # sqlite writes to the same cache.db file at once, which was enough to freeze a
+        # resource-constrained Android TV box mid-sync. Bound it the same way scrob.py's
+        # _threaded_resolve() batches TMDb lookups (dev.batch.size, default 10).
+        _unlimited = getSetting('dev.batch.unlimited') == 'true'
+        _max_workers = len(chunk) if _unlimited else max(int(getSetting('dev.batch.size') or '10'), 1)
+        with ThreadPoolExecutor(max_workers=_max_workers) as executor:
             for show in chunk:
                 imdb = show.get('imdb')
                 tvdb = show.get('tvdb')
@@ -1368,7 +1383,7 @@ def sync_dropped(activities=None, forced=False):
         log_utils.error('Error in sync_dropped: %s' % str(e))
 
 
-def service_syncSeasons(): # season indicators and counts for watched shows ex. [['1', '2', '3'], {1: {'total': 8, 'watched': 8, 'unwatched': 0}, 2: {'total': 10, 'watched': 10, 'unwatched': 0}}]
+def service_syncSeasons(progress_callback=None): # season indicators and counts for watched shows ex. [['1', '2', '3'], {1: {'total': 8, 'watched': 8, 'unwatched': 0}, 2: {'total': 10, 'watched': 10, 'unwatched': 0}}]
 	try:
 		log_utils.log('Service - Simkl Watched Shows Season Sync...', __name__, log_utils.LOGDEBUG)
 		indicators = simklsync.cache_existing(syncTVShows) # use cached data from service cachesyncTVShows() just written fresh
@@ -1382,7 +1397,7 @@ def service_syncSeasons(): # season indicators and counts for watched shows ex. 
 		#[i.start() for i in threads]
 		#[i.join() for i in threads]
 		#cachesyncSeasons('tt2152112', None, None)
-		batchCacheSyncSeason(batch)
+		batchCacheSyncSeason(batch, progress_callback=progress_callback)
 	except: log_utils.error()
 
 def _merge_watched_movies(db_ts):
@@ -1425,13 +1440,19 @@ def _merge_watched_tvshows(db_ts):
 		simklsync.cache_insert(key, repr(merged))
 	except: log_utils.error()
 
-def sync_watched(activities=None, forced=False):
+def sync_watched(activities=None, forced=False, progress_callback=None):
 	try:
 		if forced:
+			if progress_callback:
+				try: progress_callback('Syncing watched movies')
+				except: pass
 			cachesyncMovies()
+			if progress_callback:
+				try: progress_callback('Syncing watched shows')
+				except: pass
 			cachesyncTVShows()
 			control.sleep(5000)
-			service_syncSeasons() # syncs all watched shows season indicators and counts
+			service_syncSeasons(progress_callback=progress_callback) # syncs all watched shows season indicators and counts
 			simklsync.insert_syncSeasons_at()
 		else:
 			moviesWatchedActivity = getMoviesWatchedActivity(activities)

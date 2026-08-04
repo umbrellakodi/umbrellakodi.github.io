@@ -433,53 +433,71 @@ def unwatch(content_type, name, imdb=None, tvdb=None, season=None, episode=None,
 #### Now Playing card only; local resume/bookmark state is tracked client-side since
 #### Floppy has no queryable "in progress playback" list to pull from). ####
 
-def scrobbleStart(media_type, title='', tvshowtitle='', year='0', imdb='', tmdb='', tvdb='', season='', episode='', watched_percent=0):
+def _scrobble_seconds(watched_percent, current_time, total_time):
+	# position_seconds/duration_seconds are meant to be real elapsed/total playback
+	# seconds — every call site now has Kodi's actual getTime()/getTotalTime() available
+	# and passes them through. Without them (current_time/total_time not provided), this
+	# used to send the 0-100 percent value itself as "seconds" with a hardcoded 100-second
+	# "duration" — Floppy's own Now Playing card then displayed e.g. 38 seconds of a
+	# 1:40 (100s) runtime for what was really 38% into a much longer episode. The percent
+	# fallback below only exists for any caller that still can't supply real seconds.
+	if total_time:
+		return int(current_time or 0), int(total_time)
+	return int(watched_percent), 100
+
+def scrobbleStart(media_type, title='', tvshowtitle='', year='0', imdb='', tmdb='', tvdb='', season='', episode='', watched_percent=0, current_time=0, total_time=0):
 	try:
 		ids = {}
 		if tmdb: ids['tmdb'] = str(tmdb)
 		if imdb: ids['imdb'] = str(imdb)
 		if tvdb: ids['tvdb'] = str(tvdb)
+		position_seconds, duration_seconds = _scrobble_seconds(watched_percent, current_time, total_time)
 		body = {'action': 'start', 'media_type': 'movie' if media_type == 'movie' else 'episode', 'ids': ids,
 			'title': title, 'series_title': tvshowtitle,
 			'season_number': int(season) if season else None, 'episode_number': int(episode) if episode else None,
-			'position_seconds': int(watched_percent), 'duration_seconds': 100}
+			'position_seconds': position_seconds, 'duration_seconds': duration_seconds}
 		getFloppy('/scrobble/', post=body, method='POST', silent=True)
 	except: log_utils.error()
 
-def scrobbleMovie(imdb, tmdb, watched_percent):
+def scrobbleMovie(imdb, tmdb, watched_percent, current_time=0, total_time=0):
 	try:
 		ids = {}
 		if tmdb: ids['tmdb'] = str(tmdb)
 		if imdb: ids['imdb'] = str(imdb)
-		body = {'action': 'pause', 'media_type': 'movie', 'ids': ids, 'position_seconds': int(watched_percent), 'duration_seconds': 100}
+		position_seconds, duration_seconds = _scrobble_seconds(watched_percent, current_time, total_time)
+		body = {'action': 'pause', 'media_type': 'movie', 'ids': ids, 'position_seconds': position_seconds, 'duration_seconds': duration_seconds}
 		response = getFloppy('/scrobble/', post=body, method='POST', silent=True)
 		if response is not None and response.status_code == 200:
 			floppysync.upsert_bookmark(title='', resume_id='', imdb=imdb or '', tmdb=str(tmdb or ''), percent_played=str(watched_percent), paused_at=_now_iso())
 			control.trigger_widget_refresh()
 	except: log_utils.error()
 
-def scrobbleEpisode(imdb, tmdb, tvdb, season, episode, watched_percent):
+def scrobbleEpisode(imdb, tmdb, tvdb, season, episode, watched_percent, current_time=0, total_time=0):
 	try:
 		season, episode = int('%01d' % int(season)), int('%01d' % int(episode))
 		ids = {}
 		if tmdb: ids['tmdb'] = str(tmdb)
 		if imdb: ids['imdb'] = str(imdb)
 		if tvdb: ids['tvdb'] = str(tvdb)
+		position_seconds, duration_seconds = _scrobble_seconds(watched_percent, current_time, total_time)
 		body = {'action': 'pause', 'media_type': 'episode', 'ids': ids, 'season_number': season, 'episode_number': episode,
-			'position_seconds': int(watched_percent), 'duration_seconds': 100}
+			'position_seconds': position_seconds, 'duration_seconds': duration_seconds}
 		response = getFloppy('/scrobble/', post=body, method='POST', silent=True)
 		if response is not None and response.status_code == 200:
 			floppysync.upsert_bookmark(tvshowtitle='x', title='', resume_id='', imdb=imdb or '', tmdb=str(tmdb or ''), tvdb=str(tvdb or ''), season=str(season), episode=str(episode), percent_played=str(watched_percent), paused_at=_now_iso())
 			control.trigger_widget_refresh()
 	except: log_utils.error()
 
-def scrobbleStopMovie(imdb, tmdb, watched_percent, completed=False):
+def scrobbleStopMovie(imdb, tmdb, watched_percent, completed=False, current_time=0, total_time=0):
 	try:
 		ids = {}
 		if tmdb: ids['tmdb'] = str(tmdb)
 		if imdb: ids['imdb'] = str(imdb)
-		body = {'action': 'stop', 'media_type': 'movie', 'ids': ids, 'position_seconds': int(watched_percent), 'duration_seconds': 100, 'completed': bool(completed)}
+		position_seconds, duration_seconds = _scrobble_seconds(watched_percent, current_time, total_time)
+		body = {'action': 'stop', 'media_type': 'movie', 'ids': ids, 'position_seconds': position_seconds, 'duration_seconds': duration_seconds, 'completed': bool(completed)}
 		response = getFloppy('/scrobble/', post=body, method='POST', silent=True)
+		if getSetting('debug.level') == '1':
+			log_utils.log('FLOPPY: scrobbleStopMovie IMDB=%s TMDB=%s Percent=%s Completed=%s HTTP=%s' % (imdb, tmdb, watched_percent, completed, response.status_code if response is not None else 'None'), level=log_utils.LOGDEBUG)
 		if response is not None and response.status_code == 200:
 			if completed:
 				floppysync.delete_bookmark(imdb or '', tvdb='', tmdb=str(tmdb or ''), season='', episode='')
@@ -488,16 +506,19 @@ def scrobbleStopMovie(imdb, tmdb, watched_percent, completed=False):
 			control.trigger_widget_refresh()
 	except: log_utils.error()
 
-def scrobbleStopEpisode(imdb, tmdb, tvdb, season, episode, watched_percent, completed=False):
+def scrobbleStopEpisode(imdb, tmdb, tvdb, season, episode, watched_percent, completed=False, current_time=0, total_time=0):
 	try:
 		season, episode = int('%01d' % int(season)), int('%01d' % int(episode))
 		ids = {}
 		if tmdb: ids['tmdb'] = str(tmdb)
 		if imdb: ids['imdb'] = str(imdb)
 		if tvdb: ids['tvdb'] = str(tvdb)
+		position_seconds, duration_seconds = _scrobble_seconds(watched_percent, current_time, total_time)
 		body = {'action': 'stop', 'media_type': 'episode', 'ids': ids, 'season_number': season, 'episode_number': episode,
-			'position_seconds': int(watched_percent), 'duration_seconds': 100, 'completed': bool(completed)}
+			'position_seconds': position_seconds, 'duration_seconds': duration_seconds, 'completed': bool(completed)}
 		response = getFloppy('/scrobble/', post=body, method='POST', silent=True)
+		if getSetting('debug.level') == '1':
+			log_utils.log('FLOPPY: scrobbleStopEpisode IMDB=%s TMDB=%s S%02dE%02d Percent=%s Completed=%s HTTP=%s' % (imdb, tmdb, season, episode, watched_percent, completed, response.status_code if response is not None else 'None'), level=log_utils.LOGDEBUG)
 		if response is not None and response.status_code == 200:
 			if completed:
 				floppysync.delete_bookmark(imdb or '', tvdb=str(tvdb or ''), tmdb=str(tmdb or ''), season=str(season), episode=str(episode))
@@ -703,8 +724,14 @@ def sync_watchedProgress(activities=None, forced=False, progress_callback=None):
 		log_utils.log('FLOPPY: movie sync — %s completed movies, %s resolved to imdb, %s could not be resolved' % (len(items), resolved, unresolved), level=log_utils.LOGINFO)
 		_sync_watched_episodes_from_shows(progress_callback=progress_callback)
 		floppysync.update_last_watched_at('last_history_at')
-		floppysync.cache_delete(floppysync._hash_function(syncMovies, ()))
-		floppysync.cache_delete(floppysync._hash_function(syncTVShows, ()))
+		# getShowProgress()/syncSeasons() are cached per-show (keyed on tmdb/imdb+tvdb) on
+		# top of this — clearing only the two no-arg syncMovies/syncTVShows keys left every
+		# already-viewed show's per-season progress (15 min) and cachesyncSeasons() (12 hr)
+		# entries pointing at pre-sync data, so a show could show fully watched one level
+		# down (season/episode lists recompute live) while the show-list widget kept
+		# reporting stale remaining-episode counts for hours. Wipe the whole cache table
+		# instead so every indicator recomputes against the just-synced data.
+		floppysync.clear_cache()
 		control.trigger_widget_refresh()
 	except: log_utils.error()
 
@@ -809,11 +836,22 @@ def _fetchShowProgress(tmdb):
 	# computed locally from floppysync's tracked-episode table plus TMDb season
 	# metadata, mirroring customtrakt.py's _local_syncSeasons fallback exactly.
 	try:
+		# Trakt's equivalent (trakt.py syncSeasons) queries with specials=false by default
+		# and only includes season 0 when the user has 'tv.specials' enabled — this had no
+		# equivalent here, so Season 0/Specials (which almost nobody tracks watched episodes
+		# for) was always being added below as a fully-unwatched season, permanently
+		# preventing otherwise-fully-watched shows from ever reading as complete. Confirmed
+		# against a real account: 19 of 40 sampled "Completed" shows had this exact mismatch,
+		# nearly all with Season 0 as the only zero-watched season.
+		include_specials = getSetting('tv.specials') == 'true'
 		episodes = floppysync.get_watched_episodes()
 		show_eps = [(s, e) for (si, st, sv, s, e) in (episodes or []) if st == tmdb]
 		from collections import defaultdict
 		by_season = defaultdict(list)
-		for (s, e) in show_eps: by_season[int(s)].append(int(e))
+		for (s, e) in show_eps:
+			s = int(s)
+			if s == 0 and not include_specials: continue
+			by_season[s].append(int(e))
 		from resources.lib.database import cache as _cache
 		from resources.lib.indexers import tmdb as _tmdb
 		# Cap each season's total at TMDb's last-aired boundary — an announced-but-
@@ -831,6 +869,7 @@ def _fetchShowProgress(tmdb):
 				for s in showSeasons.get('seasons', []):
 					sn = s.get('season_number')
 					if sn is None: continue
+					if sn == 0 and not include_specials: continue
 					ep_count = s.get('episode_count', 0)
 					if ended or not last_aired_sn or sn < last_aired_sn:
 						season_counts[sn] = ep_count

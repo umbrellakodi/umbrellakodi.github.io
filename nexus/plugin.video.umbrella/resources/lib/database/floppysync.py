@@ -360,6 +360,26 @@ def cache_delete(key):
 		try: dbcon.close()
 		except: pass
 
+def clear_cache():
+	# Truncates the whole cache table without touching the service-timestamp table —
+	# delete_floppy_tables() also resets last_history_at/etc. to epoch as a side effect,
+	# which would fight a just-written update_last_watched_at() call if reused for this.
+	try:
+		dbcon = get_connection()
+		dbcur = get_connection_cursor(dbcon)
+		ck = dbcur.execute('''SELECT * FROM sqlite_master WHERE type='table' AND name='watched';''').fetchone()
+		if ck:
+			dbcur.execute('''DELETE FROM watched''')
+			dbcur.connection.commit()
+	except:
+		from resources.lib.modules import log_utils
+		log_utils.error()
+	finally:
+		try: dbcur.close()
+		except: pass
+		try: dbcon.close()
+		except: pass
+
 def cache_existing(function, *args):
 	try:
 		result = cache_get(_hash_function(function, args))

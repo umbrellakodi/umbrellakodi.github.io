@@ -624,31 +624,76 @@ def unwatch(content_type, name, imdb=None, tvdb=None, season=None, episode=None,
 #### (local bookmarks are tracked client-side since Scrob has no queryable ####
 #### server-side "in progress playback" list either) ####
 
-def scrobbleStart(media_type, title='', tvshowtitle='', year='0', imdb='', tmdb='', tvdb='', season='', episode='', watched_percent=0):
+def _scrobble_seconds(watched_percent, current_time, total_time):
+	# time_seconds/total_seconds feed _webhook_event()'s player.time/player.totaltime,
+	# which Scrob's Now Playing card displays as real elapsed/remaining playback time.
+	# Every call site now has Kodi's actual getTime()/getTotalTime() available and passes
+	# them through. Without them (current_time/total_time not provided), this used to send
+	# the 0-100 percent value itself as "seconds" against a hardcoded 100-second "total" —
+	# the card then showed e.g. 0:38 elapsed of a 1:40 runtime for what was really 38% into
+	# a much longer episode, and stayed frozen at whatever percent playback started at until
+	# the next pause/stop event sent a fresh (still-wrong) number. The percent fallback below
+	# only exists for any caller that still can't supply real seconds.
+	if total_time:
+		return int(current_time or 0), int(total_time)
+	return int(watched_percent), 100
+
+def scrobbleStart(media_type, title='', tvshowtitle='', year='0', imdb='', tmdb='', tvdb='', season='', episode='', watched_percent=0, current_time=0, total_time=0, resumed=False):
 	try:
-		_webhook_event('Player.OnPlay', 'movie' if media_type == 'movie' else 'episode', imdb=imdb, tmdb=tmdb, tvdb=tvdb, title=title, tvshowtitle=tvshowtitle, year=year, season=season or None, episode=episode or None, time_seconds=int(watched_percent), total_seconds=100)
+		# Confirmed against Scrob's own backend (routers/webhooks.py parse_kodi_payload/
+		# _handle_kodi_webhook): Player.OnPlay only sets the live session's state to
+		# "playing" — it never writes progress_percent/progress_seconds onto it. Only
+		# Player.OnResume does. Since this function is called both for a genuine
+		# fresh start (position 0, fine either way) and for resuming after a pause
+		# (a real position that needs to be carried forward), always sending OnPlay
+		# meant the Now Playing card silently kept whatever progress it last had (0%,
+		# for a brand new pause/resume) until the next pause/stop event corrected it.
+		method = 'Player.OnResume' if resumed else 'Player.OnPlay'
+		time_seconds, total_seconds = _scrobble_seconds(watched_percent, current_time, total_time)
+		_webhook_event(method, 'movie' if media_type == 'movie' else 'episode', imdb=imdb, tmdb=tmdb, tvdb=tvdb, title=title, tvshowtitle=tvshowtitle, year=year, season=season or None, episode=episode or None, time_seconds=time_seconds, total_seconds=total_seconds)
 	except: log_utils.error()
 
-def scrobbleMovie(imdb, tmdb, watched_percent):
+def scrobbleProgress(media_type, imdb='', tmdb='', tvdb='', season='', episode='', watched_percent=0, current_time=0, total_time=0):
+	# Player.OnPlay/OnResume/OnPause/OnStop are discrete events — nothing updates the
+	# live session's progress in between them. Confirmed against Scrob's backend
+	# (parse_kodi_payload/_handle_kodi_webhook in routers/webhooks.py): only
+	# Player.OnAVChange ("progress") and Player.OnResume/OnPause write
+	# session.progress_percent/progress_seconds — Player.OnPlay never does. This is
+	# the periodic heartbeat (called from player.py's keepAlive() poll loop, throttled
+	# there) so the Now Playing card advances continuously during normal playback
+	# instead of freezing at whatever value the last pause/resume/stop sent.
 	try:
-		response = _webhook_event('Player.OnPause', 'movie', imdb=imdb, tmdb=tmdb, time_seconds=int(watched_percent), total_seconds=100)
+		season = int('%01d' % int(season)) if season else None
+		episode = int('%01d' % int(episode)) if episode else None
+		time_seconds, total_seconds = _scrobble_seconds(watched_percent, current_time, total_time)
+		_webhook_event('Player.OnAVChange', 'movie' if media_type == 'movie' else 'episode', imdb=imdb, tmdb=tmdb, tvdb=tvdb, season=season, episode=episode, time_seconds=time_seconds, total_seconds=total_seconds)
+	except: log_utils.error()
+
+def scrobbleMovie(imdb, tmdb, watched_percent, current_time=0, total_time=0):
+	try:
+		time_seconds, total_seconds = _scrobble_seconds(watched_percent, current_time, total_time)
+		response = _webhook_event('Player.OnPause', 'movie', imdb=imdb, tmdb=tmdb, time_seconds=time_seconds, total_seconds=total_seconds)
 		if response is not None and response.status_code == 200:
 			scrobsync.upsert_bookmark(title='', resume_id='', imdb=imdb or '', tmdb=str(tmdb or ''), percent_played=str(watched_percent), paused_at=_now_iso())
 			control.trigger_widget_refresh()
 	except: log_utils.error()
 
-def scrobbleEpisode(imdb, tmdb, tvdb, season, episode, watched_percent):
+def scrobbleEpisode(imdb, tmdb, tvdb, season, episode, watched_percent, current_time=0, total_time=0):
 	try:
 		season, episode = int('%01d' % int(season)), int('%01d' % int(episode))
-		response = _webhook_event('Player.OnPause', 'episode', imdb=imdb, tmdb=tmdb, tvdb=tvdb, season=season, episode=episode, time_seconds=int(watched_percent), total_seconds=100)
+		time_seconds, total_seconds = _scrobble_seconds(watched_percent, current_time, total_time)
+		response = _webhook_event('Player.OnPause', 'episode', imdb=imdb, tmdb=tmdb, tvdb=tvdb, season=season, episode=episode, time_seconds=time_seconds, total_seconds=total_seconds)
 		if response is not None and response.status_code == 200:
 			scrobsync.upsert_bookmark(tvshowtitle='x', title='', resume_id='', imdb=imdb or '', tmdb=str(tmdb or ''), tvdb=str(tvdb or ''), season=str(season), episode=str(episode), percent_played=str(watched_percent), paused_at=_now_iso())
 			control.trigger_widget_refresh()
 	except: log_utils.error()
 
-def scrobbleStopMovie(imdb, tmdb, watched_percent, completed=False):
+def scrobbleStopMovie(imdb, tmdb, watched_percent, completed=False, current_time=0, total_time=0):
 	try:
-		response = _webhook_event('Player.OnStop', 'movie', imdb=imdb, tmdb=tmdb, time_seconds=int(watched_percent), total_seconds=100, end=bool(completed))
+		time_seconds, total_seconds = _scrobble_seconds(watched_percent, current_time, total_time)
+		response = _webhook_event('Player.OnStop', 'movie', imdb=imdb, tmdb=tmdb, time_seconds=time_seconds, total_seconds=total_seconds, end=bool(completed))
+		if getSetting('debug.level') == '1':
+			log_utils.log('SCROB: scrobbleStopMovie IMDB=%s TMDB=%s Percent=%s Completed=%s HTTP=%s' % (imdb, tmdb, watched_percent, completed, response.status_code if response is not None else 'None'), level=log_utils.LOGDEBUG)
 		if response is not None and response.status_code == 200:
 			if completed:
 				scrobsync.delete_bookmark(imdb or '', tvdb='', tmdb=str(tmdb or ''), season='', episode='')
@@ -657,10 +702,13 @@ def scrobbleStopMovie(imdb, tmdb, watched_percent, completed=False):
 			control.trigger_widget_refresh()
 	except: log_utils.error()
 
-def scrobbleStopEpisode(imdb, tmdb, tvdb, season, episode, watched_percent, completed=False):
+def scrobbleStopEpisode(imdb, tmdb, tvdb, season, episode, watched_percent, completed=False, current_time=0, total_time=0):
 	try:
 		season, episode = int('%01d' % int(season)), int('%01d' % int(episode))
-		response = _webhook_event('Player.OnStop', 'episode', imdb=imdb, tmdb=tmdb, tvdb=tvdb, season=season, episode=episode, time_seconds=int(watched_percent), total_seconds=100, end=bool(completed))
+		time_seconds, total_seconds = _scrobble_seconds(watched_percent, current_time, total_time)
+		response = _webhook_event('Player.OnStop', 'episode', imdb=imdb, tmdb=tmdb, tvdb=tvdb, season=season, episode=episode, time_seconds=time_seconds, total_seconds=total_seconds, end=bool(completed))
+		if getSetting('debug.level') == '1':
+			log_utils.log('SCROB: scrobbleStopEpisode IMDB=%s TMDB=%s S%02dE%02d Percent=%s Completed=%s HTTP=%s' % (imdb, tmdb, season, episode, watched_percent, completed, response.status_code if response is not None else 'None'), level=log_utils.LOGDEBUG)
 		if response is not None and response.status_code == 200:
 			if completed:
 				scrobsync.delete_bookmark(imdb or '', tvdb=str(tvdb or ''), tmdb=str(tmdb or ''), season=str(season), episode=str(episode))
@@ -701,47 +749,95 @@ def rateEpisode(tmdb, tvdb, series_name, season, episode, rating):
 
 #### Sync ####
 
+def _threaded_resolve(unique_ids, resolver):
+	# Resolves a set of tmdb ids to imdb ids concurrently, in batches (mirrors the
+	# dev.batch.size/dev.batch.unlimited pattern used by trakt.py's service_syncSeasons
+	# and floppy.py's episode-tracking sync). Each thread writes to a distinct dict
+	# key, so no lock is needed. Confirmed necessary on a resource-constrained device:
+	# a large watched history means hundreds/thousands of individual TMDb lookups, and
+	# doing them one at a time in sequence (the original implementation) was slow
+	# enough on its own to contribute to the sync appearing to hang.
+	from threading import Thread
+	result = {}
+	def _one(tmdb_id):
+		result[tmdb_id] = resolver(tmdb_id)
+	threads = [Thread(target=_one, args=(t,)) for t in unique_ids]
+	_unlimited = getSetting('dev.batch.unlimited') == 'true'
+	_bs = max(int(getSetting('dev.batch.size') or '10'), 1)
+	_chunk = max(len(threads), 1) if _unlimited else _bs
+	for i in range(0, len(threads), _chunk):
+		if control.monitor.abortRequested(): break
+		batch = threads[i:i + _chunk]
+		[t.start() for t in batch]
+		[t.join() for t in batch]
+	return result
+
 def sync_watchedProgress(activities=None, forced=False, progress_callback=None):
+	# Two real bottlenecks fixed here vs. the original single-item-at-a-time version:
+	#  1. TMDb id resolution was done sequentially, one network-bound lookup at a time,
+	#     for every movie/show in the history — now threaded in batches (see
+	#     _threaded_resolve above).
+	#  2. Every single upsert_watched_movie()/upsert_watched_episode() call opened and
+	#     closed its own sqlite connection — with a large history (thousands of watched
+	#     episodes is normal for an imported account) that's thousands of redundant
+	#     connection cycles. Confirmed on a real device: this alone was enough for the
+	#     episode half of the sync to never finish. Now collected into row lists and
+	#     written in one batched transaction via scrobsync.bulk_upsert_*().
 	try:
 		if not getScrobCredentialsInfo(): return
 		movies = get_all_pages('/history?type=movie', silent=True) or []
+		completed_movies = [item for item in movies if (item.get('media') or {}).get('tmdb_id') and item.get('completed')]
+		unique_movie_tmdbs = list({str((item.get('media') or {}).get('tmdb_id')) for item in completed_movies})
+		movie_imdb_map = _threaded_resolve(unique_movie_tmdbs, _resolve_movie_imdb)
+
 		total = len(movies)
 		resolved, unresolved = 0, 0
+		movie_rows = []
 		for idx, item in enumerate(movies):
 			media = item.get('media') or {}
 			tmdb = str(media.get('tmdb_id') or '')
 			if tmdb and item.get('completed'):
-				imdb = _resolve_movie_imdb(tmdb)
+				imdb = movie_imdb_map.get(tmdb, '')
 				if imdb: resolved += 1
 				else: unresolved += 1
-				scrobsync.upsert_watched_movie(imdb=imdb, tmdb=tmdb, title=media.get('title', ''), year=str(media.get('release_date', '') or '')[:4], last_watched_at=item.get('watched_at') or _now_iso())
+				movie_rows.append((imdb, tmdb, media.get('title', ''), str(media.get('release_date', '') or '')[:4], item.get('watched_at') or _now_iso()))
 			if progress_callback:
 				try: progress_callback('Syncing watched movies', idx + 1, total)
 				except: pass
+		scrobsync.bulk_upsert_watched_movies(movie_rows)
 		log_utils.log('SCROB: movie sync — %s completed movies, %s resolved to imdb, %s could not be resolved' % (len(movies), resolved, unresolved), level=log_utils.LOGINFO)
 
 		episodes = get_all_pages('/history?type=episode', silent=True) or []
+		completed_episodes = [item for item in episodes if item.get('completed') and (item.get('media') or {}).get('show_tmdb_id')
+			and (item.get('media') or {}).get('season_number') is not None and (item.get('media') or {}).get('episode_number') is not None]
+		unique_show_tmdbs = list({str((item.get('media') or {}).get('show_tmdb_id')) for item in completed_episodes})
+		show_imdb_map = _threaded_resolve(unique_show_tmdbs, _resolve_tv_imdb)
+
 		total = len(episodes)
-		shows_seen = {}
+		shows_seen = set()
+		episode_rows = []
 		for idx, item in enumerate(episodes):
 			media = item.get('media') or {}
 			show_tmdb = str(media.get('show_tmdb_id') or '')
 			season = media.get('season_number')
 			episode = media.get('episode_number')
 			if show_tmdb and item.get('completed') and season is not None and episode is not None:
-				if show_tmdb not in shows_seen:
-					shows_seen[show_tmdb] = _resolve_tv_imdb(show_tmdb)
-				show_imdb = shows_seen[show_tmdb]
+				shows_seen.add(show_tmdb)
+				show_imdb = show_imdb_map.get(show_tmdb, '')
 				show_tvdb = str(media.get('show_tvdb_id') or '')
-				scrobsync.upsert_watched_episode(show_imdb=show_imdb, show_tmdb=show_tmdb, show_tvdb=show_tvdb, season=int(season), episode=int(episode), last_watched_at=item.get('watched_at') or _now_iso())
+				episode_rows.append((show_imdb, show_tmdb, show_tvdb, int(season), int(episode), item.get('watched_at') or _now_iso()))
 			if progress_callback:
 				try: progress_callback('Syncing watched shows', idx + 1, total)
 				except: pass
+		scrobsync.bulk_upsert_watched_episodes(episode_rows)
 		log_utils.log('SCROB: episode sync — %s watched episodes across %s shows' % (len(episodes), len(shows_seen)), level=log_utils.LOGINFO)
 
 		scrobsync.update_last_watched_at('last_history_at')
-		scrobsync.cache_delete(scrobsync._hash_function(syncMovies, ()))
-		scrobsync.cache_delete(scrobsync._hash_function(syncTVShows, ()))
+		# Same fix as floppy.py's sync_watchedProgress(): getShowProgress()/_fetchShowProgress()
+		# is cached per-show (15 min) on top of the no-arg syncMovies/syncTVShows cache — a
+		# full history sync can touch shows well beyond the handful invalidated one-by-one
+		# elsewhere in this file, so wipe the whole cache table rather than just these two keys.
+		scrobsync.clear_cache()
 		control.trigger_widget_refresh()
 	except: log_utils.error()
 
@@ -827,11 +923,20 @@ def _fetchShowProgress(tmdb):
 	# Computed locally from scrobsync's tracked-episode table plus TMDb season
 	# metadata — same shape as floppy.py's _fetchShowProgress fallback.
 	try:
+		# Trakt's equivalent (trakt.py syncSeasons) excludes Season 0/Specials by default
+		# (only included when 'tv.specials' is enabled) — mirror that here, otherwise a
+		# show is never seen as fully watched once TMDb lists a Specials season, since
+		# almost nobody has watched episodes tracked for it. Confirmed against a real
+		# account: most "should be fully watched" shows had exactly this mismatch.
+		include_specials = getSetting('tv.specials') == 'true'
 		episodes = scrobsync.get_watched_episodes()
 		show_eps = [(s, e) for (si, st, sv, s, e) in (episodes or []) if st == tmdb]
 		from collections import defaultdict
 		by_season = defaultdict(list)
-		for (s, e) in show_eps: by_season[int(s)].append(int(e))
+		for (s, e) in show_eps:
+			s = int(s)
+			if s == 0 and not include_specials: continue
+			by_season[s].append(int(e))
 		from resources.lib.database import cache as _cache
 		from resources.lib.indexers import tmdb as _tmdb
 		# Cap each season's total at TMDb's last-aired boundary — an announced-but-
@@ -848,6 +953,7 @@ def _fetchShowProgress(tmdb):
 				for s in showSeasons.get('seasons', []):
 					sn = s.get('season_number')
 					if sn is None: continue
+					if sn == 0 and not include_specials: continue
 					ep_count = s.get('episode_count', 0)
 					if ended or not last_aired_sn or sn < last_aired_sn:
 						season_counts[sn] = ep_count
