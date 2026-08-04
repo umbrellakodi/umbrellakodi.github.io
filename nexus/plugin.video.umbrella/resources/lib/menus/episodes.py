@@ -792,11 +792,32 @@ class Episodes:
 				if not showSeasons: return
 				seasons_meta = {s.get('season_number'): s for s in showSeasons.get('seasons', [])}
 				season_meta = seasons_meta.get(furthest_season)
-				if season_meta and furthest_episode < season_meta.get('episode_count', 0):
+				# Cap the current season's episode count at TMDb's last-aired boundary —
+				# episode_count reflects the full *planned* season, not what's actually
+				# released yet. Without this, a fully-caught-up show on a still-airing
+				# season (e.g. watched all 3 of 10 planned episodes so far) always looked
+				# like it had a next episode ready, and a show between seasons entirely
+				# (renewed but not yet released) still showed up rather than disappearing
+				# until the new season actually starts airing. Same fix already applied to
+				# floppy.py/scrob.py's _fetchShowProgress().
+				status = (showSeasons.get('status') or '').lower()
+				ended = status in ('ended', 'canceled', 'cancelled')
+				last_ep = showSeasons.get('last_episode_to_air') or {}
+				last_aired_sn = int(last_ep.get('season_number', 0)) if last_ep else 0
+				last_aired_ep = int(last_ep.get('episode_number', 0)) if last_ep else 0
+				raw_count = season_meta.get('episode_count', 0) if season_meta else 0
+				if ended or not last_aired_sn or furthest_season < last_aired_sn:
+					capped_count = raw_count
+				elif furthest_season == last_aired_sn:
+					capped_count = last_aired_ep if last_aired_ep > 0 else raw_count
+				else:
+					capped_count = 0  # watched season is ahead of the last-aired boundary — nothing genuinely aired there yet
+				if capped_count and furthest_episode < capped_count:
 					next_season_num, next_episode_num = furthest_season, furthest_episode + 1
 				else:
 					next_season_num, next_episode_num = furthest_season + 1, 1
 				if next_season_num not in seasons_meta: return  # no further known season — fully caught up
+				if not ended and last_aired_sn and next_season_num > last_aired_sn: return  # next season hasn't started airing yet
 				values = {}
 				values['imdb'] = imdb_id
 				values['tmdb'] = tmdb

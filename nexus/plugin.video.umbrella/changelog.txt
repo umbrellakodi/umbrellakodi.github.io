@@ -1,2 +1,2 @@
-[B]Update - v6.7.651 - August 4th, 2026 [/B]
---[Change] Removed duplicate upcoming episodes entry in mdblist. 
+[B]Update - v6.7.652 - August 4th, 2026 [/B]
+--[Change] Removed returning series from episodes in progress mdblist.
