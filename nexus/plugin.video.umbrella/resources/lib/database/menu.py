@@ -201,10 +201,9 @@ _MYTVSHOWS_MDBLIST_DEFAULTS = [
 	('mytv_mdb_ep_prog',       '40685', 'mdblist_calendar&url=mdbprogress',                     'mdblist.png',   'mdblist.png',   1, 1, 1,  5, 0, 'mdblist_with_indicators',1, '32037'),
 	('mytv_mdb_unfinished',    '40686', 'mdblistEpisodesUnfinished',                            'mdblist.png',   'mdblist.png',   1, 1, 1,  6, 0, 'mdblist_with_indicators',1, '35308'),
 	('mytv_mdb_watched',       '40715', 'mdblist_shows_watched&url=mdblistwatchedtv',           'mdblist.png',   'mdblist.png',   1, 1, 1,  7, 0, 'mdblist_with_indicators',1, '40433'),
-	('mytv_mdb_cal_upcoming',  '40717', 'mdblist_calendar_upcoming&url=mdblistcalupcoming',     'mdblist.png',   'mdblist.png',   1, 1, 1,  8, 0, 'mdblist_with_indicators',1, '32203'),
-	('mytv_mdb_events_recent', '40778', 'mdblist_events_recent&url=mdblisteventsrecent',        'mdblist.png',   'mdblist.png',   1, 1, 1,  9, 0, 'mdblist_with_indicators',1, '32202'),
-	('mytv_mdb_events_upcoming','40779','mdblist_events_upcoming&url=mdblisteventsupcoming',    'mdblist.png',   'mdblist.png',   1, 1, 1, 10, 0, 'mdblist_with_indicators',1, '32203'),
-	('mytv_mdb_events_premiers','40780','mdblist_events_premieres&url=mdblisteventspremieres',  'mdblist.png',   'mdblist.png',   1, 1, 1, 11, 0, 'mdblist_with_indicators',1, '32204'),
+	('mytv_mdb_events_recent', '40778', 'mdblist_events_recent&url=mdblisteventsrecent',        'mdblist.png',   'mdblist.png',   1, 1, 1,  8, 0, 'mdblist_with_indicators',1, '32202'),
+	('mytv_mdb_events_upcoming','40779','mdblist_events_upcoming&url=mdblisteventsupcoming',    'mdblist.png',   'mdblist.png',   1, 1, 1,  9, 0, 'mdblist_with_indicators',1, '32203'),
+	('mytv_mdb_events_premiers','40780','mdblist_events_premieres&url=mdblisteventspremieres',  'mdblist.png',   'mdblist.png',   1, 1, 1, 10, 0, 'mdblist_with_indicators',1, '32204'),
 ]
 
 _MYTVSHOWS_CUSTOM_DEFAULTS = [
@@ -306,7 +305,7 @@ _defaults_version_file = control.joinPath(control.dataPath, 'menu_defaults.v')
 # regardless of addon version (e.g. to fix a migration bug) — the on-disk marker below
 # is keyed on addonVersion+this, not addonVersion alone, so incrementing it forces one
 # more sync pass even for users already marked up to date on the current addon version.
-_MENU_SCHEMA_REVISION = '7'
+_MENU_SCHEMA_REVISION = '8'
 
 
 def _read_synced_version():
@@ -409,7 +408,6 @@ def _sync_defaults(dbcon):
 		'mytv_mdb_ep_prog':       ('mytvshows', 'mytvshows_mdblist'),
 		'mytv_mdb_unfinished':    ('mytvshows', 'mytvshows_mdblist'),
 		'mytv_mdb_watched':       ('mytvshows', 'mytvshows_mdblist'),
-		'mytv_mdb_cal_upcoming':  ('mytvshows', 'mytvshows_mdblist'),
 		'mytv_mdb_events_recent': ('mytvshows', 'mytvshows_mdblist'),
 		'mytv_mdb_events_upcoming': ('mytvshows', 'mytvshows_mdblist'),
 		'mytv_mdb_events_premiers': ('mytvshows', 'mytvshows_mdblist'),
@@ -469,6 +467,12 @@ def _sync_defaults(dbcon):
 	dbcon.execute("DELETE FROM menu_items WHERE menu_name IN ('mymovies_yamtrack', 'mytvshows_yamtrack') AND is_custom=0")
 	dbcon.execute("DELETE FROM menu_items WHERE item_id IN ('mymv_yamtrack_folder', 'mytv_yamtrack_folder') AND is_custom=0")
 	dbcon.commit()
+	# mytv_mdb_cal_upcoming (TMDb next_episode_to_air per watchlisted show) is superseded
+	# by mytv_mdb_events_upcoming (MDBList's own personalized /calendar/events) — both
+	# rendered under the identical label "Upcoming Episodes (MDBList)", which read as one
+	# broken duplicated entry rather than two different features. Drop the old one.
+	dbcon.execute("DELETE FROM menu_items WHERE item_id='mytv_mdb_cal_upcoming' AND is_custom=0")
+	dbcon.commit()
 	# Insert items added after initial release for existing users
 	_NEW_DEFAULT_ITEMS = [
 		('mymovies', 'mymv_mdblist_folder',  'MDBList',  'mymovies_mdblistNavigator',  'mdblist.png',  'mdblist.png',  1, 1, 1, 2, 0, 'mdblist_token',        0, None),
@@ -499,7 +503,6 @@ def _sync_defaults(dbcon):
 		('tvshows',   'tv_mdb_official',      '40711',  'mdbOfficialListTV',                 'mdblist.png', 'mdblist.png', 1, 1, 1, 99, 0, 'mdblist_token',           0, None),
 		('mytvshows_mdblist', 'mytv_mdb_watched',     '40715',  'mdblist_shows_watched&url=mdblistwatchedtv', 'mdblist.png', 'mdblist.png', 1, 1, 1, 99, 0, 'mdblist_with_indicators', 1, '40433'),
 		('mymovies_mdblist',  'mymv_mdb_watched',     '40716',  'mdblist_movies_watched&url=mdblistwatchedmv', 'mdblist.png', 'mdblist.png', 1, 1, 1, 99, 0, 'mdblist_with_indicators', 1, None),
-		('mytvshows_mdblist', 'mytv_mdb_cal_upcoming', '40717', 'mdblist_calendar_upcoming&url=mdblistcalupcoming', 'mdblist.png', 'mdblist.png', 1, 1, 1, 99, 0, 'mdblist_with_indicators', 1, '32203'),
 		('mytvshows_mdblist', 'mytv_mdb_events_recent', '40778', 'mdblist_events_recent&url=mdblisteventsrecent', 'mdblist.png', 'mdblist.png', 1, 1, 1, 99, 0, 'mdblist_with_indicators', 1, '32202'),
 		('mytvshows_mdblist', 'mytv_mdb_events_upcoming', '40779', 'mdblist_events_upcoming&url=mdblisteventsupcoming', 'mdblist.png', 'mdblist.png', 1, 1, 1, 99, 0, 'mdblist_with_indicators', 1, '32203'),
 		('mytvshows_mdblist', 'mytv_mdb_events_premiers', '40780', 'mdblist_events_premieres&url=mdblisteventspremieres', 'mdblist.png', 'mdblist.png', 1, 1, 1, 99, 0, 'mdblist_with_indicators', 1, '32204'),

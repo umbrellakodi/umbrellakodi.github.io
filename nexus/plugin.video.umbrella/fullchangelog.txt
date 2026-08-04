@@ -1,3 +1,6 @@
+[B]Update - v6.7.651 - August 4th, 2026 [/B]
+--[Change] Removed duplicate upcoming episodes entry in mdblist. 
+
 [B]Update - v6.7.650 - August 4th, 2026 [/B]
 --[Change] Made changes MDBList Calendar.
 

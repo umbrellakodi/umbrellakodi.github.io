@@ -681,9 +681,6 @@ def router(argv2):
 	elif action == 'mdblist_calendar':
 		from resources.lib.menus import episodes
 		episodes.Episodes().mdblist_calendar(url, folderName=folderName)
-	elif action == 'mdblist_calendar_upcoming':
-		from resources.lib.menus import episodes
-		episodes.Episodes().mdblist_upcoming_calendar(url, folderName=folderName)
 	elif action == 'custom_episodes_progress':
 		from resources.lib.menus import episodes
 		episodes.Episodes().custom_calendar(url, folderName=folderName)
