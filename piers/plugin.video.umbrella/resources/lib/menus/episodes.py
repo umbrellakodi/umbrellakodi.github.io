@@ -980,7 +980,13 @@ class Episodes:
 		items = []
 		try:
 			start = start_date or self.date_time.strftime('%Y-%m-%d')
-			end = (datetime.strptime(start, '%Y-%m-%d') + timedelta(days=days)).strftime('%Y-%m-%d')
+			# datetime.strptime() is unreliable on some embedded Python builds (confirmed:
+			# broke on a Firecube Android TV device with 'NoneType' object is not callable —
+			# strptime's lazy _strptime import isn't thread-safe there) — every other date
+			# computation in this file already avoids it, this was the one new usage.
+			# datetime(y, m, d) needs no lazy import, so build the date manually instead.
+			y, m, d = (int(x) for x in start.split('-')[:3])
+			end = (datetime(y, m, d) + timedelta(days=days)).strftime('%Y-%m-%d')
 			raw = mdblist.get_calendar(start, end)
 			if not raw: return items
 			for i in raw:

@@ -1,2 +1,2 @@
-[B]Update - v6.7.649 - August 4th, 2026 [/B]
---[Change] Made changes for stop on Floppy and Scrob.
+[B]Update - v6.7.650 - August 4th, 2026 [/B]
+--[Change] Made changes MDBList Calendar.
