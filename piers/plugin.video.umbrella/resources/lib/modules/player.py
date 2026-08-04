@@ -583,7 +583,15 @@ class Player(xbmc.Player):
 		homeWindow.clearProperty(pname)
 		if playlist_skip: pass
 		else:
-			if (int(self.current_time) > 180 and (self.getWatchedPercent() < int(self.markwatched_percentage))): # kodi is unreliable issuing callback "onPlayBackStopped" and "onPlayBackEnded"
+			# Kodi is unreliable issuing callback "onPlayBackStopped" and "onPlayBackEnded" —
+			# this is the fallback for that. It used to only fire below the watched
+			# threshold, which is backwards: a full natural play-to-completion (no manual
+			# stop) is exactly the case where the native callbacks are least reliable, and
+			# that previous condition skipped the fallback precisely then, leaving Floppy/
+			# Scrob's live session stuck "now playing" forever with no stop signal ever
+			# sent. self.scrobble_sent is the real idempotency guard (also checked inside
+			# onPlayBackStopped/onPlayBackEnded), so key off that instead of percentage.
+			if not self.scrobble_sent:
 				self.playbackStopped_triggered = True
 				self.onPlayBackStopped()
 			
