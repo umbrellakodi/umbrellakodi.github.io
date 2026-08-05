@@ -1089,6 +1089,25 @@ def get_list_items(list_id):
 		log_utils.error()
 		return []
 
+def get_lists_with_type(media_type):
+	# /lists only returns a total item_count (mixed movies/shows) - to show only lists
+	# relevant to a given section (My Movies vs My TV Shows) we have to check each
+	# list's actual items and filter/re-count by type ourselves.
+	try:
+		matches = []
+		for lst in get_lists():
+			list_id = lst.get('id')
+			if list_id is None: continue
+			count = sum(1 for item in get_list_items(list_id) if (item.get('media') or {}).get('type') == media_type)
+			if count:
+				lst = dict(lst)
+				lst['item_count'] = count
+				matches.append(lst)
+		return matches
+	except:
+		log_utils.error()
+		return []
+
 def get_lists_containing(tmdb, media_type):
 	try:
 		tmdb = str(tmdb)

@@ -2624,7 +2624,7 @@ class TVshows:
 	def scrob_user_lists(self, create_directory=True, folderName=''):
 		self.list = []
 		try:
-			lists = scrob.get_lists()
+			lists = scrob.get_lists_with_type('series')
 			if not lists: return self.list
 			for lst in lists:
 				try:
