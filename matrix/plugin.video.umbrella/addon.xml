@@ -1,4 +1,4 @@
-<addon id="plugin.video.umbrella" name="Umbrella" provider-name="Umbrella" version="6.7.656">
+<addon id="plugin.video.umbrella" name="Umbrella" provider-name="Umbrella" version="6.7.657">
 	<requires>
 		<import addon="xbmc.python" version="3.0.0" />
 		<import addon="script.module.requests" />
@@ -261,9 +261,8 @@
 			<screenshot>resources/screenshots/screenshot003.jpg</screenshot>
 		</assets>
 		<news>
-[B]Update - v6.7.656 - August 5th, 2026 [/B]
---[Fix] Fix for Scrob watched/ unwatched not recognizing username and pw.
---[Fix] Changes made for marking show, season, episode as watched/ unwatched on Scrob.	(Do a force sync on Scrob)	
+[B]Update - v6.7.657 - August 5th, 2026 [/B]
+--[Change] Change made to allow for sorting networks by popularity.
 		</news>
 	</extension>
 

@@ -310,7 +310,11 @@ class TVshows:
 			elif u in self.tmdb_link and not is_collection_url:
 				self.list = tmdb_indexer().tmdb_list(url) # caching handled in list indexer
 			if self.list is None: self.list = []
-			if create_directory: self.sort(type='shows.tmdblist')
+			# Only re-sort locally for curated list/account URLs, which have no inherent
+			# order of their own. Discover-style URLs (Networks, Genres, Originals, etc.)
+			# already come back sorted by tmdb_DiscoverSort()'s sort_by param, and a local
+			# re-sort here (defaulting to alphabetical) was silently clobbering that order.
+			if create_directory and is_collection_url: self.sort(type='shows.tmdblist')
 			if create_directory: self.tvshowDirectory(self.list, folderName=folderName, isCollection=is_collection_url)
 			return self.list
 		except:
@@ -716,7 +720,15 @@ class TVshows:
 		elif sort == 2: tmdb_sort = 'vote_average'
 		elif sort == 3: tmdb_sort = 'vote_count'
 		elif sort in (4, 5, 6): tmdb_sort = 'primary_release_date'
-		tmdb_sort_order = '.asc' if (int(getSetting('sort.shows.order')) == 0) else '.desc'
+		if sort == 0:
+			# "Default" is meant to mean popularity, and its order control is disabled
+			# in settings (no user could have consciously chosen Ascending here) — always
+			# show most-popular-first rather than trusting sort.shows.order's raw stored
+			# value, which a settings.xml default fix alone didn't reliably propagate to
+			# already-installed users.
+			tmdb_sort_order = '.desc'
+		else:
+			tmdb_sort_order = '.asc' if (int(getSetting('sort.shows.order')) == 0) else '.desc'
 		sort_string = tmdb_sort + tmdb_sort_order
 		if sort == 2: sort_string = sort_string + '&vote_count.gte=500'
 		return sort_string
