@@ -1,3 +1,2 @@
-[B]Update - v6.7.654 - August 4th, 2026 [/B]
---[Change] Change to playlist creation to avoid duplicate episodes.
---[Change] Fix for full playback not showing stopped on scrob and floppy.
+[B]Update - v6.7.655 - August 5th, 2026 [/B]
+--[Fix] Fix for Scrob watched/ unwatched not recognizing username and pw.

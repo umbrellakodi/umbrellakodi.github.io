@@ -204,7 +204,18 @@ def _scrobLogin(silent=False):
 		if not username or not password: return None
 		base = scrobBaseUrl()
 		if not base: return None
-		login_url = urljoin(base + '/', 'auth/login')
+		# The api_key query param is required here, not just for auth — confirmed against
+		# Scrob's actual frontend middleware (frontend/src/middleware.ts): /api/proxy/auth/
+		# login is NOT in its public-route allowlist, so without a valid session cookie
+		# (which nothing has yet — that's what this call is trying to obtain) every request
+		# to it gets 302-redirected to the /login page instead of ever reaching the real
+		# login handler, regardless of whether the username/password are correct. The one
+		# documented bypass is a request under /api/proxy/ carrying the API key (header or
+		# query param), which the middleware waves through and lets the backend's own
+		# per-endpoint auth decide. Verified live: without api_key this always 302s (even
+		# against the officially hosted instance, not just self-hosted deployments); with
+		# it, a wrong password correctly gets a real 401 JSON body instead.
+		login_url = urljoin(base + '/', 'auth/login') + '?api_key=' + quote_plus(getSetting('scrob.apikey'))
 		req_headers = {'Content-Type': 'application/x-www-form-urlencoded'}
 		body = urlencode({'username': username, 'password': password})
 		try:
@@ -216,7 +227,20 @@ def _scrobLogin(silent=False):
 			if not silent: control.notification(title='Scrob', message='Scrob login failed - check username/password', icon=scrob_icon)
 			log_utils.log('SCROB: login failed HTTP %s' % response.status_code, level=log_utils.LOGWARNING)
 			return None
-		data = response.json()
+		try:
+			data = response.json()
+		except ValueError:
+			# Login reported success (HTTP 200) but the body isn't valid JSON. The known
+			# cause of a non-JSON response here — the frontend middleware redirecting this
+			# request instead of reaching the real handler — is now avoided by the api_key
+			# on the URL above (see the comment on login_url). This except is a defensive
+			# fallback for anything else unexpected (e.g. the server erroring in a way that
+			# still returns 200), so a broken write-auth setup doesn't look like unwatch/
+			# lists are just silently doing nothing.
+			if not silent:
+				control.notification(title='Scrob', message='Scrob login got an unreadable response — unwatch/lists unavailable', icon=scrob_icon)
+			log_utils.log('SCROB: login HTTP 200 but response body was not valid JSON (url=%s) - is this instance reachable at the standard /api/proxy path?' % login_url, level=log_utils.LOGWARNING)
+			return None
 		if data.get('requires_2fa'):
 			if not silent:
 				control.dialog.ok('Scrob', 'This Scrob account has two-factor authentication enabled. Umbrella cannot complete a 2FA login, so username/password-only features (mark unwatched, list management) will not be available. Scrobbling, watched history, and marking items watched will still work normally via the API key.')
