@@ -379,6 +379,8 @@ def services_syncs():
 				from resources.lib.modules import log_utils
 				log_utils.log('Floppy Service Sync is running.', 1)
 				if not control.monitor.abortRequested():
+					if getSetting('bookmarks') == 'true' and getSetting('scrobble.source') == '5':
+						floppy.sync_playbackProgress()
 					floppy.sync_watchedProgress(forced=True)
 				if not control.monitor.abortRequested():
 					floppy.sync_watch_list(forced=True)
@@ -391,6 +393,8 @@ def services_syncs():
 				from resources.lib.modules import log_utils
 				log_utils.log('Scrob Service Sync is running.', 1)
 				if not control.monitor.abortRequested():
+					if getSetting('bookmarks') == 'true' and getSetting('scrobble.source') == '6':
+						scrob.sync_playbackProgress()
 					scrob.sync_watchedProgress(forced=True)
 				last_scrob_sync = current_time
 		if control.monitor.waitForAbort(60*service_syncInterval): break

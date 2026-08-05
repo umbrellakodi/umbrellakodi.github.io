@@ -1,2 +1,3 @@
-[B]Update - v6.7.655 - August 5th, 2026 [/B]
+[B]Update - v6.7.656 - August 5th, 2026 [/B]
 --[Fix] Fix for Scrob watched/ unwatched not recognizing username and pw.
+--[Fix] Changes made for marking show, season, episode as watched/ unwatched on Scrob.	(Do a force sync on Scrob)	

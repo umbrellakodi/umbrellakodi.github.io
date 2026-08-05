@@ -171,6 +171,7 @@ _MYMOVIES_FLOPPY_DEFAULTS = [
 _MYMOVIES_SCROB_DEFAULTS = [
 	('mymv_scrob_watched', 'Scrob Watched', 'scrob_movies_watched&url=scrobmovieswatched', 'scrob.png', 'scrob.png', 1, 1, 1, 0, 0, 'scrob_with_indicators', 1, None),
 	('mymv_scrob_unfinished', 'Scrob Unfinished', 'scrob_movies_unfinished&url=scrobmoviesunfinished', 'scrob.png', 'scrob.png', 1, 1, 1, 1, 0, 'scrob_credentials', 1, '35308'),
+	('mymv_scrob_userlists', '40781', 'scrob_movies_userlists', 'scrob.png', 'scrob.png', 1, 1, 1, 2, 0, 'scrob_credentials', 1, None),
 ]
 
 _MYTVSHOWS_DEFAULTS = [
@@ -266,6 +267,7 @@ _MYTVSHOWS_SCROB_DEFAULTS = [
 	('mytv_scrob_ep_prog',    'Scrob Progress Episodes', 'scrob_episodes_progress&url=scrobepisodesprogress', 'scrob.png', 'scrob.png', 1, 1, 1,  1, 0, 'scrob_with_indicators', 1, None),
 	('mytv_scrob_upcoming',   'Scrob Upcoming Progress', 'scrob_upcoming_progress&url=scrobupcomingprogress', 'scrob.png', 'scrob.png', 1, 1, 1,  2, 0, 'scrob_with_indicators', 1, None),
 	('mytv_scrob_unfinished', 'Scrob Unfinished', 'scrob_episodes_unfinished&url=scrobepisodesunfinished', 'scrob.png', 'scrob.png', 1, 1, 1,  3, 0, 'scrob_credentials', 1, '35308'),
+	('mytv_scrob_userlists', '40781', 'scrob_tvshows_userlists', 'scrob.png', 'scrob.png', 1, 1, 1,  4, 0, 'scrob_credentials', 1, None),
 ]
 
 MENU_DEFAULTS = {
@@ -305,7 +307,7 @@ _defaults_version_file = control.joinPath(control.dataPath, 'menu_defaults.v')
 # regardless of addon version (e.g. to fix a migration bug) — the on-disk marker below
 # is keyed on addonVersion+this, not addonVersion alone, so incrementing it forces one
 # more sync pass even for users already marked up to date on the current addon version.
-_MENU_SCHEMA_REVISION = '8'
+_MENU_SCHEMA_REVISION = '9'
 
 
 def _read_synced_version():
@@ -491,6 +493,8 @@ def _sync_defaults(dbcon):
 		('mytvshows', 'mytv_scrob_folder', 'Scrob', 'mytvshows_scrobNavigator', 'scrob.png', 'scrob.png', 1, 1, 1, 15, 0, 'scrob_credentials', 0, None),
 		('mymovies_scrob', 'mymv_scrob_unfinished', 'Scrob Unfinished', 'scrob_movies_unfinished&url=scrobmoviesunfinished', 'scrob.png', 'scrob.png', 1, 1, 1, 99, 0, 'scrob_credentials', 1, '35308'),
 		('mytvshows_scrob', 'mytv_scrob_unfinished', 'Scrob Unfinished', 'scrob_episodes_unfinished&url=scrobepisodesunfinished', 'scrob.png', 'scrob.png', 1, 1, 1, 99, 0, 'scrob_credentials', 1, '35308'),
+		('mymovies_scrob', 'mymv_scrob_userlists', '40781', 'scrob_movies_userlists', 'scrob.png', 'scrob.png', 1, 1, 1, 99, 0, 'scrob_credentials', 1, None),
+		('mytvshows_scrob', 'mytv_scrob_userlists', '40781', 'scrob_tvshows_userlists', 'scrob.png', 'scrob.png', 1, 1, 1, 99, 0, 'scrob_credentials', 1, None),
 		('mymovies_floppy', 'mymv_floppy_unfinished', 'Floppy Unfinished', 'floppy_movies_unfinished&url=floppymoviesunfinished', 'floppy.png', 'floppy.png', 1, 1, 1, 99, 0, 'floppy_credentials', 1, '35308'),
 		('mytvshows_floppy', 'mytv_floppy_unfinished', 'Floppy Unfinished', 'floppy_episodes_unfinished&url=floppyepisodesunfinished', 'floppy.png', 'floppy.png', 1, 1, 1, 99, 0, 'floppy_credentials', 1, '35308'),
 		('mymovies_mdblist',  'mymv_mdb_unfinished',  '40686',  'mdblistMoviesUnfinished',          'mdblist.png', 'mdblist.png', 1, 1, 1, 99, 0, 'mdblist_with_indicators', 1, '35308'),

@@ -504,3 +504,22 @@ def delete_bookmark(imdb, tvdb='', tmdb='', season='', episode=''):
 		except: pass
 		try: dbcon.close()
 		except: pass
+
+def clear_bookmarks():
+	# Dedicated to just the bookmarks table — delete_floppy_tables() also resets
+	# last_history_at as a side effect, which is unrelated here and would wrongly make
+	# the watched-history sync think it needs a full resync.
+	try:
+		dbcon = get_connection()
+		dbcur = get_connection_cursor(dbcon)
+		_ensure_bookmarks_table(dbcur)
+		dbcur.execute('''DELETE FROM bookmarks''')
+		dbcur.connection.commit()
+	except:
+		from resources.lib.modules import log_utils
+		log_utils.error()
+	finally:
+		try: dbcur.close()
+		except: pass
+		try: dbcon.close()
+		except: pass

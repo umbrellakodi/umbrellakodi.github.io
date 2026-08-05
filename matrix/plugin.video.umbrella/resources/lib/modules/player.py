@@ -1566,6 +1566,12 @@ class Bookmarks:
 				if not runtime or runtime == 'None': return offset
 				from resources.lib.database import scrobsync
 				progress = float(scrobsync.fetch_bookmarks(imdb, tmdb, tvdb, season, episode))
+				if progress <= 0:
+					# No local bookmark on this device — unlike the other providers here,
+					# Scrob has a genuine server-side continue-watching list (confirmed
+					# live), so a second device with nothing paused locally can still pick
+					# up a resume point a different device stopped at.
+					progress = float(scrob.get_resume_percent(tmdb, season=season, episode=episode) or 0)
 				offset = (progress / 100) * runtime
 				display_offset = offset * 60
 				seekable = (2 <= progress <= int(markwatched_percentage))

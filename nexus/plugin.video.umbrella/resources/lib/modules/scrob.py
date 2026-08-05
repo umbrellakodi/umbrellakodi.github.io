@@ -2,27 +2,7 @@
 """
 	Umbrella Add-on
 """
-# Scrob (self-hosted media tracker, github.com/ellite/scrob). The backend is
-# internal-only and reachable solely through the frontend's /api/proxy/{path}
-# passthrough (confirmed against the project's own backend/main.py router mounts
-# and its official Kodi addon's webhook URL shape), so every request below is
-# built as {scrobBaseUrl()}/api/proxy/{router_prefix}/{endpoint}.
-#
-# Auth is two-tier, confirmed directly from the backend source:
-#   - API key (query param) works for every GET endpoint AND for POST /webhooks/kodi,
-#     whose Player.OnStop + params.data.end=true payload marks an item watched — so
-#     scrobbling, watched-history pulls, and "mark watched" all work with only an
-#     API key configured.
-#   - JWT (from a real username+password login, POST /auth/login, 1-week expiry, no
-#     refresh endpoint) is required for every write endpoint: mark unwatched,
-#     season/show bulk watched/unwatched, and all list create/edit/add/remove.
-#     Username/password are optional in settings — when absent, JWT-only functions
-#     below simply return False rather than erroring.
-#
-# Scrob has no watchlist/collection/status-bucket concept at all (its List/ListItem
-# model is just arbitrary user-named lists with no "is watchlist" flag, and there is
-# no per-item status field anywhere in its schema) — so unlike Floppy there are no
-# status-bucket sync functions or manager() actions for those here.
+# Scrob (self-hosted media tracker, github.com/ellite/scrob).
 
 from datetime import datetime
 import time
@@ -69,15 +49,10 @@ def getScrobIndicatorsInfo():
 	return getSetting('indicators.alt') == '6'
 
 
-#### Core request plumbing (mirrors floppy.py's getFloppy, plus a JWT auth tier) ####
+#### Core request ####
 
 def getScrob(url, post=None, method=None, auth='api_key', silent=False, _retried=False):
-	# auth='api_key' authenticates via the ?api_key= query param (works for every GET
-	# endpoint and for POST /webhooks/kodi*). auth='jwt' authenticates via a cached
-	# Bearer token, silently re-logging in once on a 401 (the token may have just
-	# crossed its 1-week expiry); returns None immediately, without making the
-	# request, if no username/password are configured — this is the single choke
-	# point that makes every JWT-only function above it naturally no-op.
+	
 	try:
 		global _last_request_time
 		base = scrobBaseUrl()
@@ -90,12 +65,11 @@ def getScrob(url, post=None, method=None, auth='api_key', silent=False, _retried
 			session.close()
 		full_url = url if url.startswith(base) else urljoin(base + '/', url.lstrip('/'))
 		req_headers = dict(headers)
+		
+		sep = '&' if '?' in full_url else '?'
+		request_url = full_url + sep + 'api_key=' + quote_plus(getSetting('scrob.apikey'))
 		if auth == 'jwt':
 			req_headers['Authorization'] = 'Bearer %s' % token
-			request_url = full_url
-		else:
-			sep = '&' if '?' in full_url else '?'
-			request_url = full_url + sep + 'api_key=' + quote_plus(getSetting('scrob.apikey'))
 		body = jsdumps(post) if post is not None else None
 		if not method: method = 'POST' if post is not None else 'GET'
 		method = method.upper()
@@ -193,28 +167,13 @@ def _getScrobJWT():
 
 
 def _scrobLogin(silent=False):
-	# POST /auth/login (form-encoded username+password). Three documented response shapes:
-	#  - {access_token, token_type} -> cache token + ~1 week expiry
-	#  - {requires_2fa: true, temp_token} -> no TOTP entry surface exists in Umbrella,
-	#    so JWT features stay unavailable; notify once (unless silent) and return None
-	#  - non-200 -> bad credentials; notify (unless silent) and return None
+	# POST /auth/login (form-encoded username+password).
 	try:
 		username = getSetting('scrob.username')
 		password = getSetting('scrob.password')
 		if not username or not password: return None
 		base = scrobBaseUrl()
 		if not base: return None
-		# The api_key query param is required here, not just for auth — confirmed against
-		# Scrob's actual frontend middleware (frontend/src/middleware.ts): /api/proxy/auth/
-		# login is NOT in its public-route allowlist, so without a valid session cookie
-		# (which nothing has yet — that's what this call is trying to obtain) every request
-		# to it gets 302-redirected to the /login page instead of ever reaching the real
-		# login handler, regardless of whether the username/password are correct. The one
-		# documented bypass is a request under /api/proxy/ carrying the API key (header or
-		# query param), which the middleware waves through and lets the backend's own
-		# per-endpoint auth decide. Verified live: without api_key this always 302s (even
-		# against the officially hosted instance, not just self-hosted deployments); with
-		# it, a wrong password correctly gets a real 401 JSON body instead.
 		login_url = urljoin(base + '/', 'auth/login') + '?api_key=' + quote_plus(getSetting('scrob.apikey'))
 		req_headers = {'Content-Type': 'application/x-www-form-urlencoded'}
 		body = urlencode({'username': username, 'password': password})
@@ -230,13 +189,6 @@ def _scrobLogin(silent=False):
 		try:
 			data = response.json()
 		except ValueError:
-			# Login reported success (HTTP 200) but the body isn't valid JSON. The known
-			# cause of a non-JSON response here — the frontend middleware redirecting this
-			# request instead of reaching the real handler — is now avoided by the api_key
-			# on the URL above (see the comment on login_url). This except is a defensive
-			# fallback for anything else unexpected (e.g. the server erroring in a way that
-			# still returns 200), so a broken write-auth setup doesn't look like unwatch/
-			# lists are just silently doing nothing.
 			if not silent:
 				control.notification(title='Scrob', message='Scrob login got an unreadable response — unwatch/lists unavailable', icon=scrob_icon)
 			log_utils.log('SCROB: login HTTP 200 but response body was not valid JSON (url=%s) - is this instance reachable at the standard /api/proxy path?' % login_url, level=log_utils.LOGWARNING)
@@ -366,8 +318,7 @@ def _now_iso():
 	return datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%S.000Z')
 
 
-#### Mark watched — API-key-only, via a synthetic Kodi scrobble webhook payload ####
-#### (confirmed server-side: Player.OnStop + params.data.end=true writes a WatchEvent) ####
+#### Mark watched — API-key-only, via a Kodi scrobble webhook payload ####
 
 def _webhook_event(method, media_type, imdb='', tmdb='', tvdb='', title='', tvshowtitle='', year='0', season=None, episode=None, time_seconds=0, total_seconds=0, end=None):
 	try:
@@ -437,10 +388,6 @@ def markEpisodeAsWatched(imdb, tvdb, season, episode):
 		return False
 
 def _webhook_mark_all_episodes(tmdb, tvdb='', imdb='', season=None):
-	# API-key-only fallback for season/show "mark watched" when no JWT is configured
-	# — loops the webhook trick per episode using TMDb season metadata for episode
-	# numbers, same approach floppy.py's _watch_all_episodes_remote takes (just
-	# POSTing the Kodi webhook per episode instead of a dedicated watch endpoint).
 	try:
 		from resources.lib.database import cache as _cache
 		from resources.lib.indexers import tmdb as _tmdb
@@ -508,25 +455,35 @@ def _sync_episodes_for_show_locally(imdb, tmdb, season=None):
 		from resources.lib.database import cache as _cache
 		from resources.lib.indexers import tmdb as _tmdb
 		now = _now_iso()
-		if season is not None:
-			raw = _cache.get(_tmdb.TVshows().get_season_request, 96, tmdb, int(season))
-			for ep in (raw or {}).get('episodes', []):
-				en = int(ep.get('episode_number', 0))
-				if en > 0: scrobsync.upsert_watched_episode(show_imdb=imdb, show_tmdb=tmdb, show_tvdb='', season=int(season), episode=en, last_watched_at=now)
-		else:
-			meta = _cache.get(_tmdb.TVshows().get_showSeasons_meta, 96, tmdb)
-			for s_item in (meta or {}).get('seasons', []):
-				sn = int(s_item.get('season_number', 0))
-				ec = int(s_item.get('episode_count', 0))
-				if sn > 0 and ec > 0:
-					for en in range(1, ec + 1):
-						scrobsync.upsert_watched_episode(show_imdb=imdb, show_tmdb=tmdb, show_tvdb='', season=sn, episode=en, last_watched_at=now)
+		meta = _cache.get(_tmdb.TVshows().get_showSeasons_meta, 96, tmdb)
+		if not meta: return
+		status = (meta.get('status') or '').lower()
+		ended = status in ('ended', 'canceled', 'cancelled')
+		last_ep = meta.get('last_episode_to_air') or {}
+		last_aired_sn = int(last_ep.get('season_number', 0)) if last_ep else 0
+		last_aired_ep = int(last_ep.get('episode_number', 0)) if last_ep else 0
+		season_caps = {}
+		for s_item in meta.get('seasons', []):
+			sn = s_item.get('season_number')
+			if sn is None or sn <= 0: continue
+			ec = int(s_item.get('episode_count', 0))
+			if ended or not last_aired_sn or sn < last_aired_sn:
+				season_caps[sn] = ec
+			elif sn == last_aired_sn:
+				season_caps[sn] = last_aired_ep if last_aired_ep > 0 else ec
+			# sn > last_aired_sn: future/unaired season — omit entirely
+		seasons_to_write = [season] if season is not None else list(season_caps.keys())
+		for sn in seasons_to_write:
+			sn = int(sn)
+			cap = season_caps.get(sn, 0)
+			if cap <= 0: continue
+			for en in range(1, cap + 1):
+				scrobsync.upsert_watched_episode(show_imdb=imdb, show_tmdb=tmdb, show_tvdb='', season=sn, episode=en, last_watched_at=now)
 	except: log_utils.error()
 
 
-#### Mark unwatched / season / show unwatched — JWT-only, no lower-fidelity fallback ####
-#### (confirmed: there is no api-key-only unwatch path — the server's unwatch-toggle ####
-#### helper is wired only to Jellyfin's webhook, not Kodi's) ####
+#### Mark unwatched / season / show unwatched — JWT-only, no fallback ####
+
 
 def markMovieAsNotWatched(imdb, tmdb=''):
 	try:
@@ -553,9 +510,6 @@ def markEpisodeAsNotWatched(imdb, tvdb, season, episode):
 		tmdb = _resolve_tmdb('tv', imdb=imdb, tvdb=tvdb)
 		if not tmdb: return False
 		season, episode = int('%01d' % int(season)), int('%01d' % int(episode))
-		# Episode-scoped unwatch has no dedicated single-episode DELETE endpoint —
-		# DELETE /history/item is item(=Media row)-scoped, so a matching episode Media
-		# row must exist server-side under this show's tmdb id for this to resolve it.
 		response = getScrob('/history/item?tmdb_id=%s&media_type=episode' % tmdb, method='DELETE', auth='jwt', silent=True)
 		success = bool(response is not None and response.status_code in (200, 204))
 		if success:
@@ -574,7 +528,8 @@ def markTVShowAsNotWatched(imdb, tvdb):
 			return False
 		tmdb = _resolve_tmdb('tv', imdb=imdb, tvdb=tvdb)
 		if not tmdb: return False
-		response = getScrob('/history/show-all', post={'series_tmdb_id': int(tmdb), 'series_tvdb_id': int(tvdb) if tvdb else None}, method='DELETE', auth='jwt', silent=True)
+
+		response = getScrob('/history/show-all?series_tmdb_id=%s' % tmdb, method='DELETE', auth='jwt', silent=True)
 		success = bool(response is not None and response.status_code in (200, 204))
 		if success:
 			for (si, st, sv, s, e) in scrobsync.get_watched_episodes():
@@ -649,43 +604,19 @@ def unwatch(content_type, name, imdb=None, tvdb=None, season=None, episode=None,
 #### server-side "in progress playback" list either) ####
 
 def _scrobble_seconds(watched_percent, current_time, total_time):
-	# time_seconds/total_seconds feed _webhook_event()'s player.time/player.totaltime,
-	# which Scrob's Now Playing card displays as real elapsed/remaining playback time.
-	# Every call site now has Kodi's actual getTime()/getTotalTime() available and passes
-	# them through. Without them (current_time/total_time not provided), this used to send
-	# the 0-100 percent value itself as "seconds" against a hardcoded 100-second "total" —
-	# the card then showed e.g. 0:38 elapsed of a 1:40 runtime for what was really 38% into
-	# a much longer episode, and stayed frozen at whatever percent playback started at until
-	# the next pause/stop event sent a fresh (still-wrong) number. The percent fallback below
-	# only exists for any caller that still can't supply real seconds.
+
 	if total_time:
 		return int(current_time or 0), int(total_time)
 	return int(watched_percent), 100
 
 def scrobbleStart(media_type, title='', tvshowtitle='', year='0', imdb='', tmdb='', tvdb='', season='', episode='', watched_percent=0, current_time=0, total_time=0, resumed=False):
 	try:
-		# Confirmed against Scrob's own backend (routers/webhooks.py parse_kodi_payload/
-		# _handle_kodi_webhook): Player.OnPlay only sets the live session's state to
-		# "playing" — it never writes progress_percent/progress_seconds onto it. Only
-		# Player.OnResume does. Since this function is called both for a genuine
-		# fresh start (position 0, fine either way) and for resuming after a pause
-		# (a real position that needs to be carried forward), always sending OnPlay
-		# meant the Now Playing card silently kept whatever progress it last had (0%,
-		# for a brand new pause/resume) until the next pause/stop event corrected it.
 		method = 'Player.OnResume' if resumed else 'Player.OnPlay'
 		time_seconds, total_seconds = _scrobble_seconds(watched_percent, current_time, total_time)
 		_webhook_event(method, 'movie' if media_type == 'movie' else 'episode', imdb=imdb, tmdb=tmdb, tvdb=tvdb, title=title, tvshowtitle=tvshowtitle, year=year, season=season or None, episode=episode or None, time_seconds=time_seconds, total_seconds=total_seconds)
 	except: log_utils.error()
 
 def scrobbleProgress(media_type, imdb='', tmdb='', tvdb='', season='', episode='', watched_percent=0, current_time=0, total_time=0):
-	# Player.OnPlay/OnResume/OnPause/OnStop are discrete events — nothing updates the
-	# live session's progress in between them. Confirmed against Scrob's backend
-	# (parse_kodi_payload/_handle_kodi_webhook in routers/webhooks.py): only
-	# Player.OnAVChange ("progress") and Player.OnResume/OnPause write
-	# session.progress_percent/progress_seconds — Player.OnPlay never does. This is
-	# the periodic heartbeat (called from player.py's keepAlive() poll loop, throttled
-	# there) so the Now Playing card advances continuously during normal playback
-	# instead of freezing at whatever value the last pause/resume/stop sent.
 	try:
 		season = int('%01d' % int(season)) if season else None
 		episode = int('%01d' % int(episode)) if episode else None
@@ -774,13 +705,6 @@ def rateEpisode(tmdb, tvdb, series_name, season, episode, rating):
 #### Sync ####
 
 def _threaded_resolve(unique_ids, resolver):
-	# Resolves a set of tmdb ids to imdb ids concurrently, in batches (mirrors the
-	# dev.batch.size/dev.batch.unlimited pattern used by trakt.py's service_syncSeasons
-	# and floppy.py's episode-tracking sync). Each thread writes to a distinct dict
-	# key, so no lock is needed. Confirmed necessary on a resource-constrained device:
-	# a large watched history means hundreds/thousands of individual TMDb lookups, and
-	# doing them one at a time in sequence (the original implementation) was slow
-	# enough on its own to contribute to the sync appearing to hang.
 	from threading import Thread
 	result = {}
 	def _one(tmdb_id):
@@ -797,16 +721,6 @@ def _threaded_resolve(unique_ids, resolver):
 	return result
 
 def sync_watchedProgress(activities=None, forced=False, progress_callback=None):
-	# Two real bottlenecks fixed here vs. the original single-item-at-a-time version:
-	#  1. TMDb id resolution was done sequentially, one network-bound lookup at a time,
-	#     for every movie/show in the history — now threaded in batches (see
-	#     _threaded_resolve above).
-	#  2. Every single upsert_watched_movie()/upsert_watched_episode() call opened and
-	#     closed its own sqlite connection — with a large history (thousands of watched
-	#     episodes is normal for an imported account) that's thousands of redundant
-	#     connection cycles. Confirmed on a real device: this alone was enough for the
-	#     episode half of the sync to never finish. Now collected into row lists and
-	#     written in one batched transaction via scrobsync.bulk_upsert_*().
 	try:
 		if not getScrobCredentialsInfo(): return
 		movies = get_all_pages('/history?type=movie', silent=True) or []
@@ -857,10 +771,6 @@ def sync_watchedProgress(activities=None, forced=False, progress_callback=None):
 		log_utils.log('SCROB: episode sync — %s watched episodes across %s shows' % (len(episodes), len(shows_seen)), level=log_utils.LOGINFO)
 
 		scrobsync.update_last_watched_at('last_history_at')
-		# Same fix as floppy.py's sync_watchedProgress(): getShowProgress()/_fetchShowProgress()
-		# is cached per-show (15 min) on top of the no-arg syncMovies/syncTVShows cache — a
-		# full history sync can touch shows well beyond the handful invalidated one-by-one
-		# elsewhere in this file, so wipe the whole cache table rather than just these two keys.
 		scrobsync.clear_cache()
 		control.trigger_widget_refresh()
 	except: log_utils.error()
@@ -869,11 +779,34 @@ def sync_watched(activities=None, forced=False, progress_callback=None):
 	sync_watchedProgress(activities=activities, forced=forced, progress_callback=progress_callback)
 
 def sync_playbackProgress(activities=None, forced=False):
-	# No queryable server-side "in progress playback" list exists for this provider
-	# either — local bookmarks are maintained directly by scrobbleMovie/scrobbleEpisode,
-	# so this is a deliberate no-op kept for call-site symmetry with the other
-	# providers' services_syncs() loop.
-	pass
+	# Mirrors trakt.py's sync_playbackProgress()/traktsync.insert_bookmarks(): pull the
+	# full server-side in-progress list and fully replace the local bookmarks table with
+	# it, rather than only ever writing what *this* device paused. Without this, a second
+	# device had no way to see a resume point another device left on Scrob's server short
+	# of the live per-item fallback query in Bookmarks.get() (get_resume_percent) — that
+	# fallback only fires when the local table has nothing at all, so it stays in place as
+	# a safety net for the gap between sync intervals, but this is now the primary path.
+	try:
+		if not getScrobCredentialsInfo(): return
+		items = get_continue_watching()
+		scrobsync.clear_bookmarks()
+		for item in items:
+			try:
+				media = item.get('media') or {}
+				media_type = media.get('type')
+				percent_played = str(round((item.get('progress_percent') or 0) * 100, 2))
+				paused_at = item.get('watched_at') or _now_iso()
+				if media_type == 'movie':
+					scrobsync.upsert_bookmark(title=media.get('title', ''), imdb='', tmdb=str(media.get('tmdb_id') or ''),
+						percent_played=percent_played, paused_at=paused_at)
+				elif media_type == 'episode':
+					season, episode = media.get('season_number'), media.get('episode_number')
+					if season is None or episode is None: continue
+					scrobsync.upsert_bookmark(tvshowtitle=media.get('show_title', ''), title=media.get('title', ''), imdb='',
+						tmdb=str(media.get('show_tmdb_id') or ''), tvdb='', season=str(season), episode=str(episode),
+						percent_played=percent_played, paused_at=paused_at)
+			except: log_utils.error()
+	except: log_utils.error()
 
 def force_scrobSync():
 	if not control.yesnoDialog(control.lang(32056), '', ''): return
@@ -947,11 +880,6 @@ def _fetchShowProgress(tmdb):
 	# Computed locally from scrobsync's tracked-episode table plus TMDb season
 	# metadata — same shape as floppy.py's _fetchShowProgress fallback.
 	try:
-		# Trakt's equivalent (trakt.py syncSeasons) excludes Season 0/Specials by default
-		# (only included when 'tv.specials' is enabled) — mirror that here, otherwise a
-		# show is never seen as fully watched once TMDb lists a Specials season, since
-		# almost nobody has watched episodes tracked for it. Confirmed against a real
-		# account: most "should be fully watched" shows had exactly this mismatch.
 		include_specials = getSetting('tv.specials') == 'true'
 		episodes = scrobsync.get_watched_episodes()
 		show_eps = [(s, e) for (si, st, sv, s, e) in (episodes or []) if st == tmdb]
@@ -1074,6 +1002,32 @@ def get_continue_watching():
 		log_utils.error()
 		return []
 
+def get_resume_percent(tmdb, season=None, episode=None):
+	# Local bookmarks (scrobsync.fetch_bookmarks) only cover the device that actually
+	# paused/stopped — a second device has no local record of that at all. Scrob is the
+	# one provider here with a genuine server-side continue-watching list (unlike e.g.
+	# Floppy, which has no queryable equivalent), so this lets a second device pick up a
+	# resume point a different device left on the server. For episodes, media.tmdb_id in
+	# this response is the episode's own distinct TMDb id (not comparable to anything
+	# Umbrella tracks) — match on show_tmdb_id + season/episode instead, confirmed
+	# against a real account.
+	try:
+		if not tmdb: return 0
+		for item in get_continue_watching():
+			media = item.get('media') or {}
+			if season is not None and episode is not None:
+				if media.get('type') != 'episode': continue
+				if str(media.get('show_tmdb_id') or '') != str(tmdb): continue
+				if media.get('season_number') != int(season) or media.get('episode_number') != int(episode): continue
+			else:
+				if media.get('type') != 'movie': continue
+				if str(media.get('tmdb_id') or '') != str(tmdb): continue
+			return round((item.get('progress_percent') or 0) * 100, 2)
+		return 0
+	except:
+		log_utils.error()
+		return 0
+
 def get_next_up():
 	try:
 		if not getScrobCredentialsInfo(): return []
@@ -1126,6 +1080,32 @@ def remove_from_list(list_id, item_id):
 		log_utils.error()
 		return False
 
+def get_list_items(list_id):
+	try:
+		if not getScrobCredentialsInfo(): return []
+		data = getScrobAsJson('/lists/%s' % list_id, auth='api_key', silent=True)
+		return (data or {}).get('items', []) if isinstance(data, dict) else []
+	except:
+		log_utils.error()
+		return []
+
+def get_lists_containing(tmdb, media_type):
+	try:
+		tmdb = str(tmdb)
+		matches = []
+		for lst in get_lists():
+			list_id = lst.get('id')
+			if list_id is None: continue
+			for item in get_list_items(list_id):
+				media = item.get('media') or {}
+				if str(media.get('tmdb_id') or '') == tmdb and media.get('type') == media_type:
+					matches.append((list_id, lst.get('name', ''), item.get('id')))
+					break
+		return matches
+	except:
+		log_utils.error()
+		return []
+
 
 #### Context-menu manager (mirrors floppy.manager()/customtrakt.manager()) ####
 
@@ -1138,6 +1118,7 @@ def manager(name, imdb=None, tvdb=None, tmdb=None, season=None, episode=None, re
 		elif tvdb and tvdb != 'None': content_type = 'tvshow'
 		else: content_type = 'movie'
 		media_type = 'movie' if content_type == 'movie' else 'tv'
+		scrob_media_type = 'movie' if content_type == 'movie' else 'series'
 		hc = getSetting('highlight.color')
 		has_write = getScrobWriteCredentialsInfo()
 		items = []
@@ -1153,6 +1134,7 @@ def manager(name, imdb=None, tvdb=None, tmdb=None, season=None, episode=None, re
 			items += [('[COLOR %s]Clear Scrobble Progress[/COLOR]' % hc, 'scrobbleReset')]
 		if has_write:
 			items += [('[COLOR %s]Add to List[/COLOR]' % hc, 'list_add')]
+			items += [('[COLOR %s]Remove from List[/COLOR]' % hc, 'list_remove')]
 		control.hide()
 		select = control.selectDialog([i[0] for i in items], heading=control.addonInfo('name') + ' - Scrob')
 		if select == -1: return
@@ -1180,6 +1162,18 @@ def manager(name, imdb=None, tvdb=None, tmdb=None, season=None, episode=None, re
 				list_id = match[0].get('id')
 			else:
 				list_id = lists[list_select].get('id')
-			if list_id and add_to_list(list_id, resolved_tmdb, media_type=media_type):
+			if list_id and add_to_list(list_id, resolved_tmdb, media_type=scrob_media_type):
 				control.notification(title='Scrob', message='Added to list')
+		elif action_key == 'list_remove':
+			resolved_tmdb = tmdb or _resolve_tmdb(media_type, imdb=imdb, tvdb=tvdb)
+			if not resolved_tmdb: return
+			matches = get_lists_containing(resolved_tmdb, scrob_media_type)
+			if not matches:
+				control.notification(title='Scrob', message='Not in any list')
+				return
+			list_select = control.selectDialog([m[1] for m in matches], heading=control.addonInfo('name') + ' - Remove From List')
+			if list_select == -1: return
+			list_id, _, item_id = matches[list_select]
+			if remove_from_list(list_id, item_id):
+				control.notification(title='Scrob', message='Removed from list')
 	except: log_utils.error()

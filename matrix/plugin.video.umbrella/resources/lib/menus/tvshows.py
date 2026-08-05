@@ -2609,6 +2609,55 @@ class TVshows:
 			log_utils.error()
 		return self.list
 
+	def scrob_user_lists(self, create_directory=True, folderName=''):
+		self.list = []
+		try:
+			lists = scrob.get_lists()
+			if not lists: return self.list
+			for lst in lists:
+				try:
+					list_id = lst.get('id')
+					if list_id is None: continue
+					name = lst.get('name', '')
+					count = lst.get('item_count', 0)
+					values = {
+						'name': '%s (%s)' % (name, count),
+						'action': 'scrob_list_shows&list_id=%s' % list_id,
+						'image': 'scrob.png', 'icon': 'scrob.png', 'url': '',
+					}
+					self.list.append(values)
+				except: log_utils.error()
+			if create_directory: self.addDirectory(self.list, folderName=folderName)
+			return self.list
+		except:
+			log_utils.error()
+
+	def scrob_list_shows(self, list_id, folderName=''):
+		self.list = []
+		try:
+			items = scrob.get_list_items(list_id)
+			for i in items:
+				try:
+					media = i.get('media') or {}
+					if media.get('type') != 'series': continue
+					values = {}
+					values['tmdb'] = str(media.get('tmdb_id') or '')
+					values['imdb'] = ''
+					values['tvdb'] = ''
+					values['tvshowtitle'] = media.get('title', '')
+					values['title'] = values['tvshowtitle']
+					values['year'] = str(media.get('release_date', '') or '')[:4]
+					values['mediatype'] = 'tvshows'
+					values['next'] = ''
+					self.list.append(values)
+				except: log_utils.error()
+			if self.list is None: self.list = []
+			self.worker()
+			self.tvshowDirectory(self.list, next=False, folderName=folderName)
+			return self.list
+		except:
+			log_utils.error()
+
 	def simkl_list(self, url, folderName):
 		self.list = []
 		if ',return' in url: url = url.split(',return')[0]

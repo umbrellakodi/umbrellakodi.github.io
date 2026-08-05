@@ -6051,3 +6051,7 @@ msgstr ""
 msgctxt "#40780"
 msgid "Season Premieres (MDBList)"
 msgstr ""
+
+msgctxt "#40781"
+msgid "User Lists (Scrob)"
+msgstr ""
