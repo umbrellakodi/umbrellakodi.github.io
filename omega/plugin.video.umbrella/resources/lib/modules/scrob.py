@@ -1164,6 +1164,9 @@ def manager(name, imdb=None, tvdb=None, tmdb=None, season=None, episode=None, re
 				list_id = lists[list_select].get('id')
 			if list_id and add_to_list(list_id, resolved_tmdb, media_type=scrob_media_type):
 				control.notification(title='Scrob', message='Added to list')
+				if refresh: control.refresh()
+			else:
+				control.notification(title='Scrob', message='Failed to add to list - check username/password')
 		elif action_key == 'list_remove':
 			resolved_tmdb = tmdb or _resolve_tmdb(media_type, imdb=imdb, tvdb=tvdb)
 			if not resolved_tmdb: return
@@ -1176,4 +1179,7 @@ def manager(name, imdb=None, tvdb=None, tmdb=None, season=None, episode=None, re
 			list_id, _, item_id = matches[list_select]
 			if remove_from_list(list_id, item_id):
 				control.notification(title='Scrob', message='Removed from list')
+				if refresh: control.refresh()
+			else:
+				control.notification(title='Scrob', message='Failed to remove from list - check username/password')
 	except: log_utils.error()

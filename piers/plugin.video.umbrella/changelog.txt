@@ -1,2 +1,2 @@
-[B]Update - v6.7.657 - August 5th, 2026 [/B]
---[Change] Change made to allow for sorting networks by popularity.
+[B]Update - v6.7.658 - August 5th, 2026 [/B]
+--[Change] Refresh on add or remove from Scrob list.
