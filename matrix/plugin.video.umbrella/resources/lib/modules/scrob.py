@@ -643,12 +643,19 @@ def scrobbleEpisode(imdb, tmdb, tvdb, season, episode, watched_percent, current_
 			control.trigger_widget_refresh()
 	except: log_utils.error()
 
-def scrobbleStopMovie(imdb, tmdb, watched_percent, completed=False, current_time=0, total_time=0):
+def scrobbleStopMovie(imdb, tmdb, watched_percent, completed=False, current_time=0, total_time=0, already_watched=False):
 	try:
 		time_seconds, total_seconds = _scrobble_seconds(watched_percent, current_time, total_time)
-		response = _webhook_event('Player.OnStop', 'movie', imdb=imdb, tmdb=tmdb, time_seconds=time_seconds, total_seconds=total_seconds, end=bool(completed))
+		# already_watched means markMovieDuringPlayback() already recorded this as watched
+		# mid-playback (see playcount.py) — sending end=True here too would write a second,
+		# duplicate watched-history entry server-side. Still send the OnStop event itself
+		# unconditionally (that's what closes Scrob's live session — skipping this call
+		# entirely left it stuck on every normal watch-to-completion), just with the
+		# completion flag forced False so it's a no-op for history.
+		send_completed = bool(completed) and not already_watched
+		response = _webhook_event('Player.OnStop', 'movie', imdb=imdb, tmdb=tmdb, time_seconds=time_seconds, total_seconds=total_seconds, end=send_completed)
 		if getSetting('debug.level') == '1':
-			log_utils.log('SCROB: scrobbleStopMovie IMDB=%s TMDB=%s Percent=%s Completed=%s HTTP=%s' % (imdb, tmdb, watched_percent, completed, response.status_code if response is not None else 'None'), level=log_utils.LOGDEBUG)
+			log_utils.log('SCROB: scrobbleStopMovie IMDB=%s TMDB=%s Percent=%s Completed=%s AlreadyWatched=%s HTTP=%s' % (imdb, tmdb, watched_percent, send_completed, already_watched, response.status_code if response is not None else 'None'), level=log_utils.LOGDEBUG)
 		if response is not None and response.status_code == 200:
 			if completed:
 				scrobsync.delete_bookmark(imdb or '', tvdb='', tmdb=str(tmdb or ''), season='', episode='')
@@ -657,13 +664,15 @@ def scrobbleStopMovie(imdb, tmdb, watched_percent, completed=False, current_time
 			control.trigger_widget_refresh()
 	except: log_utils.error()
 
-def scrobbleStopEpisode(imdb, tmdb, tvdb, season, episode, watched_percent, completed=False, current_time=0, total_time=0):
+def scrobbleStopEpisode(imdb, tmdb, tvdb, season, episode, watched_percent, completed=False, current_time=0, total_time=0, already_watched=False):
 	try:
 		season, episode = int('%01d' % int(season)), int('%01d' % int(episode))
 		time_seconds, total_seconds = _scrobble_seconds(watched_percent, current_time, total_time)
-		response = _webhook_event('Player.OnStop', 'episode', imdb=imdb, tmdb=tmdb, tvdb=tvdb, season=season, episode=episode, time_seconds=time_seconds, total_seconds=total_seconds, end=bool(completed))
+		# See scrobbleStopMovie() above for why already_watched forces end=False on the wire.
+		send_completed = bool(completed) and not already_watched
+		response = _webhook_event('Player.OnStop', 'episode', imdb=imdb, tmdb=tmdb, tvdb=tvdb, season=season, episode=episode, time_seconds=time_seconds, total_seconds=total_seconds, end=send_completed)
 		if getSetting('debug.level') == '1':
-			log_utils.log('SCROB: scrobbleStopEpisode IMDB=%s TMDB=%s S%02dE%02d Percent=%s Completed=%s HTTP=%s' % (imdb, tmdb, season, episode, watched_percent, completed, response.status_code if response is not None else 'None'), level=log_utils.LOGDEBUG)
+			log_utils.log('SCROB: scrobbleStopEpisode IMDB=%s TMDB=%s S%02dE%02d Percent=%s Completed=%s AlreadyWatched=%s HTTP=%s' % (imdb, tmdb, season, episode, watched_percent, send_completed, already_watched, response.status_code if response is not None else 'None'), level=log_utils.LOGDEBUG)
 		if response is not None and response.status_code == 200:
 			if completed:
 				scrobsync.delete_bookmark(imdb or '', tvdb=str(tvdb or ''), tmdb=str(tmdb or ''), season=str(season), episode=str(episode))

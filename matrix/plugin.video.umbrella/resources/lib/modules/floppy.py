@@ -488,16 +488,23 @@ def scrobbleEpisode(imdb, tmdb, tvdb, season, episode, watched_percent, current_
 			control.trigger_widget_refresh()
 	except: log_utils.error()
 
-def scrobbleStopMovie(imdb, tmdb, watched_percent, completed=False, current_time=0, total_time=0):
+def scrobbleStopMovie(imdb, tmdb, watched_percent, completed=False, current_time=0, total_time=0, already_watched=False):
 	try:
 		ids = {}
 		if tmdb: ids['tmdb'] = str(tmdb)
 		if imdb: ids['imdb'] = str(imdb)
 		position_seconds, duration_seconds = _scrobble_seconds(watched_percent, current_time, total_time)
-		body = {'action': 'stop', 'media_type': 'movie', 'ids': ids, 'position_seconds': position_seconds, 'duration_seconds': duration_seconds, 'completed': bool(completed)}
+		# already_watched means markMovieDuringPlayback() already recorded this as watched
+		# mid-playback (see playcount.py) — sending completed=True here too would write a
+		# second, duplicate watched-history entry server-side. Still send the stop action
+		# itself unconditionally (that's what closes Floppy's live "Now Playing" session —
+		# skipping this call entirely left that card stuck on every normal watch-to-
+		# completion), just with completed forced False so it's a no-op for history.
+		send_completed = bool(completed) and not already_watched
+		body = {'action': 'stop', 'media_type': 'movie', 'ids': ids, 'position_seconds': position_seconds, 'duration_seconds': duration_seconds, 'completed': send_completed}
 		response = getFloppy('/scrobble/', post=body, method='POST', silent=True)
 		if getSetting('debug.level') == '1':
-			log_utils.log('FLOPPY: scrobbleStopMovie IMDB=%s TMDB=%s Percent=%s Completed=%s HTTP=%s' % (imdb, tmdb, watched_percent, completed, response.status_code if response is not None else 'None'), level=log_utils.LOGDEBUG)
+			log_utils.log('FLOPPY: scrobbleStopMovie IMDB=%s TMDB=%s Percent=%s Completed=%s AlreadyWatched=%s HTTP=%s' % (imdb, tmdb, watched_percent, send_completed, already_watched, response.status_code if response is not None else 'None'), level=log_utils.LOGDEBUG)
 		if response is not None and response.status_code == 200:
 			if completed:
 				floppysync.delete_bookmark(imdb or '', tvdb='', tmdb=str(tmdb or ''), season='', episode='')
@@ -506,7 +513,7 @@ def scrobbleStopMovie(imdb, tmdb, watched_percent, completed=False, current_time
 			control.trigger_widget_refresh()
 	except: log_utils.error()
 
-def scrobbleStopEpisode(imdb, tmdb, tvdb, season, episode, watched_percent, completed=False, current_time=0, total_time=0):
+def scrobbleStopEpisode(imdb, tmdb, tvdb, season, episode, watched_percent, completed=False, current_time=0, total_time=0, already_watched=False):
 	try:
 		season, episode = int('%01d' % int(season)), int('%01d' % int(episode))
 		ids = {}
@@ -514,11 +521,13 @@ def scrobbleStopEpisode(imdb, tmdb, tvdb, season, episode, watched_percent, comp
 		if imdb: ids['imdb'] = str(imdb)
 		if tvdb: ids['tvdb'] = str(tvdb)
 		position_seconds, duration_seconds = _scrobble_seconds(watched_percent, current_time, total_time)
+		# See scrobbleStopMovie() above for why already_watched forces completed=False on the wire.
+		send_completed = bool(completed) and not already_watched
 		body = {'action': 'stop', 'media_type': 'episode', 'ids': ids, 'season_number': season, 'episode_number': episode,
-			'position_seconds': position_seconds, 'duration_seconds': duration_seconds, 'completed': bool(completed)}
+			'position_seconds': position_seconds, 'duration_seconds': duration_seconds, 'completed': send_completed}
 		response = getFloppy('/scrobble/', post=body, method='POST', silent=True)
 		if getSetting('debug.level') == '1':
-			log_utils.log('FLOPPY: scrobbleStopEpisode IMDB=%s TMDB=%s S%02dE%02d Percent=%s Completed=%s HTTP=%s' % (imdb, tmdb, season, episode, watched_percent, completed, response.status_code if response is not None else 'None'), level=log_utils.LOGDEBUG)
+			log_utils.log('FLOPPY: scrobbleStopEpisode IMDB=%s TMDB=%s S%02dE%02d Percent=%s Completed=%s AlreadyWatched=%s HTTP=%s' % (imdb, tmdb, season, episode, watched_percent, send_completed, already_watched, response.status_code if response is not None else 'None'), level=log_utils.LOGDEBUG)
 		if response is not None and response.status_code == 200:
 			if completed:
 				floppysync.delete_bookmark(imdb or '', tvdb=str(tvdb or ''), tmdb=str(tmdb or ''), season=str(season), episode=str(episode))

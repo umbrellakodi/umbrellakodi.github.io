@@ -1,5 +1,2 @@
-[B]Update - v6.7.660 - August 5th, 2026 [/B]
---[Change] Fixed My TV Shows and My Movies being incorrectly gated.
---[Fix] Added pagination for user lists.
---[Change] Made all force sync show progress dialogs.
---[Fix] Change made for database on android 14 devices.
+[B]Update - v6.7.661 - August 5th, 2026 [/B]
+--[Change] Changes made to avoid double scrobble on Scrob and Floppy.

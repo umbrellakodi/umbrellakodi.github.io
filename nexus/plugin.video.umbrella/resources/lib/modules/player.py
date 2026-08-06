@@ -778,6 +778,13 @@ class Player(xbmc.Player):
 		# it by the time a playlist-driven transition is detected. Returns (seekable,
 		# scrobble_source) for the caller's own follow-up (e.g. the crefresh check below).
 		Bookmarks().reset(self.current_time, self.media_length, self.name, self.year)
+		# Set the idempotency guard BEFORE the (slow, network-bound) set_scrobble() calls
+		# below, not after — onPlayBackStopped()/onPlayBackEnded()/keepAlive()'s playlist-
+		# advance path can all race to call this within the same finished-item window, and
+		# each set_scrobble() call is a real HTTP POST that can take long enough for a second
+		# caller to read self.scrobble_sent as still False and duplicate every provider's
+		# watched/scrobble-stop signal for this item.
+		self.scrobble_sent = True
 		_scrobble_source = getSetting('scrobble.source')
 		if _scrobble_source == '0':
 			_indicators_alt = getSetting('indicators.alt')
@@ -799,7 +806,6 @@ class Player(xbmc.Player):
 			Bookmarks().set_scrobble(self.current_time, self.media_length, self.media_type, self.imdb, self.tmdb, self.tvdb, self.season, self.episode, service='floppy', title=self.title, tvshowtitle=self.title, year=self.year, already_watched=self.watched_during_playback)
 		if self.scrobCredentials and (_scrobble_source == '6' or getSetting('scrob.markwatched') == 'true'):
 			Bookmarks().set_scrobble(self.current_time, self.media_length, self.media_type, self.imdb, self.tmdb, self.tvdb, self.season, self.episode, service='scrob', title=self.title, tvshowtitle=self.title, year=self.year, already_watched=self.watched_during_playback)
-		self.scrobble_sent = True
 		watcher = self.getWatchedPercent()
 		seekable = (int(self.current_time) > 180 and (watcher < int(self.markwatched_percentage)))
 		if watcher >= int(self.markwatched_percentage):
@@ -863,6 +869,11 @@ class Player(xbmc.Player):
 				elif _indicators_alt == '5' and self.floppyCredentials: _scrobble_source = '5'
 				elif _indicators_alt == '6' and self.scrobCredentials: _scrobble_source = '6'
 			if not self.scrobble_sent:
+				# Set the guard before the (slow, network-bound) set_scrobble() calls below —
+				# see the matching comment in _sendFinishedItemState() for why: this can race
+				# against onPlayBackStopped()/keepAlive()'s playlist-advance path for the same
+				# finished item.
+				self.scrobble_sent = True
 				if self.traktCredentials and (_scrobble_source == '1' or getSetting('trakt.markwatched') == 'true'):
 					Bookmarks().set_scrobble(self.current_time, self.media_length, self.media_type, self.imdb, self.tmdb, self.tvdb, self.season, self.episode, already_watched=self.watched_during_playback)
 				if self.simklCredentials and (_scrobble_source == '2' or getSetting('simkl.markwatched') == 'true'):
@@ -875,7 +886,6 @@ class Player(xbmc.Player):
 					Bookmarks().set_scrobble(self.current_time, self.media_length, self.media_type, self.imdb, self.tmdb, self.tvdb, self.season, self.episode, service='floppy', title=self.title, tvshowtitle=self.title, year=self.year, already_watched=self.watched_during_playback)
 				if self.scrobCredentials and (_scrobble_source == '6' or getSetting('scrob.markwatched') == 'true'):
 					Bookmarks().set_scrobble(self.current_time, self.media_length, self.media_type, self.imdb, self.tmdb, self.tvdb, self.season, self.episode, service='scrob', title=self.title, tvshowtitle=self.title, year=self.year, already_watched=self.watched_during_playback)
-			self.scrobble_sent = True
 			if _scrobble_source == '0':
 				if getSetting('localnotify') == 'true': control.notification(title=self.title, message=getLS(35510))
 				if not self.watched_during_playback and self.media_length > 0:
@@ -1697,7 +1707,7 @@ class Bookmarks:
 				# entirely, leaving the card stuck on every normal watch-to-completion —
 				# the far more common case than a short/aborted stop. Floppy's server
 				# treats a low-percent 'stop' as a no-op for history, so this is safe.
-				floppy.scrobbleStopMovie(imdb, tmdb, percent, completed=completed, current_time=current_time, total_time=media_length) if media_type == 'movie' else floppy.scrobbleStopEpisode(imdb, tmdb, tvdb, season, episode, percent, completed=completed, current_time=current_time, total_time=media_length)
+				floppy.scrobbleStopMovie(imdb, tmdb, percent, completed=completed, current_time=current_time, total_time=media_length, already_watched=skip_scrobble) if media_type == 'movie' else floppy.scrobbleStopEpisode(imdb, tmdb, tvdb, season, episode, percent, completed=completed, current_time=current_time, total_time=media_length, already_watched=skip_scrobble)
 				if percent >= int(markwatched_percentage):
 					floppy.scrobbleReset(imdb, tmdb, tvdb, season, episode, refresh=False)
 					if not already_watched:
@@ -1718,7 +1728,7 @@ class Bookmarks:
 				# watched mid-playback) previously skipped this call entirely, leaving the
 				# card stuck on every normal watch-to-completion — the common case, not an
 				# edge case.
-				scrob.scrobbleStopMovie(imdb, tmdb, percent, completed=completed, current_time=current_time, total_time=media_length) if media_type == 'movie' else scrob.scrobbleStopEpisode(imdb, tmdb, tvdb, season, episode, percent, completed=completed, current_time=current_time, total_time=media_length)
+				scrob.scrobbleStopMovie(imdb, tmdb, percent, completed=completed, current_time=current_time, total_time=media_length, already_watched=skip_scrobble) if media_type == 'movie' else scrob.scrobbleStopEpisode(imdb, tmdb, tvdb, season, episode, percent, completed=completed, current_time=current_time, total_time=media_length, already_watched=skip_scrobble)
 				if percent >= int(markwatched_percentage):
 					scrob.scrobbleReset(imdb, tmdb, tvdb, season, episode, refresh=False)
 					if not already_watched:
