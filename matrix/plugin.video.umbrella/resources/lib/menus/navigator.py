@@ -900,7 +900,9 @@ class Navigator:
 			return
 
 	def accountCheck(self):
-		if not self.traktCredentials and not self.simklCredentials and not self.tmdbCredentials and not self.mdblistCredentials:
+		if (not self.traktCredentials and not self.simklCredentials and not self.tmdbCredentials and not self.mdblistCredentials
+				and not self.customCredentials and not self.floppyCredentials and not self.scrobCredentials
+				and not (getSetting('indicators.alt') == '0' and getSetting('scrobble.source') == '0')):
 			control.hide()
 			control.notification(message=32042, icon='WARNING')
 			sysexit()

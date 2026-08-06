@@ -1,4 +1,4 @@
-<addon id="plugin.video.umbrella" name="Umbrella" provider-name="Umbrella" version="6.7.659">
+<addon id="plugin.video.umbrella" name="Umbrella" provider-name="Umbrella" version="6.7.660">
 	<requires>
 		<import addon="xbmc.python" version="3.0.0" />
 		<import addon="script.module.requests" />
@@ -261,8 +261,11 @@
 			<screenshot>resources/screenshots/screenshot003.jpg</screenshot>
 		</assets>
 		<news>
-[B]Update - v6.7.659 - August 5th, 2026 [/B]
---[Change] Made change so that tv and movie lists only showed up if those types of items are present in scrob user lists.
+[B]Update - v6.7.660 - August 5th, 2026 [/B]
+--[Change] Fixed My TV Shows and My Movies being incorrectly gated.
+--[Fix] Added pagination for user lists.
+--[Change] Made all force sync show progress dialogs.
+--[Fix] Change made for database on android 14 devices.
 		</news>
 	</extension>
 

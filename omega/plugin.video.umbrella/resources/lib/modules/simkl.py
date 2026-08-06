@@ -1714,21 +1714,42 @@ def sync_playbackProgress(activities=None, forced=False):
 	except: log_utils.error()
 
 def force_simklSync(silent=False):
+	dialog = None
 	if not silent:
 		if not control.yesnoDialog(getLS(32056), '', ''): return
-		control.busy()
+		dialog = control.progressDialog
+		dialog.create(control.addonName(), 'Preparing Simkl sync...')
 
-	# wipe all tables and start fresh
-	clr_simkl = {'movies_plantowatch': True, 'shows_plantowatch': True, 'shows_watching': True, 'shows_hold': True, 'movies_dropped': True, 'shows_dropped': True, 'watched': True, 'movies_completed': True, 'shows_completed': True}
-	simklsync.delete_tables(clr_simkl)
+	def _progress(phase, done=None, total=None):
+		if not dialog: return
+		try:
+			if done is not None and total:
+				dialog.update(min(int(100.0 * done / total), 100), '%s... (%s/%s)' % (phase, done, total))
+			elif done is not None:
+				dialog.update(0, '%s... (%s synced)' % (phase, done))
+			else:
+				dialog.update(0, '%s...' % phase)
+		except: pass
 
-	sync_plantowatch(forced=True)
-	sync_completed(forced=True)
-	sync_watched(forced=True) #simkl counts
-	sync_watchedProgress(forced=True) # simkl progress sync
-	sync_watching(forced=True)
-	sync_hold(forced=True)
-	sync_dropped(forced=True)
-	if not silent: 
-		control.hide()
+	try:
+		# wipe all tables and start fresh
+		clr_simkl = {'movies_plantowatch': True, 'shows_plantowatch': True, 'shows_watching': True, 'shows_hold': True, 'movies_dropped': True, 'shows_dropped': True, 'watched': True, 'movies_completed': True, 'shows_completed': True}
+		simklsync.delete_tables(clr_simkl)
+
+		if dialog: dialog.update(0, 'Syncing plan-to-watch...')
+		sync_plantowatch(forced=True)
+		if dialog: dialog.update(15, 'Syncing completed...')
+		sync_completed(forced=True)
+		sync_watched(forced=True, progress_callback=_progress) #simkl counts
+		if dialog: dialog.update(55, 'Syncing watched progress...')
+		sync_watchedProgress(forced=True) # simkl progress sync
+		if dialog: dialog.update(70, 'Syncing watching...')
+		sync_watching(forced=True)
+		if dialog: dialog.update(85, 'Syncing on hold...')
+		sync_hold(forced=True)
+		if dialog: dialog.update(95, 'Syncing dropped...')
+		sync_dropped(forced=True)
+	finally:
+		if dialog: dialog.close()
+	if not silent:
 		control.notification(message='Forced Simkl Sync Complete')

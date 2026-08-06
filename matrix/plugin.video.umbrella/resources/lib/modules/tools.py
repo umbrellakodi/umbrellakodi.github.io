@@ -396,6 +396,8 @@ def services_syncs():
 					if getSetting('bookmarks') == 'true' and getSetting('scrobble.source') == '6':
 						scrob.sync_playbackProgress()
 					scrob.sync_watchedProgress(forced=True)
+				if not control.monitor.abortRequested():
+					scrob.sync_user_lists(forced=True)
 				last_scrob_sync = current_time
 		if control.monitor.waitForAbort(60*service_syncInterval): break
 

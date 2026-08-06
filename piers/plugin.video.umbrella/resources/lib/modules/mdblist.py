@@ -1267,12 +1267,17 @@ def removeWatchlistItems(media_type, imdb_list):
 
 def force_mdblistSync():
 	if not control.yesnoDialog(control.lang(32056), '', ''): return
-	control.busy()
-	clr_mdb = {'mdb_watched_movies': True, 'mdb_watched_episodes': True, 'movies_watchlist': True, 'shows_watchlist': True, 'watched': True}
-	mdbsync.delete_mdb_tables(clr_mdb)
-	sync_watch_list(forced=True)
-	sync_watchedProgress(forced=True)
-	control.hide()
+	dialog = control.progressDialog
+	dialog.create(control.addonName(), 'Preparing MDBList sync...')
+	try:
+		clr_mdb = {'mdb_watched_movies': True, 'mdb_watched_episodes': True, 'movies_watchlist': True, 'shows_watchlist': True, 'watched': True}
+		mdbsync.delete_mdb_tables(clr_mdb)
+		dialog.update(0, 'Syncing watchlist...')
+		sync_watch_list(forced=True)
+		dialog.update(50, 'Syncing watched history...')
+		sync_watchedProgress(forced=True)
+	finally:
+		dialog.close()
 	control.notification(message='Forced MDBList Sync Complete')
 
 

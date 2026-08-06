@@ -4132,6 +4132,16 @@
 						<popup>false</popup>
 					</control>
 				</setting>
+				<setting id="floppy.paginate.lists" type="boolean" label="32188" help="">
+					<level>0</level>
+					<default>true</default>
+					<dependencies>
+						<dependency type="visible">
+							<condition operator="!is" setting="floppy.token"/>
+						</dependency>
+					</dependencies>
+					<control type="toggle"/>
+				</setting>
 				<setting id="floppy.progress.showunaired" type="boolean" label="40764" help="">
 					<level>0</level>
 					<default>false</default>

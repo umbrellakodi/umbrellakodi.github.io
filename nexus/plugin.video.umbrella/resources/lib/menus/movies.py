@@ -1002,8 +1002,7 @@ class Movies:
 	def scrob_user_lists(self, create_directory=True, folderName=''):
 		self.list = []
 		try:
-			lists = scrob.get_lists_with_type('movie')
-			if not lists: return self.list
+			lists = scrobsync.fetch_user_lists('movie')
 			for lst in lists:
 				try:
 					list_id = lst.get('id')
@@ -1025,28 +1024,51 @@ class Movies:
 			from resources.lib.modules import log_utils
 			log_utils.error()
 
-	def scrob_list_movies(self, list_id, folderName=''):
+	def scrob_list_movies(self, list_id, url=None, create_directory=True, folderName=''):
+		# Local-cache read + client-side pagination, same shape as floppyList() — Scrob's
+		# GET /lists/{id} has no server-side paging, so this slices scrobsync's locally
+		# cached copy of the list rather than re-fetching the whole thing from the API.
 		self.list = []
 		try:
-			items = scrob.get_list_items(list_id)
+			url = url or ('scroblistmovies?list_id=%s&limit=%s&page=1' % (list_id, self.page_limit))
+			try:
+				q = dict(parse_qsl(urlsplit(url).query))
+				index = int(q.get('page', 1)) - 1
+			except:
+				index = 0
+			items = scrobsync.fetch_list_items(list_id, 'movie')
 			for i in items:
 				try:
-					media = i.get('media') or {}
-					if media.get('type') != 'movie': continue
 					values = {}
-					values['tmdb'] = str(media.get('tmdb_id') or '')
+					values['tmdb'] = i.get('tmdb', '')
 					values['imdb'] = ''
-					values['title'] = media.get('title', '')
-					values['year'] = str(media.get('release_date', '') or '')[:4]
+					values['title'] = i.get('title', '')
+					values['year'] = i.get('year', '')
 					values['mediatype'] = 'movies'
-					values['next'] = ''
 					self.list.append(values)
 				except:
 					from resources.lib.modules import log_utils
 					log_utils.error()
+			useNext = True
+			if create_directory:
+				self.sort(type='movies.watchlist')
+				if getSetting('scrob.paginate.lists') == 'true' and self.list:
+					if len(self.list) <= int(self.page_limit):
+						useNext = False
+					paginated_ids = [self.list[x:x + int(self.page_limit)] for x in range(0, len(self.list), int(self.page_limit))]
+					self.list = paginated_ids[index]
+				else:
+					useNext = False
+			try:
+				if useNext == False: raise Exception()
+				next_page = index + 2
+				next = 'plugin://plugin.video.umbrella/?action=scrob_list_movies&list_id=%s&url=%s&folderName=%s' % (
+					list_id, quote_plus('scroblistmovies?list_id=%s&limit=%s&page=%s' % (list_id, self.page_limit, next_page)), quote_plus(folderName))
+			except: next = ''
+			for i in range(len(self.list)): self.list[i]['next'] = next
 			if self.list is None: self.list = []
 			self.worker()
-			self.movieDirectory(self.list, folderName=folderName)
+			if create_directory: self.movieDirectory(self.list, folderName=folderName)
 			return self.list
 		except:
 			from resources.lib.modules import log_utils
@@ -1758,11 +1780,13 @@ class Movies:
 			useNext = True
 			if create_directory:
 				self.sort(type='movies.collection' if isCollection else 'movies.watchlist')
-				if self.list:
+				if getSetting('floppy.paginate.lists') == 'true' and self.list:
 					if len(self.list) <= int(self.page_limit):
 						useNext = False
 					paginated_ids = [self.list[x:x + int(self.page_limit)] for x in range(0, len(self.list), int(self.page_limit))]
 					self.list = paginated_ids[index]
+				else:
+					useNext = False
 			try:
 				if useNext == False: raise Exception()
 				if len(self.list) < int(self.page_limit): raise Exception()

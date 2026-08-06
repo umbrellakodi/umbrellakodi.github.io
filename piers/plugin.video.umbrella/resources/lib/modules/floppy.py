@@ -818,16 +818,30 @@ def sync_playbackProgress(activities=None, forced=False):
 
 def force_floppySync():
 	if not control.yesnoDialog(control.lang(32056), '', ''): return
-	control.busy()
-	clr_tables = ('floppy_watched_movies', 'floppy_watched_episodes',
-		'movies_plantowatch', 'shows_plantowatch', 'movies_watching', 'shows_watching',
-		'movies_hold', 'shows_hold', 'movies_completed', 'shows_completed',
-		'movies_dropped', 'shows_dropped', 'movies_collection', 'shows_collection')
-	floppysync.delete_floppy_tables(clr_tables)
-	sync_watch_list(forced=True)
-	sync_collection(forced=True)
-	sync_watchedProgress(forced=True)
-	control.hide()
+	dialog = control.progressDialog
+	dialog.create(control.addonName(), 'Preparing Floppy sync...')
+	def _progress(phase, done=None, total=None):
+		try:
+			if done is not None and total:
+				dialog.update(min(int(100.0 * done / total), 100), '%s... (%s/%s)' % (phase, done, total))
+			elif done is not None:
+				dialog.update(0, '%s... (%s synced)' % (phase, done))
+			else:
+				dialog.update(0, '%s...' % phase)
+		except: pass
+	try:
+		clr_tables = ('floppy_watched_movies', 'floppy_watched_episodes',
+			'movies_plantowatch', 'shows_plantowatch', 'movies_watching', 'shows_watching',
+			'movies_hold', 'shows_hold', 'movies_completed', 'shows_completed',
+			'movies_dropped', 'shows_dropped', 'movies_collection', 'shows_collection')
+		floppysync.delete_floppy_tables(clr_tables)
+		_progress('Syncing watchlist/watching/on-hold/etc')
+		sync_watch_list(forced=True)
+		_progress('Syncing collection')
+		sync_collection(forced=True)
+		sync_watchedProgress(forced=True, progress_callback=_progress)
+	finally:
+		dialog.close()
 	control.notification(title='Floppy', message='Forced Floppy Sync Complete')
 
 

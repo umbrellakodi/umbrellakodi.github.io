@@ -946,13 +946,27 @@ def sync_collection(activities=None, forced=False):
 
 def force_customSync():
 	if not control.yesnoDialog(control.lang(32056), '', ''): return
-	control.busy()
-	clr_custom = ('custom_watched_movies', 'custom_watched_episodes', 'movies_watchlist', 'shows_watchlist', 'movies_collection', 'shows_collection', 'watched')
-	customtraktsync.delete_custom_tables(clr_custom)
-	sync_watch_list(forced=True)
-	sync_collection(forced=True)
-	sync_watchedProgress(forced=True)
-	control.hide()
+	dialog = control.progressDialog
+	dialog.create(control.addonName(), 'Preparing %s sync...' % getCustomServiceName())
+	def _progress(phase, done=None, total=None):
+		try:
+			if done is not None and total:
+				dialog.update(min(int(100.0 * done / total), 100), '%s... (%s/%s)' % (phase, done, total))
+			elif done is not None:
+				dialog.update(0, '%s... (%s synced)' % (phase, done))
+			else:
+				dialog.update(0, '%s...' % phase)
+		except: pass
+	try:
+		clr_custom = ('custom_watched_movies', 'custom_watched_episodes', 'movies_watchlist', 'shows_watchlist', 'movies_collection', 'shows_collection', 'watched')
+		customtraktsync.delete_custom_tables(clr_custom)
+		_progress('Syncing watchlist')
+		sync_watch_list(forced=True)
+		_progress('Syncing collection')
+		sync_collection(forced=True)
+		sync_watchedProgress(forced=True, progress_callback=_progress)
+	finally:
+		dialog.close()
 	control.notification(title=getCustomServiceName(), message='Forced %s Sync Complete' % getCustomServiceName())
 
 

@@ -332,8 +332,12 @@ def _get_connection():
 	if not control.existsPath(control.dataPath):
 		control.makeFile(control.dataPath)
 	dbcon = db.connect(menuFile, timeout=60)
-	dbcon.execute('PRAGMA journal_mode = WAL')
-	dbcon.execute('PRAGMA synchronous = NORMAL')
+	try:
+		dbcon.execute('PRAGMA journal_mode = WAL')
+		dbcon.execute('PRAGMA synchronous = NORMAL')
+	except db.OperationalError:
+		dbcon.execute('PRAGMA journal_mode = OFF')
+		dbcon.execute('PRAGMA synchronous = OFF')
 	dbcon.execute('PRAGMA temp_store = memory')
 	dbcon.row_factory = lambda c, r: {col[0]: r[i] for i, col in enumerate(c.description)}
 	return dbcon

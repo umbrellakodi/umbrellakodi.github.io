@@ -191,7 +191,7 @@ msgid "Episode Lists"
 msgstr ""
 
 msgctxt "#32042"
-msgid "No Trakt, MDbList, or TMDb account found."
+msgid "No service provider or local indicators enabled."
 msgstr ""
 
 msgctxt "#32043"

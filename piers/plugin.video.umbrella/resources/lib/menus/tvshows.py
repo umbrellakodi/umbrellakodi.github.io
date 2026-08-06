@@ -1208,11 +1208,13 @@ class TVshows:
 			useNext = True
 			if create_directory:
 				self.sort()
-				if self.list:
+				if getSetting('floppy.paginate.lists') == 'true' and self.list:
 					if len(self.list) <= int(self.page_limit):
 						useNext = False
 					paginated_ids = [self.list[x:x + int(self.page_limit)] for x in range(0, len(self.list), int(self.page_limit))]
 					self.list = paginated_ids[index]
+				else:
+					useNext = False
 			try:
 				if useNext == False: raise Exception()
 				if len(self.list) < int(self.page_limit): raise Exception()
@@ -2481,7 +2483,7 @@ class TVshows:
 			self.sort(type='progress')
 			if self.list is None: self.list = []
 			next = ''
-			if self.list:
+			if getSetting('floppy.paginate.lists') == 'true' and self.list:
 				paginated_ids = [self.list[x:x + int(self.page_limit)] for x in range(0, len(self.list), int(self.page_limit))]
 				total_pages = len(paginated_ids)
 				self.list = paginated_ids[index] if index < total_pages else []
@@ -2563,7 +2565,7 @@ class TVshows:
 			self.sort(type='progress')
 			if self.list is None: self.list = []
 			next = ''
-			if self.list:
+			if getSetting('scrob.paginate.lists') == 'true' and self.list:
 				paginated_ids = [self.list[x:x + int(self.page_limit)] for x in range(0, len(self.list), int(self.page_limit))]
 				total_pages = len(paginated_ids)
 				self.list = paginated_ids[index] if index < total_pages else []
@@ -2624,8 +2626,7 @@ class TVshows:
 	def scrob_user_lists(self, create_directory=True, folderName=''):
 		self.list = []
 		try:
-			lists = scrob.get_lists_with_type('series')
-			if not lists: return self.list
+			lists = scrobsync.fetch_user_lists('series')
 			for lst in lists:
 				try:
 					list_id = lst.get('id')
@@ -2644,28 +2645,51 @@ class TVshows:
 		except:
 			log_utils.error()
 
-	def scrob_list_shows(self, list_id, folderName=''):
+	def scrob_list_shows(self, list_id, url=None, create_directory=True, folderName=''):
+		# Local-cache read + client-side pagination, same shape as floppyList() — Scrob's
+		# GET /lists/{id} has no server-side paging, so this slices scrobsync's locally
+		# cached copy of the list rather than re-fetching the whole thing from the API.
 		self.list = []
 		try:
-			items = scrob.get_list_items(list_id)
+			url = url or ('scroblistshows?list_id=%s&limit=%s&page=1' % (list_id, self.page_limit))
+			try:
+				q = dict(parse_qsl(urlsplit(url).query))
+				index = int(q.get('page', 1)) - 1
+			except:
+				index = 0
+			items = scrobsync.fetch_list_items(list_id, 'series')
 			for i in items:
 				try:
-					media = i.get('media') or {}
-					if media.get('type') != 'series': continue
 					values = {}
-					values['tmdb'] = str(media.get('tmdb_id') or '')
+					values['tmdb'] = i.get('tmdb', '')
 					values['imdb'] = ''
 					values['tvdb'] = ''
-					values['tvshowtitle'] = media.get('title', '')
+					values['tvshowtitle'] = i.get('title', '')
 					values['title'] = values['tvshowtitle']
-					values['year'] = str(media.get('release_date', '') or '')[:4]
+					values['year'] = i.get('year', '')
 					values['mediatype'] = 'tvshows'
-					values['next'] = ''
 					self.list.append(values)
 				except: log_utils.error()
+			useNext = True
+			if create_directory:
+				self.sort()
+				if getSetting('scrob.paginate.lists') == 'true' and self.list:
+					if len(self.list) <= int(self.page_limit):
+						useNext = False
+					paginated_ids = [self.list[x:x + int(self.page_limit)] for x in range(0, len(self.list), int(self.page_limit))]
+					self.list = paginated_ids[index]
+				else:
+					useNext = False
+			try:
+				if useNext == False: raise Exception()
+				next_page = index + 2
+				next = 'plugin://plugin.video.umbrella/?action=scrob_list_shows&list_id=%s&url=%s&folderName=%s' % (
+					list_id, quote_plus('scroblistshows?list_id=%s&limit=%s&page=%s' % (list_id, self.page_limit, next_page)), quote_plus(folderName))
+			except: next = ''
+			for i in range(len(self.list)): self.list[i]['next'] = next
 			if self.list is None: self.list = []
 			self.worker()
-			self.tvshowDirectory(self.list, next=False, folderName=folderName)
+			if create_directory: self.tvshowDirectory(self.list, next=bool(next), folderName=folderName)
 			return self.list
 		except:
 			log_utils.error()

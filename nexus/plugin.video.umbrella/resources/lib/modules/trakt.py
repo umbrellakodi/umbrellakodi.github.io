@@ -2006,24 +2006,41 @@ def delete_traktSyncDatabase():
 
 def force_traktSync():
 	if not control.yesnoDialog(getLS(32056), '', ''): return
-	control.busy()
-
-	# Run lightweight syncs in parallel (no internal threading, safe on low-end devices)
-	lightweight = [
-		Thread(target=sync_playbackProgress, kwargs={'forced': True}),
-		Thread(target=sync_hidden_progress, kwargs={'forced': True}),
-		Thread(target=sync_collection, kwargs={'forced': True}),
-		Thread(target=sync_watch_list, kwargs={'forced': True}),
-	]
-	[t.start() for t in lightweight]
-	[t.join() for t in lightweight]
-	# Thread-spawning functions run sequentially to cap concurrency on low-end devices
-	sync_user_lists(forced=True)
-	sync_liked_lists(forced=True)
-	sync_popular_lists()  # use TTL-based check — these are public lists, not user-specific
-	sync_trending_lists() # use TTL-based check — these are public lists, not user-specific
-	sync_watched(forced=True)
-	control.hide()
+	dialog = control.progressDialog
+	dialog.create(control.addonName(), 'Preparing Trakt sync...')
+	def _progress(phase, done=None, total=None):
+		try:
+			if done is not None and total:
+				dialog.update(min(int(100.0 * done / total), 100), '%s... (%s/%s)' % (phase, done, total))
+			elif done is not None:
+				dialog.update(0, '%s... (%s synced)' % (phase, done))
+			else:
+				dialog.update(0, '%s...' % phase)
+		except: pass
+	try:
+		# Run lightweight syncs in parallel (no internal threading, safe on low-end devices)
+		# — they run concurrently so only a single combined phase label is shown for this batch.
+		dialog.update(0, 'Syncing collection/watchlist/playback/hidden...')
+		lightweight = [
+			Thread(target=sync_playbackProgress, kwargs={'forced': True}),
+			Thread(target=sync_hidden_progress, kwargs={'forced': True}),
+			Thread(target=sync_collection, kwargs={'forced': True}),
+			Thread(target=sync_watch_list, kwargs={'forced': True}),
+		]
+		[t.start() for t in lightweight]
+		[t.join() for t in lightweight]
+		# Thread-spawning functions run sequentially to cap concurrency on low-end devices
+		dialog.update(20, 'Syncing user lists...')
+		sync_user_lists(forced=True)
+		dialog.update(35, 'Syncing liked lists...')
+		sync_liked_lists(forced=True)
+		dialog.update(50, 'Syncing popular lists...')
+		sync_popular_lists()  # use TTL-based check — these are public lists, not user-specific
+		dialog.update(60, 'Syncing trending lists...')
+		sync_trending_lists() # use TTL-based check — these are public lists, not user-specific
+		sync_watched(forced=True, progress_callback=_progress)
+	finally:
+		dialog.close()
 	control.trigger_widget_refresh() # refresh after watched sync, progress will refresh again when done
 	control.notification(message='Trakt Sync Complete - Progress List Updating...')
 	Thread(target=sync_watchedProgress, kwargs={'forced': True, 'trigger_refresh': True}).start()

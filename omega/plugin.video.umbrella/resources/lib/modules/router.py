@@ -338,7 +338,7 @@ def router(argv2):
 		movies.Movies().scrob_user_lists(folderName=folderName)
 	elif action == 'scrob_list_movies':
 		from resources.lib.menus import movies
-		movies.Movies().scrob_list_movies(params.get('list_id'), folderName=folderName)
+		movies.Movies().scrob_list_movies(params.get('list_id'), url=url, folderName=folderName)
 	elif action == 'mdbOfficialListMovies':
 		from resources.lib.menus import movies
 		movies.Movies().getMDBOfficialLists(folderName=folderName)
@@ -734,7 +734,7 @@ def router(argv2):
 		tvshows.TVshows().scrob_user_lists(folderName=folderName)
 	elif action == 'scrob_list_shows':
 		from resources.lib.menus import tvshows
-		tvshows.TVshows().scrob_list_shows(params.get('list_id'), folderName=folderName)
+		tvshows.TVshows().scrob_list_shows(params.get('list_id'), url=url, folderName=folderName)
 	elif action == 'local_calendar':
 		from resources.lib.menus import episodes
 		episodes.Episodes().local_calendar(url, folderName=folderName)

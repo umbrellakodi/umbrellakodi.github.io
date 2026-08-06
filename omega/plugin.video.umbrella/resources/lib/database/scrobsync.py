@@ -66,6 +66,81 @@ def delete_scrob_tables(tables):
 		try: dbcon.close()
 		except: pass
 
+#User-created custom lists (List/ListItem) — full-overwrite local cache, mirroring floppysync.py's
+#status-bucket shape, but keyed by list_id instead of one table per bucket since Scrob's lists are
+#arbitrary and user-named rather than a fixed Watchlist/Watching/etc set. No activity/last-modified
+#signal exists for this endpoint (unlike Trakt), so this is polled on scrob_syncInterval and always
+#fully replaced rather than incrementally diffed.
+
+def fetch_user_lists(media_type):
+	result = []
+	try:
+		dbcon = get_connection()
+		dbcur = get_connection_cursor(dbcon)
+		ck_table = dbcur.execute('''SELECT * FROM sqlite_master WHERE type='table' AND name='scrob_lists';''').fetchone()
+		if not ck_table: return result
+		match = dbcur.execute('''SELECT list_id, list_name, COUNT(*) FROM scrob_lists WHERE media_type=? GROUP BY list_id, list_name''', (media_type,)).fetchall()
+		result = [{'id': i[0], 'name': i[1], 'item_count': i[2]} for i in match]
+	except:
+		from resources.lib.modules import log_utils
+		log_utils.error()
+	finally:
+		try: dbcur.close()
+		except: pass
+		try: dbcon.close()
+		except: pass
+	return result
+
+def fetch_list_items(list_id, media_type):
+	result = []
+	try:
+		dbcon = get_connection()
+		dbcur = get_connection_cursor(dbcon)
+		ck_table = dbcur.execute('''SELECT * FROM sqlite_master WHERE type='table' AND name='scrob_lists';''').fetchone()
+		if not ck_table: return result
+		match = dbcur.execute('''SELECT title, year, tmdb, item_id, listed_at FROM scrob_lists WHERE list_id=? AND media_type=?''', (str(list_id), media_type)).fetchall()
+		result = [{'title': i[0], 'year': i[1], 'tmdb': i[2], 'item_id': i[3], 'listed_at': i[4]} for i in match]
+	except:
+		from resources.lib.modules import log_utils
+		log_utils.error()
+	finally:
+		try: dbcur.close()
+		except: pass
+		try: dbcon.close()
+		except: pass
+	return result
+
+def insert_user_lists(rows):
+	# rows: [{'list_id','list_name','item_id','tmdb','title','year','media_type','listed_at'}, ...]
+	# Always a full replace — see module-level comment above for why (no activity signal to diff against).
+	try:
+		dbcon = get_connection()
+		dbcur = get_connection_cursor(dbcon)
+		dbcur.execute('''CREATE TABLE IF NOT EXISTS scrob_lists (list_id TEXT, list_name TEXT, item_id TEXT, tmdb TEXT, title TEXT, year TEXT, media_type TEXT, listed_at TEXT, UNIQUE(list_id, tmdb, media_type));''')
+		dbcur.execute('''DELETE FROM scrob_lists''')
+		dbcur.connection.commit()
+		for r in rows:
+			try:
+				dbcur.execute('''INSERT OR REPLACE INTO scrob_lists Values (?, ?, ?, ?, ?, ?, ?, ?)''',
+					(r['list_id'], r['list_name'], r['item_id'], r['tmdb'], r['title'], r['year'], r['media_type'], r['listed_at']))
+			except:
+				from resources.lib.modules import log_utils
+				log_utils.error()
+		dbcur.execute('''CREATE TABLE IF NOT EXISTS service (setting TEXT, value TEXT, UNIQUE(setting));''')
+		timestamp = datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%S.000Z")
+		dbcur.execute('''INSERT OR REPLACE INTO service Values (?, ?)''', ('last_lists_sync_at', timestamp))
+		dbcur.connection.commit()
+		dbcur.execute('''VACUUM''')
+	except:
+		from resources.lib.modules import log_utils
+		log_utils.error()
+	finally:
+		try: dbcur.close()
+		except: pass
+		try: dbcon.close()
+		except: pass
+
+
 def last_sync(type):
 	last_sync_at = 0
 	try:

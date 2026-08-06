@@ -1277,7 +1277,7 @@ class Episodes:
 				self.list = [i for i in self.list if i.get('unaired', '') != 'true']
 			next_url = ''
 			hasNext = False
-			if self.list:
+			if getSetting('floppy.paginate.lists') == 'true' and self.list:
 				paginated_ids = [self.list[x:x + page_limit] for x in range(0, len(self.list), page_limit)]
 				total_pages = len(paginated_ids)
 				self.list = paginated_ids[index] if index < total_pages else []
@@ -1457,7 +1457,7 @@ class Episodes:
 			self.list = [i for i in self.list if i.get('unaired', '') != 'true']
 			next_url = ''
 			hasNext = False
-			if self.list:
+			if getSetting('scrob.paginate.lists') == 'true' and self.list:
 				paginated_ids = [self.list[x:x + page_limit] for x in range(0, len(self.list), page_limit)]
 				total_pages = len(paginated_ids)
 				self.list = paginated_ids[index] if index < total_pages else []

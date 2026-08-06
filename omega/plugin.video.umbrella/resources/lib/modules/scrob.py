@@ -261,7 +261,7 @@ def scrobRevoke(fromSettings=0):
 	setSetting('scrob.isauthed', '')
 	control.homeWindow.setProperty('umbrella.updateSettings', 'true')
 	try:
-		scrobsync.delete_scrob_tables(('bookmarks', 'scrob_watched_movies', 'scrob_watched_episodes'))
+		scrobsync.delete_scrob_tables(('bookmarks', 'scrob_watched_movies', 'scrob_watched_episodes', 'scrob_lists'))
 		if getSetting('indicators.alt') == '6':
 			setSetting('indicators.alt', '0')
 			setSetting('indicators', 'Local')
@@ -810,10 +810,24 @@ def sync_playbackProgress(activities=None, forced=False):
 
 def force_scrobSync():
 	if not control.yesnoDialog(control.lang(32056), '', ''): return
-	control.busy()
-	scrobsync.delete_scrob_tables(('scrob_watched_movies', 'scrob_watched_episodes'))
-	sync_watchedProgress(forced=True)
-	control.hide()
+	dialog = control.progressDialog
+	dialog.create(control.addonName(), 'Preparing Scrob sync...')
+	def _progress(phase, done=None, total=None):
+		try:
+			if done is not None and total:
+				dialog.update(min(int(100.0 * done / total), 100), '%s... (%s/%s)' % (phase, done, total))
+			elif done is not None:
+				dialog.update(0, '%s... (%s synced)' % (phase, done))
+			else:
+				dialog.update(0, '%s...' % phase)
+		except: pass
+	try:
+		scrobsync.delete_scrob_tables(('scrob_watched_movies', 'scrob_watched_episodes', 'scrob_lists'))
+		sync_watchedProgress(forced=True, progress_callback=_progress)
+		_progress('Syncing user lists')
+		sync_user_lists(forced=True)
+	finally:
+		dialog.close()
 	control.notification(title='Scrob', message='Forced Scrob Sync Complete')
 
 
@@ -1089,24 +1103,40 @@ def get_list_items(list_id):
 		log_utils.error()
 		return []
 
-def get_lists_with_type(media_type):
-	# /lists only returns a total item_count (mixed movies/shows) - to show only lists
-	# relevant to a given section (My Movies vs My TV Shows) we have to check each
-	# list's actual items and filter/re-count by type ourselves.
+def sync_user_lists(forced=False):
+	# Locally caches every list's items (movies_watched()'s "same local-history pagination
+	# shape" reasoning applies here too) — get_lists_with_type()/get_list_items() were being
+	# called live, once per list, on every single "My Movies/My TV Shows > Scrob" folder open,
+	# which is what made those views noticeably slower than Floppy's/Trakt's equivalent lists
+	# (both already locally cached). No activity/last-modified endpoint exists for /lists, so
+	# this is a full poll-and-replace on scrob_syncInterval, same as sync_watchedProgress().
 	try:
-		matches = []
-		for lst in get_lists():
-			list_id = lst.get('id')
-			if list_id is None: continue
-			count = sum(1 for item in get_list_items(list_id) if (item.get('media') or {}).get('type') == media_type)
-			if count:
-				lst = dict(lst)
-				lst['item_count'] = count
-				matches.append(lst)
-		return matches
-	except:
-		log_utils.error()
-		return []
+		if not getScrobCredentialsInfo(): return
+		rows = []
+		lists = get_lists()
+		for lst in lists:
+			try:
+				list_id = lst.get('id')
+				if list_id is None: continue
+				list_name = lst.get('name', '')
+				for item in get_list_items(list_id):
+					try:
+						media = item.get('media') or {}
+						media_type = media.get('type')
+						if media_type not in ('movie', 'series'): continue
+						tmdb = str(media.get('tmdb_id') or '')
+						if not tmdb: continue
+						rows.append({
+							'list_id': str(list_id), 'list_name': list_name, 'item_id': str(item.get('id') or ''),
+							'tmdb': tmdb, 'title': media.get('title', '') or '',
+							'year': str(media.get('release_date', '') or '')[:4],
+							'media_type': media_type, 'listed_at': item.get('added_at') or item.get('created_at') or '',
+						})
+					except: log_utils.error()
+			except: log_utils.error()
+		scrobsync.insert_user_lists(rows)
+		log_utils.log('SCROB: user lists sync — %s lists, %s items cached' % (len(lists), len(rows)), level=log_utils.LOGINFO)
+	except: log_utils.error()
 
 def get_lists_containing(tmdb, media_type):
 	try:
