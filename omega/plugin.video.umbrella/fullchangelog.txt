@@ -1,3 +1,6 @@
+[B]Update - v6.7.662 - August 7th, 2026 [/B]
+--[Change] Change to help scrob only count as one watch after long pauses.
+
 [B]Update - v6.7.661 - August 5th, 2026 [/B]
 --[Change] Changes made to avoid double scrobble on Scrob and Floppy.
 
