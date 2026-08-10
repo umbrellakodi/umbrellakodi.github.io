@@ -1202,10 +1202,14 @@ class TVshows:
 				try:
 					list_id = customtrakt.list_numeric_id(lst)
 					if not list_id: continue
+					# No cached content-type metadata (see get_user_lists()), so the only
+					# reliable way to know if this list has any shows is to fetch its
+					# items and check — same live fetch customListShows() would do anyway.
+					count = sum(1 for i in customtrakt.get_list_items(list_id) if i.get('show'))
+					if not count: continue
 					name = lst.get('name', '')
-					count = lst.get('item_count', '')
 					values = {
-						'name': '%s (%s)' % (name, count) if count != '' else name,
+						'name': '%s (%s)' % (name, count),
 						'action': 'custom_list_shows&list_id=%s' % quote_plus(list_id),
 						'image': 'icon.png', 'icon': 'DefaultVideoPlaylists.png', 'url': '',
 					}

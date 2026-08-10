@@ -1,2 +1,2 @@
-[B]Update - v6.7.663 - August 10th, 2026 [/B]
---[Change] Support for lists.
+[B]Update - v6.7.664 - August 10th, 2026 [/B]
+--[Change] Filter custom user lists by type.
