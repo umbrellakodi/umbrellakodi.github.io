@@ -1248,9 +1248,12 @@ class TVshows:
 			if create_directory:
 				self.sort()
 				if getSetting('custom.paginate.lists') == 'true' and self.list:
-					if len(self.list) <= int(self.page_limit): useNext = False
 					paginated_ids = [self.list[x:x + int(self.page_limit)] for x in range(0, len(self.list), int(self.page_limit))]
-					self.list = paginated_ids[index]
+					# useNext must reflect whether there's a page AFTER this one, not just
+					# whether the list needed paginating at all — checking total length
+					# against page_limit alone left the button showing on the last page too.
+					if index >= len(paginated_ids) - 1: useNext = False
+					self.list = paginated_ids[index] if index < len(paginated_ids) else []
 				else: useNext = False
 			try:
 				if useNext == False: raise Exception()
