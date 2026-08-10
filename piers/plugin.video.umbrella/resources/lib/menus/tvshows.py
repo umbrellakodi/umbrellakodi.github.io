@@ -3353,6 +3353,7 @@ class TVshows:
 				if 'imdb.com' in url and 'start' in url_params:
 					page = '  [I](%s)[/I]' % str(int(((int(url_params.get('start')) - 1) / int(self.page_limit)) + 1))
 				else: page = '  [I](%s)[/I]' % url_params.get('page')
+				if 'None' in page: page = page.split('  [I]')[0]
 				nextColor = '[COLOR %s]' % getSetting('highlight.color')
 				nextMenu = nextColor + nextMenu + page + '[/COLOR]'
 				u = urlparse(url).netloc.lower()

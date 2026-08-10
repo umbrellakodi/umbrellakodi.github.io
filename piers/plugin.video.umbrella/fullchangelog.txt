@@ -1,3 +1,6 @@
+[B]Update - v6.7.66 - August 10th, 2026 [/B]
+--[Change] Fixed pagination showing Next Page (None)
+
 [B]Update - v6.7.664 - August 10th, 2026 [/B]
 --[Change] Filter custom user lists by type.
 
