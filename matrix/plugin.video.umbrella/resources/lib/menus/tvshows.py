@@ -1193,6 +1193,80 @@ class TVshows:
 		except:
 			log_utils.error()
 
+	def customUserlists(self, create_directory=True, folderName=''):
+		self.list = []
+		try:
+			if not self.customCredentials: raise Exception()
+			lists = customtrakt.get_user_lists()
+			for lst in lists:
+				try:
+					list_id = customtrakt.list_numeric_id(lst)
+					if not list_id: continue
+					name = lst.get('name', '')
+					count = lst.get('item_count', '')
+					values = {
+						'name': '%s (%s)' % (name, count) if count != '' else name,
+						'action': 'custom_list_shows&list_id=%s' % quote_plus(list_id),
+						'image': 'icon.png', 'icon': 'DefaultVideoPlaylists.png', 'url': '',
+					}
+					self.list.append(values)
+				except: pass
+		except: pass
+		if create_directory: self.addDirectory(self.list, folderName=folderName)
+		return self.list
+
+	def customListShows(self, list_id, url=None, create_directory=True, folderName=''):
+		# Custom's user-list items are always live-fetched via get_all_pages(), never
+		# locally cached, so this slices the freshly fetched full list client-side —
+		# same pagination shape as customCollection()/customWatchlist() above.
+		self.list = []
+		try:
+			url = url or ('customlistshows?list_id=%s&limit=%s&page=1' % (list_id, self.page_limit))
+			try:
+				q = dict(parse_qsl(urlsplit(url).query))
+				index = int(q.get('page', 1)) - 1
+			except:
+				index = 0
+			items = customtrakt.get_list_items(list_id)
+			for i in items:
+				try:
+					show = i.get('show')
+					if not show: continue
+					ids = show.get('ids', {}) or {}
+					tvshowtitle = show.get('title', '')
+					self.list.append({
+						'tvshowtitle': tvshowtitle, 'title': tvshowtitle, 'year': str(show.get('year', '') or ''),
+						'imdb': ids.get('imdb', ''), 'tmdb': str(ids.get('tmdb', '') or ''), 'tvdb': str(ids.get('tvdb', '') or ''),
+						'premiered': (show.get('first_aired', '') or '').split('T')[0],
+					})
+				except: pass
+			useNext = True
+			if create_directory:
+				self.sort()
+				if getSetting('custom.paginate.lists') == 'true' and self.list:
+					if len(self.list) <= int(self.page_limit): useNext = False
+					paginated_ids = [self.list[x:x + int(self.page_limit)] for x in range(0, len(self.list), int(self.page_limit))]
+					self.list = paginated_ids[index]
+				else: useNext = False
+			try:
+				if useNext == False: raise Exception()
+				next_page = index + 2
+				next = 'plugin://plugin.video.umbrella/?action=custom_list_shows&list_id=%s&url=%s&folderName=%s' % (
+					quote_plus(list_id), quote_plus('customlistshows?list_id=%s&limit=%s&page=%s' % (list_id, self.page_limit, next_page)), quote_plus(folderName))
+			except: next = ''
+			for i in range(len(self.list)): self.list[i]['next'] = next
+			before_titles = [x.get('title') for x in self.list]
+			self.worker()
+			if self.list is None: self.list = []
+			after_titles = [x.get('title') for x in self.list]
+			if len(after_titles) != len(before_titles):
+				dropped = [t for t in before_titles if t not in after_titles]
+				log_utils.log('CUSTOM: customListShows(%s) worker() dropped %d item(s) with no resolvable tmdb id: %s' % (list_id, len(dropped), dropped), level=log_utils.LOGWARNING)
+			if create_directory: self.tvshowDirectory(self.list, folderName=folderName)
+			return self.list
+		except:
+			log_utils.error()
+
 	def floppyList(self, url, table, action, isCollection=False, create_directory=True, folderName=''):
 		# Generic Watchlist/Watching/On Hold/Completed/Dropped/Collection list, mirroring
 		# customWatchlist()/customCollection() above.

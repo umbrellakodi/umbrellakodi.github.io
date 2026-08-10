@@ -168,7 +168,10 @@ def get_all_pages(url, silent=False):
 			if isinstance(page_results, dict):
 				# Some endpoints likely wrap results (e.g. {"items": [...], "pagination": {...}}) —
 				# unwrap the first list-valued field found, matching the confirmed pagination shape.
-				page_results = next((v for v in page_results.values() if isinstance(v, list)), [])
+				unwrapped = next((v for v in page_results.values() if isinstance(v, list)), None)
+				if unwrapped is None:
+					log_utils.log('CUSTOM: get_all_pages page %d: dict response with no list-valued field (keys=%s) url=%s' % (page, list(page_results.keys()), page_url), level=log_utils.LOGWARNING)
+				page_results = unwrapped if unwrapped is not None else []
 			if not page_results:
 				if page == 1: return page_results if page_results is not None else []
 				break
@@ -1010,6 +1013,82 @@ def remove_from_collection(imdb='', tmdb='', tvdb='', media_type='movie'):
 		return False
 
 
+#### User Lists (GET/POST /users/me/lists[/{slug}/items[/remove]]) ####
+# Endpoint shapes aren't in the confirmed OpenAPI spec — assumed to mirror Trakt's own
+# user-list contract exactly, consistent with every other assumption in this module.
+
+def get_user_lists():
+	# Not paginated via get_all_pages(): the server doesn't honor page/limit on this
+	# endpoint (it returns the full, un-paginated list every call), which made
+	# get_all_pages loop until its safety cap, repeating the same lists hundreds of
+	# times. A "list of lists" is small by nature, so a single plain fetch is correct.
+	try:
+		result = getCustomAsJson('/users/me/lists', silent=True)
+		if not result: return []
+		if isinstance(result, dict):
+			result = next((v for v in result.values() if isinstance(v, list)), [])
+		return result or []
+	except:
+		log_utils.error()
+		return []
+
+def get_list_items(list_id):
+	# Not paginated via get_all_pages(): same non-paginating behavior confirmed on
+	# /users/me/lists (see get_user_lists() above) — this endpoint also ignores
+	# page/limit and returns the full item set every call, so a single plain fetch
+	# is both correct and avoids repeating the same items until the safety cap.
+	try:
+		items = getCustomAsJson('/users/me/lists/%s/items' % list_id, silent=True)
+		if isinstance(items, dict):
+			items = next((v for v in items.values() if isinstance(v, list)), [])
+		items = items or []
+	except:
+		log_utils.error()
+		items = []
+	if items:
+		try:
+			sample_keys = list(items[0].keys()) if isinstance(items[0], dict) else type(items[0]).__name__
+			log_utils.log('CUSTOM: get_list_items(%s): %d raw items, first item keys=%s' % (list_id, len(items), sample_keys), level=log_utils.LOGDEBUG)
+		except: pass
+	else:
+		log_utils.log('CUSTOM: get_list_items(%s): 0 raw items returned' % list_id, level=log_utils.LOGWARNING)
+	return items
+
+def create_list(name):
+	try:
+		result = getCustom('/users/me/lists', post={'name': name, 'privacy': 'private'})
+		if not result: return None
+		return list_numeric_id(result.json())
+	except:
+		log_utils.error()
+		return None
+
+def list_numeric_id(lst):
+	# The items/add/remove endpoints require the list's numeric id (path parsing fails
+	# with 422 "unable to parse string as an integer" if given the slug) — unlike real
+	# Trakt, which accepts either. ids.trakt mirrors Trakt's own {trakt, slug} shape;
+	# ids.id is a fallback in case this clone names the numeric field differently.
+	try:
+		ids = (lst or {}).get('ids', {}) or {}
+		return str(ids.get('trakt') or ids.get('id') or '') or None
+	except:
+		return None
+
+def add_to_list(list_id, imdb='', tmdb='', tvdb='', media_type='movie'):
+	try:
+		return bool(getCustomAsJson('/users/me/lists/%s/items' % list_id, _media_post(imdb, tmdb, tvdb, media_type)))
+	except:
+		log_utils.error()
+		return False
+
+def remove_from_list(list_id, imdb='', tmdb='', tvdb='', media_type='movie'):
+	try:
+		return bool(getCustomAsJson('/users/me/lists/%s/items/remove' % list_id, _media_post(imdb, tmdb, tvdb, media_type)))
+	except:
+		log_utils.error()
+		return False
+
+
 #### Context-menu manager (mirrors simkl.manager()/mdblist.manager() ####
 
 def manager(name, imdb=None, tvdb=None, tmdb=None, season=None, episode=None, refresh=True, watched=None, unfinished=False, tvshow=None):
@@ -1035,6 +1114,8 @@ def manager(name, imdb=None, tvdb=None, tmdb=None, season=None, episode=None, re
 			items += [(getLS(40747) % hc, 'watchlist_remove')]
 			items += [(getLS(40748) % hc, 'collection_add')]
 			items += [(getLS(40749) % hc, 'collection_remove')]
+			items += [('[COLOR %s]Add to List[/COLOR]' % hc, 'list_add')]
+			items += [('[COLOR %s]Remove from List[/COLOR]' % hc, 'list_remove')]
 		control.hide()
 		select = control.selectDialog([i[0] for i in items], heading=control.addonInfo('name') + ' - ' + getLS(40752) % getCustomServiceName())
 		if select == -1: return
@@ -1061,4 +1142,36 @@ def manager(name, imdb=None, tvdb=None, tmdb=None, season=None, episode=None, re
 			if remove_from_collection(imdb=imdb, tmdb=tmdb, tvdb=tvdb, media_type=media_type):
 				sync_collection(forced=True)
 				if refresh: control.refresh()
+		elif action_key == 'list_add':
+			lists = get_user_lists()
+			options = [l.get('name', '') for l in lists] + ['[COLOR %s]+ New List[/COLOR]' % hc]
+			list_select = control.selectDialog(options, heading=control.addonInfo('name') + ' - %s Lists' % getCustomServiceName())
+			if list_select == -1: return
+			if list_select == len(lists):
+				new_name = control.dialog.input(getLS(32520))
+				if not new_name: return
+				slug = create_list(new_name)
+				if not slug:
+					control.notification(title=getCustomServiceName(), message='Failed to create list')
+					return
+			else:
+				slug = list_numeric_id(lists[list_select])
+			if slug and add_to_list(slug, imdb=imdb, tmdb=tmdb, tvdb=tvdb, media_type=media_type):
+				control.notification(title=getCustomServiceName(), message='Added to list')
+				if refresh: control.refresh()
+			else:
+				control.notification(title=getCustomServiceName(), message='Failed to add to list')
+		elif action_key == 'list_remove':
+			lists = get_user_lists()
+			if not lists:
+				control.notification(title=getCustomServiceName(), message='No lists found')
+				return
+			list_select = control.selectDialog([l.get('name', '') for l in lists], heading=control.addonInfo('name') + ' - Remove From List')
+			if list_select == -1: return
+			slug = list_numeric_id(lists[list_select])
+			if slug and remove_from_list(slug, imdb=imdb, tmdb=tmdb, tvdb=tvdb, media_type=media_type):
+				control.notification(title=getCustomServiceName(), message='Removed from list')
+				if refresh: control.refresh()
+			else:
+				control.notification(title=getCustomServiceName(), message='Failed to remove from list')
 	except: log_utils.error()

@@ -137,6 +137,7 @@ _MYMOVIES_CUSTOM_DEFAULTS = [
 	('mymv_custom_collection','40737', 'custom_movies_collection&url=custommoviescollection', 'icon.png',   'icon.png',      1, 1, 1,  1, 0, 'custom_token',           0, None),
 	('mymv_custom_unfinished','40741', 'custom_movies_unfinished&url=custommoviesunfinished', 'icon.png',   'icon.png',      1, 1, 1,  2, 0, 'custom_with_indicators', 1, '35308'),
 	('mymv_custom_watched',   '40745', 'custom_movies_watched&url=custommovieswatched',       'icon.png',   'icon.png',      1, 1, 1,  3, 0, 'custom_with_indicators', 1, None),
+	('mymv_custom_userlists', '40782', 'custom_movies_userlists',                             'icon.png',   'icon.png',      1, 1, 1,  4, 0, 'custom_token',           1, None),
 ]
 
 _MYMOVIES_TMDB_DEFAULTS = [
@@ -218,6 +219,7 @@ _MYTVSHOWS_CUSTOM_DEFAULTS = [
 	('mytv_custom_cal_upcoming','40743','custom_calendar_upcoming&url=customcalendarupcoming',   'icon.png',      'icon.png',      1, 1, 1,  7, 0, 'custom_with_indicators', 1, '32203'),
 	('mytv_custom_cal_premiers','40744','custom_calendar_premieres&url=customcalendarpremieres', 'icon.png',      'icon.png',      1, 1, 1,  8, 0, 'custom_with_indicators', 1, '32204'),
 	('mytv_custom_upcoming',   '40753', 'custom_upcoming_progress&url=customupcomingprogress',   'icon.png',      'icon.png',      1, 1, 1,  9, 0, 'custom_with_indicators', 1, '32019'),
+	('mytv_custom_userlists',  '40782', 'custom_shows_userlists',                                'icon.png',      'icon.png',      1, 1, 1, 10, 0, 'custom_token',           1, None),
 ]
 
 _MYTVSHOWS_TMDB_DEFAULTS = [

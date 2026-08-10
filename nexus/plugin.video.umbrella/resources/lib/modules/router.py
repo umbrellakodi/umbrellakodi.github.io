@@ -306,6 +306,12 @@ def router(argv2):
 	elif action == 'custom_movies_collection':
 		from resources.lib.menus import movies
 		movies.Movies().customCollection(url, folderName=folderName)
+	elif action == 'custom_movies_userlists':
+		from resources.lib.menus import movies
+		movies.Movies().customUserlists(folderName=folderName, create_directory=True)
+	elif action == 'custom_list_movies':
+		from resources.lib.menus import movies
+		movies.Movies().customListMovies(params.get('list_id'), url=url, folderName=folderName)
 	elif action == 'floppy_movies_watching':
 		from resources.lib.menus import movies
 		movies.Movies().floppyList(url, 'movies_watching', 'floppy_movies_watching', folderName=folderName)
@@ -357,6 +363,12 @@ def router(argv2):
 	elif action == 'custom_shows_collection':
 		from resources.lib.menus import tvshows
 		tvshows.TVshows().customCollection(url, folderName=folderName)
+	elif action == 'custom_shows_userlists':
+		from resources.lib.menus import tvshows
+		tvshows.TVshows().customUserlists(folderName=folderName, create_directory=True)
+	elif action == 'custom_list_shows':
+		from resources.lib.menus import tvshows
+		tvshows.TVshows().customListShows(params.get('list_id'), url=url, folderName=folderName)
 	elif action == 'floppy_shows_watching':
 		from resources.lib.menus import tvshows
 		tvshows.TVshows().floppyList(url, 'shows_watching', 'floppy_shows_watching', folderName=folderName)

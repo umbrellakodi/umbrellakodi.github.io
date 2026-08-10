@@ -1,3 +1,6 @@
+[B]Update - v6.7.663 - August 10th, 2026 [/B]
+--[Change] Support for lists.
+
 [B]Update - v6.7.662 - August 7th, 2026 [/B]
 --[Change] Change to help scrob only count as one watch after long pauses.
 

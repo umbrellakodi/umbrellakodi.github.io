@@ -1,4 +1,4 @@
-<addon id="plugin.video.umbrella" name="Umbrella" provider-name="Umbrella" version="6.7.662">
+<addon id="plugin.video.umbrella" name="Umbrella" provider-name="Umbrella" version="6.7.663">
 	<requires>
 		<import addon="xbmc.python" version="3.0.0" />
 		<import addon="script.module.requests" />
@@ -261,8 +261,8 @@
 			<screenshot>resources/screenshots/screenshot003.jpg</screenshot>
 		</assets>
 		<news>
-[B]Update - v6.7.662 - August 7th, 2026 [/B]
---[Change] Change to help scrob only count as one watch after long pauses.
+[B]Update - v6.7.663 - August 10th, 2026 [/B]
+--[Change] Support for lists.
 		</news>
 	</extension>
 

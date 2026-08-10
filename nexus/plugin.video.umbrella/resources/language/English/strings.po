@@ -6055,3 +6055,7 @@ msgstr ""
 msgctxt "#40781"
 msgid "User Lists (Scrob)"
 msgstr ""
+
+msgctxt "#40782"
+msgid "User Lists (Custom)"
+msgstr ""
