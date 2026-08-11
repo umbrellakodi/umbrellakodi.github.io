@@ -348,8 +348,12 @@ def services_syncs():
 				from resources.lib.modules import log_utils
 				log_utils.log('MDBList Sync Service is running.', 1)
 				if not control.monitor.abortRequested():
-					if getSetting('indicators.alt') == '3':
-						mdblist.sync_watchedProgress(activities)
+					# Unconditional like Trakt/Custom/Floppy's equivalents — this feeds
+					# mdb_watched_episodes, which the MDBList Episode Progress widget reads
+					# from regardless of whether MDBList is the active indicators source.
+					# Gating it behind indicators.alt=='3' left that table stale for anyone
+					# using the widget with a different indicators source selected.
+					mdblist.sync_watchedProgress(activities)
 					mdblist.sync_watch_list(activities)
 					mdblist.sync_collection(activities)
 					mdblist.sync_dropped(activities)

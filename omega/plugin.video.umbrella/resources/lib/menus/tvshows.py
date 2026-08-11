@@ -685,20 +685,23 @@ class TVshows:
 							# Some providers' raw timestamps don't match either expected
 							# format (e.g. an unexpected double-fraction like
 							# "...25.000.000Z") — never let one bad value crash sorting
-							# for the whole list.
-							try:
-								return time.strptime(lp, "%Y-%m-%dT%H:%M:%S.%fZ")
-							except ValueError:
-								pass
-							try:
-								return time.strptime(lp, "%Y-%m-%dT%H:%M:%SZ")
-							except ValueError:
-								return time.gmtime(0)
+							# for the whole list. Scrob's own /history timestamps come
+							# through with no trailing "Z" at all (Python's raw
+							# datetime.isoformat() shape, e.g. "...21:35:47.759746"),
+							# which silently fell back to epoch for every Scrob show and
+							# made its progress list sort in essentially arbitrary order.
+							for fmt in ("%Y-%m-%dT%H:%M:%S.%fZ", "%Y-%m-%dT%H:%M:%SZ", "%Y-%m-%dT%H:%M:%S.%f", "%Y-%m-%dT%H:%M:%S"):
+								try: return time.strptime(lp, fmt)
+								except ValueError: continue
+							return time.gmtime(0)
 						self.list = sorted(self.list, key=_parse_lastplayed, reverse=reverse)
 			elif reverse:
 				self.list = list(reversed(self.list))
+			if type == 'progress':
+				log_utils.log('SHOWPROGRESS[ORDER]: attribute=%s reverse=%s order=%s' % (
+					attribute, reverse, [(x.get('tvshowtitle', x.get('title', '')), x.get('imdb', ''), x.get('tmdb', ''), x.get('lastplayed', '')) for x in self.list]), level=log_utils.LOGDEBUG)
 		except:
-			
+
 			log_utils.error()
 
 	def imdb_sort(self, type='shows'):
@@ -2282,28 +2285,63 @@ class TVshows:
 	def simkl_progress(self, url, folderName=''):
 		self.list = []
 		try:
+			try:
+				q = dict(parse_qsl(urlsplit(url).query)) if url and '?' in url else {}
+				index = int(q.get('page', 1)) - 1
+			except:
+				index = 0
 			cache.get(self.simkl_tvshow_progress, 0, folderName)
 			self.sort(type='progress')
 			if self.list is None: self.list = []
+			next_url = ''
 			hasNext = False
+			if getSetting('simkl.paginate.lists') == 'true' and self.list:
+				paginated_ids = [self.list[x:x + int(self.page_limit)] for x in range(0, len(self.list), int(self.page_limit))]
+				total_pages = len(paginated_ids)
+				self.list = paginated_ids[index] if index < total_pages else []
+				try:
+					if index + 1 >= total_pages: raise Exception()
+					next_page = index + 2
+					next_url = 'plugin://plugin.video.umbrella/?action=simkl_shows_progress&url=%s&folderName=%s' % (
+						quote_plus('simklshowsprogress?limit=%s&page=%s' % (self.page_limit, next_page)), quote_plus(folderName))
+					hasNext = True
+				except: pass
+			for i in range(len(self.list)): self.list[i]['next'] = next_url
 			self.tvshowDirectory(self.list, next=hasNext, isProgress=True, folderName=folderName)
 			return self.list
 		except:
-			
+
 			log_utils.error()
 			if not self.list:
 				control.hide()
 				if self.notifications and self.is_widget != True: control.notification(title=32326, message=33049)
     
 	def simkl_tvshow_progress(self, create_directory=True, folderName=''):
+		# Simkl treats anime as a separate content bucket from "shows" (see
+		# simkl_anime_list()'s dedicated anime discover endpoints) — querying only
+		# /sync/all-items/shows/watching silently excluded every in-progress anime title.
 		self.list = []
 		try:
-			url = 'https://api.simkl.com/sync/all-items/shows/watching'
-			self.list = self.simkl_list(url, folderName)
+			shows = self.simkl_list('https://api.simkl.com/sync/all-items/shows/watching', folderName) or []
+			anime = self.simkl_list('https://api.simkl.com/sync/all-items/anime/watching', folderName) or []
+			log_utils.log('SIMKL_ANIME_DEBUG: shows=%d anime=%d anime_titles=%s' % (
+				len(shows), len(anime), [a.get('tvshowtitle') for a in anime]), level=log_utils.LOGDEBUG)
+			self.list = shows + anime
 			next = ''
 			for i in range(len(self.list)): self.list[i]['next'] = next
 			self.worker()
 			if self.list is None: self.list = []
+			try:
+				from resources.lib.database import simklsync as _simklsync
+				dropped = _simklsync.fetch_dropped('shows_dropped')
+				if dropped:
+					dropped_tmdb = {str(i['tmdb']) for i in dropped if i.get('tmdb')}
+					dropped_imdb = {str(i['imdb']) for i in dropped if i.get('imdb')}
+					self.list = [i for i in self.list if not (
+						(i.get('tmdb') and str(i['tmdb']) in dropped_tmdb) or
+						(i.get('imdb') and str(i['imdb']) in dropped_imdb)
+					)]
+			except: pass
 			#if create_directory: self.tvshowDirectory(self.list)
 		except:
 
@@ -2347,41 +2385,43 @@ class TVshows:
 				if self.notifications and self.is_widget != True: control.notification(title=32326, message=33049)
 
 	def mdblist_tvshow_progress(self, create_directory=True, folderName=''):
+		# Local reconstruction from the synced watched-episode set, mirroring
+		# floppy_tvshow_progress()/scrob_tvshow_progress() above — NOT mdblist.get_up_next()
+		# (MDBList's own live /upnext endpoint), which is documented as unreliable for
+		# out-of-order watching (see mdblist.py get_calendar()'s comment) and was already
+		# swapped out for this same local reconstruction on the episode-level progress list
+		# (mdblist_progress_list() in episodes.py) — the show-level list never got that fix,
+		# which is why its ordering/inclusion diverged from Trakt/Scrob/Floppy.
 		self.list = []
 		try:
-			items = mdblist.get_up_next()
-			if not items: return self.list
-			next = ''
-			for item in items:
+			from resources.lib.database import mdbsync as _mdbsync
+			indicators = mdblist.syncTVShows()
+			if not indicators: return self.list
+			last_watched_by_imdb = {r[0]: r[3] for r in _mdbsync.get_watched_shows() if r[0]}
+			for (ids, watched_count, ep_ranges) in indicators:
 				try:
+					imdb, tmdb, tvdb = ids.get('imdb', ''), ids.get('tmdb', ''), ids.get('tvdb', '')
+					if not imdb and not tvdb: continue
+					progress = mdblist.syncSeasons(imdb, tvdb)
+					if progress and len(progress) > 1:
+						counts = progress[1] or {}
+						total = sum(v.get('total', 0) for v in counts.values())
+						watched = sum(v.get('watched', 0) for v in counts.values())
+						if total and watched >= total: continue  # fully watched, not "in progress"
 					values = {}
-					values['next'] = next
+					values['next'] = ''
 					values['progress'] = ''
-					show = item.get('show', {})
-					last_watched = item.get('last_watched_at', '')
-					if last_watched:
-						try:
-							date_part = last_watched.split('T')[0]
-							time_part = last_watched.split('T')[1].split('+')[0].rstrip('Z')
-							values['lastplayed'] = '%sT%s.000Z' % (date_part, time_part)
-						except: values['lastplayed'] = ''
-					else: values['lastplayed'] = ''
-					values['title'] = show.get('title', '')
-					values['tvshowtitle'] = values['title']
-					values['year'] = str(show.get('year', '')) if show.get('year') else ''
-					ids = show.get('ids', {})
-					values['imdb'] = ''
-					values['tmdb'] = str(ids.get('tmdb', '')) if ids.get('tmdb') else ''
-					values['tvdb'] = ''
+					values['imdb'] = imdb
+					values['tmdb'] = tmdb
+					values['tvdb'] = tvdb
+					values['lastplayed'] = last_watched_by_imdb.get(imdb, '')
 					values['mediatype'] = 'tvshows'
 					values['has_next_episode'] = True
-					if not values['title']: continue
 					self.list.append(values)
 				except: log_utils.error()
 			self.worker()
 			if self.list is None: self.list = []
 			try:
-				from resources.lib.database import mdbsync as _mdbsync
 				dropped = _mdbsync.fetch_dropped('shows_dropped')
 				if dropped:
 					dropped_tmdb = {str(i['tmdb']) for i in dropped if i.get('tmdb')}

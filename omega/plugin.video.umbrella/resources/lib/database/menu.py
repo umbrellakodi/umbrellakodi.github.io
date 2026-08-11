@@ -229,11 +229,12 @@ _MYTVSHOWS_TMDB_DEFAULTS = [
 
 _MYTVSHOWS_SIMKL_DEFAULTS = [
 	('mytv_simkl_ep_prog',     'Simkl Progress Episodes', 'simkl_calendar&url=/sync/all-items/shows/watching', 'simkl.png', 'simkl.png', 1, 1, 1, 0, 0, 'simkl_credentials', 1, None),
-	('mytv_simkl_watching',    'Simkl Watching', 'tvshows&url=simklwatching',                  'simkl.png',     'simkl.png',     1, 1, 1,  1, 0, 'simkl_credentials',     1, None),
-	('mytv_simkl_watchlist',   'Simkl Plan to Watch', 'tvshows&url=simklwatchlist',             'simkl.png',     'simkl.png',     1, 1, 1,  2, 0, 'simkl_credentials',     0, None),
-	('mytv_simkl_onhold',      'Simkl On Hold', 'tvshows&url=simklonhold',                     'simkl.png',     'simkl.png',     1, 1, 1,  3, 0, 'simkl_credentials',     0, None),
-	('mytv_simkl_completed',   'Simkl Completed', 'tvshows&url=simklhistory',                  'simkl.png',     'simkl.png',     1, 1, 1,  4, 0, 'simkl_credentials',     0, None),
-	('mytv_simkl_dropped',     'Simkl Dropped', 'tvshows&url=simkldropped',                   'simkl.png',     'simkl.png',     1, 1, 1,  5, 0, 'simkl_credentials',     0, None),
+	('mytv_simkl_show_prog',   'Simkl Show Progress', 'simkl_shows_progress&url=simklshowsprogress', 'simkl.png', 'simkl.png', 1, 1, 1,  1, 0, 'simkl_credentials',     1, None),
+	('mytv_simkl_watching',    'Simkl Watching', 'tvshows&url=simklwatching',                  'simkl.png',     'simkl.png',     1, 1, 1,  2, 0, 'simkl_credentials',     1, None),
+	('mytv_simkl_watchlist',   'Simkl Plan to Watch', 'tvshows&url=simklwatchlist',             'simkl.png',     'simkl.png',     1, 1, 1,  3, 0, 'simkl_credentials',     0, None),
+	('mytv_simkl_onhold',      'Simkl On Hold', 'tvshows&url=simklonhold',                     'simkl.png',     'simkl.png',     1, 1, 1,  4, 0, 'simkl_credentials',     0, None),
+	('mytv_simkl_completed',   'Simkl Completed', 'tvshows&url=simklhistory',                  'simkl.png',     'simkl.png',     1, 1, 1,  5, 0, 'simkl_credentials',     0, None),
+	('mytv_simkl_dropped',     'Simkl Dropped', 'tvshows&url=simkldropped',                   'simkl.png',     'simkl.png',     1, 1, 1,  6, 0, 'simkl_credentials',     0, None),
 ]
 
 _MYTVSHOWS_TRAKT_DEFAULTS = [

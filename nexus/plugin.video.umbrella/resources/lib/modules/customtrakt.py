@@ -1110,10 +1110,11 @@ def manager(name, imdb=None, tvdb=None, tmdb=None, season=None, episode=None, re
 		if content_type in ('movie', 'episode'):
 			items += [(getLS(40076) % hc, 'scrobbleReset')]
 		if content_type in ('movie', 'tvshow'):
-			items += [(getLS(40746) % hc, 'watchlist_add')]
-			items += [(getLS(40747) % hc, 'watchlist_remove')]
-			items += [(getLS(40748) % hc, 'collection_add')]
-			items += [(getLS(40749) % hc, 'collection_remove')]
+			service_name = getCustomServiceName()
+			items += [(getLS(40746) % (hc, service_name), 'watchlist_add')]
+			items += [(getLS(40747) % (hc, service_name), 'watchlist_remove')]
+			items += [(getLS(40748) % (hc, service_name), 'collection_add')]
+			items += [(getLS(40749) % (hc, service_name), 'collection_remove')]
 			items += [('[COLOR %s]Add to List[/COLOR]' % hc, 'list_add')]
 			items += [('[COLOR %s]Remove from List[/COLOR]' % hc, 'list_remove')]
 		control.hide()

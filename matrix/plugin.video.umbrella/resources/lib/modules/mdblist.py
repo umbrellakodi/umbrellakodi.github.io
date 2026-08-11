@@ -1035,7 +1035,11 @@ def syncSeasons(imdb, tvdb):
 		if not getMDBListCredentialsInfo(): return None
 		if not imdb and not tvdb: return None
 		episodes = mdbsync.get_watched_episodes()
-		show_eps = [(s, e) for (si, st, sv, s, e) in (episodes or []) if si == imdb or sv == tvdb]
+		# MDBList's local watched-episode rows never populate show_tvdb (always ''), so
+		# comparing "sv == tvdb" against an empty tvdb matched every other show's rows too
+		# (both sides ''), silently merging hundreds of unrelated shows' episodes into one
+		# season/episode count — only match on a given id when it's actually non-empty.
+		show_eps = [(s, e) for (si, st, sv, s, e) in (episodes or []) if (imdb and si == imdb) or (tvdb and sv == tvdb)]
 		from collections import defaultdict
 		by_season = defaultdict(list)
 		for (s, e) in show_eps:
@@ -1381,8 +1385,12 @@ def markTVShowAsWatched(imdb, tvdb, tmdb=''):
 def markTVShowAsNotWatched(imdb, tvdb):
 	try:
 		episodes = mdbsync.get_watched_episodes()
+		# See syncSeasons() above: MDBList's local rows never populate show_tvdb (always
+		# ''), so matching on an empty tvdb matched every other show's rows too and wiped
+		# the entire local watched-episode table on a single unwatch — only match a given
+		# id when it's actually non-empty.
 		for (si, st, sv, s, e) in episodes:
-			if si == imdb or sv == tvdb:
+			if (imdb and si == imdb) or (tvdb and sv == tvdb):
 				mdbsync.delete_watched_episode(si, s, e)
 		mdbsync.cache_delete(mdbsync._hash_function(syncTVShows, ()))
 		return True
@@ -1418,7 +1426,7 @@ def markSeasonAsNotWatched(imdb, tvdb, season):
 	try:
 		episodes = mdbsync.get_watched_episodes()
 		for (si, st, sv, s, e) in episodes:
-			if (si == imdb or sv == tvdb) and int(s) == int(season):
+			if ((imdb and si == imdb) or (tvdb and sv == tvdb)) and int(s) == int(season):
 				mdbsync.delete_watched_episode(si, s, e)
 		mdbsync.cache_delete(mdbsync._hash_function(syncTVShows, ()))
 		return True

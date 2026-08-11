@@ -5913,19 +5913,19 @@ msgid "Watched Movies (Custom)"
 msgstr ""
 
 msgctxt "#40746"
-msgid "Add item to your [COLOR %s][B]Custom Watchlist[/B][/COLOR]"
+msgid "Add item to your [COLOR %s][B]%s Watchlist[/B][/COLOR]"
 msgstr ""
 
 msgctxt "#40747"
-msgid "Remove item from your [COLOR %s][B]Custom Watchlist[/B][/COLOR]"
+msgid "Remove item from your [COLOR %s][B]%s Watchlist[/B][/COLOR]"
 msgstr ""
 
 msgctxt "#40748"
-msgid "Add to [COLOR %s][B]Custom Collection[/B][/COLOR]"
+msgid "Add to [COLOR %s][B]%s Collection[/B][/COLOR]"
 msgstr ""
 
 msgctxt "#40749"
-msgid "Remove from [COLOR %s][B]Custom Collection[/B][/COLOR]"
+msgid "Remove from [COLOR %s][B]%s Collection[/B][/COLOR]"
 msgstr ""
 
 msgctxt "#40750"

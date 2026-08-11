@@ -658,6 +658,17 @@ class Episodes:
 				sorted_list.extend(top_items)
 				sorted_list.extend([i for i in self.list if i not in top_items])
 				self.list = sorted_list
+				try:
+					from resources.lib.database import simklsync as _simklsync
+					dropped = _simklsync.fetch_dropped('shows_dropped')
+					if dropped:
+						dropped_tmdb = {str(i['tmdb']) for i in dropped if i.get('tmdb')}
+						dropped_imdb = {str(i['imdb']) for i in dropped if i.get('imdb')}
+						self.list = [i for i in self.list if not (
+							(i.get('tmdb') and str(i['tmdb']) in dropped_tmdb) or
+							(i.get('imdb') and str(i['imdb']) in dropped_imdb)
+						)]
+				except: pass
 			if self.list is None: self.list = []
 			if not self.progress_showunairedSimkl:
 				self.list = [i for i in self.list if i.get('unaired', '') != 'true']
@@ -792,32 +803,21 @@ class Episodes:
 				if not showSeasons: return
 				seasons_meta = {s.get('season_number'): s for s in showSeasons.get('seasons', [])}
 				season_meta = seasons_meta.get(furthest_season)
-				# Cap the current season's episode count at TMDb's last-aired boundary —
-				# episode_count reflects the full *planned* season, not what's actually
-				# released yet. Without this, a fully-caught-up show on a still-airing
-				# season (e.g. watched all 3 of 10 planned episodes so far) always looked
-				# like it had a next episode ready, and a show between seasons entirely
-				# (renewed but not yet released) still showed up rather than disappearing
-				# until the new season actually starts airing. Same fix already applied to
-				# floppy.py/scrob.py's _fetchShowProgress().
-				status = (showSeasons.get('status') or '').lower()
-				ended = status in ('ended', 'canceled', 'cancelled')
-				last_ep = showSeasons.get('last_episode_to_air') or {}
-				last_aired_sn = int(last_ep.get('season_number', 0)) if last_ep else 0
-				last_aired_ep = int(last_ep.get('episode_number', 0)) if last_ep else 0
+				# Not capped to TMDb's last-aired boundary (last_episode_to_air) — that
+				# show-level field lags behind reality right around an episode's actual air
+				# date/time, which caused this to silently drop shows whose next episode had
+				# genuinely already released but TMDb hadn't flipped last_episode_to_air to
+				# yet (e.g. next_episode_to_air.air_date == today). The per-episode "unaired"
+				# check below (using that specific episode's own air_date, refreshed via
+				# get_seasonEpisodes_meta_checked) is the precise signal for whether an episode
+				# is actually out yet; a "renewed but next season not released" show is still
+				# correctly excluded by the seasons_meta membership check right after this.
 				raw_count = season_meta.get('episode_count', 0) if season_meta else 0
-				if ended or not last_aired_sn or furthest_season < last_aired_sn:
-					capped_count = raw_count
-				elif furthest_season == last_aired_sn:
-					capped_count = last_aired_ep if last_aired_ep > 0 else raw_count
-				else:
-					capped_count = 0  # watched season is ahead of the last-aired boundary — nothing genuinely aired there yet
-				if capped_count and furthest_episode < capped_count:
+				if raw_count and furthest_episode < raw_count:
 					next_season_num, next_episode_num = furthest_season, furthest_episode + 1
 				else:
 					next_season_num, next_episode_num = furthest_season + 1, 1
 				if next_season_num not in seasons_meta: return  # no further known season — fully caught up
-				if not ended and last_aired_sn and next_season_num > last_aired_sn: return  # next season hasn't started airing yet
 				values = {}
 				values['imdb'] = imdb_id
 				values['tmdb'] = tmdb
@@ -854,6 +854,10 @@ class Episodes:
 				values['mdblistProgress'] = True
 				values['extended'] = True
 				self.list.append(values)
+				from resources.lib.modules import log_utils
+				log_utils.log('PROGRESS[MDBLIST]: title=%s imdb=%s furthest_watched=S%02dE%02d next=S%02dE%02d lastplayed=%s' % (
+					values.get('tvshowtitle', values.get('title', '')), imdb_id, furthest_season, furthest_episode,
+					next_season_num, next_episode_num, values.get('lastplayed', '')), level=log_utils.LOGDEBUG)
 			except:
 				from resources.lib.modules import log_utils
 				log_utils.error()
@@ -1062,6 +1066,10 @@ class Episodes:
 					values.update(seasonEpisodes)
 					values.update(episode_meta)
 					for k in ('episodes', 'snum', 'enum'): values.pop(k, None)
+					duration = values.get('duration')
+					if duration:
+						try: values['duration'] = int(duration) * 60
+						except: pass
 					air_date = values.get('premiered', '')
 					values['unaired'] = ''
 					try:
@@ -1198,6 +1206,10 @@ class Episodes:
 					values.update(seasonEpisodes)
 					values.update(episode_meta)
 					for k in ('episodes', 'snum', 'enum'): values.pop(k, None)
+					duration = values.get('duration')
+					if duration:
+						try: values['duration'] = int(duration) * 60
+						except: pass
 					air_date = values.get('premiered', '')
 					values['unaired'] = ''
 					if upcoming:
@@ -1382,6 +1394,10 @@ class Episodes:
 					values.update(seasonEpisodes)
 					values.update(episode_meta)
 					for k in ('episodes', 'snum', 'enum'): values.pop(k, None)
+					duration = values.get('duration')
+					if duration:
+						try: values['duration'] = int(duration) * 60
+						except: pass
 					air_date = values.get('premiered', '')
 					values['unaired'] = ''
 					if upcoming:
@@ -1554,6 +1570,10 @@ class Episodes:
 					values.update(seasonEpisodes)
 					values.update(episode_meta)
 					for k in ('episodes', 'snum', 'enum'): values.pop(k, None)
+					duration = values.get('duration')
+					if duration:
+						try: values['duration'] = int(duration) * 60
+						except: pass
 					air_date = values.get('premiered', '')
 					values['unaired'] = ''
 					if upcoming:
@@ -1582,6 +1602,10 @@ class Episodes:
 					if not direct: values['action'] = 'episodes'
 					values['extended'] = True
 					self.list.append(values)
+					from resources.lib.modules import log_utils
+					log_utils.log('PROGRESS[SCROB]: title=%s imdb=%s furthest_watched=S%02dE%02d next=S%02dE%02d lastplayed=%s' % (
+						values.get('tvshowtitle', values.get('title', '')), imdb_id, furthest_season, furthest_episode,
+						int(values.get('season') or 0), int(values.get('episode') or 0), values.get('lastplayed', '')), level=log_utils.LOGDEBUG)
 				except:
 					from resources.lib.modules import log_utils
 					log_utils.error()
@@ -1730,6 +1754,10 @@ class Episodes:
 					self.list = sorted(self.list, key=lambda k: k['lastplayed'], reverse=reverse)
 			elif reverse:
 				self.list = list(reversed(self.list))
+			if type == 'progress':
+				from resources.lib.modules import log_utils
+				log_utils.log('PROGRESS[ORDER]: attribute=%s reverse=%s order=%s' % (
+					attribute, reverse, [(x.get('tvshowtitle', x.get('title', '')), x.get('lastplayed', '')) for x in self.list]), level=log_utils.LOGDEBUG)
 		except:
 			from resources.lib.modules import log_utils
 			log_utils.error()
@@ -1950,6 +1978,9 @@ class Episodes:
 					extended_art = fanarttv_cache.get(FanartTv().get_tvshow_art, 336, tvdb)
 					if extended_art: values.update(extended_art)
 				self.list.append(values)
+				from resources.lib.modules import log_utils
+				log_utils.log('PROGRESS[TRAKT]: title=%s imdb=%s next=S%02dE%02d lastplayed=%s' % (
+					values.get('tvshowtitle', ''), values.get('imdb', ''), int(values.get('season') or 0), int(values.get('episode') or 0), values.get('lastplayed', '')), level=log_utils.LOGDEBUG)
 			except:
 				from resources.lib.modules import log_utils
 				log_utils.error()
@@ -2230,9 +2261,12 @@ class Episodes:
 
 	def simkl_progress_list(self, url, direct=False, upcoming=False):
 		#https://api.simkl.com/sync/all-items/shows/watching?extended=full
+		# Simkl treats anime as a separate content bucket from "shows" — querying only
+		# the shows endpoint silently excluded every in-progress anime title.
 		try:
-			url = '/sync/all-items/shows/watching?extended=full'
-			result = simkl.getSimklAsJson(url)
+			shows_result = simkl.getSimklAsJson('/sync/all-items/shows/watching?extended=full') or []
+			anime_result = simkl.getSimklAsJson('/sync/all-items/anime/watching?extended=full') or []
+			result = shows_result + anime_result
 		except: return
 		if not result: return
 		items = []
@@ -2246,6 +2280,12 @@ class Episodes:
 				episode = [x for x in season_sort[-1]['episodes'] if 'number' in x]
 				episode = sorted(episode, key=lambda x: x['number'])
 				values['enum'] = episode[-1]['number']
+				if "JoJo" in item.get('show', {}).get('title', ''):
+					from resources.lib.modules import log_utils
+					log_utils.log('SIMKL_JOJO_DEBUG: raw seasons=%s' % [
+						{'number': s.get('number'), 'episodes': [e.get('number') for e in s.get('episodes', [])]}
+						for s in item.get('seasons', [])
+					], level=log_utils.LOGDEBUG)
 				try: values['lastplayed'] = item.get('last_watched_at')
 				except: values['lastplayed'] = ''
 				values['tvshowtitle'] = item['show']['title']
@@ -2341,6 +2381,9 @@ class Episodes:
 					extended_art = fanarttv_cache.get(FanartTv().get_tvshow_art, 336, tvdb)
 					if extended_art: values.update(extended_art)
 				self.list.append(values)
+				from resources.lib.modules import log_utils
+				log_utils.log('PROGRESS[SIMKL]: title=%s imdb=%s next=S%02dE%02d lastplayed=%s' % (
+					values.get('tvshowtitle', ''), values.get('imdb', ''), int(values.get('season') or 0), int(values.get('episode') or 0), values.get('lastplayed', '')), level=log_utils.LOGDEBUG)
 			except:
 				from resources.lib.modules import log_utils
 				log_utils.error()
