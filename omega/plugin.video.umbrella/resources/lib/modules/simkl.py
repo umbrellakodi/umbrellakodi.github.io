@@ -1507,26 +1507,20 @@ def _merge_watched_tvshows(db_ts):
 def sync_watched(activities=None, forced=False, progress_callback=None):
 	try:
 		if forced:
-			_t0 = time.time()
 			if progress_callback:
 				try: progress_callback('Syncing watched movies')
 				except: pass
 			cachesyncMovies()
-			log_utils.log('SIMKL_SYNC_TIMING: cachesyncMovies took %.2fs' % (time.time() - _t0), level=log_utils.LOGDEBUG)
-			_t1 = time.time()
 			if progress_callback:
 				try: progress_callback('Syncing watched shows')
 				except: pass
 			cachesyncTVShows()
-			log_utils.log('SIMKL_SYNC_TIMING: cachesyncTVShows took %.2fs' % (time.time() - _t1), level=log_utils.LOGDEBUG)
-			_t2 = time.time()
 			if progress_callback:
 				try: progress_callback('Syncing season indicators')
 				except: pass
 			control.sleep(5000)
 			service_syncSeasons(progress_callback=progress_callback)
 			simklsync.insert_syncSeasons_at()
-			log_utils.log('SIMKL_SYNC_TIMING: service_syncSeasons took %.2fs' % (time.time() - _t2), level=log_utils.LOGDEBUG)
 		else:
 			moviesWatchedActivity = getMoviesWatchedActivity(activities)
 			db_movies_last_watched = timeoutsyncMovies()
@@ -1804,38 +1798,24 @@ def force_simklSync(silent=False):
 				dialog.update(0, '%s...' % phase)
 		except: pass
 
-	_t0 = time.time()
-	def _lap(label):
-		now = time.time()
-		log_utils.log('SIMKL_SYNC_TIMING: %s took %.2fs (elapsed %.2fs)' % (label, now - _lap.last, now - _t0), level=log_utils.LOGDEBUG)
-		_lap.last = now
-	_lap.last = _t0
 	try:
 		# wipe all tables and start fresh
 		clr_simkl = {'movies_plantowatch': True, 'shows_plantowatch': True, 'shows_watching': True, 'shows_hold': True, 'movies_dropped': True, 'shows_dropped': True, 'watched': True, 'movies_completed': True, 'shows_completed': True}
 		simklsync.delete_tables(clr_simkl)
-		_lap('delete_tables')
 
 		if dialog: dialog.update(0, 'Syncing plan-to-watch...')
 		sync_plantowatch(forced=True)
-		_lap('sync_plantowatch')
 		if dialog: dialog.update(15, 'Syncing completed...')
 		sync_completed(forced=True)
-		_lap('sync_completed')
 		sync_watched(forced=True, progress_callback=_progress) #simkl counts
-		_lap('sync_watched (includes service_syncSeasons)')
 		if dialog: dialog.update(55, 'Syncing watched progress...')
 		sync_watchedProgress(forced=True) # simkl progress sync
-		_lap('sync_watchedProgress')
 		if dialog: dialog.update(70, 'Syncing watching...')
 		sync_watching(forced=True)
-		_lap('sync_watching')
 		if dialog: dialog.update(85, 'Syncing on hold...')
 		sync_hold(forced=True)
-		_lap('sync_hold')
 		if dialog: dialog.update(95, 'Syncing dropped...')
 		sync_dropped(forced=True)
-		_lap('sync_dropped')
 	finally:
 		if dialog: dialog.close()
 	if not silent:

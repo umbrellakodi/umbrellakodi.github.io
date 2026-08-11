@@ -1,2 +1,2 @@
-[B]Update - v6.7.666 - August 10th, 2026 [/B]
---[Change] Change made for irrelevant text.
+[B]Update - v6.7.667 - August 11th, 2026 [/B]
+--[Change] Removed debug logging in preparation for release.

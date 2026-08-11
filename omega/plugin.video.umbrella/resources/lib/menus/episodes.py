@@ -854,10 +854,6 @@ class Episodes:
 				values['mdblistProgress'] = True
 				values['extended'] = True
 				self.list.append(values)
-				from resources.lib.modules import log_utils
-				log_utils.log('PROGRESS[MDBLIST]: title=%s imdb=%s furthest_watched=S%02dE%02d next=S%02dE%02d lastplayed=%s' % (
-					values.get('tvshowtitle', values.get('title', '')), imdb_id, furthest_season, furthest_episode,
-					next_season_num, next_episode_num, values.get('lastplayed', '')), level=log_utils.LOGDEBUG)
 			except:
 				from resources.lib.modules import log_utils
 				log_utils.error()
@@ -1602,10 +1598,6 @@ class Episodes:
 					if not direct: values['action'] = 'episodes'
 					values['extended'] = True
 					self.list.append(values)
-					from resources.lib.modules import log_utils
-					log_utils.log('PROGRESS[SCROB]: title=%s imdb=%s furthest_watched=S%02dE%02d next=S%02dE%02d lastplayed=%s' % (
-						values.get('tvshowtitle', values.get('title', '')), imdb_id, furthest_season, furthest_episode,
-						int(values.get('season') or 0), int(values.get('episode') or 0), values.get('lastplayed', '')), level=log_utils.LOGDEBUG)
 				except:
 					from resources.lib.modules import log_utils
 					log_utils.error()
@@ -1754,10 +1746,6 @@ class Episodes:
 					self.list = sorted(self.list, key=lambda k: k['lastplayed'], reverse=reverse)
 			elif reverse:
 				self.list = list(reversed(self.list))
-			if type == 'progress':
-				from resources.lib.modules import log_utils
-				log_utils.log('PROGRESS[ORDER]: attribute=%s reverse=%s order=%s' % (
-					attribute, reverse, [(x.get('tvshowtitle', x.get('title', '')), x.get('lastplayed', '')) for x in self.list]), level=log_utils.LOGDEBUG)
 		except:
 			from resources.lib.modules import log_utils
 			log_utils.error()
@@ -1978,9 +1966,6 @@ class Episodes:
 					extended_art = fanarttv_cache.get(FanartTv().get_tvshow_art, 336, tvdb)
 					if extended_art: values.update(extended_art)
 				self.list.append(values)
-				from resources.lib.modules import log_utils
-				log_utils.log('PROGRESS[TRAKT]: title=%s imdb=%s next=S%02dE%02d lastplayed=%s' % (
-					values.get('tvshowtitle', ''), values.get('imdb', ''), int(values.get('season') or 0), int(values.get('episode') or 0), values.get('lastplayed', '')), level=log_utils.LOGDEBUG)
 			except:
 				from resources.lib.modules import log_utils
 				log_utils.error()
@@ -2280,12 +2265,6 @@ class Episodes:
 				episode = [x for x in season_sort[-1]['episodes'] if 'number' in x]
 				episode = sorted(episode, key=lambda x: x['number'])
 				values['enum'] = episode[-1]['number']
-				if "JoJo" in item.get('show', {}).get('title', ''):
-					from resources.lib.modules import log_utils
-					log_utils.log('SIMKL_JOJO_DEBUG: raw seasons=%s' % [
-						{'number': s.get('number'), 'episodes': [e.get('number') for e in s.get('episodes', [])]}
-						for s in item.get('seasons', [])
-					], level=log_utils.LOGDEBUG)
 				try: values['lastplayed'] = item.get('last_watched_at')
 				except: values['lastplayed'] = ''
 				values['tvshowtitle'] = item['show']['title']
@@ -2381,9 +2360,6 @@ class Episodes:
 					extended_art = fanarttv_cache.get(FanartTv().get_tvshow_art, 336, tvdb)
 					if extended_art: values.update(extended_art)
 				self.list.append(values)
-				from resources.lib.modules import log_utils
-				log_utils.log('PROGRESS[SIMKL]: title=%s imdb=%s next=S%02dE%02d lastplayed=%s' % (
-					values.get('tvshowtitle', ''), values.get('imdb', ''), int(values.get('season') or 0), int(values.get('episode') or 0), values.get('lastplayed', '')), level=log_utils.LOGDEBUG)
 			except:
 				from resources.lib.modules import log_utils
 				log_utils.error()

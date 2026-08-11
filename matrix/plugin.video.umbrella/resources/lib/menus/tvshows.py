@@ -697,9 +697,6 @@ class TVshows:
 						self.list = sorted(self.list, key=_parse_lastplayed, reverse=reverse)
 			elif reverse:
 				self.list = list(reversed(self.list))
-			if type == 'progress':
-				log_utils.log('SHOWPROGRESS[ORDER]: attribute=%s reverse=%s order=%s' % (
-					attribute, reverse, [(x.get('tvshowtitle', x.get('title', '')), x.get('imdb', ''), x.get('tmdb', ''), x.get('lastplayed', '')) for x in self.list]), level=log_utils.LOGDEBUG)
 		except:
 
 			log_utils.error()
@@ -2324,8 +2321,6 @@ class TVshows:
 		try:
 			shows = self.simkl_list('https://api.simkl.com/sync/all-items/shows/watching', folderName) or []
 			anime = self.simkl_list('https://api.simkl.com/sync/all-items/anime/watching', folderName) or []
-			log_utils.log('SIMKL_ANIME_DEBUG: shows=%d anime=%d anime_titles=%s' % (
-				len(shows), len(anime), [a.get('tvshowtitle') for a in anime]), level=log_utils.LOGDEBUG)
 			self.list = shows + anime
 			next = ''
 			for i in range(len(self.list)): self.list[i]['next'] = next
