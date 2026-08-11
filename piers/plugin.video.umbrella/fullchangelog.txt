@@ -1,3 +1,6 @@
+[B]Update - v6.7.668 - August 11th, 2026 [/B]
+--[Change] Removed bookmark logging.
+
 [B]Update - v6.7.667 - August 11th, 2026 [/B]
 --[Change] Removed debug logging in preparation for release.
 
