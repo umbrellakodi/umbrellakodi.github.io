@@ -5327,7 +5327,7 @@ msgid "Completed"
 msgstr ""
 
 msgctxt "#40548"
-msgid "Completed (SimKl)"
+msgid "Completed (Simkl)"
 msgstr ""
 
 msgctxt "#40549"
@@ -5335,7 +5335,7 @@ msgid "Plan to Watch"
 msgstr ""
 
 msgctxt "#40550"
-msgid "Plan to Watch (SimKl)"
+msgid "Plan to Watch (Simkl)"
 msgstr ""
 
 msgctxt "#40551"
@@ -6079,11 +6079,11 @@ msgid "Watched Shows (Custom)"
 msgstr ""
 
 msgctxt "#40739"
-msgid "Show Progress (Custom)"
+msgid "Progress Shows (Custom)"
 msgstr ""
 
 msgctxt "#40740"
-msgid "Episode Progress (Custom)"
+msgid "Progress Episodes (Custom)"
 msgstr ""
 
 msgctxt "#40741"

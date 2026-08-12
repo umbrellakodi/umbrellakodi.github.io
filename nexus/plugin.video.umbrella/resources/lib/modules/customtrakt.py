@@ -385,7 +385,7 @@ def customRevoke(fromSettings=0):
 	control.homeWindow.setProperty('umbrella.updateSettings', 'true')
 	control.setSetting('custom.refreshtoken', '')
 	try:
-		clr_customSync = ('bookmarks', 'custom_watched_movies', 'custom_watched_episodes', 'movies_watchlist', 'shows_watchlist', 'movies_collection', 'shows_collection')
+		clr_customSync = ('bookmarks', 'custom_watched_movies', 'custom_watched_episodes', 'movies_watchlist', 'shows_watchlist', 'movies_collection', 'shows_collection', 'movies_dropped', 'shows_dropped', 'watched')
 		customtraktsync.delete_custom_tables(clr_customSync)
 		if getSetting('indicators.alt') == '4':
 			control.setSetting('indicators.alt', '0')
@@ -947,6 +947,19 @@ def sync_collection(activities=None, forced=False):
 			customtraktsync.insert_collection(items, 'shows_collection')
 	except: log_utils.error()
 
+def sync_dropped(activities=None, forced=False):
+	# Same shape as sync_watch_list()/sync_collection() above — Custom's confirmed
+	# /sync/last_activities payload has no per-section "hidden_at"/"dropped_at" field to
+	# gate an incremental resync against (see getActivity()'s comment), so this only acts
+	# on the periodic forced=True pass tools.py already uses for watchlist/collection.
+	try:
+		if forced:
+			items = get_user_dropped('movie')
+			customtraktsync.insert_dropped(items, 'movies_dropped')
+			items = get_user_dropped('tvshow')
+			customtraktsync.insert_dropped(items, 'shows_dropped')
+	except: log_utils.error()
+
 def force_customSync():
 	if not control.yesnoDialog(control.lang(32056), '', ''): return
 	dialog = control.progressDialog
@@ -961,12 +974,14 @@ def force_customSync():
 				dialog.update(0, '%s...' % phase)
 		except: pass
 	try:
-		clr_custom = ('custom_watched_movies', 'custom_watched_episodes', 'movies_watchlist', 'shows_watchlist', 'movies_collection', 'shows_collection', 'watched')
+		clr_custom = ('custom_watched_movies', 'custom_watched_episodes', 'movies_watchlist', 'shows_watchlist', 'movies_collection', 'shows_collection', 'movies_dropped', 'shows_dropped', 'watched')
 		customtraktsync.delete_custom_tables(clr_custom)
 		_progress('Syncing watchlist')
 		sync_watch_list(forced=True)
 		_progress('Syncing collection')
 		sync_collection(forced=True)
+		_progress('Syncing dropped')
+		sync_dropped(forced=True)
 		sync_watchedProgress(forced=True, progress_callback=_progress)
 	finally:
 		dialog.close()
@@ -1007,6 +1022,39 @@ def add_to_collection(imdb='', tmdb='', tvdb='', media_type='movie'):
 def remove_from_collection(imdb='', tmdb='', tvdb='', media_type='movie'):
 	try:
 		result = getCustomAsJson('/sync/collection/remove', _media_post(imdb, tmdb, tvdb, media_type))
+		return bool(result)
+	except:
+		log_utils.error()
+		return False
+
+
+#### Dropped / Hidden Progress (GET/POST /users/hidden/dropped[/remove]) ####
+# Mirrors real Trakt's /users/hidden/{section} "Drop Show" feature (see trakt.py's own
+# sync_hidden_progress()) — hides a show from progress/calendar without touching watch
+# history. Uses the same ids-based SyncRequest body as watchlist/collection above rather
+# than the server's item_id-based /media/show/{item_id}/drop/{action} toggle, since every
+# other write call in this module operates on imdb/tmdb/tvdb and never learns a server-side
+# row id.
+
+def get_user_dropped(listType):
+	try:
+		media_type = 'movie' if listType == 'movie' else 'show'
+		items = get_all_pages('/users/hidden/dropped?type=%s&extended=full' % media_type, silent=True)
+		return items or []
+	except: log_utils.error()
+	return []
+
+def add_to_dropped(imdb='', tmdb='', tvdb='', media_type='movie'):
+	try:
+		result = getCustomAsJson('/users/hidden/dropped', _media_post(imdb, tmdb, tvdb, media_type))
+		return bool(result)
+	except:
+		log_utils.error()
+		return False
+
+def remove_from_dropped(imdb='', tmdb='', tvdb='', media_type='movie'):
+	try:
+		result = getCustomAsJson('/users/hidden/dropped/remove', _media_post(imdb, tmdb, tvdb, media_type))
 		return bool(result)
 	except:
 		log_utils.error()
@@ -1115,6 +1163,8 @@ def manager(name, imdb=None, tvdb=None, tmdb=None, season=None, episode=None, re
 			items += [(getLS(40747) % (hc, service_name), 'watchlist_remove')]
 			items += [(getLS(40748) % (hc, service_name), 'collection_add')]
 			items += [(getLS(40749) % (hc, service_name), 'collection_remove')]
+			items += [(getLS(40784) % (hc, service_name), 'dropped_add')]
+			items += [(getLS(40785) % (hc, service_name), 'dropped_remove')]
 			items += [('[COLOR %s]Add to List[/COLOR]' % hc, 'list_add')]
 			items += [('[COLOR %s]Remove from List[/COLOR]' % hc, 'list_remove')]
 		control.hide()
@@ -1142,6 +1192,14 @@ def manager(name, imdb=None, tvdb=None, tmdb=None, season=None, episode=None, re
 		elif action_key == 'collection_remove':
 			if remove_from_collection(imdb=imdb, tmdb=tmdb, tvdb=tvdb, media_type=media_type):
 				sync_collection(forced=True)
+				if refresh: control.refresh()
+		elif action_key == 'dropped_add':
+			if add_to_dropped(imdb=imdb, tmdb=tmdb, tvdb=tvdb, media_type=media_type):
+				sync_dropped(forced=True)
+				if refresh: control.refresh()
+		elif action_key == 'dropped_remove':
+			if remove_from_dropped(imdb=imdb, tmdb=tmdb, tvdb=tvdb, media_type=media_type):
+				sync_dropped(forced=True)
 				if refresh: control.refresh()
 		elif action_key == 'list_add':
 			lists = get_user_lists()

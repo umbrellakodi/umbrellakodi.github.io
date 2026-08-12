@@ -117,6 +117,7 @@ class SIMKL:
 			control.setSetting('scrobble.source', '2')
 			control.homeWindow.setProperty('umbrella.updateSettings', 'true')
 			control.setSetting('indicators', 'Simkl')
+			control.setSetting('scrobble', 'Simkl')
 			if fromSettings == 1:
 				control.openSettings('5.2', 'plugin.video.umbrella')
 			return True, None
@@ -149,6 +150,7 @@ class SIMKL:
 				control.setSetting('indicators', 'Local')
 			if getSetting('scrobble.source') == '2':
 				control.setSetting('scrobble.source', '0')
+				control.setSetting('scrobble', 'Local')
 			control.setSetting('simkl.markwatched', 'false')
 			if fromSettings == 1:
 				control.openSettings('5.2', 'plugin.video.umbrella')

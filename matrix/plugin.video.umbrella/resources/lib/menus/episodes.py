@@ -266,6 +266,25 @@ class Episodes:
 			from resources.lib.modules import log_utils
 			log_utils.error()
 
+	def mdblistUnfinishedManager(self):
+		try:
+			control.busy()
+			list = self.mdblist_unfinished(create_directory=False)
+			control.hide()
+			from resources.lib.windows.traktepisodeprogress_manager import TraktEpisodeProgressManagerXML
+			window = TraktEpisodeProgressManagerXML('traktepisodeprogress_manager.xml', control.addonPath(control.addonId()), results=list)
+			selected_items = window.run()
+			del window
+			if selected_items:
+				for i in selected_items:
+					mdblist.scrobbleReset(imdb=i.get('imdb', ''), tvdb=i.get('tvdb', ''), season=i.get('season'), episode=i.get('episode'), refresh=False)
+				control.trigger_widget_refresh()
+				if 'plugin.video.umbrella' in control.infoLabel('Container.PluginName'): control.refresh()
+		except:
+			from resources.lib.modules import log_utils
+			log_utils.error()
+			control.hide()
+
 	def floppy_unfinished(self, url=None, create_directory=True, folderName=''):
 		# Confirmed via GET /api/v1/playback/progress/ (not previously known when
 		# Floppy was first integrated) — same idea as scrob_unfinished() below, but
@@ -313,6 +332,26 @@ class Episodes:
 			from resources.lib.modules import log_utils
 			log_utils.error()
 
+	def floppyUnfinishedManager(self):
+		try:
+			control.busy()
+			list = self.floppy_unfinished(create_directory=False)
+			control.hide()
+			from resources.lib.windows.traktepisodeprogress_manager import TraktEpisodeProgressManagerXML
+			window = TraktEpisodeProgressManagerXML('traktepisodeprogress_manager.xml', control.addonPath(control.addonId()), results=list)
+			selected_items = window.run()
+			del window
+			if selected_items:
+				for i in selected_items:
+					item = next((x for x in list if x.get('imdb') == i.get('imdb') and str(x.get('season')) == str(i.get('season')) and str(x.get('episode')) == str(i.get('episode'))), {})
+					floppy.scrobbleReset(imdb=i.get('imdb', ''), tmdb=item.get('tmdb', ''), tvdb=i.get('tvdb', ''), season=i.get('season'), episode=i.get('episode'), refresh=False)
+				control.trigger_widget_refresh()
+				if 'plugin.video.umbrella' in control.infoLabel('Container.PluginName'): control.refresh()
+		except:
+			from resources.lib.modules import log_utils
+			log_utils.error()
+			control.hide()
+
 	def custom_unfinished(self, url=None, create_directory=True, folderName=''):
 		self.list = []
 		try:
@@ -334,6 +373,25 @@ class Episodes:
 		except:
 			from resources.lib.modules import log_utils
 			log_utils.error()
+
+	def customUnfinishedManager(self):
+		try:
+			control.busy()
+			list = self.custom_unfinished(create_directory=False)
+			control.hide()
+			from resources.lib.windows.traktepisodeprogress_manager import TraktEpisodeProgressManagerXML
+			window = TraktEpisodeProgressManagerXML('traktepisodeprogress_manager.xml', control.addonPath(control.addonId()), results=list)
+			selected_items = window.run()
+			del window
+			if selected_items:
+				for i in selected_items:
+					customtrakt.scrobbleReset(imdb=i.get('imdb', ''), tvdb=i.get('tvdb', ''), season=i.get('season'), episode=i.get('episode'), refresh=False)
+				control.trigger_widget_refresh()
+				if 'plugin.video.umbrella' in control.infoLabel('Container.PluginName'): control.refresh()
+		except:
+			from resources.lib.modules import log_utils
+			log_utils.error()
+			control.hide()
 
 	def scrob_unfinished(self, url=None, create_directory=True, folderName=''):
 		# Unlike the other providers' "Unfinished" (which read local client-tracked
@@ -381,6 +439,25 @@ class Episodes:
 		except:
 			from resources.lib.modules import log_utils
 			log_utils.error()
+
+	def scrobUnfinishedManager(self):
+		try:
+			control.busy()
+			list = self.scrob_unfinished(create_directory=False)
+			control.hide()
+			from resources.lib.windows.traktepisodeprogress_manager import TraktEpisodeProgressManagerXML
+			window = TraktEpisodeProgressManagerXML('traktepisodeprogress_manager.xml', control.addonPath(control.addonId()), results=list)
+			selected_items = window.run()
+			del window
+			if selected_items:
+				for i in selected_items:
+					scrob.scrobbleReset(imdb=i.get('imdb', ''), tvdb=i.get('tvdb', ''), season=i.get('season'), episode=i.get('episode'), refresh=False)
+				control.trigger_widget_refresh()
+				if 'plugin.video.umbrella' in control.infoLabel('Container.PluginName'): control.refresh()
+		except:
+			from resources.lib.modules import log_utils
+			log_utils.error()
+			control.hide()
 
 	def local_finish_watching(self, url='', folderName=''):
 		self.list = []
@@ -572,6 +649,15 @@ class Episodes:
 				if trakt.getActivity() > cache.timeout(self.trakt_episodes_list, url, self.trakt_user, self.lang):
 					self.list = cache.get(self.trakt_episodes_list, 0, url, self.trakt_user, self.lang)
 				else: self.list = cache.get(self.trakt_episodes_list, 1, url, self.trakt_user, self.lang)
+				try:
+					hidden_prog = traktsync.fetch_hidden_progress()
+					hidden_imdb = {str(i['imdb']) for i in hidden_prog if i.get('imdb')}
+					hidden_tvdb = {str(i['tvdb']) for i in hidden_prog if i.get('tvdb')}
+					self.list = [i for i in (self.list or []) if not (
+						(i.get('imdb') and str(i['imdb']) in hidden_imdb) or
+						(i.get('tvdb') and str(i['tvdb']) in hidden_tvdb)
+					)]
+				except: pass
 				if (url == self.mycalendarUpcoming_link) or (url == self.mycalendarPremiers_link):
 					if self.list:
 						self.list = [i for i in self.list if int(re.sub(r'[^0-9]', '', str(i['premiered']).split('T')[0])) >= int(re.sub(r'[^0-9]', '', str(self.today_date)))]
@@ -910,6 +996,13 @@ class Episodes:
 					}
 					items.append(values)
 				except: pass
+			try:
+				from resources.lib.database import mdbsync as _mdbsync
+				dropped = _mdbsync.fetch_dropped('shows_dropped')
+				if dropped:
+					dropped_tmdb = {str(i['tmdb']) for i in dropped if i.get('tmdb')}
+					items = [i for i in items if not (i.get('tmdb') and str(i['tmdb']) in dropped_tmdb)]
+			except: pass
 		except:
 			from resources.lib.modules import log_utils
 			log_utils.error()
@@ -1251,6 +1344,16 @@ class Episodes:
 				batch = threads[i:i + _chunk]
 				[t.start() for t in batch]
 				[t.join() for t in batch]
+			try:
+				dropped = customtraktsync.fetch_dropped('shows_dropped')
+				if dropped:
+					dropped_tmdb = {str(i['tmdb']) for i in dropped if i.get('tmdb')}
+					dropped_imdb = {str(i['imdb']) for i in dropped if i.get('imdb')}
+					self.list = [i for i in self.list if not (
+						(i.get('tmdb') and str(i['tmdb']) in dropped_tmdb) or
+						(i.get('imdb') and str(i['imdb']) in dropped_imdb)
+					)]
+			except: pass
 		except:
 			from resources.lib.modules import log_utils
 			log_utils.error()
@@ -1437,6 +1540,12 @@ class Episodes:
 				batch = threads[i:i + _chunk]
 				[t.start() for t in batch]
 				[t.join() for t in batch]
+			try:
+				dropped = floppysync.fetch_status_list('shows_dropped')
+				if dropped:
+					dropped_tmdb = {str(i['tmdb']) for i in dropped if i.get('tmdb')}
+					self.list = [i for i in self.list if not (i.get('tmdb') and str(i['tmdb']) in dropped_tmdb)]
+			except: pass
 		except:
 			from resources.lib.modules import log_utils
 			log_utils.error()
@@ -1649,6 +1758,16 @@ class Episodes:
 					}
 					items.append(values)
 				except: pass
+			try:
+				dropped = customtraktsync.fetch_dropped('shows_dropped')
+				if dropped:
+					dropped_tmdb = {str(i['tmdb']) for i in dropped if i.get('tmdb')}
+					dropped_imdb = {str(i['imdb']) for i in dropped if i.get('imdb')}
+					items = [i for i in items if not (
+						(i.get('tmdb') and str(i['tmdb']) in dropped_tmdb) or
+						(i.get('imdb') and str(i['imdb']) in dropped_imdb)
+					)]
+			except: pass
 		except:
 			from resources.lib.modules import log_utils
 			log_utils.error()

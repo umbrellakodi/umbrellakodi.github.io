@@ -799,9 +799,21 @@ def mdblistAuth(fromSettings=0):
 
 def mdblistRevoke(fromSettings=0):
 	try:
+		control.homeWindow.setProperty('umbrella.updateSettings', 'false')
 		control.setSetting('mdblist.token', '')
 		control.setSetting('mdblist.refresh.token', '')
+		control.homeWindow.setProperty('umbrella.updateSettings', 'true')
 		session.headers.pop('Authorization', None)
+		clr_mdb = {'mdb_watched_movies': True, 'mdb_watched_episodes': True, 'watched': True, 'bookmarks': True,
+			'movies_watchlist': True, 'shows_watchlist': True, 'movies_collection': True, 'shows_collection': True, 'shows_dropped': True}
+		mdbsync.delete_mdb_tables(clr_mdb)
+		if getSetting('indicators.alt') == '3':
+			control.setSetting('indicators.alt', '0')
+			control.setSetting('indicators', 'Local')
+		if getSetting('scrobble.source') == '3':
+			control.setSetting('scrobble.source', '0')
+			control.setSetting('scrobble', 'Local')
+		control.setSetting('mdblist.markwatched', 'false')
 		control.notification(title='MDBList', message='MDBList Authorization Revoked')
 	except: log_utils.error()
 	finally:

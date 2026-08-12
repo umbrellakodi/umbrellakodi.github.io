@@ -138,6 +138,11 @@ _MYMOVIES_CUSTOM_DEFAULTS = [
 	('mymv_custom_unfinished','40741', 'custom_movies_unfinished&url=custommoviesunfinished', 'icon.png',   'icon.png',      1, 1, 1,  2, 0, 'custom_with_indicators', 1, '35308'),
 	('mymv_custom_watched',   '40745', 'custom_movies_watched&url=custommovieswatched',       'icon.png',   'icon.png',      1, 1, 1,  3, 0, 'custom_with_indicators', 1, None),
 	('mymv_custom_userlists', '40782', 'custom_movies_userlists',                             'icon.png',   'icon.png',      1, 1, 1,  4, 0, 'custom_token',           1, None),
+	# sort_order 99 (not 5): existing users' DBs already have mymv_custom_userlists at
+	# position 4 and won't retroactively re-sort it (only label/icon/poster/alt_label sync
+	# across an upgrade, per _sync_defaults()'s _field_sync) — a low sort_order here would
+	# collide with whatever already occupies position 5 in their menu.
+	('mymv_custom_dropped',   '40783', 'custom_movies_dropped&url=custommoviesdropped',       'icon.png',   'icon.png',      1, 1, 1, 99, 0, 'custom_token',           0, None),
 ]
 
 _MYMOVIES_TMDB_DEFAULTS = [
@@ -148,7 +153,7 @@ _MYMOVIES_TMDB_DEFAULTS = [
 _MYMOVIES_SIMKL_DEFAULTS = [
 	('mymv_simkl_completed',  '40548', 'movies&url=simklhistory',                          'simkl.png',     'simkl.png',     1, 1, 1,  0, 0, 'simkl_token',          0, None),
 	('mymv_simkl_watchlist',  '40550', 'movies&url=simklwatchlist',                        'simkl.png',     'simkl.png',     1, 1, 1,  1, 0, 'simkl_token',          0, None),
-	('mymv_simkl_dropped',    'Simkl Dropped', 'movies&url=simkldropped',                 'simkl.png',     'simkl.png',     1, 1, 1,  2, 0, 'simkl_token',          0, None),
+	('mymv_simkl_dropped',    'Dropped (Simkl)', 'movies&url=simkldropped',                 'simkl.png',     'simkl.png',     1, 1, 1,  2, 0, 'simkl_token',          0, None),
 ]
 
 _MYMOVIES_TRAKT_DEFAULTS = [
@@ -160,18 +165,18 @@ _MYMOVIES_TRAKT_DEFAULTS = [
 ]
 
 _MYMOVIES_FLOPPY_DEFAULTS = [
-	('mymv_floppy_watching',   'Floppy Watching',   'floppy_movies_watching&url=floppymovieswatching',     'floppy.png', 'floppy.png', 1, 1, 1,  0, 0, 'floppy_credentials', 0, None),
-	('mymv_floppy_watchlist',  'Floppy Watchlist',  'floppy_movies_watchlist&url=floppymovieswatchlist',   'floppy.png', 'floppy.png', 1, 1, 1,  1, 0, 'floppy_credentials', 0, None),
-	('mymv_floppy_onhold',     'Floppy On Hold',    'floppy_movies_onhold&url=floppymoviesonhold',         'floppy.png', 'floppy.png', 1, 1, 1,  2, 0, 'floppy_credentials', 0, None),
-	('mymv_floppy_completed',  'Floppy Completed',  'floppy_movies_completed&url=floppymoviescompleted',   'floppy.png', 'floppy.png', 1, 1, 1,  3, 0, 'floppy_credentials', 0, None),
-	('mymv_floppy_dropped',    'Floppy Dropped',    'floppy_movies_dropped&url=floppymoviesdropped',       'floppy.png', 'floppy.png', 1, 1, 1,  4, 0, 'floppy_credentials', 0, None),
-	('mymv_floppy_collection', 'Floppy Collection', 'floppy_movies_collection&url=floppymoviescollection', 'floppy.png', 'floppy.png', 1, 1, 1,  5, 0, 'floppy_credentials', 0, None),
-	('mymv_floppy_unfinished', 'Floppy Unfinished', 'floppy_movies_unfinished&url=floppymoviesunfinished', 'floppy.png', 'floppy.png', 1, 1, 1,  6, 0, 'floppy_credentials', 1, '35308'),
+	('mymv_floppy_watching',   'Watching (Floppy)',   'floppy_movies_watching&url=floppymovieswatching',     'floppy.png', 'floppy.png', 1, 1, 1,  0, 0, 'floppy_credentials', 0, None),
+	('mymv_floppy_watchlist',  'Watchlist (Floppy)',  'floppy_movies_watchlist&url=floppymovieswatchlist',   'floppy.png', 'floppy.png', 1, 1, 1,  1, 0, 'floppy_credentials', 0, None),
+	('mymv_floppy_onhold',     'On Hold (Floppy)',    'floppy_movies_onhold&url=floppymoviesonhold',         'floppy.png', 'floppy.png', 1, 1, 1,  2, 0, 'floppy_credentials', 0, None),
+	('mymv_floppy_completed',  'Completed (Floppy)',  'floppy_movies_completed&url=floppymoviescompleted',   'floppy.png', 'floppy.png', 1, 1, 1,  3, 0, 'floppy_credentials', 0, None),
+	('mymv_floppy_dropped',    'Dropped (Floppy)',    'floppy_movies_dropped&url=floppymoviesdropped',       'floppy.png', 'floppy.png', 1, 1, 1,  4, 0, 'floppy_credentials', 0, None),
+	('mymv_floppy_collection', 'Collection (Floppy)', 'floppy_movies_collection&url=floppymoviescollection', 'floppy.png', 'floppy.png', 1, 1, 1,  5, 0, 'floppy_credentials', 0, None),
+	('mymv_floppy_unfinished', 'Unfinished (Floppy)', 'floppy_movies_unfinished&url=floppymoviesunfinished', 'floppy.png', 'floppy.png', 1, 1, 1,  6, 0, 'floppy_credentials', 1, '35308'),
 ]
 
 _MYMOVIES_SCROB_DEFAULTS = [
-	('mymv_scrob_watched', 'Scrob Watched', 'scrob_movies_watched&url=scrobmovieswatched', 'scrob.png', 'scrob.png', 1, 1, 1, 0, 0, 'scrob_with_indicators', 1, None),
-	('mymv_scrob_unfinished', 'Scrob Unfinished', 'scrob_movies_unfinished&url=scrobmoviesunfinished', 'scrob.png', 'scrob.png', 1, 1, 1, 1, 0, 'scrob_credentials', 1, '35308'),
+	('mymv_scrob_watched', 'Watched (Scrob)', 'scrob_movies_watched&url=scrobmovieswatched', 'scrob.png', 'scrob.png', 1, 1, 1, 0, 0, 'scrob_with_indicators', 1, None),
+	('mymv_scrob_unfinished', 'Unfinished (Scrob)', 'scrob_movies_unfinished&url=scrobmoviesunfinished', 'scrob.png', 'scrob.png', 1, 1, 1, 1, 0, 'scrob_credentials', 1, '35308'),
 	('mymv_scrob_userlists', '40781', 'scrob_movies_userlists', 'scrob.png', 'scrob.png', 1, 1, 1, 2, 0, 'scrob_credentials', 1, None),
 ]
 
@@ -220,6 +225,9 @@ _MYTVSHOWS_CUSTOM_DEFAULTS = [
 	('mytv_custom_cal_premiers','40744','custom_calendar_premieres&url=customcalendarpremieres', 'icon.png',      'icon.png',      1, 1, 1,  8, 0, 'custom_with_indicators', 1, '32204'),
 	('mytv_custom_upcoming',   '40753', 'custom_upcoming_progress&url=customupcomingprogress',   'icon.png',      'icon.png',      1, 1, 1,  9, 0, 'custom_with_indicators', 1, '32019'),
 	('mytv_custom_userlists',  '40782', 'custom_shows_userlists',                                'icon.png',      'icon.png',      1, 1, 1, 10, 0, 'custom_token',           1, None),
+	# sort_order 99 — see mymv_custom_dropped's comment above for why this can't safely
+	# reuse position 11.
+	('mytv_custom_dropped',    '40783', 'custom_shows_dropped&url=customshowsdropped',           'icon.png',      'icon.png',      1, 1, 1, 99, 0, 'custom_token',           0, None),
 ]
 
 _MYTVSHOWS_TMDB_DEFAULTS = [
@@ -228,13 +236,13 @@ _MYTVSHOWS_TMDB_DEFAULTS = [
 ]
 
 _MYTVSHOWS_SIMKL_DEFAULTS = [
-	('mytv_simkl_ep_prog',     'Simkl Progress Episodes', 'simkl_calendar&url=/sync/all-items/shows/watching', 'simkl.png', 'simkl.png', 1, 1, 1, 0, 0, 'simkl_credentials', 1, None),
-	('mytv_simkl_show_prog',   'Simkl Show Progress', 'simkl_shows_progress&url=simklshowsprogress', 'simkl.png', 'simkl.png', 1, 1, 1,  1, 0, 'simkl_credentials',     1, None),
-	('mytv_simkl_watching',    'Simkl Watching', 'tvshows&url=simklwatching',                  'simkl.png',     'simkl.png',     1, 1, 1,  2, 0, 'simkl_credentials',     1, None),
-	('mytv_simkl_watchlist',   'Simkl Plan to Watch', 'tvshows&url=simklwatchlist',             'simkl.png',     'simkl.png',     1, 1, 1,  3, 0, 'simkl_credentials',     0, None),
-	('mytv_simkl_onhold',      'Simkl On Hold', 'tvshows&url=simklonhold',                     'simkl.png',     'simkl.png',     1, 1, 1,  4, 0, 'simkl_credentials',     0, None),
-	('mytv_simkl_completed',   'Simkl Completed', 'tvshows&url=simklhistory',                  'simkl.png',     'simkl.png',     1, 1, 1,  5, 0, 'simkl_credentials',     0, None),
-	('mytv_simkl_dropped',     'Simkl Dropped', 'tvshows&url=simkldropped',                   'simkl.png',     'simkl.png',     1, 1, 1,  6, 0, 'simkl_credentials',     0, None),
+	('mytv_simkl_ep_prog',     'Progress Episodes (Simkl)', 'simkl_calendar&url=/sync/all-items/shows/watching', 'simkl.png', 'simkl.png', 1, 1, 1, 0, 0, 'simkl_credentials', 1, None),
+	('mytv_simkl_show_prog',   'Progress Shows (Simkl)', 'simkl_shows_progress&url=simklshowsprogress', 'simkl.png', 'simkl.png', 1, 1, 1,  1, 0, 'simkl_credentials',     1, None),
+	('mytv_simkl_watching',    'Watching (Simkl)', 'tvshows&url=simklwatching',                  'simkl.png',     'simkl.png',     1, 1, 1,  2, 0, 'simkl_credentials',     1, None),
+	('mytv_simkl_watchlist',   'Plan to Watch (Simkl)', 'tvshows&url=simklwatchlist',             'simkl.png',     'simkl.png',     1, 1, 1,  3, 0, 'simkl_credentials',     0, None),
+	('mytv_simkl_onhold',      'On Hold (Simkl)', 'tvshows&url=simklonhold',                     'simkl.png',     'simkl.png',     1, 1, 1,  4, 0, 'simkl_credentials',     0, None),
+	('mytv_simkl_completed',   'Completed (Simkl)', 'tvshows&url=simklhistory',                  'simkl.png',     'simkl.png',     1, 1, 1,  5, 0, 'simkl_credentials',     0, None),
+	('mytv_simkl_dropped',     'Dropped (Simkl)', 'tvshows&url=simkldropped',                   'simkl.png',     'simkl.png',     1, 1, 1,  6, 0, 'simkl_credentials',     0, None),
 ]
 
 _MYTVSHOWS_TRAKT_DEFAULTS = [
@@ -253,23 +261,23 @@ _MYTVSHOWS_TRAKT_DEFAULTS = [
 ]
 
 _MYTVSHOWS_FLOPPY_DEFAULTS = [
-	('mytv_floppy_watching',   'Floppy Watching',   'floppy_shows_watching&url=floppyshowswatching',     'floppy.png', 'floppy.png', 1, 1, 1,  0, 0, 'floppy_credentials', 0, None),
-	('mytv_floppy_watchlist',  'Floppy Watchlist',  'floppy_shows_watchlist&url=floppyshowswatchlist',   'floppy.png', 'floppy.png', 1, 1, 1,  1, 0, 'floppy_credentials', 0, None),
-	('mytv_floppy_onhold',     'Floppy On Hold',    'floppy_shows_onhold&url=floppyshowsonhold',         'floppy.png', 'floppy.png', 1, 1, 1,  2, 0, 'floppy_credentials', 0, None),
-	('mytv_floppy_completed',  'Floppy Completed',  'floppy_shows_completed&url=floppyshowscompleted',   'floppy.png', 'floppy.png', 1, 1, 1,  3, 0, 'floppy_credentials', 0, None),
-	('mytv_floppy_dropped',    'Floppy Dropped',    'floppy_shows_dropped&url=floppyshowsdropped',       'floppy.png', 'floppy.png', 1, 1, 1,  4, 0, 'floppy_credentials', 0, None),
-	('mytv_floppy_collection', 'Floppy Collection', 'floppy_shows_collection&url=floppyshowscollection', 'floppy.png', 'floppy.png', 1, 1, 1,  5, 0, 'floppy_credentials', 0, None),
-	('mytv_floppy_show_prog',  'Floppy Show Progress', 'floppy_shows_progress&url=floppyshowsprogress',   'floppy.png', 'floppy.png', 1, 1, 1,  6, 0, 'floppy_with_indicators', 1, None),
-	('mytv_floppy_ep_prog',    'Floppy Progress Episodes', 'floppy_episodes_progress&url=floppyepisodesprogress', 'floppy.png', 'floppy.png', 1, 1, 1,  7, 0, 'floppy_with_indicators', 1, None),
-	('mytv_floppy_upcoming',   'Floppy Upcoming Progress', 'floppy_upcoming_progress&url=floppyupcomingprogress', 'floppy.png', 'floppy.png', 1, 1, 1,  8, 0, 'floppy_with_indicators', 1, None),
-	('mytv_floppy_unfinished', 'Floppy Unfinished', 'floppy_episodes_unfinished&url=floppyepisodesunfinished', 'floppy.png', 'floppy.png', 1, 1, 1,  9, 0, 'floppy_credentials', 1, '35308'),
+	('mytv_floppy_watching',   'Watching (Floppy)',   'floppy_shows_watching&url=floppyshowswatching',     'floppy.png', 'floppy.png', 1, 1, 1,  0, 0, 'floppy_credentials', 0, None),
+	('mytv_floppy_watchlist',  'Watchlist (Floppy)',  'floppy_shows_watchlist&url=floppyshowswatchlist',   'floppy.png', 'floppy.png', 1, 1, 1,  1, 0, 'floppy_credentials', 0, None),
+	('mytv_floppy_onhold',     'On Hold (Floppy)',    'floppy_shows_onhold&url=floppyshowsonhold',         'floppy.png', 'floppy.png', 1, 1, 1,  2, 0, 'floppy_credentials', 0, None),
+	('mytv_floppy_completed',  'Completed (Floppy)',  'floppy_shows_completed&url=floppyshowscompleted',   'floppy.png', 'floppy.png', 1, 1, 1,  3, 0, 'floppy_credentials', 0, None),
+	('mytv_floppy_dropped',    'Dropped (Floppy)',    'floppy_shows_dropped&url=floppyshowsdropped',       'floppy.png', 'floppy.png', 1, 1, 1,  4, 0, 'floppy_credentials', 0, None),
+	('mytv_floppy_collection', 'Collection (Floppy)', 'floppy_shows_collection&url=floppyshowscollection', 'floppy.png', 'floppy.png', 1, 1, 1,  5, 0, 'floppy_credentials', 0, None),
+	('mytv_floppy_show_prog',  'Progress Shows (Floppy)', 'floppy_shows_progress&url=floppyshowsprogress',   'floppy.png', 'floppy.png', 1, 1, 1,  6, 0, 'floppy_with_indicators', 1, None),
+	('mytv_floppy_ep_prog',    'Progress Episodes (Floppy)', 'floppy_episodes_progress&url=floppyepisodesprogress', 'floppy.png', 'floppy.png', 1, 1, 1,  7, 0, 'floppy_with_indicators', 1, None),
+	('mytv_floppy_upcoming',   'Upcoming Progress (Floppy)', 'floppy_upcoming_progress&url=floppyupcomingprogress', 'floppy.png', 'floppy.png', 1, 1, 1,  8, 0, 'floppy_with_indicators', 1, None),
+	('mytv_floppy_unfinished', 'Unfinished (Floppy)', 'floppy_episodes_unfinished&url=floppyepisodesunfinished', 'floppy.png', 'floppy.png', 1, 1, 1,  9, 0, 'floppy_credentials', 1, '35308'),
 ]
 
 _MYTVSHOWS_SCROB_DEFAULTS = [
-	('mytv_scrob_show_prog',  'Scrob Show Progress', 'scrob_shows_progress&url=scrobshowsprogress',     'scrob.png', 'scrob.png', 1, 1, 1,  0, 0, 'scrob_with_indicators', 1, None),
-	('mytv_scrob_ep_prog',    'Scrob Progress Episodes', 'scrob_episodes_progress&url=scrobepisodesprogress', 'scrob.png', 'scrob.png', 1, 1, 1,  1, 0, 'scrob_with_indicators', 1, None),
-	('mytv_scrob_upcoming',   'Scrob Upcoming Progress', 'scrob_upcoming_progress&url=scrobupcomingprogress', 'scrob.png', 'scrob.png', 1, 1, 1,  2, 0, 'scrob_with_indicators', 1, None),
-	('mytv_scrob_unfinished', 'Scrob Unfinished', 'scrob_episodes_unfinished&url=scrobepisodesunfinished', 'scrob.png', 'scrob.png', 1, 1, 1,  3, 0, 'scrob_credentials', 1, '35308'),
+	('mytv_scrob_show_prog',  'Progress Shows (Scrob)', 'scrob_shows_progress&url=scrobshowsprogress',     'scrob.png', 'scrob.png', 1, 1, 1,  0, 0, 'scrob_with_indicators', 1, None),
+	('mytv_scrob_ep_prog',    'Progress Episodes (Scrob)', 'scrob_episodes_progress&url=scrobepisodesprogress', 'scrob.png', 'scrob.png', 1, 1, 1,  1, 0, 'scrob_with_indicators', 1, None),
+	('mytv_scrob_upcoming',   'Upcoming Progress (Scrob)', 'scrob_upcoming_progress&url=scrobupcomingprogress', 'scrob.png', 'scrob.png', 1, 1, 1,  2, 0, 'scrob_with_indicators', 1, None),
+	('mytv_scrob_unfinished', 'Unfinished (Scrob)', 'scrob_episodes_unfinished&url=scrobepisodesunfinished', 'scrob.png', 'scrob.png', 1, 1, 1,  3, 0, 'scrob_credentials', 1, '35308'),
 	('mytv_scrob_userlists', '40781', 'scrob_tvshows_userlists', 'scrob.png', 'scrob.png', 1, 1, 1,  4, 0, 'scrob_credentials', 1, None),
 ]
 
@@ -310,7 +318,7 @@ _defaults_version_file = control.joinPath(control.dataPath, 'menu_defaults.v')
 # regardless of addon version (e.g. to fix a migration bug) — the on-disk marker below
 # is keyed on addonVersion+this, not addonVersion alone, so incrementing it forces one
 # more sync pass even for users already marked up to date on the current addon version.
-_MENU_SCHEMA_REVISION = '9'
+_MENU_SCHEMA_REVISION = '11'
 
 
 def _read_synced_version():
@@ -498,12 +506,12 @@ def _sync_defaults(dbcon):
 		('mytvshows', 'mytv_floppy_folder', 'Floppy', 'mytvshows_floppyNavigator', 'floppy.png', 'floppy.png', 1, 1, 1, 11, 0, 'floppy_credentials', 0, None),
 		('mymovies', 'mymv_scrob_folder', 'Scrob', 'mymovies_scrobNavigator', 'scrob.png', 'scrob.png', 1, 1, 1, 12, 0, 'scrob_credentials', 0, None),
 		('mytvshows', 'mytv_scrob_folder', 'Scrob', 'mytvshows_scrobNavigator', 'scrob.png', 'scrob.png', 1, 1, 1, 15, 0, 'scrob_credentials', 0, None),
-		('mymovies_scrob', 'mymv_scrob_unfinished', 'Scrob Unfinished', 'scrob_movies_unfinished&url=scrobmoviesunfinished', 'scrob.png', 'scrob.png', 1, 1, 1, 99, 0, 'scrob_credentials', 1, '35308'),
-		('mytvshows_scrob', 'mytv_scrob_unfinished', 'Scrob Unfinished', 'scrob_episodes_unfinished&url=scrobepisodesunfinished', 'scrob.png', 'scrob.png', 1, 1, 1, 99, 0, 'scrob_credentials', 1, '35308'),
+		('mymovies_scrob', 'mymv_scrob_unfinished', 'Unfinished (Scrob)', 'scrob_movies_unfinished&url=scrobmoviesunfinished', 'scrob.png', 'scrob.png', 1, 1, 1, 99, 0, 'scrob_credentials', 1, '35308'),
+		('mytvshows_scrob', 'mytv_scrob_unfinished', 'Unfinished (Scrob)', 'scrob_episodes_unfinished&url=scrobepisodesunfinished', 'scrob.png', 'scrob.png', 1, 1, 1, 99, 0, 'scrob_credentials', 1, '35308'),
 		('mymovies_scrob', 'mymv_scrob_userlists', '40781', 'scrob_movies_userlists', 'scrob.png', 'scrob.png', 1, 1, 1, 99, 0, 'scrob_credentials', 1, None),
 		('mytvshows_scrob', 'mytv_scrob_userlists', '40781', 'scrob_tvshows_userlists', 'scrob.png', 'scrob.png', 1, 1, 1, 99, 0, 'scrob_credentials', 1, None),
-		('mymovies_floppy', 'mymv_floppy_unfinished', 'Floppy Unfinished', 'floppy_movies_unfinished&url=floppymoviesunfinished', 'floppy.png', 'floppy.png', 1, 1, 1, 99, 0, 'floppy_credentials', 1, '35308'),
-		('mytvshows_floppy', 'mytv_floppy_unfinished', 'Floppy Unfinished', 'floppy_episodes_unfinished&url=floppyepisodesunfinished', 'floppy.png', 'floppy.png', 1, 1, 1, 99, 0, 'floppy_credentials', 1, '35308'),
+		('mymovies_floppy', 'mymv_floppy_unfinished', 'Unfinished (Floppy)', 'floppy_movies_unfinished&url=floppymoviesunfinished', 'floppy.png', 'floppy.png', 1, 1, 1, 99, 0, 'floppy_credentials', 1, '35308'),
+		('mytvshows_floppy', 'mytv_floppy_unfinished', 'Unfinished (Floppy)', 'floppy_episodes_unfinished&url=floppyepisodesunfinished', 'floppy.png', 'floppy.png', 1, 1, 1, 99, 0, 'floppy_credentials', 1, '35308'),
 		('mymovies_mdblist',  'mymv_mdb_unfinished',  '40686',  'mdblistMoviesUnfinished',          'mdblist.png', 'mdblist.png', 1, 1, 1, 99, 0, 'mdblist_with_indicators', 1, '35308'),
 		('mytvshows_mdblist', 'mytv_mdb_unfinished',  '40686',  'mdblistEpisodesUnfinished',         'mdblist.png', 'mdblist.png', 1, 1, 1, 99, 0, 'mdblist_with_indicators', 1, '35308'),
 		('mymovies',  'mymv_local_finish',    'Local: Finish Watching', 'local_finish_watching_movies',   'icon.png',    'icon.png',    1, 1, 1, 99, 0, 'local_scrobble',          1, None),

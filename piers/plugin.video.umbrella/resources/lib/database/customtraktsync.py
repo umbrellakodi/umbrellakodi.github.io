@@ -252,6 +252,111 @@ def delete_collection_items(items, table, col_name='custom_id'):
 		try: dbcon.close()
 		except: pass
 
+def fetch_dropped(table):
+	list = ''
+	try:
+		dbcon = get_connection()
+		dbcur = get_connection_cursor(dbcon)
+		ck_table = dbcur.execute('''SELECT * FROM sqlite_master WHERE type='table' AND name=?;''', (table,)).fetchone()
+		if not ck_table:
+			dbcur.execute('''CREATE TABLE IF NOT EXISTS %s (title TEXT, year TEXT, premiered TEXT, imdb TEXT, tmdb TEXT, tvdb TEXT, custom_id TEXT, rating FLOAT, votes INTEGER, listed_at TEXT, UNIQUE(imdb, tmdb, tvdb, custom_id));''' % table)
+			dbcur.connection.commit()
+			return list
+		try:
+			match = dbcur.execute('''SELECT * FROM %s WHERE NOT title=""''' % table).fetchall()
+			list = [{'title': i[0], 'year': i[1], 'premiered': i[2], 'imdb': i[3], 'tmdb': i[4], 'tvdb': i[5], 'custom_id': i[6], 'rating': i[7], 'votes': i[8], 'added': i[9]} for i in match]
+		except: pass
+	except:
+		from resources.lib.modules import log_utils
+		log_utils.error()
+	finally:
+		try: dbcur.close()
+		except: pass
+		try: dbcon.close()
+		except: pass
+	return list
+
+def insert_dropped(items, table, new_sync=True):
+	try:
+		dbcon = get_connection()
+		dbcur = get_connection_cursor(dbcon)
+		dbcur.execute('''CREATE TABLE IF NOT EXISTS %s (title TEXT, year TEXT, premiered TEXT, imdb TEXT, tmdb TEXT, tvdb TEXT, custom_id TEXT, rating FLOAT, votes INTEGER, listed_at TEXT, UNIQUE(imdb, tmdb, tvdb, custom_id));''' % table)
+		dbcur.execute('''CREATE TABLE IF NOT EXISTS service (setting TEXT, value TEXT, UNIQUE(setting));''')
+		if new_sync:
+			dbcur.execute('''DELETE FROM %s''' % table)
+			dbcur.connection.commit()
+			dbcur.execute('''VACUUM''')
+		for i in items:
+			try:
+				if i is None: continue
+				if 'show' in i or 'movie' in i:
+					item = i.get('show') or i.get('movie') or {}
+					title = item.get('title', '')
+					year = str(item.get('year', '') or '')
+					premiered = ''
+					ids = item.get('ids') or {}
+					imdb = ids.get('imdb', '')
+					tmdb = str(ids.get('tmdb', '') or '')
+					tvdb = str(ids.get('tvdb', '') or '')
+					custom_id = str(ids.get('custom', '') or ids.get('trakt', '') or '')
+					rating = item.get('rating', '')
+					votes = item.get('votes', '')
+					listed_at = i.get('hidden_at', '') or i.get('listed_at', '')
+				else:
+					title = i.get('title', '')
+					year = str(i.get('year', '') or '')
+					premiered = ''
+					imdb = i.get('imdb', '')
+					tmdb = str(i.get('tmdb', '') or '')
+					tvdb = str(i.get('tvdb', '') or '')
+					custom_id = str(i.get('id', '') or '')
+					rating = i.get('rating', '')
+					votes = i.get('votes', '')
+					listed_at = i.get('added', '') or i.get('hidden_at', '')
+				dbcur.execute('''INSERT OR REPLACE INTO %s Values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''' % table, (title, year, premiered, imdb, tmdb, tvdb, custom_id, rating, votes, listed_at))
+			except:
+				from resources.lib.modules import log_utils
+				log_utils.error()
+		timestamp = datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%S.000Z")
+		dbcur.execute('''INSERT OR REPLACE INTO service Values (?, ?)''', ('last_dropped_at', timestamp))
+		dbcur.connection.commit()
+	except:
+		from resources.lib.modules import log_utils
+		log_utils.error()
+	finally:
+		try: dbcur.close()
+		except: pass
+		try: dbcon.close()
+		except: pass
+
+def delete_dropped_items(items, table, col_name='custom_id'):
+	try:
+		dbcon = get_connection()
+		dbcur = get_connection_cursor(dbcon)
+		ck_table = dbcur.execute('''SELECT * FROM sqlite_master WHERE type='table' AND name=?;''', (table,)).fetchone()
+		if not ck_table:
+			dbcur.execute('''CREATE TABLE IF NOT EXISTS %s (title TEXT, year TEXT, premiered TEXT, imdb TEXT, tmdb TEXT, tvdb TEXT, custom_id TEXT, rating FLOAT, votes INTEGER, listed_at TEXT, UNIQUE(imdb, tmdb, tvdb, custom_id));''' % table)
+			dbcur.execute('''CREATE TABLE IF NOT EXISTS service (setting TEXT, value TEXT, UNIQUE(setting));''')
+			dbcur.connection.commit()
+			return
+		for item in items:
+			try:
+				dbcur.execute('''DELETE FROM %s WHERE %s=?;''' % (table, col_name), (item,))
+			except:
+				from resources.lib.modules import log_utils
+				log_utils.error()
+		timestamp = datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%S.000Z")
+		dbcur.execute('''INSERT OR REPLACE INTO service Values (?, ?)''', ('last_dropped_at', timestamp))
+		dbcur.connection.commit()
+	except:
+		from resources.lib.modules import log_utils
+		log_utils.error()
+	finally:
+		try: dbcur.close()
+		except: pass
+		try: dbcon.close()
+		except: pass
+
 def delete_custom_tables(tables):
 	# Delete and vacuum the specified Custom-service tables, and reset their service timestamps.
 	try:
@@ -266,7 +371,7 @@ def delete_custom_tables(tables):
 				from resources.lib.modules import log_utils
 				log_utils.error()
 		epoch = '1970-01-01T00:00:00.000Z'
-		for key in ('last_history_at', 'last_watched_movies_at', 'last_watched_episodes_at', 'last_watchlisted_at', 'last_collected_at'):
+		for key in ('last_history_at', 'last_watched_movies_at', 'last_watched_episodes_at', 'last_watchlisted_at', 'last_collected_at', 'last_dropped_at'):
 			dbcur.execute('''INSERT OR REPLACE INTO service Values (?, ?)''', (key, epoch))
 		dbcur.connection.commit()
 		dbcur.execute('''VACUUM''')

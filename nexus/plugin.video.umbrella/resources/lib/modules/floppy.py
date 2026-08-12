@@ -790,6 +790,33 @@ def sync_collection(activities=None, forced=False):
 		floppysync.insert_status_list([{'id': i.get('item', {}).get('id'), 'item': i.get('item'), 'score': None, 'created_at': i.get('collected_at')} for i in items], 'shows_collection')
 	except: log_utils.error()
 
+def get_collection_entries(media_type='movie'):
+	# DELETE /collection/{entry_id}/ (see remove_from_collection()) is keyed on the
+	# collection entry's own id, not the tracked media item's id — sync_collection()
+	# only ever caches the nested item id (floppysync's generic status-bucket schema has
+	# no column for a second id), so the Collection Manager needs its own live fetch that
+	# keeps both ids straight rather than reading from that cache.
+	results = []
+	try:
+		media_param = 'movie' if media_type == 'movie' else 'tv'
+		items = get_all_pages('/collection/?item_media_type=%s' % media_param, silent=True) or []
+		for i in items:
+			try:
+				item = i.get('item') or {}
+				entry_id = i.get('id')
+				if entry_id is None: continue
+				results.append({
+					'entry_id': str(entry_id),
+					'title': item.get('title', ''),
+					'year': str(item.get('year', '') or ''),
+					'tmdb': str(item.get('media_id') or ''),
+					'imdb': '', 'tvdb': '', 'premiered': '',
+					'trakt': str(entry_id),
+				})
+			except: log_utils.error()
+	except: log_utils.error()
+	return results
+
 def sync_playbackProgress(activities=None, forced=False):
 	# GET /playback/progress/ genuinely exists and works (confirmed live against a real
 	# instance — the comment this replaced was based on earlier, incomplete API research).

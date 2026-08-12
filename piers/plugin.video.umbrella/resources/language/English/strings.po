@@ -5137,7 +5137,7 @@ msgid "Completed"
 msgstr ""
 
 msgctxt "#40548"
-msgid "Completed (SimKl)"
+msgid "Completed (Simkl)"
 msgstr ""
 
 msgctxt "#40549"
@@ -5145,7 +5145,7 @@ msgid "Plan to Watch"
 msgstr ""
 
 msgctxt "#40550"
-msgid "Plan to Watch (SimKl)"
+msgid "Plan to Watch (Simkl)"
 msgstr ""
 
 msgctxt "#40551"
@@ -5885,11 +5885,11 @@ msgid "Watched Shows (Custom)"
 msgstr ""
 
 msgctxt "#40739"
-msgid "Show Progress (Custom)"
+msgid "Progress Shows (Custom)"
 msgstr ""
 
 msgctxt "#40740"
-msgid "Episode Progress (Custom)"
+msgid "Progress Episodes (Custom)"
 msgstr ""
 
 msgctxt "#40741"
@@ -5961,11 +5961,11 @@ msgid "Floppy Username (optional)"
 msgstr ""
 
 msgctxt "#40758"
-msgid "Test Floppy Connection"
+msgid "Authorize Floppy"
 msgstr ""
 
 msgctxt "#40759"
-msgid "Revoke Floppy Credentials"
+msgid "Revoke Floppy Authorization"
 msgstr ""
 
 msgctxt "#40760"
@@ -6017,11 +6017,11 @@ msgid "Scrob Password (optional, unlocks unwatch/lists)"
 msgstr ""
 
 msgctxt "#40772"
-msgid "Test Scrob Connection"
+msgid "Authorize Scrob"
 msgstr ""
 
 msgctxt "#40773"
-msgid "Revoke Scrob Credentials"
+msgid "Revoke Scrob Authorization"
 msgstr ""
 
 msgctxt "#40774"
@@ -6058,4 +6058,36 @@ msgstr ""
 
 msgctxt "#40782"
 msgid "User Lists (Custom)"
+msgstr ""
+
+msgctxt "#40783"
+msgid "Dropped (Custom)"
+msgstr ""
+
+msgctxt "#40784"
+msgid "Add Show to [COLOR %s][B]%s Dropped[/B][/COLOR]"
+msgstr ""
+
+msgctxt "#40785"
+msgid "Remove Show from [COLOR %s][B]%s Dropped[/B][/COLOR]"
+msgstr ""
+
+msgctxt "#40786"
+msgid "[COLOR %s][B]Dropped Manager - Movies[/B][/COLOR]"
+msgstr ""
+
+msgctxt "#40787"
+msgid "[COLOR %s][B]Dropped Manager - Shows[/B][/COLOR]"
+msgstr ""
+
+msgctxt "#40788"
+msgid "[COLOR %s][B]Plan to Watch Manager - Movies[/B][/COLOR]"
+msgstr ""
+
+msgctxt "#40789"
+msgid "[COLOR %s][B]Plan to Watch Manager - Shows[/B][/COLOR]"
+msgstr ""
+
+msgctxt "#40790"
+msgid "[COLOR %s][B]On Hold Manager - Shows[/B][/COLOR]"
 msgstr ""

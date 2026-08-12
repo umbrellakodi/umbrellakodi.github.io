@@ -424,6 +424,7 @@ def traktRevoke(fromSettings=0):
 				control.setSetting('indicators', 'Local')
 			if getSetting('scrobble.source') == '1':
 				control.setSetting('scrobble.source', '0')
+				control.setSetting('scrobble', 'Local')
 			control.setSetting('trakt.markwatched', 'false')
 			global _reauth_failed
 			_reauth_failed = False

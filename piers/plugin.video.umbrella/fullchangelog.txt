@@ -1,3 +1,10 @@
+[B]Update - v6.7.669 - August 12th, 2026 [/B]
+--[Change] Changed labels throughout providers to be consistent.
+--[Change] Added support for dropped to Floppy.
+--[Change] Added support for dropped to all calendar lists.
+--[Change] Added support for 3 digit episode numbers from manthock.
+--[Change] Management Tools Sections and Managers in context menu updated to add all available options for each provider.
+
 [B]Update - v6.7.668 - August 11th, 2026 [/B]
 --[Change] Removed bookmark logging.
 

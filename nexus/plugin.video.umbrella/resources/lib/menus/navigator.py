@@ -665,6 +665,11 @@ class Navigator:
 
 	def simklTools(self, folderName=''):
 		if self.useContainerTitles: control.setContainerName(folderName)
+		self.addDirectoryItem(getLS(40788) % self.highlight_color, 'movies_simklPlantowatchManager', 'simkl.png', 'DefaultAddonService.png', isFolder=False)
+		self.addDirectoryItem(getLS(40789) % self.highlight_color, 'shows_simklPlantowatchManager', 'simkl.png', 'DefaultAddonService.png', isFolder=False)
+		self.addDirectoryItem(getLS(40790) % self.highlight_color, 'shows_simklOnholdManager', 'simkl.png', 'DefaultAddonService.png', isFolder=False)
+		self.addDirectoryItem(getLS(40786) % self.highlight_color, 'movies_simklDroppedManager', 'simkl.png', 'DefaultAddonService.png', isFolder=False)
+		self.addDirectoryItem(getLS(40787) % self.highlight_color, 'shows_simklDroppedManager', 'simkl.png', 'DefaultAddonService.png', isFolder=False)
 		self.addDirectoryItem(40553, 'tools_forceSimklSync', 'tools.png', 'DefaultAddonService.png', isFolder=False)
 		self.endDirectory()
 
@@ -676,13 +681,25 @@ class Navigator:
 			self.addDirectoryItem(40670, 'mdblistRevoke', 'mdblist.png', 'DefaultAddonService.png', isFolder=False)
 		self.addDirectoryItem(40638, 'movies_mdblistWatchlistManager', 'mdblist.png', 'DefaultAddonService.png', isFolder=False)
 		self.addDirectoryItem(40639, 'shows_mdblistWatchlistManager', 'mdblist.png', 'DefaultAddonService.png', isFolder=False)
+		self.addDirectoryItem(getLS(40709) % self.highlight_color, 'movies_mdblistCollectionManager', 'mdblist.png', 'DefaultAddonService.png', isFolder=False)
+		self.addDirectoryItem(getLS(40710) % self.highlight_color, 'shows_mdblistCollectionManager', 'mdblist.png', 'DefaultAddonService.png', isFolder=False)
+		self.addDirectoryItem(getLS(35059) % self.highlight_color, 'movies_mdblistUnfinishedManager', 'mdblist.png', 'DefaultAddonService.png', isFolder=False)
+		self.addDirectoryItem(getLS(35060) % self.highlight_color, 'episodes_mdblistUnfinishedManager', 'mdblist.png', 'DefaultAddonService.png', isFolder=False)
 		self.addDirectoryItem(40714, 'shows_mdblistDroppedManager', 'mdblist.png', 'DefaultAddonService.png', isFolder=False)
 		self.addDirectoryItem(40637, 'tools_forceMDBListSync', 'mdblist.png', 'DefaultAddonService.png', isFolder=False)
 		self.endDirectory()
 
 	def customTools(self, folderName=''):
 		if self.useContainerTitles: control.setContainerName(folderName)
-		self.addDirectoryItem('[COLOR %%s][B]Force %s Sync to local database[/B][/COLOR]' % customtrakt.getCustomServiceName(), 'tools_forceCustomSync', 'icon.png', 'DefaultAddonService.png', isFolder=False)
+		self.addDirectoryItem(getLS(35061) % self.highlight_color, 'movies_customWatchlistManager', 'icon.png', 'DefaultAddonService.png', isFolder=False)
+		self.addDirectoryItem(getLS(35062) % self.highlight_color, 'shows_customWatchlistManager', 'icon.png', 'DefaultAddonService.png', isFolder=False)
+		self.addDirectoryItem(getLS(35063) % self.highlight_color, 'movies_customCollectionManager', 'icon.png', 'DefaultAddonService.png', isFolder=False)
+		self.addDirectoryItem(getLS(35064) % self.highlight_color, 'shows_customCollectionManager', 'icon.png', 'DefaultAddonService.png', isFolder=False)
+		self.addDirectoryItem(getLS(40786) % self.highlight_color, 'movies_customDroppedManager', 'icon.png', 'DefaultAddonService.png', isFolder=False)
+		self.addDirectoryItem(getLS(40787) % self.highlight_color, 'shows_customDroppedManager', 'icon.png', 'DefaultAddonService.png', isFolder=False)
+		self.addDirectoryItem(getLS(35059) % self.highlight_color, 'movies_customUnfinishedManager', 'icon.png', 'DefaultAddonService.png', isFolder=False)
+		self.addDirectoryItem(getLS(35060) % self.highlight_color, 'episodes_customUnfinishedManager', 'icon.png', 'DefaultAddonService.png', isFolder=False)
+		self.addDirectoryItem('[COLOR %s][B]Force %s Sync to local database[/B][/COLOR]' % (self.highlight_color, customtrakt.getCustomServiceName()), 'tools_forceCustomSync', 'icon.png', 'DefaultAddonService.png', isFolder=False)
 		self.endDirectory()
 
 	def floppyTools(self, folderName=''):
@@ -691,6 +708,14 @@ class Navigator:
 			self.addDirectoryItem('Authorize Floppy', 'floppyAuth', 'floppy.png', 'DefaultAddonService.png', isFolder=False)
 		else:
 			self.addDirectoryItem('Revoke Floppy', 'floppyRevoke', 'floppy.png', 'DefaultAddonService.png', isFolder=False)
+		self.addDirectoryItem(getLS(35061) % self.highlight_color, 'movies_floppyWatchlistManager', 'floppy.png', 'DefaultAddonService.png', isFolder=False)
+		self.addDirectoryItem(getLS(35062) % self.highlight_color, 'shows_floppyWatchlistManager', 'floppy.png', 'DefaultAddonService.png', isFolder=False)
+		self.addDirectoryItem(getLS(35063) % self.highlight_color, 'movies_floppyCollectionManager', 'floppy.png', 'DefaultAddonService.png', isFolder=False)
+		self.addDirectoryItem(getLS(35064) % self.highlight_color, 'shows_floppyCollectionManager', 'floppy.png', 'DefaultAddonService.png', isFolder=False)
+		self.addDirectoryItem(getLS(40786) % self.highlight_color, 'movies_floppyDroppedManager', 'floppy.png', 'DefaultAddonService.png', isFolder=False)
+		self.addDirectoryItem(getLS(40787) % self.highlight_color, 'shows_floppyDroppedManager', 'floppy.png', 'DefaultAddonService.png', isFolder=False)
+		self.addDirectoryItem(getLS(35059) % self.highlight_color, 'movies_floppyUnfinishedManager', 'floppy.png', 'DefaultAddonService.png', isFolder=False)
+		self.addDirectoryItem(getLS(35060) % self.highlight_color, 'episodes_floppyUnfinishedManager', 'floppy.png', 'DefaultAddonService.png', isFolder=False)
 		self.addDirectoryItem('Force Floppy Sync', 'tools_forceFloppySync', 'floppy.png', 'DefaultAddonService.png', isFolder=False)
 		self.endDirectory()
 
@@ -700,6 +725,8 @@ class Navigator:
 			self.addDirectoryItem('Authorize Scrob', 'scrobAuth', 'scrob.png', 'DefaultAddonService.png', isFolder=False)
 		else:
 			self.addDirectoryItem('Revoke Scrob', 'scrobRevoke', 'scrob.png', 'DefaultAddonService.png', isFolder=False)
+		self.addDirectoryItem(getLS(35059) % self.highlight_color, 'movies_scrobUnfinishedManager', 'scrob.png', 'DefaultAddonService.png', isFolder=False)
+		self.addDirectoryItem(getLS(35060) % self.highlight_color, 'episodes_scrobUnfinishedManager', 'scrob.png', 'DefaultAddonService.png', isFolder=False)
 		self.addDirectoryItem('Force Scrob Sync', 'tools_forceScrobSync', 'scrob.png', 'DefaultAddonService.png', isFolder=False)
 		self.endDirectory()
 

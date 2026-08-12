@@ -375,6 +375,7 @@ def services_syncs():
 				if not control.monitor.abortRequested():
 					customtrakt.sync_watch_list(activities, forced=True)
 					customtrakt.sync_collection(activities, forced=True)
+					customtrakt.sync_dropped(activities, forced=True)
 				last_custom_sync = current_time
 		if control.monitor.abortRequested(): break
 		if internets and floppy.getFloppyCredentialsInfo():

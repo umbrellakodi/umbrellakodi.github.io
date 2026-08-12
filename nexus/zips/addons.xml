@@ -1,5 +1,5 @@
 <?xml version='1.0' encoding='utf-8'?>
-<addons><addon id="plugin.video.umbrella" name="Umbrella" provider-name="Umbrella" version="6.7.668">
+<addons><addon id="plugin.video.umbrella" name="Umbrella" provider-name="Umbrella" version="6.7.669">
 	<requires>
 		<import addon="xbmc.python" version="3.0.0" />
 		<import addon="script.module.requests" />
@@ -262,8 +262,12 @@
 			<screenshot>resources/screenshots/screenshot003.jpg</screenshot>
 		</assets>
 		<news>
-[B]Update - v6.7.668 - August 11th, 2026 [/B]
---[Change] Removed bookmark logging.
+[B]Update - v6.7.669 - August 12th, 2026 [/B]
+--[Change] Changed labels throughout providers to be consistent.
+--[Change] Added support for dropped to Floppy.
+--[Change] Added support for dropped to all calendar lists.
+--[Change] Added support for 3 digit episode numbers from manthock.
+--[Change] Management Tools Sections and Managers in context menu updated to add all available options for each provider.
 		</news>
 	</extension>
 

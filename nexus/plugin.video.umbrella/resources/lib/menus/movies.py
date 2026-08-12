@@ -892,6 +892,24 @@ class Movies:
 			from resources.lib.modules import log_utils
 			log_utils.error()
 
+	def mdblistUnfinishedManager(self):
+		try:
+			control.busy()
+			list = self.mdblist_unfinished(create_directory=False)
+			control.hide()
+			from resources.lib.windows.traktmovieprogress_manager import TraktMovieProgressManagerXML
+			window = TraktMovieProgressManagerXML('traktmovieprogress_manager.xml', control.addonPath(control.addonId()), results=list)
+			selected_items = window.run()
+			del window
+			if selected_items:
+				for imdb in selected_items: mdblist.scrobbleReset(imdb=imdb, refresh=False)
+				control.trigger_widget_refresh()
+				if 'plugin.video.umbrella' in control.infoLabel('Container.PluginName'): control.refresh()
+		except:
+			from resources.lib.modules import log_utils
+			log_utils.error()
+			control.hide()
+
 	def mdblist_watched(self, url=None, idx=True, create_directory=True, folderName=''):
 		# Paginated the same way customWatched() is: watch history is already a fully-local
 		# list (no live remote pagination possible), but without slicing before worker() runs,
@@ -1764,6 +1782,124 @@ class Movies:
 			from resources.lib.modules import log_utils
 			log_utils.error()
 
+	def customDropped(self, url, create_directory=True, folderName=''):
+		self.list = []
+		try:
+			try:
+				q = dict(parse_qsl(urlsplit(url).query))
+				index = int(q['page']) - 1
+			except:
+				q = dict(parse_qsl(urlsplit(url).query))
+				index = 0
+			self.list = customtraktsync.fetch_dropped('movies_dropped')
+			useNext = True
+			if create_directory:
+				self.sort()
+				if getSetting('custom.paginate.lists') == 'true' and self.list:
+					if len(self.list) <= int(self.page_limit):
+						useNext = False
+					paginated_ids = [self.list[x:x + int(self.page_limit)] for x in range(0, len(self.list), int(self.page_limit))]
+					self.list = paginated_ids[index]
+			try:
+				if useNext == False: raise Exception()
+				if len(self.list) < int(self.page_limit): raise Exception()
+				q.update({'page': str(index + 2), 'limit': str(self.page_limit)})
+				q = (urlencode(q)).replace('%2C', ',')
+				continuation = url.replace('?' + urlparse(url).query, '') + '?' + q
+				# See customCollection() above for why this must be a full plugin://
+				# action URL rather than a bare continuation token.
+				next = 'plugin://plugin.video.umbrella/?action=custom_movies_dropped&url=%s&folderName=%s' % (quote_plus(continuation), quote_plus(folderName))
+			except: next = ''
+			for i in range(len(self.list)): self.list[i]['next'] = next
+			self.worker()
+			if self.list is None: self.list = []
+			if create_directory: self.movieDirectory(self.list, folderName=folderName)
+			return self.list
+		except:
+			from resources.lib.modules import log_utils
+			log_utils.error()
+
+	def customWatchlistManager(self):
+		try:
+			control.busy()
+			self.list = customtraktsync.fetch_watch_list('movies_watchlist')
+			for item in self.list: item['trakt'] = item.get('imdb', '')
+			self.worker()
+			self.sort(type='movies.watchlist')
+			control.hide()
+			from resources.lib.windows.traktbasic_manager import TraktBasicManagerXML
+			window = TraktBasicManagerXML('traktbasic_manager.xml', control.addonPath(control.addonId()), results=self.list)
+			selected_items = window.run()
+			del window
+			if selected_items:
+				for imdb in selected_items: customtrakt.remove_from_watchlist(imdb=imdb, media_type='movie')
+				customtrakt.sync_watch_list(forced=True)
+				control.trigger_widget_refresh()
+		except:
+			from resources.lib.modules import log_utils
+			log_utils.error()
+			control.hide()
+
+	def customCollectionManager(self):
+		try:
+			control.busy()
+			self.list = customtraktsync.fetch_collection('movies_collection')
+			for item in self.list: item['trakt'] = item.get('imdb', '')
+			self.worker()
+			self.sort()
+			control.hide()
+			from resources.lib.windows.traktbasic_manager import TraktBasicManagerXML
+			window = TraktBasicManagerXML('traktbasic_manager.xml', control.addonPath(control.addonId()), results=self.list)
+			selected_items = window.run()
+			del window
+			if selected_items:
+				for imdb in selected_items: customtrakt.remove_from_collection(imdb=imdb, media_type='movie')
+				customtrakt.sync_collection(forced=True)
+				control.trigger_widget_refresh()
+		except:
+			from resources.lib.modules import log_utils
+			log_utils.error()
+			control.hide()
+
+	def customDroppedManager(self):
+		try:
+			control.busy()
+			self.list = customtraktsync.fetch_dropped('movies_dropped')
+			for item in self.list: item['trakt'] = item.get('imdb', '')
+			self.worker()
+			self.sort()
+			control.hide()
+			from resources.lib.windows.traktbasic_manager import TraktBasicManagerXML
+			window = TraktBasicManagerXML('traktbasic_manager.xml', control.addonPath(control.addonId()), results=self.list)
+			selected_items = window.run()
+			del window
+			if selected_items:
+				for imdb in selected_items: customtrakt.remove_from_dropped(imdb=imdb, media_type='movie')
+				customtrakt.sync_dropped(forced=True)
+				control.trigger_widget_refresh()
+		except:
+			from resources.lib.modules import log_utils
+			log_utils.error()
+			control.hide()
+
+	def customUnfinishedManager(self):
+		try:
+			control.busy()
+			list = self.custom_unfinished(create_directory=False)
+			control.hide()
+			from resources.lib.windows.traktmovieprogress_manager import TraktMovieProgressManagerXML
+			window = TraktMovieProgressManagerXML('traktmovieprogress_manager.xml', control.addonPath(control.addonId()), results=list)
+			selected_items = window.run()
+			del window
+			if selected_items:
+				for imdb in selected_items: customtrakt.scrobbleReset(imdb=imdb, refresh=False)
+				control.trigger_widget_refresh()
+				if 'plugin.video.umbrella' in control.infoLabel('Container.PluginName'): control.refresh()
+		except:
+			from resources.lib.modules import log_utils
+			log_utils.error()
+			control.hide()
+
 	def customUserlists(self, create_directory=True, folderName=''):
 		self.list = []
 		try:
@@ -1991,6 +2127,88 @@ class Movies:
 			from resources.lib.modules import log_utils
 			log_utils.error()
 
+	def floppyWatchlistManager(self):
+		try:
+			control.busy()
+			self.list = floppysync.fetch_status_list('movies_plantowatch')
+			for item in self.list: item['trakt'] = item.get('tmdb', '')
+			self.worker()
+			self.sort(type='movies.watchlist')
+			control.hide()
+			from resources.lib.windows.traktbasic_manager import TraktBasicManagerXML
+			window = TraktBasicManagerXML('traktbasic_manager.xml', control.addonPath(control.addonId()), results=self.list)
+			selected_items = window.run()
+			del window
+			if selected_items:
+				for tmdb in selected_items: floppy.remove_from_watchlist(tmdb=tmdb, media_type='movie')
+				floppy.sync_watch_list(forced=True)
+				control.trigger_widget_refresh()
+		except:
+			from resources.lib.modules import log_utils
+			log_utils.error()
+			control.hide()
+
+	def floppyCollectionManager(self):
+		try:
+			control.busy()
+			self.list = floppy.get_collection_entries('movie')
+			self.worker()
+			self.sort()
+			control.hide()
+			from resources.lib.windows.traktbasic_manager import TraktBasicManagerXML
+			window = TraktBasicManagerXML('traktbasic_manager.xml', control.addonPath(control.addonId()), results=self.list)
+			selected_items = window.run()
+			del window
+			if selected_items:
+				for entry_id in selected_items: floppy.remove_from_collection(entry_id)
+				floppy.sync_collection(forced=True)
+				control.trigger_widget_refresh()
+		except:
+			from resources.lib.modules import log_utils
+			log_utils.error()
+			control.hide()
+
+	def floppyDroppedManager(self):
+		try:
+			control.busy()
+			self.list = floppysync.fetch_status_list('movies_dropped')
+			for item in self.list: item['trakt'] = item.get('tmdb', '')
+			self.worker()
+			self.sort()
+			control.hide()
+			from resources.lib.windows.traktbasic_manager import TraktBasicManagerXML
+			window = TraktBasicManagerXML('traktbasic_manager.xml', control.addonPath(control.addonId()), results=self.list)
+			selected_items = window.run()
+			del window
+			if selected_items:
+				for tmdb in selected_items: floppy.set_status(tmdb=tmdb, media_type='movie', status=floppy.STATUS_PLANNING)
+				floppy.sync_watch_list(forced=True)
+				control.trigger_widget_refresh()
+		except:
+			from resources.lib.modules import log_utils
+			log_utils.error()
+			control.hide()
+
+	def floppyUnfinishedManager(self):
+		try:
+			control.busy()
+			list = self.floppy_unfinished(create_directory=False)
+			control.hide()
+			from resources.lib.windows.traktmovieprogress_manager import TraktMovieProgressManagerXML
+			window = TraktMovieProgressManagerXML('traktmovieprogress_manager.xml', control.addonPath(control.addonId()), results=list)
+			selected_items = window.run()
+			del window
+			if selected_items:
+				for imdb in selected_items:
+					item = next((i for i in list if i.get('imdb') == imdb), {})
+					floppy.scrobbleReset(imdb=imdb, tmdb=item.get('tmdb', ''), refresh=False)
+				control.trigger_widget_refresh()
+				if 'plugin.video.umbrella' in control.infoLabel('Container.PluginName'): control.refresh()
+		except:
+			from resources.lib.modules import log_utils
+			log_utils.error()
+			control.hide()
+
 	def scrob_unfinished(self, url=None, idx=True, create_directory=True, folderName=''):
 		# Unlike the other providers' "Unfinished" (which read local client-tracked
 		# bookmarks), Scrob has a real server-side "in progress playback" endpoint —
@@ -2023,6 +2241,26 @@ class Movies:
 		except:
 			from resources.lib.modules import log_utils
 			log_utils.error()
+
+	def scrobUnfinishedManager(self):
+		try:
+			control.busy()
+			list = self.scrob_unfinished(create_directory=False)
+			control.hide()
+			from resources.lib.windows.traktmovieprogress_manager import TraktMovieProgressManagerXML
+			window = TraktMovieProgressManagerXML('traktmovieprogress_manager.xml', control.addonPath(control.addonId()), results=list)
+			selected_items = window.run()
+			del window
+			if selected_items:
+				for imdb in selected_items:
+					item = next((i for i in list if i.get('imdb') == imdb), {})
+					scrob.scrobbleReset(imdb=imdb, tmdb=item.get('tmdb', ''), refresh=False)
+				control.trigger_widget_refresh()
+				if 'plugin.video.umbrella' in control.infoLabel('Container.PluginName'): control.refresh()
+		except:
+			from resources.lib.modules import log_utils
+			log_utils.error()
+			control.hide()
 
 	def simklPlantowatch(self, url, create_directory=True, folderName=''):
 		self.list = []
@@ -2123,8 +2361,54 @@ class Movies:
 			if create_directory: self.movieDirectory(self.list, folderName=folderName)
 			return self.list
 		except:
-			
+
 			log_utils.error()
+
+	def simklPlantowatchManager(self):
+		try:
+			control.busy()
+			self.list = simklsync.fetch_plantowatch('movies_plantowatch')
+			for item in self.list: item['trakt'] = item.get('imdb', '')
+			self.worker()
+			self.sort()
+			control.hide()
+			from resources.lib.windows.traktbasic_manager import TraktBasicManagerXML
+			window = TraktBasicManagerXML('traktbasic_manager.xml', control.addonPath(control.addonId()), results=self.list)
+			selected_items = window.run()
+			del window
+			if selected_items:
+				for imdb in selected_items:
+					if simkl.remove_item_from_list(imdb=imdb, mediatype='Movie', listname='plantowatch'):
+						simklsync.delete_plantowatch_items([imdb], 'movies_plantowatch', 'imdb')
+				simkl.sync_plantowatch(forced=True)
+				control.trigger_widget_refresh()
+		except:
+
+			log_utils.error()
+			control.hide()
+
+	def simklDroppedManager(self):
+		try:
+			control.busy()
+			self.list = simklsync.fetch_dropped('movies_dropped')
+			for item in self.list: item['trakt'] = item.get('imdb', '')
+			self.worker()
+			self.sort()
+			control.hide()
+			from resources.lib.windows.traktbasic_manager import TraktBasicManagerXML
+			window = TraktBasicManagerXML('traktbasic_manager.xml', control.addonPath(control.addonId()), results=self.list)
+			selected_items = window.run()
+			del window
+			if selected_items:
+				for imdb in selected_items:
+					if simkl.remove_item_from_list(imdb=imdb, mediatype='Movie', listname='dropped'):
+						simklsync.delete_dropped_items([imdb], 'movies_dropped', 'imdb')
+				simkl.sync_dropped(forced=True)
+				control.trigger_widget_refresh()
+		except:
+
+			log_utils.error()
+			control.hide()
 
 	def traktLlikedlists(self, create_directory=True, folderName=''):
 		items = traktsync.fetch_liked_list('', True)
