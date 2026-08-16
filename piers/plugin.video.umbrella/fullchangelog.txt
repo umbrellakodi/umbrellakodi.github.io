@@ -1,4 +1,9 @@
-[B]Update - v6.7.670 - August 15th, 2026 [/B]
+
+[B]Update - v6.7.671 - August 16th, 2026 [/B]
+--[Fix] Added support for custom lists from Floppy.
+--[Change] Success and Fail messages for add and remove from lists.
+
+[B]Update - v6.7.83 - August 15th, 2026 [/B]
 --[Fix] Added guard for clearing playlist to avoid play next not working.
 --[Fix] Added thread limits to tmdb to avoid lockups on lower end devices.
 --[Change] Removed Simkl Unfinished.

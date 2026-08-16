@@ -1370,6 +1370,76 @@ class TVshows:
 		except:
 			log_utils.error()
 
+	def floppyUserlists(self, create_directory=True, folderName=''):
+		# Mirrors customUserlists() — Floppy's /lists/ + /lists/{id}/items/ (confirmed
+		# via live Postman testing 2026-08-16) work the same way Custom's user lists do,
+		# so this follows the identical live-fetch-and-filter pattern rather than caching
+		# locally (list items embed a large per-country watch_providers block per item
+		# that isn't worth persisting, and floppy.get_list_items() already strips it).
+		self.list = []
+		try:
+			if not self.floppyCredentials: raise Exception()
+			lists = floppy.get_user_lists()
+			for lst in lists:
+				try:
+					list_id = str(lst.get('id', '') or '')
+					if not list_id: continue
+					count = sum(1 for i in floppy.get_list_items(list_id) if i.get('media_type') == 'tv')
+					if not count: continue
+					name = lst.get('name', '')
+					values = {
+						'name': '%s (%s)' % (name, count),
+						'action': 'floppy_list_shows&list_id=%s' % quote_plus(list_id),
+						'image': lst.get('image') or 'icon.png', 'icon': 'DefaultVideoPlaylists.png', 'url': '',
+					}
+					self.list.append(values)
+				except: pass
+		except: pass
+		if create_directory: self.addDirectory(self.list, folderName=folderName)
+		return self.list
+
+	def floppyListShows(self, list_id, url=None, create_directory=True, folderName=''):
+		# Live-fetched every call, same as customListShows() — see floppyUserlists().
+		self.list = []
+		try:
+			url = url or ('floppylistshows?list_id=%s&limit=%s&page=1' % (list_id, self.page_limit))
+			try:
+				q = dict(parse_qsl(urlsplit(url).query))
+				index = int(q.get('page', 1)) - 1
+			except:
+				index = 0
+			items = floppy.get_list_items(list_id)
+			for i in items:
+				try:
+					if i.get('media_type') != 'tv': continue
+					title = i.get('title', '')
+					self.list.append({
+						'tvshowtitle': title, 'title': title, 'year': i.get('year', ''),
+						'tmdb': i.get('tmdb', ''), 'premiered': i.get('premiered', ''),
+					})
+				except: pass
+			useNext = True
+			if create_directory:
+				self.sort()
+				if getSetting('floppy.paginate.lists') == 'true' and self.list:
+					paginated_ids = [self.list[x:x + int(self.page_limit)] for x in range(0, len(self.list), int(self.page_limit))]
+					if index >= len(paginated_ids) - 1: useNext = False
+					self.list = paginated_ids[index] if index < len(paginated_ids) else []
+				else: useNext = False
+			try:
+				if useNext == False: raise Exception()
+				next_page = index + 2
+				next = 'plugin://plugin.video.umbrella/?action=floppy_list_shows&list_id=%s&url=%s&folderName=%s' % (
+					quote_plus(list_id), quote_plus('floppylistshows?list_id=%s&limit=%s&page=%s' % (list_id, self.page_limit, next_page)), quote_plus(folderName))
+			except: next = ''
+			for i in range(len(self.list)): self.list[i]['next'] = next
+			self.worker()
+			if self.list is None: self.list = []
+			if create_directory: self.tvshowDirectory(self.list, folderName=folderName)
+			return self.list
+		except:
+			log_utils.error()
+
 	def floppyList(self, url, table, action, isCollection=False, create_directory=True, folderName=''):
 		# Generic Watchlist/Watching/On Hold/Completed/Dropped/Collection list, mirroring
 		# customWatchlist()/customCollection() above.
@@ -3293,7 +3363,10 @@ class TVshows:
 			values.update(showSeasons)
 			if 'rating' in self.list[i] and self.list[i]['rating']: values['rating'] = self.list[i]['rating'] # prefer imdb,trakt rating and votes if set
 			if 'votes' in self.list[i] and self.list[i]['votes']: values['votes'] = self.list[i]['votes']
-			if 'year' in self.list[i] and self.list[i]['year'] != values.get('year'): values['year'] = self.list[i]['year']
+			# Presence check rather than truthiness let a caller-supplied empty-string
+			# placeholder overwrite a correct freshly-fetched year with '' — see the same
+			# fix in movies.py: super_info() for the full explanation.
+			if self.list[i].get('year') and self.list[i]['year'] != values.get('year'): values['year'] = self.list[i]['year']
 			if not tvdb: tvdb = values.get('tvdb', '')
 			if not values.get('imdb'): values['imdb'] = imdb
 			if not values.get('tmdb'): values['tmdb'] = tmdb

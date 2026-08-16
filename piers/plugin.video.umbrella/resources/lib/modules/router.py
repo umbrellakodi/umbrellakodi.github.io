@@ -351,6 +351,15 @@ def router(argv2):
 	elif action == 'floppy_movies_completed':
 		from resources.lib.menus import movies
 		movies.Movies().floppyList(url, 'movies_completed', 'floppy_movies_completed', folderName=folderName)
+	elif action == 'floppy_movies_watched':
+		from resources.lib.menus import movies
+		movies.Movies().floppyWatched(url, folderName=folderName)
+	elif action == 'floppy_movies_userlists':
+		from resources.lib.menus import movies
+		movies.Movies().floppyUserlists(folderName=folderName, create_directory=True)
+	elif action == 'floppy_list_movies':
+		from resources.lib.menus import movies
+		movies.Movies().floppyListMovies(params.get('list_id'), url=url, folderName=folderName)
 	elif action == 'floppy_movies_dropped':
 		from resources.lib.menus import movies
 		movies.Movies().floppyList(url, 'movies_dropped', 'floppy_movies_dropped', folderName=folderName)
@@ -444,6 +453,12 @@ def router(argv2):
 	elif action == 'floppy_shows_completed':
 		from resources.lib.menus import tvshows
 		tvshows.TVshows().floppyList(url, 'shows_completed', 'floppy_shows_completed', folderName=folderName)
+	elif action == 'floppy_shows_userlists':
+		from resources.lib.menus import tvshows
+		tvshows.TVshows().floppyUserlists(folderName=folderName, create_directory=True)
+	elif action == 'floppy_list_shows':
+		from resources.lib.menus import tvshows
+		tvshows.TVshows().floppyListShows(params.get('list_id'), url=url, folderName=folderName)
 	elif action == 'floppy_shows_dropped':
 		from resources.lib.menus import tvshows
 		tvshows.TVshows().floppyList(url, 'shows_dropped', 'floppy_shows_dropped', folderName=folderName)
