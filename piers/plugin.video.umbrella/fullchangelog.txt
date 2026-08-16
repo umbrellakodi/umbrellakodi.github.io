@@ -1,139 +1,42 @@
-[B]Update - v6.7.669 - August 12th, 2026 [/B]
+[B]Update - v6.7.670 - August 15th, 2026 [/B]
+--[Fix] Added guard for clearing playlist to avoid play next not working.
+--[Fix] Added thread limits to tmdb to avoid lockups on lower end devices.
+--[Change] Removed Simkl Unfinished.
+
+[B]Update - v6.7.82 - August 13th, 2026 [/B]
+--[Change] Reorganized My TV Shows and My Movies to put lists under providers names. Ex: My TV Shows > Trakt > Progress Episodes
+--[Change] Added support for Scrob. (https://github.com/ellite/scrob)
+--[Change] Added support for Floppy. (https://github.com/dannyvfilms/Floppy)
 --[Change] Changed labels throughout providers to be consistent.
---[Change] Added support for dropped to Floppy.
 --[Change] Added support for dropped to all calendar lists.
 --[Change] Added support for 3 digit episode numbers from manthock.
 --[Change] Management Tools Sections and Managers in context menu updated to add all available options for each provider.
-
-[B]Update - v6.7.668 - August 11th, 2026 [/B]
---[Change] Removed bookmark logging.
-
-[B]Update - v6.7.667 - August 11th, 2026 [/B]
---[Change] Removed debug logging in preparation for release.
-
-[B]Update - v6.7.666 - August 10th, 2026 [/B]
---[Change] Change made for irrelevant text.
-
-[B]Update - v6.7.665 - August 10th, 2026 [/B]
---[Change] Fixed pagination showing Next Page (None)
-
-[B]Update - v6.7.664 - August 10th, 2026 [/B]
---[Change] Filter custom user lists by type.
-
-[B]Update - v6.7.663 - August 10th, 2026 [/B]
---[Change] Support for lists.
-
-[B]Update - v6.7.662 - August 7th, 2026 [/B]
---[Change] Change to help scrob only count as one watch after long pauses.
-
-[B]Update - v6.7.661 - August 5th, 2026 [/B]
---[Change] Changes made to avoid double scrobble on Scrob and Floppy.
-
-[B]Update - v6.7.660 - August 5th, 2026 [/B]
+--[Change] Fixed pagination showing Next Page (None) in some instances.
+--[Change] Support for lists add from more providers.
+--[Change] Changes made to avoid double scrobbles.
 --[Change] Fixed My TV Shows and My Movies being incorrectly gated.
 --[Fix] Added pagination for user lists.
 --[Change] Made all force sync show progress dialogs.
 --[Fix] Change made for database on android 14 devices.
-
-[B]Update - v6.7.659 - August 5th, 2026 [/B]
---[Change] Made change so that tv and movie lists only showed up if those types of items are present in scrob user lists.
-
-[B]Update - v6.7.658 - August 5th, 2026 [/B]
---[Change] Refresh on add or remove from Scrob list.
-
-[B]Update - v6.7.657 - August 5th, 2026 [/B]
 --[Change] Change made to allow for sorting networks by popularity.
-
-[B]Update - v6.7.656 - August 5th, 2026 [/B]
---[Fix] Fix for Scrob watched/ unwatched not recognizing username and pw.
---[Fix] Changes made for marking show, season, episode as watched/ unwatched on Scrob.	(Do a force sync on Scrob)	
-
-[B]Update - v6.7.655 - August 5th, 2026 [/B]
---[Fix] Fix for Scrob watched/ unwatched not recognizing username and pw.
-
-[B]Update - v6.7.654 - August 4th, 2026 [/B]
 --[Change] Change to playlist creation to avoid duplicate episodes.
---[Change] Fix for full playback not showing stopped on scrob and floppy.
-
-[B]Update - v6.7.652 - August 4th, 2026 [/B]
---[Change] Removed returning series from episodes in progress mdblist.
-
-[B]Update - v6.7.651 - August 4th, 2026 [/B]
---[Change] Removed duplicate upcoming episodes entry in mdblist. 
-
-[B]Update - v6.7.650 - August 4th, 2026 [/B]
---[Change] Made changes MDBList Calendar.
-
-[B]Update - v6.7.649 - August 4th, 2026 [/B]
---[Change] Made changes for stop on Floppy and Scrob.
-
-[B]Update - v6.7.648 - August 4th, 2026 [/B]
 --[Change] MdbList Calendar added.
---[Fix] Added update call for Scrob to update the now playing banner.
---[Fix] Changes made to fix Scrob resume.
---[Fix] Changes made for scrobble for Floppy and Scrob.
---[Fix] Fixed issue with Simkl sync.
---[Fix] Changes made for scrob and floppy to clear cache on full history sync to avoid stale progress indicators.
-
-[B]Update - v6.7.647 - August 3rd, 2026 [/B]
+--[Fix] Changes made for providers to clear cache on full history sync to avoid stale progress indicators.
 --[Change] Moved custom trakt provider behind developer options.
 --[Fix] Added pagination to MDBList History.
 --[Fix] Added progress for sync when changing watch indicators.
---[Change] Added initial support for Scrob.
-
-[B]Update - v6.7.646 - August 1st, 2026 [/B]
+--[Change] Made change so that tv and movie lists only showed up if those types of items are present in scrob user lists.
 --[Fix] Fix for resume on trakt resetting banner to 0.
 --[Fix] Fix to send separate stop event on Floppy to remove now playing banner.
-
-[B]Update - v6.7.645 - August 1st, 2026 [/B]
 --[Fix] Runtime duration for mdblist fixed.
 --[Fix] Fix for hiding collection items from trakt.
 --[Change] Change made for Trakt scrobble on pause.
-
-[B]Update - v6.7.644 - July 31st, 2026 [/B]
---[Change] Made changes to Yamtrack to be Floppy.
---[Change] Added pagination for shows progress in custom and Floppy.
---[Fix] Fixed custom Recent Episodes.
-
-[B]Update - v6.7.643 - July 30th, 2026 [/B]
---[Change] Made changes to Yamtrack episode watched tracking.
---[Change] Added pagination to custom server history.
---[Fix] Fixed some logging issues causing errors.
-
-[B]Update - v6.7.642 - July 30th, 2026 [/B]
---[Change] Added support for Yamtrack Fork. (https://github.com/dannyvfilms/Yamtrack)
 --[Fix] Made changes to the way counts are done when using Simkl
 --[Change] Menus changed to group lists from services together. 
-
-[B]Update - v6.7.641 - July 30th, 2026 [/B]
---[Change] Another change for users with ridiculous amounts in their collections.
-
-[B]Update - v6.7.640 - July 29th, 2026 [/B]
---[Change] Updated to fix support for large collections.
-
-[B]Update - v6.7.639 - July 24th, 2026 [/B]
---[Change] Added ability to use self-hosted trakt clones. There is a lot to be done still this is just testing.
-
-[B]Update - v6.7.638 - July 21st, 2026 [/B]
 --[Change] Added more mdblist lists for tv and movies like watched.
-
-[B]Update - v6.7.637 - July 21st, 2026 [/B]
---[Fix] Removed timestamp from Simkl scrobble.
-
-[B]Update - v6.7.636 - July 20th, 2026 [/B]
+--[Fix] Removed timestamp from Simkl scrobble. Now uses server time.
 --[Fix] Made sure scrobble fails no longer show when scrobble notifications are disabled.
-
-[B]Update - v6.7.635 - July 17th, 2026 [/B]
---[Fix] Change in the way database for menu is constructed on first run.
-
-[B]Update - v6.7.634 - July 15th, 2026 [/B]
---[Fix] Added case for a 409 result from Trakt to show as success.
-
-[B]Update - v6.7.633 - July 14th, 2026 [/B]
---[Fix] Changed settings_dict back to minidom from element tree.
-
-[B]Update - v6.7.632 - July 14th, 2026 [/B]
---[Fix] Change for settings reads for apple devices.
+--[Fix] Change for settings reads for apple devices to fix long delays.
 
 [B]Update - v6.7.81 - July 13th, 2026 [/B]
 --[Fix] Fix to clear cache on show episode and season counts when episode count does not match cache.

@@ -108,6 +108,9 @@ def router(argv2):
 	elif action == 'mymovies_scrobNavigator':
 		from resources.lib.menus import navigator
 		navigator.Navigator().mymovies_scrob(folderName=folderName)
+	elif action == 'mymovies_localNavigator':
+		from resources.lib.menus import navigator
+		navigator.Navigator().mymovies_local(folderName=folderName)
 	elif action == 'movies':
 		from resources.lib.menus import movies
 		movies.Movies().get(url, folderName=folderName)
@@ -375,6 +378,9 @@ def router(argv2):
 	elif action == 'scrob_movies_unfinished':
 		from resources.lib.menus import movies
 		movies.Movies().scrob_unfinished(url, folderName=folderName)
+	elif action == 'simkl_movies_unfinished':
+		from resources.lib.menus import movies
+		movies.Movies().simkl_unfinished(url, folderName=folderName)
 	elif action == 'movies_scrobUnfinishedManager':
 		from resources.lib.menus import movies
 		movies.Movies().scrobUnfinishedManager()
@@ -540,6 +546,9 @@ def router(argv2):
 	elif action == 'mytvshows_scrobNavigator':
 		from resources.lib.menus import navigator
 		navigator.Navigator().mytvshows_scrob(folderName=folderName)
+	elif action == 'mytvshows_localNavigator':
+		from resources.lib.menus import navigator
+		navigator.Navigator().mytvshows_local(folderName=folderName)
 	elif action == 'tvshows':
 		from resources.lib.menus import tvshows
 		tvshows.TVshows().get(url, folderName=folderName)

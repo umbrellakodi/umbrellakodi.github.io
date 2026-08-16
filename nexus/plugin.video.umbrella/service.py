@@ -57,61 +57,6 @@ class CheckSettingsFile:
 		except Exception:
 			log_utils.error()
 
-class MigrateFloppyRename:
-	# One-time migration: the Yamtrack fork this integration targets was renamed to
-	# "Floppy" by its developer, so all yamtrack.* setting ids and the sync db were
-	# renamed to floppy.* to match. Without this, an already-authenticated user would
-	# lose their saved base URL/token and synced watch history on upgrade.
-	def run(self):
-		try:
-			if control.setting('floppy.token'): return  # already migrated, or a fresh install
-			old_token = control.setting('yamtrack.token')
-			if not old_token: return  # never used the old Yamtrack integration
-			control.log('[ plugin.video.umbrella ]  Migrating Yamtrack settings to Floppy naming...', LOGINFO)
-			setting_map = [
-				('yamtrack.baseurl', 'floppy.baseurl'),
-				('yamtrack.token', 'floppy.token'),
-				('yamtrack.user.name', 'floppy.user.name'),
-				('yamtrack.general.notifications', 'floppy.general.notifications'),
-				('yamtrack.service.syncInterval', 'floppy.service.syncInterval'),
-				('yamtrack.markwatched', 'floppy.markwatched'),
-				('yamtrack.progress.showunaired', 'floppy.progress.showunaired'),
-				('yamtrack.UpcomingProgress.prependDate', 'floppy.UpcomingProgress.prependDate'),
-			]
-			for old_id, new_id in setting_map:
-				value = control.setting(old_id)
-				if value: control.setSetting(new_id, value)
-			old_db = control.joinPath(control.dataPath, 'yamtrackSync.db')
-			if control.existsPath(old_db) and not control.existsPath(control.floppySyncFile):
-				import shutil
-				shutil.copy(old_db, control.floppySyncFile)
-				control.log('[ plugin.video.umbrella ]  Migrated Floppy sync database', LOGINFO)
-			control.log('[ plugin.video.umbrella ]  Finished migrating Yamtrack settings to Floppy naming', LOGINFO)
-		except Exception:
-			log_utils.error()
-
-class ResetHiddenCustomProvider:
-	# The Custom provider is hidden from regular users behind dev.enable.custom.
-	# metacache.py and playcount.py branch on the raw indicators.alt/scrobble.source
-	# values directly (bypassing getCustomCredentialsInfo()/getCustomIndicatorsInfo()),
-	# so if a user already had Custom selected (e.g. upgrading from a build where it
-	# wasn't gated yet) and the developer flag is off, those code paths would keep
-	# running silently. Reset the selection back to Local without touching the saved
-	# custom.baseurl/custom.user.token credentials, so re-enabling the flag later
-	# restores it immediately with no re-auth needed.
-	def run(self):
-		try:
-			if control.setting('dev.enable.custom') == 'true': return
-			if control.setting('indicators.alt') == '4':
-				control.setSetting('indicators.alt', '0')
-				control.setSetting('indicators', 'Local')
-			if control.setting('scrobble.source') == '4':
-				control.setSetting('scrobble.source', '0')
-				control.setSetting('scrobble', 'Local')
-			control.setSetting('custom.markwatched', 'false')
-		except Exception:
-			log_utils.error()
-
 class SettingsMonitor(control.monitor_class):
 	def __init__ (self):
 		control.monitor_class.__init__(self)
@@ -517,8 +462,6 @@ def main():
 		schedTrakt = None
 		libraryService = None
 		CheckSettingsFile().run()
-		MigrateFloppyRename().run()
-		ResetHiddenCustomProvider().run()
 		SyncMyAccounts().run()
 		PremAccntNotification().run()
 		ReuseLanguageInvokerCheck().run()

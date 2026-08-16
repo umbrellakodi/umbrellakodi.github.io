@@ -910,6 +910,20 @@ class Movies:
 			log_utils.error()
 			control.hide()
 
+	def simkl_unfinished(self, url=None, idx=True, create_directory=True, folderName=''):
+		self.list = []
+		try:
+			from resources.lib.database import simklsync
+			self.list = simklsync.fetch_bookmarks('', ret_all=True, ret_type='movies')
+			if idx: self.worker()
+			self.list = sorted(self.list, key=lambda k: k['paused_at'], reverse=True)
+			if self.list is None: self.list = []
+			if create_directory: self.movieDirectory(self.list, unfinished=True, next=False, folderName=folderName)
+			return self.list
+		except:
+			from resources.lib.modules import log_utils
+			log_utils.error()
+
 	def mdblist_watched(self, url=None, idx=True, create_directory=True, folderName=''):
 		# Paginated the same way customWatched() is: watch history is already a fully-local
 		# list (no live remote pagination possible), but without slicing before worker() runs,

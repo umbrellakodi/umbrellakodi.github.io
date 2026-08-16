@@ -98,6 +98,7 @@ class Navigator:
 		if key == 'not_lite':                return not lite
 		if key == 'simkl_token':             return bool(self.simkltoken)
 		if key == 'simkl_credentials':       return bool(self.simklCredentials)
+		if key == 'simkl_with_indicators':   return bool(self.simklCredentials and (self.simklIndicators or getSetting('simkl.markwatched') == 'true'))
 		if key == 'trakt_credentials':       return bool(self.traktCredentials)
 		if key == 'trakt_with_indicators':   return bool(self.traktCredentials and (self.traktIndicators or getSetting('trakt.markwatched') == 'true'))
 		if key == 'mdblist_token':           return bool(getSetting('mdblist.token'))
@@ -123,6 +124,7 @@ class Navigator:
 	def _renderDbMenu(self, menu_name, editor_action, editor_label, lite=False, folderName=''):
 		from resources.lib.database import menu as menu_db
 		menu_db.initialize(menu_name)
+		editor_label = self._MENU_EDITOR_LABELS.get(menu_name, editor_label)
 		rendered = 0
 		for item in menu_db.get_menu_items(menu_name):
 			ck = item.get('condition_key')
@@ -163,6 +165,7 @@ class Navigator:
 		'mymovies_trakt':    'Edit My Movies: Trakt',
 		'mymovies_floppy': 'Edit My Movies: Floppy',
 		'mymovies_scrob': 'Edit My Movies: Scrob',
+		'mymovies_local': 'Edit My Movies: Local',
 		'mytvshows_mdblist':  'Edit My TV Shows: MDBList',
 		'mytvshows_custom':   'Edit My TV Shows: Custom',
 		'mytvshows_tmdb':     'Edit My TV Shows: TMDb',
@@ -170,6 +173,7 @@ class Navigator:
 		'mytvshows_trakt':    'Edit My TV Shows: Trakt',
 		'mytvshows_floppy': 'Edit My TV Shows: Floppy',
 		'mytvshows_scrob': 'Edit My TV Shows: Scrob',
+		'mytvshows_local': 'Edit My TV Shows: Local',
 	}
 
 	def mainMenuEditor(self, menu_name='root'):
@@ -382,7 +386,11 @@ class Navigator:
 
 	def mainMenuReorderEditor(self, menu_name='root', preselected_id=None):
 		from resources.lib.database import menu as menu_db
-		enabled = menu_db.get_menu_items(menu_name)
+		all_enabled = menu_db.get_menu_items(menu_name)
+		# Only offer items that actually render (pass condition_key) for reordering,
+		# otherwise moving an item relative to a hidden one produces no visible change
+		# in the real menu, which looks like the reorder didn't stick.
+		enabled = [it for it in all_enabled if not (it.get('condition_key') and not self._eval_condition_key(it['condition_key']))]
 		if preselected_id is not None:
 			sel = next((i for i, it in enumerate(enabled) if it['item_id'] == preselected_id), -1)
 			if sel < 0:
@@ -403,9 +411,14 @@ class Navigator:
 			pos_display.append('%d.  %s%s' % (idx + 1, it_lbl, marker))
 		target = control.selectDialog(pos_display, heading='Move "%s" to:' % lbl, preselect=sel)
 		if target >= 0 and target != sel:
-			current_ids = [it['item_id'] for it in enabled]
-			current_ids.remove(item['item_id'])
-			current_ids.insert(target, item['item_id'])
+			new_visible_ids = [it['item_id'] for it in enabled]
+			new_visible_ids.remove(item['item_id'])
+			new_visible_ids.insert(target, item['item_id'])
+			visible_id_set = set(new_visible_ids)
+			new_visible_iter = iter(new_visible_ids)
+			# Re-weave the reordered visible ids back into the full enabled list so
+			# hidden (condition_key-filtered) items keep their existing relative position.
+			current_ids = [next(new_visible_iter) if it['item_id'] in visible_id_set else it['item_id'] for it in all_enabled]
 			menu_db.reorder_enabled_items(menu_name, current_ids)
 		control.refresh()
 
@@ -437,6 +450,9 @@ class Navigator:
 	def mymovies_scrob(self, folderName=''):
 		self._renderDbMenu('mymovies_scrob', 'myMoviesNavigatorEditor', 'Edit My Movies Menu', folderName=folderName)
 
+	def mymovies_local(self, folderName=''):
+		self._renderDbMenu('mymovies_local', 'myMoviesNavigatorEditor', 'Edit My Movies Menu', folderName=folderName)
+
 	def tvshows(self, lite=False, folderName=''):
 		self._renderDbMenu('tvshows', 'tvNavigatorEditor', 'Edit TV Shows Menu', lite=lite, folderName=folderName)
 
@@ -464,6 +480,9 @@ class Navigator:
 
 	def mytvshows_scrob(self, folderName=''):
 		self._renderDbMenu('mytvshows_scrob', 'myTVShowsNavigatorEditor', 'Edit My TV Shows Menu', folderName=folderName)
+
+	def mytvshows_local(self, folderName=''):
+		self._renderDbMenu('mytvshows_local', 'myTVShowsNavigatorEditor', 'Edit My TV Shows Menu', folderName=folderName)
 
 	def anime(self, lite=False, folderName=''):
 		self.addDirectoryItem(32001, 'anime_Movies&url=anime&folderName=%s' % quote_plus(getLS(32001)), 'movies.png', 'DefaultMovies.png')
