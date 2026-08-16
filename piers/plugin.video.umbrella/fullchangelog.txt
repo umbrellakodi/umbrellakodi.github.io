@@ -1,4 +1,7 @@
 
+[B]Update - v6.7.672 - August 16th, 2026 [/B]
+--[Change] Added direct progress scrape settings for new providers. 
+
 [B]Update - v6.7.671 - August 16th, 2026 [/B]
 --[Fix] Added support for custom lists from Floppy.
 --[Change] Success and Fail messages for add and remove from lists.

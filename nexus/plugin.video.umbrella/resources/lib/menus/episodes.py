@@ -61,6 +61,9 @@ class Episodes:
 		self.trakt_directProgressScrape = getSetting('trakt.directProgress.scrape') == 'true'
 		self.simkl_directProgressScrape = getSetting('simkl.directProgress.scrape') == 'true'
 		self.mdblist_directProgressScrape = getSetting('mdblist.directProgress.scrape') == 'true'
+		self.custom_directProgressScrape = getSetting('custom.directProgress.scrape') == 'true'
+		self.floppy_directProgressScrape = getSetting('floppy.directProgress.scrape') == 'true'
+		self.scrob_directProgressScrape = getSetting('scrob.directProgress.scrape') == 'true'
 		self.trakt_progressFlatten = getSetting('trakt.progressFlatten') == 'true'
 		self.simkl_progressFlatten = getSetting('simkl.progressFlatten') == 'true'
 		self.mdblist_progressFlatten = getSetting('mdblist.progressFlatten') == 'true'
@@ -601,6 +604,22 @@ class Episodes:
 		if url == 'mdbprogress':
 			cache.remove(self.mdblist_progress_list, '/upnext', self.mdblist_directProgressScrape)
 			cache.remove(self.mdblist_progress_list, url, self.mdblist_directProgressScrape)
+			control.sleep(200)
+			return control.refresh()
+		if url == 'customprogress':
+			cache.remove(self.custom_progress_list, 'customepisodesprogress', self.custom_directProgressScrape)
+			control.sleep(200)
+			return control.refresh()
+		if url == 'floppyprogress':
+			# custom_calendar() uses the bare url as its cache key, but floppy_calendar()/
+			# scrob_calendar() rewrite it to include limit/page before ever calling
+			# cache.get() (see floppy_calendar() above) — the cache key has to be
+			# reconstructed identically here or this would silently clear nothing.
+			cache.remove(self.floppy_progress_list, 'floppyepisodesprogress?limit=%s&page=1' % (self.count or 20), self.floppy_directProgressScrape)
+			control.sleep(200)
+			return control.refresh()
+		if url == 'scrobprogress':
+			cache.remove(self.scrob_progress_list, 'scrobepisodesprogress?limit=%s&page=1' % (self.count or 20), self.scrob_directProgressScrape)
 			control.sleep(200)
 			return control.refresh()
 		try: url = getattr(self, url + '_link')
@@ -1199,7 +1218,7 @@ class Episodes:
 	def custom_calendar(self, url, folderName=''):
 		self.list = []
 		try:
-			self.list = cache.get(self.custom_progress_list, 0, url)
+			self.list = cache.get(self.custom_progress_list, 0, url, self.custom_directProgressScrape)
 			self.sort(type='progress')
 			if self.list is None: self.list = []
 			prior_week = int(re.sub(r'[^0-9]', '', (self.date_time - timedelta(days=7)).strftime('%Y-%m-%d')))
@@ -1224,7 +1243,7 @@ class Episodes:
 	def custom_upcoming_progress(self, url, folderName=''):
 		self.list = []
 		try:
-			self.list = cache.get(self.custom_progress_list, 0, url, False, True)
+			self.list = cache.get(self.custom_progress_list, 0, url, self.custom_directProgressScrape, True)
 			if self.list:
 				self.list = sorted(self.list, key=lambda k: (k['premiered'] if k.get('premiered') else '3021-01-01', k.get('airtime', '')))
 			if self.list is None: self.list = []
@@ -1388,7 +1407,7 @@ class Episodes:
 			except:
 				index = 0
 				page_limit = max(1, int(self.count) if self.count else 20)
-			self.list = cache.get(self.floppy_progress_list, 0, url)
+			self.list = cache.get(self.floppy_progress_list, 0, url, self.floppy_directProgressScrape)
 			self.sort(type='progress')
 			if self.list is None: self.list = []
 			prior_week = int(re.sub(r'[^0-9]', '', (self.date_time - timedelta(days=7)).strftime('%Y-%m-%d')))
@@ -1427,7 +1446,7 @@ class Episodes:
 	def floppy_upcoming_progress(self, url, folderName=''):
 		self.list = []
 		try:
-			self.list = cache.get(self.floppy_progress_list, 0, url, False, True)
+			self.list = cache.get(self.floppy_progress_list, 0, url, self.floppy_directProgressScrape, True)
 			if self.list:
 				self.list = sorted(self.list, key=lambda k: (k['premiered'] if k.get('premiered') else '3021-01-01', k.get('airtime', '')))
 			if self.list is None: self.list = []
@@ -1586,7 +1605,7 @@ class Episodes:
 			except:
 				index = 0
 				page_limit = max(1, int(self.count) if self.count else 20)
-			self.list = cache.get(self.scrob_progress_list, 0, url)
+			self.list = cache.get(self.scrob_progress_list, 0, url, self.scrob_directProgressScrape)
 			self.sort(type='progress')
 			if self.list is None: self.list = []
 			prior_week = int(re.sub(r'[^0-9]', '', (self.date_time - timedelta(days=7)).strftime('%Y-%m-%d')))
@@ -1624,7 +1643,7 @@ class Episodes:
 	def scrob_upcoming_progress(self, url, folderName=''):
 		self.list = []
 		try:
-			self.list = cache.get(self.scrob_progress_list, 0, url, False, True)
+			self.list = cache.get(self.scrob_progress_list, 0, url, self.scrob_directProgressScrape, True)
 			if self.list:
 				self.list = sorted(self.list, key=lambda k: (k['premiered'] if k.get('premiered') else '3021-01-01', k.get('airtime', '')))
 			if self.list is None: self.list = []
@@ -2551,9 +2570,18 @@ class Episodes:
 		except: simklProgress = False
 		try: mdblistProgress = False if 'mdblistProgress' not in items[0] else True
 		except: mdblistProgress = False
+		try: customProgress = False if 'customProgress' not in items[0] else True
+		except: customProgress = False
+		try: floppyProgress = False if 'floppyProgress' not in items[0] else True
+		except: floppyProgress = False
+		try: scrobProgress = False if 'scrobProgress' not in items[0] else True
+		except: scrobProgress = False
 		if simklProgress and self.simkl_directProgressScrape: progressMenu = getLS(32016)
 		if traktProgress and self.trakt_directProgressScrape: progressMenu = getLS(32016)
 		elif mdblistProgress and self.mdblist_directProgressScrape: progressMenu = getLS(32016)
+		elif customProgress and self.custom_directProgressScrape: progressMenu = getLS(32016)
+		elif floppyProgress and self.floppy_directProgressScrape: progressMenu = getLS(32016)
+		elif scrobProgress and self.scrob_directProgressScrape: progressMenu = getLS(32016)
 		else: progressMenu = getLS(32015)
 		if traktProgress: isMultiList = True
 		elif simklProgress: isMultiList = True
@@ -2813,8 +2841,14 @@ class Episodes:
 					cm.append((progressRefreshMenu, 'RunPlugin(%s?action=episodes_clrProgressCache&url=progress)' % sysaddon))	
 				if mdblistProgress and is_widget == False:
 					cm.append((progressRefreshMenu, 'RunPlugin(%s?action=episodes_clrProgressCache&url=mdbprogress)' % sysaddon))
+				if customProgress and is_widget == False:
+					cm.append((progressRefreshMenu, 'RunPlugin(%s?action=episodes_clrProgressCache&url=customprogress)' % sysaddon))
+				if floppyProgress and is_widget == False:
+					cm.append((progressRefreshMenu, 'RunPlugin(%s?action=episodes_clrProgressCache&url=floppyprogress)' % sysaddon))
+				if scrobProgress and is_widget == False:
+					cm.append((progressRefreshMenu, 'RunPlugin(%s?action=episodes_clrProgressCache&url=scrobprogress)' % sysaddon))
 				if isFolder:
-					if (traktProgress or simklProgress or mdblistProgress) and is_widget == False:
+					if (traktProgress or simklProgress or mdblistProgress or customProgress or floppyProgress or scrobProgress) and is_widget == False:
 						cm.append((progressMenu, 'PlayMedia(%s)' % url))
 					url = '%s?action=episodes&tvshowtitle=%s&year=%s&imdb=%s&tmdb=%s&tvdb=%s&meta=%s&season=%s&episode=%s&art=%s' % (sysaddon, systvshowtitle, year, imdb, tmdb, tvdb, sysmeta, season, episode, sysart)
 				cm.append((playlistManagerMenu, 'RunPlugin(%s?action=playlist_Manager&name=%s&url=%s&meta=%s&art=%s)' % (sysaddon, syslabelProgress, sysurl, sysmeta, sysart)))
