@@ -1,2 +1,2 @@
-[B]Update - v6.7.672 - August 16th, 2026 [/B]
---[Change] Added direct progress scrape settings for new providers. 
+[B]Update - v6.7.673 - August 16th, 2026 [/B]
+--[Change] Change made for playnext window.
