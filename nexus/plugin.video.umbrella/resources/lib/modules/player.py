@@ -186,7 +186,12 @@ class Player(xbmc.Player):
 					except (TypeError, ValueError):
 						continue
 			if self.debuglog: log_utils.log('addEpisodetoPlaylist: found seasons %s' % season_nums, level=log_utils.LOGDEBUG)
-			ep_data = [episodes.Episodes().get(self.meta.get('tvshowtitle'), self.meta.get('year'), self.imdb, self.tmdb, self.tvdb, self.meta, season=i, create_directory=False) for i in season_nums]
+			show_meta = dict(self.meta)
+			try:
+				series_rating = next(float(s.get('rating') or 0) for s in seasons_list if float(s.get('rating') or 0) > 0)
+				show_meta['rating'] = series_rating
+			except: pass
+			ep_data = [episodes.Episodes().get(self.meta.get('tvshowtitle'), self.meta.get('year'), self.imdb, self.tmdb, self.tvdb, show_meta, season=i, create_directory=False) for i in season_nums]
 			items = [i for e in ep_data for i in e if isinstance(i, dict) and i.get('unaired') != 'true']
 			if self.debuglog: log_utils.log('addEpisodetoPlaylist: total aired episodes across all seasons: %s' % len(items), level=log_utils.LOGDEBUG)
 			if not items:
@@ -1011,11 +1016,18 @@ class PlayNext(xbmc.Player):
 					if str(item.get('episode')) != helper_episode: continue #episode is a string.... important to note.
 					else: break
 				next_meta = {'tvshowtitle': item.get('tvshowtitle'), 'title': item.get('title'), 'year': item.get('year'), 'premiered': item.get('premiered'), 'season': helper_season, 'episode': helper_episode, 'imdb': item.get('imdb'),
-									'tmdb': item.get('tmdb'), 'tvdb': item.get('tvdb'), 'rating': item.get('rating'), 'landscape': '', 'fanart': item.get('fanart'), 'thumb': item.get('thumb'), 'duration': item.get('duration'), 'episode_type': item.get('episode_type')}
+									'tmdb': item.get('tmdb'), 'tvdb': item.get('tvdb'), 'rating': item.get('rating'), 'tvshow_rating': item.get('tvshow_rating'), 'landscape': '', 'fanart': item.get('fanart'), 'thumb': item.get('thumb'), 'duration': item.get('duration'), 'episode_type': item.get('episode_type')}
 			elif 'plugin.video.umbrella' in next_url:
 				next_meta = jsloads(params.get('meta')) if params.get('meta') else ''
 			elif 'videob://' in next_url and not control.addonInstalled('service.upnext'):
 				log_utils.log('Library not supported currently.', level=log_utils.LOGDEBUG)
+			if next_meta:
+				try: episode_rating = float(next_meta.get('rating') or 0)
+				except: episode_rating = 0
+				try: show_rating = float(next_meta.get('tvshow_rating') or 0)
+				except: show_rating = 0
+				rating = episode_rating if episode_rating > 0 else show_rating
+				next_meta['rating'] = round(rating, 1) if rating > 0 else ''
 		except:
 			log_utils.error()
 		return next_meta

@@ -1,2 +1,3 @@
 [B]Update - v6.7.675 - August 17th, 2026 [/B]
+--[Fix] Continuous-playback dialogs now fall back to the show rating for unrated episodes.
 --[Fix] Standardized direct Progress Episode scraping, refresh, and browse actions across tracking services.

@@ -1983,6 +1983,9 @@ class Episodes:
 				values = {}
 				values.update(seasonEpisodes)
 				values.update(item)
+				# Preserve the show rating separately because an unrated episode's
+				# TMDb vote_average (0.0) overwrites it in the episode metadata.
+				values['tvshow_rating'] = showSeasons.get('rating', '')
 				values['tvshowtitle'] = tvshowtitle
 				values['year'] = showSeasons.get('year')
 				values['trailer'] = showSeasons.get('trailer')
