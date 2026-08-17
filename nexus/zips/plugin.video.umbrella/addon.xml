@@ -261,10 +261,8 @@
 			<screenshot>resources/screenshots/screenshot003.jpg</screenshot>
 		</assets>
 		<news>
-[B]Update - v6.7.674 - August 17th, 2026 [/B]
---[Fix] MDBList completed playback no longer leaves a pause point in Progress Episodes.
---[Fix] Reduced MDBList Progress Shows loading time by eliminating duplicate per-show metadata requests.
---[Fix] Progress Episodes from all tracking services now show configured air information.
+[B]Update - v6.7.675 - August 17th, 2026 [/B]
+--[Fix] Standardized direct Progress Episode scraping, refresh, and browse actions across tracking services.
 		</news>
 	</extension>
 

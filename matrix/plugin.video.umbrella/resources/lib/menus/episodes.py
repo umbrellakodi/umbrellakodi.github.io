@@ -601,6 +601,11 @@ class Episodes:
 				if self.notifications: control.notification(title=32326, message=33049)
 
 	def clr_progress_cache(self, url):
+		if url == 'simklprogress':
+			cache.remove(self.simkl_progress_list, '/sync/all-items/shows/watching', self.simkl_directProgressScrape)
+			cache.remove(self.simkl_progress_list, '/sync/all-items/shows/watching?extended=full', self.simkl_directProgressScrape)
+			control.sleep(200)
+			return control.refresh()
 		if url == 'mdbprogress':
 			cache.remove(self.mdblist_progress_list, '/upnext', self.mdblist_directProgressScrape)
 			cache.remove(self.mdblist_progress_list, url, self.mdblist_directProgressScrape)
@@ -2616,8 +2621,8 @@ class Episodes:
 		except: floppyProgress = False
 		try: scrobProgress = False if 'scrobProgress' not in items[0] else True
 		except: scrobProgress = False
-		if simklProgress and self.simkl_directProgressScrape: progressMenu = getLS(32016)
 		if traktProgress and self.trakt_directProgressScrape: progressMenu = getLS(32016)
+		elif simklProgress and self.simkl_directProgressScrape: progressMenu = getLS(32016)
 		elif mdblistProgress and self.mdblist_directProgressScrape: progressMenu = getLS(32016)
 		elif customProgress and self.custom_directProgressScrape: progressMenu = getLS(32016)
 		elif floppyProgress and self.floppy_directProgressScrape: progressMenu = getLS(32016)
@@ -2878,7 +2883,7 @@ class Episodes:
 				if traktProgress and is_widget == False:
 					cm.append((progressRefreshMenu, 'RunPlugin(%s?action=episodes_clrProgressCache&url=progress)' % sysaddon))
 				if simklProgress and is_widget == False:
-					cm.append((progressRefreshMenu, 'RunPlugin(%s?action=episodes_clrProgressCache&url=progress)' % sysaddon))	
+					cm.append((progressRefreshMenu, 'RunPlugin(%s?action=episodes_clrProgressCache&url=simklprogress)' % sysaddon))	
 				if mdblistProgress and is_widget == False:
 					cm.append((progressRefreshMenu, 'RunPlugin(%s?action=episodes_clrProgressCache&url=mdbprogress)' % sysaddon))
 				if customProgress and is_widget == False:
@@ -2906,7 +2911,7 @@ class Episodes:
 					# cm.append((tvshowBrowserMenu, 'Container.Update(%s?action=episodes&tvshowtitle=%s&year=%s&imdb=%s&tmdb=%s&tvdb=%s&meta=%s,return)' % (sysaddon, systvshowtitle, year, imdb, tmdb, tvdb, sysmeta)))
 
 				if not isFolder:
-					if (traktProgress or simklProgress or mdblistProgress) and is_widget == False: cm.append((progressMenu, 'Container.Update(%s)' % Folderurl))
+					if (traktProgress or simklProgress or mdblistProgress or customProgress or floppyProgress or scrobProgress) and is_widget == False: cm.append((progressMenu, 'Container.Update(%s)' % Folderurl))
 					#cm.append((playbackMenu, 'RunPlugin(%s?action=alterSources&url=%s&meta=%s)' % (sysaddon, sysurl, sysmeta)))
 					if not rescrape_useDefault:
 						cm.append(('Rescrape Options ------>', 'PlayMedia(%s?action=rescrapeMenu&title=%s&year=%s&imdb=%s&tmdb=%s&tvdb=%s&season=%s&episode=%s&tvshowtitle=%s&premiered=%s&meta=%s)' % (
