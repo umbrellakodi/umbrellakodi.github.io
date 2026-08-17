@@ -863,8 +863,15 @@ class Player(xbmc.Player):
 				playingfile = self.isPlaying()
 			except:
 				playingfile = False
-			log_utils.log('onPlayBackEnded Playlist Position: %s isPlaying: %s' % (control.playlist.getposition(), playingfile), level=log_utils.LOGDEBUG)
-			if not playingfile and (control.playlist.getposition() == control.playlist.size() or control.playlist.size() == 1 or (control.playlist.getposition() == 0 and playerWindow.getProperty('umbrella.playnextPlayPressed') == '0')):
+			playlist_position = control.playlist.getposition()
+			playlist_size = control.playlist.size()
+			has_next_queued = playlist_position >= 0 and playlist_position + 1 < playlist_size
+			log_utils.log('onPlayBackEnded Playlist Position: %s Playlist Count: %s Has Next: %s isPlaying: %s' % (playlist_position, playlist_size, has_next_queued, playingfile), level=log_utils.LOGDEBUG)
+			# Kodi can briefly report position 0 with no active file between plugin
+			# playlist items. Position 0 is not a reason to clear when position 1 is
+			# the next episode; doing so breaks continuous playback after the second
+			# episode even though the Play Next window found and displayed episode 3.
+			if not playingfile and not has_next_queued and (playlist_size <= 1 or playlist_position >= playlist_size - 1):
 				control.playlist.clear()
 			log_utils.log('onPlayBackEnded callback', level=log_utils.LOGDEBUG)
 			#control.checkforSkin(action='off')

@@ -1,2 +1,4 @@
-[B]Update - v6.7.673 - August 16th, 2026 [/B]
---[Change] Change made for playnext window.
+[B]Update - v6.7.673 - August 17th, 2026 [/B]
+--[Fix] Simkl Progress Episodes widgets now advance after an episode is marked watched.
+--[Fix] Continuous playback now preserves a queued third episode at playback end.
+--[Fix] Play Random now starts a fresh continuous-playback playlist.

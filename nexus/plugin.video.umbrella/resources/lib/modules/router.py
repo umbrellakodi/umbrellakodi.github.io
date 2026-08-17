@@ -1650,7 +1650,13 @@ def router(argv2):
 				elif rtype == "episode":
 					try: control.notification(title=32536, message='%s - %01dx%02d - %s' % (rlist[rand]['tvshowtitle'], int(rlist[rand]['season']), int(rlist[rand]['episode']), rlist[rand]['title']))
 					except: pass
-				if 'play_Item' in r: control.execute('PlayMedia(%s)' % r)
+				if 'play_Item' in r:
+					# Play Random starts a new continuous-playback chain. A playlist left
+					# behind by an earlier session makes Player.addEpisodetoPlaylist()
+					# mistake that stale entry for an already queued next episode, so the
+					# random episode plays but continuous playback stops afterward.
+					if rtype == 'episode': control.playlist.clear()
+					control.execute('PlayMedia(%s)' % r)
 				else: control.execute('RunPlugin(%s)' % r)
 			except: control.notification(message=32537)
 
