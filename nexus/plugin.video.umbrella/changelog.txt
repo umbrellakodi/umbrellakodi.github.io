@@ -1,4 +1,4 @@
-[B]Update - v6.7.673 - August 17th, 2026 [/B]
---[Fix] Simkl Progress Episodes widgets now advance after an episode is marked watched.
---[Fix] Continuous playback now preserves a queued third episode at playback end.
---[Fix] Play Random now starts a fresh continuous-playback playlist.
+[B]Update - v6.7.674 - August 17th, 2026 [/B]
+--[Fix] MDBList completed playback no longer leaves a pause point in Progress Episodes.
+--[Fix] Reduced MDBList Progress Shows loading time by eliminating duplicate per-show metadata requests.
+--[Fix] Progress Episodes from all tracking services now show configured air information.

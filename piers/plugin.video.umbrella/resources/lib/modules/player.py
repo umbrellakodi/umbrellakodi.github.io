@@ -1627,7 +1627,10 @@ class Bookmarks:
 					simkl.scrobbleMovie(title, year, imdb, tmdb, percent) if media_type == 'movie' else simkl.scrobbleEpisode(tvshowtitle or title, year, imdb, tmdb, tvdb, season, episode, percent)
 				if percent >= int(markwatched_percentage): simkl.scrobbleReset(imdb, tmdb, tvdb, season, episode, refresh=False)
 			elif service == 'mdblist':
-				if not skip_scrobble and (seekable or percent >= int(markwatched_percentage)):
+				# Do not create a new pause bookmark immediately before clearing a
+				# completed item. If the subsequent clear is delayed or fails, that
+				# final pause point is synced back and leaves the episode in progress.
+				if not skip_scrobble and seekable:
 					mdblist.scrobbleMovie(title, year, imdb, tmdb, percent) if media_type == 'movie' else mdblist.scrobbleEpisode(tvshowtitle or title, year, imdb, tmdb, tvdb, season, episode, percent)
 				if percent >= int(markwatched_percentage): mdblist.scrobbleReset(imdb, tmdb, tvdb, season, episode, refresh=False, already_watched=skip_scrobble)
 			elif service == 'custom':

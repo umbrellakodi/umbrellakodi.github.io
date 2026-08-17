@@ -650,6 +650,11 @@ class Episodes:
 				if trakt.getProgressActivity() > cache.timeout(self.trakt_progress_list, api_url, self.trakt_user, self.lang, self.trakt_directProgressScrape):
 					self.list = cache.get(self.trakt_progress_list, 0, api_url, self.trakt_user, self.lang, self.trakt_directProgressScrape)
 				else: self.list = cache.get(self.trakt_progress_list, self.trakt_progress_hours, api_url, self.trakt_user, self.lang, self.trakt_directProgressScrape)
+				# Rebuild progress rows cached before full air-schedule enrichment.
+				if self.list and any(not i.get('airinfo_enriched') for i in self.list):
+					cache.remove(self.trakt_progress_list, api_url, self.trakt_user, self.lang, self.trakt_directProgressScrape)
+					self.list = []
+					self.list = cache.get(self.trakt_progress_list, 0, api_url, self.trakt_user, self.lang, self.trakt_directProgressScrape)
 				try:
 					hidden_prog = traktsync.fetch_hidden_progress()
 					hidden_tvdb_set = {str(i['tvdb']) for i in hidden_prog if i.get('tvdb')}
@@ -754,6 +759,11 @@ class Episodes:
 				if simkl.getProgressActivity() > cache.timeout(self.simkl_progress_list, api_url, self.simkl_directProgressScrape):
 					self.list = cache.get(self.simkl_progress_list, 0, api_url, self.simkl_directProgressScrape)
 				else: self.list = cache.get(self.simkl_progress_list, self.simkl_hours, api_url, self.simkl_directProgressScrape)
+				# Rebuild progress rows cached before air-schedule enrichment.
+				if self.list and any(not i.get('airinfo_enriched') for i in self.list):
+					cache.remove(self.simkl_progress_list, api_url, self.simkl_directProgressScrape)
+					self.list = []
+					self.list = cache.get(self.simkl_progress_list, 0, api_url, self.simkl_directProgressScrape)
 				self.sort(type='progress')
 				if self.list is None: self.list = []
 				# place new season ep1's at top of list for 1 week
@@ -808,6 +818,11 @@ class Episodes:
 				self.list = cache.get(self.mdblist_progress_list, 0, url, self.mdblist_directProgressScrape)
 			else:
 				self.list = cache.get(self.mdblist_progress_list, self.mdblist_hours, url, self.mdblist_directProgressScrape)
+			# Progress rows cached before air-schedule enrichment do not contain the
+			# fields needed by the Air Information label. Rebuild those rows once.
+			if self.list and any(not i.get('airinfo_enriched') for i in self.list):
+				cache.remove(self.mdblist_progress_list, url, self.mdblist_directProgressScrape)
+				self.list = cache.get(self.mdblist_progress_list, 0, url, self.mdblist_directProgressScrape)
 			self.sort(type='progress')
 			if self.list is None: self.list = []
 			# place new season ep1's at top of list for 1 week
@@ -929,12 +944,15 @@ class Episodes:
 				values['tvdb'] = i.get('tvdb', '')
 				values['lastplayed'] = i.get('lastplayed', '')
 				try:
-					show_summary = trakt.getTVShowSummary(imdb_id, full=False) if imdb_id else None
+					# The minimal Trakt show summary does not include the `airs` schedule.
+					# MDBList progress items need the full summary for Air Information labels.
+					show_summary = trakt.getTVShowSummary(imdb_id, full=True) if imdb_id else None
 					airs = (show_summary or {}).get('airs', {}) or {}
 					values['airday'] = airs.get('day', '')
 					values['airtime'] = airs.get('time', '')
 					values['airzone'] = airs.get('timezone', '')
 				except: pass
+				values['airinfo_enriched'] = True
 				if not self.showspecials and next_season_num == 0: return
 				seasonEpisodes = tmdb_indexer().get_seasonEpisodes_meta_checked(tmdb, next_season_num)
 				if not seasonEpisodes: return
@@ -1317,12 +1335,13 @@ class Episodes:
 					values['snum'] = next_season
 					values['enum'] = next_episode
 					try:
-						show_summary = trakt.getTVShowSummary(imdb_id, full=False) if imdb_id else None
+						show_summary = trakt.getTVShowSummary(imdb_id, full=True) if imdb_id else None
 						airs = (show_summary or {}).get('airs', {}) or {}
 						values['airday'] = airs.get('day', '')
 						values['airtime'] = airs.get('time', '')
 						values['airzone'] = airs.get('timezone', '')
 					except: pass
+					values['airinfo_enriched'] = True
 					if not episode_meta.get('plot'): episode_meta['plot'] = showSeasons.get('plot', '')
 					values.update(showSeasons)
 					values.update(seasonEpisodes)
@@ -1522,12 +1541,13 @@ class Episodes:
 					values['snum'] = next_season
 					values['enum'] = next_episode
 					try:
-						show_summary = trakt.getTVShowSummary(imdb_id, full=False) if imdb_id else None
+						show_summary = trakt.getTVShowSummary(imdb_id, full=True) if imdb_id else None
 						airs = (show_summary or {}).get('airs', {}) or {}
 						values['airday'] = airs.get('day', '')
 						values['airtime'] = airs.get('time', '')
 						values['airzone'] = airs.get('timezone', '')
 					except: pass
+					values['airinfo_enriched'] = True
 					if not episode_meta.get('plot'): episode_meta['plot'] = showSeasons.get('plot', '')
 					values.update(showSeasons)
 					values.update(seasonEpisodes)
@@ -1711,12 +1731,13 @@ class Episodes:
 					values['snum'] = next_season
 					values['enum'] = next_episode
 					try:
-						show_summary = trakt.getTVShowSummary(imdb_id, full=False) if imdb_id else None
+						show_summary = trakt.getTVShowSummary(imdb_id, full=True) if imdb_id else None
 						airs = (show_summary or {}).get('airs', {}) or {}
 						values['airday'] = airs.get('day', '')
 						values['airtime'] = airs.get('time', '')
 						values['airzone'] = airs.get('timezone', '')
 					except: pass
+					values['airinfo_enriched'] = True
 					if not episode_meta.get('plot'): episode_meta['plot'] = showSeasons.get('plot', '')
 					values.update(showSeasons)
 					values.update(seasonEpisodes)
@@ -2056,6 +2077,17 @@ class Episodes:
 		def items_list(i):
 			values = i
 			imdb, tmdb, tvdb = i.get('imdb'), i.get('tmdb'), i.get('tvdb')
+			try:
+				# `extended=progress` can omit the `airs` object. Fill it from the
+				# full show summary so Air Information works in Progress Episodes.
+				if not (values.get('airday') or values.get('airtime')):
+					show_summary = trakt.getTVShowSummary(imdb or tvdb, full=True) if (imdb or tvdb) else None
+					airs = (show_summary or {}).get('airs', {}) or {}
+					values['airday'] = airs.get('day', '')
+					values['airtime'] = airs.get('time', '')[:5]
+					values['airzone'] = airs.get('timezone', '')
+			except: pass
+			values['airinfo_enriched'] = True
 			if not tmdb and (imdb or tvdb):
 				try:
 					result = cache.get(tmdb_indexer().IdLookup, 96, imdb, tvdb)
@@ -2447,6 +2479,14 @@ class Episodes:
 		def items_list(i):
 			values = i
 			imdb, tmdb, tvdb = i.get('imdb'), i.get('tmdb'), i.get('tvdb')
+			try:
+				show_summary = trakt.getTVShowSummary(imdb or tvdb, full=True) if (imdb or tvdb) else None
+				airs = (show_summary or {}).get('airs', {}) or {}
+				values['airday'] = airs.get('day', '')
+				values['airtime'] = airs.get('time', '')[:5]
+				values['airzone'] = airs.get('timezone', '')
+			except: pass
+			values['airinfo_enriched'] = True
 			if not tmdb and (imdb or tvdb):
 				try:
 					result = cache.get(tmdb_indexer().IdLookup, 96, imdb, tvdb)

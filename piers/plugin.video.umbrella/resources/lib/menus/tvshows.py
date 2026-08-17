@@ -2635,12 +2635,14 @@ class TVshows:
 				try:
 					imdb, tmdb, tvdb = ids.get('imdb', ''), ids.get('tmdb', ''), ids.get('tvdb', '')
 					if not imdb and not tvdb: continue
-					progress = mdblist.syncSeasons(imdb, tvdb)
-					if progress and len(progress) > 1:
-						counts = progress[1] or {}
-						total = sum(v.get('total', 0) for v in counts.values())
-						watched = sum(v.get('watched', 0) for v in counts.values())
-						if total and watched >= total: continue  # fully watched, not "in progress"
+					# Keep the non-special watched count with the lightweight local row.
+					# worker() fetches show metadata once; its aired total is then enough
+					# to remove completed shows without a duplicate syncSeasons/TMDb pass.
+					watched_aired = sum(
+						(end - start + 1)
+						for season, ranges in (ep_ranges or {}).items() if int(season) > 0
+						for start, end in ranges
+					)
 					values = {}
 					values['next'] = ''
 					values['progress'] = ''
@@ -2650,10 +2652,16 @@ class TVshows:
 					values['lastplayed'] = last_watched_by_imdb.get(imdb, '')
 					values['mediatype'] = 'tvshows'
 					values['has_next_episode'] = True
+					values['_mdb_watched_aired'] = watched_aired
 					self.list.append(values)
 				except: log_utils.error()
 			self.worker()
 			if self.list is None: self.list = []
+			self.list = [i for i in self.list if not (
+				int(i.get('total_aired_episodes') or 0) > 0
+				and int(i.get('_mdb_watched_aired') or 0) >= int(i.get('total_aired_episodes') or 0)
+			)]
+			for i in self.list: i.pop('_mdb_watched_aired', None)
 			try:
 				dropped = _mdbsync.fetch_dropped('shows_dropped')
 				if dropped:
@@ -3025,16 +3033,17 @@ class TVshows:
 			indicators = scrob.syncTVShows()
 			if not indicators: return self.list
 			last_watched_by_tmdb = {str(r[1]): r[3] for r in scrobsync.get_watched_shows() if r[1]}
-			for (ids, watched_count, ep_ranges) in indicators:
+
+			def check_show(ids):
 				try:
 					imdb, tmdb, tvdb = ids.get('imdb', ''), ids.get('tmdb', ''), ids.get('tvdb', '')
-					if not tmdb: continue
+					if not tmdb: return
 					progress = scrob.getShowProgress(tmdb)
 					if progress and len(progress) > 1:
 						counts = progress[1] or {}
 						total = sum(v.get('total', 0) for v in counts.values())
 						watched = sum(v.get('watched', 0) for v in counts.values())
-						if total and watched >= total: continue  # fully watched, not "in progress"
+						if total and watched >= total: return  # fully watched, not "in progress"
 					values = {}
 					values['next'] = ''
 					values['progress'] = ''
@@ -3046,6 +3055,19 @@ class TVshows:
 					values['has_next_episode'] = True
 					self.list.append(values)
 				except: log_utils.error()
+
+			threads = [Thread(target=check_show, args=(ids,)) for (ids, watched_count, ep_ranges) in indicators]
+			# getShowProgress() can block on TMDb season metadata for every uncached
+			# show. Run those independent lookups in the same bounded batches used by
+			# the other metadata-heavy progress providers.
+			_unlimited = getSetting('dev.batch.unlimited') == 'true'
+			_bs = max(int(getSetting('dev.batch.size') or '10'), 1)
+			_chunk = max(len(threads), 1) if _unlimited else _bs
+			for i in range(0, len(threads), _chunk):
+				if control.monitor.abortRequested(): break
+				batch = threads[i:i + _chunk]
+				[t.start() for t in batch]
+				[t.join() for t in batch]
 			self.worker()
 			if self.list is None: self.list = []
 		except:
