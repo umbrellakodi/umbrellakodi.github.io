@@ -1044,6 +1044,9 @@ def router(argv2):
 		elif action == 'tb_DeleteUserTorrent':
 			from resources.lib.debrid import torbox
 			torbox.TorBox().delete_user_torrent(params.get('id'), mediatype, name)
+		elif action == 'tb_ToggleAirlock':
+			from resources.lib.debrid import torbox
+			torbox.TorBox().toggle_airlock(params.get('id'), mediatype, name)
 		elif action == 'tb_ReferralLink':
 			from resources.lib.debrid import torbox
 			torbox.TorBox().referral_link()

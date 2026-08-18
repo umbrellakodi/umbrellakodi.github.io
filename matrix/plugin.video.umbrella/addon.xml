@@ -1,4 +1,4 @@
-<addon id="plugin.video.umbrella" name="Umbrella" provider-name="Umbrella" version="6.7.675">
+<addon id="plugin.video.umbrella" name="Umbrella" provider-name="Umbrella" version="6.7.676">
 	<requires>
 		<import addon="xbmc.python" version="3.0.0" />
 		<import addon="script.module.requests" />
@@ -261,9 +261,8 @@
 			<screenshot>resources/screenshots/screenshot003.jpg</screenshot>
 		</assets>
 		<news>
-[B]Update - v6.7.675 - August 17th, 2026 [/B]
---[Fix] Continuous-playback dialogs now fall back to the show rating for unrated episodes.
---[Fix] Standardized direct Progress Episode scraping, refresh, and browse actions across tracking services.
+[B]Update - v6.7.676 - August 18th, 2026 [/B]
+--[Fix] Changes made for playlist creation for playnext.
 		</news>
 	</extension>
 

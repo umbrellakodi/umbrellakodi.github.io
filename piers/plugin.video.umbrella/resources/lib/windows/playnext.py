@@ -46,11 +46,13 @@ class PlayNextXML(BaseDialog):
 	def onClick(self, control_id):
 		if control_id == 3011: # Play Now, skip to end of current
 			playerWindow.setProperty('umbrella.playnextPlayPressed', str(1))
+			playerWindow.setProperty('umbrella.playnext.transition', 'true')
 			from resources.lib.modules import log_utils
 			log_utils.log('PlayNext Play Button! Playlist Position: %s Playlist Count: %s ' % (control.playlist.getposition(), control.playlist.size()), log_utils.LOGDEBUG)
 			xbmc.executebuiltin('PlayerControl(BigSkipForward)')
 			self.doClose()
 		if control_id == 3012: # Stop playback
+			playerWindow.clearProperty('umbrella.playnext.transition')
 			xbmc.executebuiltin('PlayerControl(Playlist.Clear)')
 			xbmc.executebuiltin('PlayerControl(Stop)')
 			playerWindow.clearProperty('umbrella.preResolved_nextUrl')
@@ -97,7 +99,15 @@ class PlayNextXML(BaseDialog):
 
 			if self.closed: return
 
+			# Natural end with the default "play next" action.  The outgoing
+			# Player instance receives onPlayBackStopped before Kodi opens the
+			# queued plugin item; mark that short hand-off so it does not discard
+			# the playlist or the source that was pre-resolved for the next item.
+			if self.default_action == 0 and self.playing_file == self.getPlayingFile():
+				playerWindow.setProperty('umbrella.playnext.transition', 'true')
+
 			if (self.default_action == 1 and self.playing_file == self.getPlayingFile()):
+				playerWindow.clearProperty('umbrella.playnext.transition')
 				xbmc.executebuiltin('PlayerControl(Playlist.Clear)')
 				xbmc.executebuiltin('PlayerControl(Stop)')
 

@@ -1,21 +1,18 @@
-[B]Update - v6.7.675 - August 17th, 2026 [/B]
+[B]Update - v6.7.676 - August 18th, 2026 [/B]
+--[Fix] Changes made for playlist creation for playnext.
+
+[B]Update - v6.7.84 - August 18th, 2026 [/B]
+--[Enhancement] Added Airlock status and controls to TorBox cloud files, including fresh status after changes.
+--[Change] Removed the TorBox Delete All Cloud Files menu item.
 --[Fix] Continuous-playback dialogs now fall back to the show rating for unrated episodes.
 --[Fix] Standardized direct Progress Episode scraping, refresh, and browse actions across tracking services.
-
-[B]Update - v6.7.674 - August 17th, 2026 [/B]
 --[Fix] MDBList completed playback no longer leaves a pause point in Progress Episodes.
 --[Fix] Reduced MDBList Progress Shows loading time by eliminating duplicate per-show metadata requests.
---[Fix] Progress Episodes from all tracking services now show configured air information.
-
-[B]Update - v6.7.673 - August 17th, 2026 [/B]
---[Fix] Simkl Progress Episodes widgets now advance after an episode is marked watched.
+--[Fix] Progress Episodes from all tracking services now show air information if turned on.
+--[Fix] Simkl Progress Episodes now advances after an episode is marked watched.
 --[Fix] Continuous playback now preserves a queued third episode at playback end.
 --[Fix] Play Random now starts a fresh continuous-playback playlist.
-
-[B]Update - v6.7.672 - August 16th, 2026 [/B]
 --[Change] Added direct progress scrape settings for new providers. 
-
-[B]Update - v6.7.671 - August 16th, 2026 [/B]
 --[Fix] Added support for custom lists from Floppy.
 --[Change] Success and Fail messages for add and remove from lists.
 

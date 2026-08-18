@@ -628,6 +628,10 @@ class Player(xbmc.Player):
 
 ### Kodi player callback methods ###
 	def onAVStarted(self): # Kodi docs suggests "Use onAVStarted() instead of onPlayBackStarted() as of v18"
+		# The queued episode has taken ownership of playback.  Its source has
+		# already had a chance to consume the pre-resolved URL, so the hand-off
+		# guard used by the outgoing Player instance is no longer needed.
+		playerWindow.clearProperty('umbrella.playnext.transition')
 		self.watched_during_playback = False
 		self.scrobble_sent = False
 		self.onPlayBackStopped_ran = False
@@ -782,11 +786,13 @@ class Player(xbmc.Player):
 
 	def onPlayBackStopped(self):
 		try:
-			playerWindow.clearProperty('umbrella.preResolved_nextUrl')
-			playerWindow.clearProperty('umbrella.preResolved_season')
-			playerWindow.clearProperty('umbrella.preResolved_episode')
-			playerWindow.clearProperty('umbrella.preResolved_imdb')
-			playerWindow.clearProperty('umbrella.playlistStart_position')
+			playnext_transition = playerWindow.getProperty('umbrella.playnext.transition') == 'true'
+			if not playnext_transition:
+				playerWindow.clearProperty('umbrella.preResolved_nextUrl')
+				playerWindow.clearProperty('umbrella.preResolved_season')
+				playerWindow.clearProperty('umbrella.preResolved_episode')
+				playerWindow.clearProperty('umbrella.preResolved_imdb')
+				playerWindow.clearProperty('umbrella.playlistStart_position')
 			homeWindow.clearProperty('umbrella.window_keep_alive')
 			clear_local_bookmarks() # clear all umbrella bookmarks from kodi database
 			# Don't wipe a playlist that already has the next episode legitimately
@@ -805,7 +811,7 @@ class Player(xbmc.Player):
 				has_next_queued = current_pos != -1 and control.playlist.size() > current_pos + 1
 			except:
 				has_next_queued = False
-			if not has_next_queued:
+			if not playnext_transition and not has_next_queued:
 				control.playlist.clear()
 			if (not self.onPlayBackStopped_ran or (self.playbackStopped_triggered and not self.onPlayBackStopped_ran)) and not self.scrobble_sent: # Kodi callback unreliable and often not issued
 				self.onPlayBackStopped_ran = True
@@ -883,6 +889,7 @@ class Player(xbmc.Player):
 		except: log_utils.error()
 
 	def onPlayBackError(self):
+		playerWindow.clearProperty('umbrella.playnext.transition')
 		playerWindow.clearProperty('umbrella.preResolved_nextUrl')
 		playerWindow.clearProperty('umbrella.playlistStart_position')
 		homeWindow.clearProperty('umbrella.window_keep_alive')
