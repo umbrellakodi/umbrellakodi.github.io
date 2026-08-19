@@ -766,7 +766,12 @@ def sync_watchedProgress(activities=None, forced=False, progress_callback=None):
 				if imdb: resolved += 1
 				else: unresolved += 1
 				year = (item.get('release_datetime') or '')[:4]
-				floppysync.upsert_watched_movie(imdb=imdb, tmdb=tmdb, title=item.get('title', ''), year=year, last_watched_at=i.get('progressed_at') or i.get('created_at') or _now_iso())
+				# end_date is the user-selected completion/watch date. progressed_at
+				# and created_at describe when Floppy processed or created the record,
+				# so using either first makes an older watch imported/edited today look
+				# like the most recently watched movie in Umbrella.
+				last_watched_at = i.get('end_date') or i.get('progressed_at') or i.get('created_at') or _now_iso()
+				floppysync.upsert_watched_movie(imdb=imdb, tmdb=tmdb, title=item.get('title', ''), year=year, last_watched_at=last_watched_at)
 			if progress_callback:
 				try: progress_callback('Syncing watched movies', idx + 1, total)
 				except: pass
