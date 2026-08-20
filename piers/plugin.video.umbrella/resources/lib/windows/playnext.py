@@ -99,10 +99,6 @@ class PlayNextXML(BaseDialog):
 
 			if self.closed: return
 
-			# Natural end with the default "play next" action.  The outgoing
-			# Player instance receives onPlayBackStopped before Kodi opens the
-			# queued plugin item; mark that short hand-off so it does not discard
-			# the playlist or the source that was pre-resolved for the next item.
 			if self.default_action == 0 and self.playing_file == self.getPlayingFile():
 				playerWindow.setProperty('umbrella.playnext.transition', 'true')
 

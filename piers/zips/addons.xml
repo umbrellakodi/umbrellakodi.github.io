@@ -1,5 +1,5 @@
 <?xml version='1.0' encoding='utf-8'?>
-<addons><addon id="plugin.video.umbrella" name="Umbrella" provider-name="Umbrella" version="6.7.677">
+<addons><addon id="plugin.video.umbrella" name="Umbrella" provider-name="Umbrella" version="6.7.678">
 	<requires>
 		<import addon="xbmc.python" version="3.0.0" />
 		<import addon="script.module.requests" />
@@ -262,9 +262,8 @@
 			<screenshot>resources/screenshots/screenshot003.jpg</screenshot>
 		</assets>
 		<news>
-[B]Update - v6.7.677 - August 18th, 2026 [/B]
---[Fix] Fixed hosts.quality setting being used for sorting but not filtering.
---[Change] Change made for Floppy to use end_date for Watch History sorting.
+[B]Update - v6.7.678 - August 20th, 2026 [/B]
+--[Fix] Fixed for episode progress to stop duplication of episodes after playback.
 		</news>
 	</extension>
 

@@ -2587,6 +2587,26 @@ class Episodes:
 
 	def episodeDirectory(self, items, unfinished=False, next=True, playlist=False, folderName=''):
 		from sys import argv # some functions like ActivateWindow() throw invalid handle less this is imported here.
+		# A container refresh after playback can hand this method the same episode more
+		# than once (notably when a progress item expands into its remaining episodes).
+		# Kodi does not collapse duplicate plugin rows, so keep the first occurrence
+		# while preserving the provider's ordering and metadata.
+		unique_items = []
+		seen_episodes = set()
+		for episode_item in items or []:
+			try:
+				show_id = (episode_item.get('imdb') or episode_item.get('tmdb') or
+						episode_item.get('tvdb') or episode_item.get('tvshowtitle') or '')
+				episode_key = (str(show_id), str(episode_item.get('season', '')),
+						str(episode_item.get('episode', '')))
+			except AttributeError:
+				unique_items.append(episode_item)
+				continue
+			if episode_key in seen_episodes:
+				continue
+			seen_episodes.add(episode_key)
+			unique_items.append(episode_item)
+		items = unique_items
 		if self.useContainerTitles: control.setContainerName(folderName)
 		if not items: # with reuselanguageinvoker on an empty directory must be loaded, do not use sys.exit()
 			control.hide() ; control.notification(title=32326, message=33049)

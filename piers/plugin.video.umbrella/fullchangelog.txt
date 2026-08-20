@@ -1,8 +1,9 @@
-[B]Update - v6.7.677 - August 18th, 2026 [/B]
+[B]Update - v6.7.678 - August 20th, 2026 [/B]
+--[Fix] Fixed for episode progress to stop duplication of episodes after playback.
+
+[B]Update - v6.7.85 - August 19th, 2026 [/B]
 --[Fix] Fixed hosts.quality setting being used for sorting but not filtering.
 --[Change] Change made for Floppy to use end_date for Watch History sorting.
-
-[B]Update - v6.7.676 - August 18th, 2026 [/B]
 --[Fix] Changes made for playlist creation for playnext.
 
 [B]Update - v6.7.84 - August 18th, 2026 [/B]

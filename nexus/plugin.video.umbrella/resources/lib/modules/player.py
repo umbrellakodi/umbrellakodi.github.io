@@ -627,10 +627,7 @@ class Player(xbmc.Player):
 		except: log_utils.error()
 
 ### Kodi player callback methods ###
-	def onAVStarted(self): # Kodi docs suggests "Use onAVStarted() instead of onPlayBackStarted() as of v18"
-		# The queued episode has taken ownership of playback.  Its source has
-		# already had a chance to consume the pre-resolved URL, so the hand-off
-		# guard used by the outgoing Player instance is no longer needed.
+	def onAVStarted(self): 
 		playerWindow.clearProperty('umbrella.playnext.transition')
 		self.watched_during_playback = False
 		self.scrobble_sent = False
@@ -794,18 +791,7 @@ class Player(xbmc.Player):
 				playerWindow.clearProperty('umbrella.preResolved_imdb')
 				playerWindow.clearProperty('umbrella.playlistStart_position')
 			homeWindow.clearProperty('umbrella.window_keep_alive')
-			clear_local_bookmarks() # clear all umbrella bookmarks from kodi database
-			# Don't wipe a playlist that already has the next episode legitimately
-			# queued. addEpisodetoPlaylist() pre-queues the next episode while the
-			# current one is still playing, but on some devices/sources natural
-			# end-of-file fires only onPlayBackStopped (no onPlayBackEnded at all), and
-			# Kodi's native playlist auto-advance doesn't always win the race against
-			# this callback — confirmed via device logs: the next episode was freshly,
-			# successfully queued (addEpisodetoPlaylist: successfully added ...), then
-			# wiped by this unconditional clear() a fraction of a second later, before
-			# Kodi ever opened it, breaking playnext auto-continue intermittently. Same
-			# "is something already queued right after the current position" check
-			# addEpisodetoPlaylist() itself uses to avoid duplicate adds.
+			clear_local_bookmarks()
 			try:
 				current_pos = control.playlist.getposition()
 				has_next_queued = current_pos != -1 and control.playlist.size() > current_pos + 1
