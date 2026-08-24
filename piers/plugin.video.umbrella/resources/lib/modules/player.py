@@ -29,6 +29,7 @@ from resources.lib.modules.source_utils import seas_ep_filter
 from urllib.request import urlopen, Request
 import fnmatch
 import os
+import time
 
 LOGINFO = 1
 getLS = control.lang
@@ -803,9 +804,21 @@ class Player(xbmc.Player):
 				self.onPlayBackStopped_ran = True
 				self.playbackStopped_triggered = False
 				seekable, _scrobble_source = self._sendFinishedItemState()
-				if getSetting('crefresh') == 'true' and seekable:
-					log_utils.log('container.refresh issued', level=log_utils.LOGDEBUG)
-					control.refresh() #not all skins refresh after playback stopped
+				# Do not refresh the directory between queued episodes. Kodi may deliver
+				# stop callbacks from more than one Player instance during a multi-episode
+				# session; overlapping refreshes can leave an empty container and append the
+				# same directory rows twice. Only the final callback refreshes, and debounce
+				# that refresh across Player instances.
+				if (getSetting('crefresh') == 'true' and seekable and not playnext_transition
+						and not has_next_queued
+						and 'plugin.video.umbrella' in control.infoLabel('Container.PluginName')):
+					now = time.time()
+					try: last_refresh = float(homeWindow.getProperty('umbrella.container_refresh_at') or 0)
+					except: last_refresh = 0
+					if now - last_refresh >= 2:
+						homeWindow.setProperty('umbrella.container_refresh_at', str(now))
+						log_utils.log('container.refresh issued at end of playback queue', level=log_utils.LOGDEBUG)
+						control.refresh() #not all skins refresh after playback stopped
 				#control.trigger_widget_refresh() # skinshortcuts handles widget refresh
 				#control.checkforSkin(action='off')
 				try:

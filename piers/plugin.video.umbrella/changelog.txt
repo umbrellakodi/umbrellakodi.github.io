@@ -1,2 +1,2 @@
-[B]Update - v6.7.678 - August 20th, 2026 [/B]
---[Fix] Fixed for episode progress to stop duplication of episodes after playback.
+[B]Update - v6.7.680 - August 24th, 2026 [/B]
+--[Fix] Changed to use Scrob's history/next-up endpoint instead of reconstructing from local history.

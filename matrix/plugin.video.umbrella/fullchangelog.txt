@@ -1,3 +1,10 @@
+[B]Update - v6.7.680 - August 24th, 2026 [/B]
+--[Fix] Changed to use Scrob's history/next-up endpoint instead of reconstructing from local history.
+
+[B]Update - v6.7.679 - August 21st, 2026 [/B]
+--[Fix] Prevented overlapping container refreshes after multi-episode playback, from producing blank or duplicated episode menus.
+--[Fix] MDBList TV show collections now use the show-level collection feed.
+
 [B]Update - v6.7.678 - August 20th, 2026 [/B]
 --[Fix] Fixed for episode progress to stop duplication of episodes after playback.
 

@@ -1682,34 +1682,40 @@ class Episodes:
 				if self.notifications: control.notification(title=32326, message=33049)
 
 	def scrob_progress_list(self, url='', direct=False, upcoming=False):
-		# Ported verbatim from floppy_progress_list() — Scrob's GET /history/next-up
-		# is server-computed, but doesn't carry the TMDb-enriched fields (plot/art/
-		# premiered) episodeDirectory() needs, so this still builds "next episode" the
-		# same locally-reconstructed way from the synced watched-episode set.
+		# Let Scrob's canonical Next Up endpoint choose both the shows and episodes.
+		# That endpoint applies the user's hidden-show preferences; Umbrella only
+		# enriches its episode references with the metadata episodeDirectory needs.
 		self.list = []
 		try:
-			episodes = scrobsync.get_watched_episodes()
-			if not episodes: return self.list
-			shows = {}
-			for (show_imdb, show_tmdb, show_tvdb, season, episode) in episodes:
-				shows.setdefault(show_imdb, {'imdb': show_imdb, 'tmdb': show_tmdb, 'tvdb': show_tvdb, 'watched_set': set()})
-				shows[show_imdb]['watched_set'].add((int(season), int(episode)))
-			try:
-				for (show_imdb, show_tmdb, show_tvdb, last_watched_at) in scrobsync.get_watched_shows():
-					if show_imdb in shows: shows[show_imdb]['lastplayed'] = last_watched_at
-			except: pass
-			items = list(shows.values())
+			next_up = scrob.get_next_up()
+			if not next_up: return self.list
+			items = []
+			for item in next_up:
+				try:
+					show = item.get('show') or item.get('series') or {}
+					next_episode = item.get('next_episode') or item.get('episode') or item.get('media') or {}
+					if not isinstance(next_episode, dict): next_episode = {}
+					season = next_episode.get('season_number', next_episode.get('season', item.get('season_number', item.get('next_season_number'))))
+					episode = next_episode.get('episode_number', next_episode.get('number', item.get('episode_number', item.get('next_episode_number'))))
+					if season is None or episode is None: continue
+					if not self.showspecials and int(season) == 0: continue
+					tmdb_id = (show.get('tmdb_id') or show.get('tmdb') or next_episode.get('show_tmdb_id') or item.get('show_tmdb_id')
+						or item.get('series_tmdb_id') or item.get('show_tmdb') or item.get('series_tmdb'))
+					imdb_id = (show.get('imdb_id') or show.get('imdb') or next_episode.get('show_imdb_id') or item.get('show_imdb_id')
+						or item.get('series_imdb_id') or item.get('show_imdb') or item.get('series_imdb'))
+					tvdb_id = (show.get('tvdb_id') or show.get('tvdb') or next_episode.get('show_tvdb_id') or item.get('show_tvdb_id')
+						or item.get('series_tvdb_id') or item.get('show_tvdb') or item.get('series_tvdb'))
+					items.append({'imdb': str(imdb_id or ''), 'tmdb': str(tmdb_id or ''), 'tvdb': str(tvdb_id or ''),
+						'season': int(season), 'episode': int(episode),
+						'lastplayed': item.get('last_watched_at') or item.get('updated_at') or ''})
+				except: pass
 			if not items: return self.list
 
 			def items_list(i):
 				imdb_id = i.get('imdb', '')
 				tmdb_id = i.get('tmdb', '')
-				watched_set = i.get('watched_set', set())
 				try:
-					candidates = watched_set if self.showspecials else set((s, e) for (s, e) in watched_set if s != 0)
-					if not candidates: return
-					furthest_season = max(s for (s, e) in candidates)
-					furthest_episode = max(e for (s, e) in candidates if s == furthest_season)
+					next_season, next_episode = i['season'], i['episode']
 					if not tmdb_id and imdb_id:
 						tmdb_result = cache.get(tmdb_indexer().IdLookup, 96, imdb_id, i.get('tvdb', ''))
 						tmdb_id = str(tmdb_result.get('id')) if tmdb_result else ''
@@ -1717,12 +1723,7 @@ class Episodes:
 					showSeasons = cache.get(tmdb_indexer().get_showSeasons_meta, 96, tmdb_id)
 					if not showSeasons: return
 					seasons_meta = {s.get('season_number'): s for s in showSeasons.get('seasons', [])}
-					season_meta = seasons_meta.get(furthest_season)
-					if season_meta and furthest_episode < season_meta.get('episode_count', 0):
-						next_season, next_episode = furthest_season, furthest_episode + 1
-					else:
-						next_season, next_episode = furthest_season + 1, 1
-					if next_season not in seasons_meta: return  # no further known season — fully caught up
+					if next_season not in seasons_meta: return
 					seasonEpisodes = tmdb_indexer().get_seasonEpisodes_meta_checked(tmdb_id, next_season)
 					if not seasonEpisodes: return
 					episode_list = seasonEpisodes.get('episodes', [])
