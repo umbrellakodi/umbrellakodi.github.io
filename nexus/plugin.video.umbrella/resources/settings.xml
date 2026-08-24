@@ -6477,6 +6477,36 @@
 				</setting>
 			</group>
 			<group id="2">
+				<setting id="subtitles.prefer.embedded" type="boolean" label="40791" help="">
+					<level>0</level>
+					<default>true</default>
+					<dependencies>
+						<dependency type="enable">
+							<condition operator="is" setting="subtitles">true</condition>
+						</dependency>
+					</dependencies>
+					<control type="toggle"/>
+				</setting>
+				<setting id="subtitles.prefer.hearing_impaired" type="boolean" label="40792" help="">
+					<level>0</level>
+					<default>false</default>
+					<dependencies>
+						<dependency type="enable">
+							<condition operator="is" setting="subtitles">true</condition>
+						</dependency>
+					</dependencies>
+					<control type="toggle"/>
+				</setting>
+				<setting id="subtitles.prefer.forced" type="boolean" label="40793" help="">
+					<level>0</level>
+					<default>false</default>
+					<dependencies>
+						<dependency type="enable">
+							<condition operator="is" setting="subtitles">true</condition>
+						</dependency>
+					</dependencies>
+					<control type="toggle"/>
+				</setting>
 				<setting id="subtitles.utf" type="boolean" label="32355" help="">
 					<level>0</level>
 					<default>false</default>
