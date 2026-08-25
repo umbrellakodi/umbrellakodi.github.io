@@ -1,2 +1,4 @@
-[B]Update - v6.7.681 - August 24th, 2026 [/B]
---[Fix] Changes made to subtitle module to improve matching and detection.
+[B]Update - v6.7.682 - August 25th, 2026 [/B]
+--[Fix] Made changes to custom to increase limit to 1000 items.
+--[Change] Fixed issue with Trakt retries on mark episode as watched.
+--[Fix] Fixed issue where multiple container refreshes were sent after an item was watched.

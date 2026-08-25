@@ -936,6 +936,10 @@ class Player(xbmc.Player):
 					scrob.scrobbleMovie(self.imdb, self.tmdb, pause_percent, current_time=self.getTime(), total_time=total_time)
 				else:
 					scrob.scrobbleEpisode(self.imdb, self.tmdb, self.tvdb, self.season, self.episode, pause_percent, current_time=self.getTime(), total_time=total_time)
+		except RuntimeError:
+			# Kodi may deliver the pause callback as playback is stopping, after the
+			# player has already discarded its timing state.
+			return
 		except: log_utils.error()
 
 	def onPlayBackResumed(self):

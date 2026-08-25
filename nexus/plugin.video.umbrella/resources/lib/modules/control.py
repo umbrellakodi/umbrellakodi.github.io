@@ -536,6 +536,18 @@ def getMenuEnabled(menu_title):
 
 def trigger_widget_refresh():
 	import time
+	# Playback completion can update several enabled tracking services in quick
+	# succession. Each service requests the same widget refresh, and overlapping
+	# UpdateLibrary calls can make Kodi append rows to a directory that is already
+	# updating ("CGUIMediaWindow::OnMessage - updating in progress"). Keep the
+	# timestamp on the home window so the guard is shared by concurrent plugin
+	# invokers and Player threads.
+	now = time.time()
+	try: last_refresh = float(homeWindow.getProperty('umbrella.widget_refresh_at') or 0)
+	except: last_refresh = 0
+	if now - last_refresh < 2:
+		return
+	homeWindow.setProperty('umbrella.widget_refresh_at', str(now))
 	timestr = time.strftime("%Y%m%d%H%M%S", time.gmtime())
 	homeWindow.setProperty('widgetreload', timestr)
 	homeWindow.setProperty('widgetreload-episodes', timestr)
