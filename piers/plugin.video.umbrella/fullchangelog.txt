@@ -1,3 +1,6 @@
+[B]Update - v6.7.683 - August 27th, 2026 [/B]
+--[Enhancement] Added support for dropping and undropping TV shows on Scrob.
+
 [B]Update - v6.7.682 - August 25th, 2026 [/B]
 --[Fix] Made changes to custom to increase limit to 1000 items.
 --[Change] Fixed issue with Trakt retries on mark episode as watched.

@@ -1083,6 +1083,34 @@ def get_next_up():
 
 #### Simple list add/create/remove — JWT-only, no browsable list-of-lists surface ####
 
+def get_show_drop_info(tmdb):
+	"""Return Scrob's local show id and dropped state for a TMDb show id."""
+	try:
+		if not tmdb or not getScrobCredentialsInfo(): return None
+		data = getScrobAsJson('/shows/%s' % tmdb, auth='api_key', silent=True)
+		if not isinstance(data, dict) or data.get('id') is None: return None
+		return {'show_id': int(data['id']), 'dropped': bool(data.get('dropped', False))}
+	except:
+		log_utils.error()
+		return None
+
+def drop_show(show_id):
+	try:
+		response = getScrob('/history/drop/show', post={'show_id': int(show_id)}, method='POST', auth='api_key', silent=True)
+		return bool(response is not None and response.status_code in (200, 201, 204))
+	except:
+		log_utils.error()
+		return False
+
+def undrop_show(show_id):
+	try:
+		response = getScrob('/history/drop/show?show_id=%s' % int(show_id), method='DELETE', auth='api_key', silent=True)
+		return bool(response is not None and response.status_code in (200, 201, 204))
+	except:
+		log_utils.error()
+		return False
+
+
 def get_lists():
 	try:
 		if not getScrobCredentialsInfo(): return []
@@ -1196,6 +1224,7 @@ def manager(name, imdb=None, tvdb=None, tmdb=None, season=None, episode=None, re
 		hc = getSetting('highlight.color')
 		has_write = getScrobWriteCredentialsInfo()
 		items = []
+		drop_info = None
 		if watched is not None:
 			if watched:
 				if has_write: items += [('[COLOR %s]Unwatch[/COLOR]' % hc, 'unwatch')]
@@ -1206,6 +1235,14 @@ def manager(name, imdb=None, tvdb=None, tmdb=None, season=None, episode=None, re
 			if has_write: items += [('[COLOR %s]Unwatch[/COLOR]' % hc, 'unwatch')]
 		if content_type in ('movie', 'episode'):
 			items += [('[COLOR %s]Clear Scrobble Progress[/COLOR]' % hc, 'scrobbleReset')]
+		if content_type == 'tvshow':
+			resolved_tmdb = tmdb or _resolve_tmdb('tv', imdb=imdb, tvdb=tvdb)
+			drop_info = get_show_drop_info(resolved_tmdb)
+			if drop_info:
+				if drop_info['dropped']:
+					items += [('[COLOR %s]Undrop Show[/COLOR]' % hc, 'undrop')]
+				else:
+					items += [('[COLOR %s]Drop Show[/COLOR]' % hc, 'drop')]
 		if has_write:
 			items += [('[COLOR %s]Add to List[/COLOR]' % hc, 'list_add')]
 			items += [('[COLOR %s]Remove from List[/COLOR]' % hc, 'list_remove')]
@@ -1219,6 +1256,13 @@ def manager(name, imdb=None, tvdb=None, tmdb=None, season=None, episode=None, re
 			unwatch(content_type, name, imdb=imdb, tvdb=tvdb, season=season, episode=episode, refresh=refresh)
 		elif action_key == 'scrobbleReset':
 			scrobbleReset(imdb=imdb, tmdb=tmdb, tvdb=tvdb, season=season, episode=episode, refresh=True)
+		elif action_key in ('drop', 'undrop'):
+			success = drop_show(drop_info['show_id']) if action_key == 'drop' else undrop_show(drop_info['show_id'])
+			if success:
+				control.notification(title='Scrob', message='Show dropped' if action_key == 'drop' else 'Show undropped')
+				if refresh: control.refresh()
+			else:
+				control.notification(title='Scrob', message='Failed to update dropped status')
 		elif action_key == 'list_add':
 			resolved_tmdb = tmdb or _resolve_tmdb(media_type, imdb=imdb, tvdb=tvdb)
 			if not resolved_tmdb: return
