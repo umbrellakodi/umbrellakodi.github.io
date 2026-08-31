@@ -1212,6 +1212,48 @@ def undrop_show(show_id):
 		log_utils.error()
 		return False
 
+def get_dropped(media_type=None):
+	"""Return Scrob's dropped movies/shows in Umbrella's normal item shape."""
+	try:
+		data = getScrobAsJson('/history/dropped', auth='api_key', silent=True) or {}
+		keys = ('movies', 'shows') if media_type is None else (media_type,)
+		result = []
+		for key in keys:
+			for item in data.get(key, []):
+				result.append({
+					'title': item.get('title', ''), 'year': str(item.get('year') or ''),
+					'tmdb': str(item.get('tmdb_id') or ''), 'tvdb': str(item.get('tvdb_id') or ''),
+					'scrob_id': item.get('id'), 'mediatype': 'movie' if key == 'movies' else 'tvshow'
+				})
+		return result
+	except:
+		log_utils.error()
+		return []
+
+def drop_movie(tmdb):
+	try:
+		response = getScrob('/history/drop/movie', post={'tmdb_id': int(tmdb)}, method='POST', auth='api_key', silent=True)
+		return bool(response is not None and response.status_code in (200, 201, 204))
+	except:
+		log_utils.error()
+		return False
+
+def undrop_movie(tmdb):
+	try:
+		response = getScrob('/history/drop/movie?tmdb_id=%s' % int(tmdb), method='DELETE', auth='api_key', silent=True)
+		return bool(response is not None and response.status_code in (200, 201, 204))
+	except:
+		log_utils.error()
+		return False
+
+def remove_dropped_items(tmdb_ids, media_type):
+	for tmdb in tmdb_ids:
+		if media_type == 'movies':
+			undrop_movie(tmdb)
+		else:
+			info = get_show_drop_info(tmdb)
+			if info: undrop_show(info['show_id'])
+
 
 def get_lists():
 	try:
@@ -1319,7 +1361,7 @@ def manager(name, imdb=None, tvdb=None, tmdb=None, season=None, episode=None, re
 		if episode: episode = int(episode)
 		if episode: content_type = 'episode'
 		elif season: content_type = 'season'
-		elif tvdb and tvdb != 'None': content_type = 'tvshow'
+		elif tvshow or (tvdb and tvdb != 'None'): content_type = 'tvshow'
 		else: content_type = 'movie'
 		media_type = 'movie' if content_type == 'movie' else 'tv'
 		scrob_media_type = 'movie' if content_type == 'movie' else 'series'
@@ -1345,6 +1387,10 @@ def manager(name, imdb=None, tvdb=None, tmdb=None, season=None, episode=None, re
 					items += [('[COLOR %s]Undrop Show[/COLOR]' % hc, 'undrop')]
 				else:
 					items += [('[COLOR %s]Drop Show[/COLOR]' % hc, 'drop')]
+		elif content_type == 'movie' and tmdb:
+			dropped_movies = {i.get('tmdb') for i in get_dropped('movies')}
+			items += [('[COLOR %s]%s Movie[/COLOR]' % (hc, 'Undrop' if str(tmdb) in dropped_movies else 'Drop'),
+				'undrop_movie' if str(tmdb) in dropped_movies else 'drop_movie')]
 		if has_write:
 			items += [('[COLOR %s]Add to List[/COLOR]' % hc, 'list_add')]
 			items += [('[COLOR %s]Remove from List[/COLOR]' % hc, 'list_remove')]
@@ -1362,6 +1408,13 @@ def manager(name, imdb=None, tvdb=None, tmdb=None, season=None, episode=None, re
 			success = drop_show(drop_info['show_id']) if action_key == 'drop' else undrop_show(drop_info['show_id'])
 			if success:
 				control.notification(title='Scrob', message='Show dropped' if action_key == 'drop' else 'Show undropped')
+				if refresh: control.refresh()
+			else:
+				control.notification(title='Scrob', message='Failed to update dropped status')
+		elif action_key in ('drop_movie', 'undrop_movie'):
+			success = drop_movie(tmdb) if action_key == 'drop_movie' else undrop_movie(tmdb)
+			if success:
+				control.notification(title='Scrob', message='Movie dropped' if action_key == 'drop_movie' else 'Movie undropped')
 				if refresh: control.refresh()
 			else:
 				control.notification(title='Scrob', message='Failed to update dropped status')
