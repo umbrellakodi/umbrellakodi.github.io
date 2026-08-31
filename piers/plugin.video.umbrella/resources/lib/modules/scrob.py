@@ -38,11 +38,11 @@ def scrobBaseUrl():
 
 
 def getScrobCredentialsInfo():
-	return bool(scrobBaseUrl() and getSetting('scrob.apikey'))
+	return bool(scrobBaseUrl() and (getSetting('scrob.refreshtoken') or getSetting('scrob.accesstoken') or getSetting('scrob.apikey')))
 
 
 def getScrobWriteCredentialsInfo():
-	return bool(getScrobCredentialsInfo() and getSetting('scrob.username') and getSetting('scrob.password'))
+	return bool(scrobBaseUrl() and (getSetting('scrob.refreshtoken') or getSetting('scrob.accesstoken') or (getSetting('scrob.apikey') and getSetting('scrob.username') and getSetting('scrob.password'))))
 
 
 def getScrobIndicatorsInfo():
@@ -57,18 +57,20 @@ def getScrob(url, post=None, method=None, auth='api_key', silent=False, _retried
 		global _last_request_time
 		base = scrobBaseUrl()
 		if not base: return None
-		token = None
-		if auth == 'jwt':
-			token = _getScrobJWT()
-			if not token: return None
+		token = _getScrobJWT() if (auth == 'jwt' or getSetting('scrob.refreshtoken') or getSetting('scrob.accesstoken')) else None
+		if auth == 'jwt' and not token: return None
 		if time.time() - _last_request_time > 300:
 			session.close()
 		full_url = url if url.startswith(base) else urljoin(base + '/', url.lstrip('/'))
 		req_headers = dict(headers)
 		
-		sep = '&' if '?' in full_url else '?'
-		request_url = full_url + sep + 'api_key=' + quote_plus(getSetting('scrob.apikey'))
-		if auth == 'jwt':
+		api_key = getSetting('scrob.apikey')
+		if api_key:
+			sep = '&' if '?' in full_url else '?'
+			request_url = full_url + sep + 'api_key=' + quote_plus(api_key)
+		else:
+			request_url = full_url
+		if token:
 			req_headers['Authorization'] = 'Bearer %s' % token
 		body = jsdumps(post) if post is not None else None
 		if not method: method = 'POST' if post is not None else 'GET'
@@ -98,7 +100,7 @@ def getScrob(url, post=None, method=None, auth='api_key', silent=False, _retried
 				control.sleep((int(throttleTime) + 1) * 1000)
 				return getScrob(url, post=post, method=method, auth=auth, silent=silent, _retried=_retried)
 		if status_code == 401:
-			if auth == 'jwt' and not _retried:
+			if token and not _retried:
 				setSetting('scrob.accesstoken', '')
 				setSetting('scrob.tokenexpiry', '')
 				return getScrob(url, post=post, method=method, auth=auth, silent=silent, _retried=True)
@@ -150,7 +152,7 @@ def get_all_pages(url, silent=False):
 		return None
 
 
-#### JWT session management (obtained via username+password login; no refresh endpoint exists server-side) ####
+#### Device-token session management (legacy username/password login is retained for migration) ####
 
 def _getScrobJWT():
 	try:
@@ -160,9 +162,54 @@ def _getScrobJWT():
 			try:
 				if int(expiry) - 300 > int(time.time()): return token
 			except: pass
+		if getSetting('scrob.refreshtoken'):
+			return _refreshScrobToken(silent=True)
 		return _scrobLogin(silent=True)
 	except:
 		log_utils.error()
+		return None
+
+
+def _saveScrobTokens(data):
+	try:
+		access_token = data.get('access_token')
+		if not access_token: return None
+		control.homeWindow.setProperty('umbrella.updateSettings', 'false')
+		setSetting('scrob.accesstoken', access_token)
+		if data.get('refresh_token'): setSetting('scrob.refreshtoken', data['refresh_token'])
+		setSetting('scrob.tokenexpiry', str(int(time.time()) + int(data.get('expires_in', 86400))))
+		setSetting('scrob.isauthed', 'true')
+		control.homeWindow.setProperty('umbrella.updateSettings', 'true')
+		return access_token
+	except:
+		control.homeWindow.setProperty('umbrella.updateSettings', 'true')
+		log_utils.error()
+		return None
+
+
+def _refreshScrobToken(silent=False):
+	try:
+		refresh_token = getSetting('scrob.refreshtoken')
+		base = scrobBaseUrl()
+		if not refresh_token or not base: return None
+		url = urljoin(base + '/', 'auth/device/token')
+		body = urlencode({'grant_type': 'refresh_token', 'refresh_token': refresh_token})
+		response = session.post(url, data=body, headers={'Content-Type': 'application/x-www-form-urlencoded'}, timeout=20)
+		if response.status_code == 200:
+			return _saveScrobTokens(response.json())
+		if response.status_code == 400:
+			try: error = response.json().get('error', '')
+			except: error = ''
+			if error == 'invalid_grant':
+				setSetting('scrob.accesstoken', '')
+				setSetting('scrob.refreshtoken', '')
+				setSetting('scrob.tokenexpiry', '')
+				setSetting('scrob.isauthed', '')
+		if not silent: control.notification(title='Scrob', message='Scrob authorization expired - please authorize again', icon=scrob_icon)
+		log_utils.log('SCROB: device token refresh failed HTTP %s' % response.status_code, level=log_utils.LOGWARNING)
+		return None
+	except Exception as e:
+		if not silent: log_utils.log('SCROB: token refresh failed: %s' % str(e), level=log_utils.LOGWARNING)
 		return None
 
 
@@ -212,23 +259,77 @@ def _scrobLogin(silent=False):
 
 #### Auth / revoke (settings entry points, called from router.py) ####
 
+def _requestScrobDeviceCode():
+	try:
+		url = urljoin(scrobBaseUrl() + '/', 'auth/device/code')
+		body = jsdumps({'client_name': 'Umbrella on Kodi', 'scope': 'write'})
+		response = session.post(url, data=body, headers=headers, timeout=20)
+		if response.status_code == 200: return response.json()
+		log_utils.log('SCROB: device code request failed HTTP %s' % response.status_code, level=log_utils.LOGWARNING)
+	except Exception as e:
+		log_utils.log('SCROB: device code request failed: %s' % str(e), level=log_utils.LOGWARNING)
+	return None
+
+
+def _pollScrobDeviceToken(device):
+	if not device or not device.get('device_code'): return None
+	start = time.time()
+	expires_in = int(device.get('expires_in', 900))
+	interval = max(int(device.get('interval', 5)), 1)
+	verification_url = str(device.get('verification_uri') or '')
+	verification_complete = str(device.get('verification_uri_complete') or verification_url)
+	user_code = str(device.get('user_code') or '')
+	message = 'Go to [COLOR deepskyblue]%s[/COLOR]\nEnter code [COLOR deepskyblue]%s[/COLOR]' % (verification_url, user_code)
+	if control.setting('dialogs.useumbrelladialog') == 'true':
+		from resources.lib.modules import tools
+		qr = tools.make_qr(verification_complete, 'scrob_qr.png')
+		dialog = control.getProgressWindow('Authorize Scrob', qr, 1)
+		dialog.set_controls()
+		dialog.update(100, message)
+	else:
+		dialog = control.progressDialog
+		dialog.create('Authorize Scrob', message)
+	try:
+		while not dialog.iscanceled() and time.time() - start < expires_in:
+			body = urlencode({'grant_type': 'urn:ietf:params:oauth:grant-type:device_code', 'device_code': device['device_code']})
+			response = session.post(urljoin(scrobBaseUrl() + '/', 'auth/device/token'), data=body,
+				headers={'Content-Type': 'application/x-www-form-urlencoded'}, timeout=20)
+			if response.status_code == 200: return response.json()
+			try: error = response.json().get('error', '')
+			except: error = ''
+			if error == 'slow_down': interval += 5
+			elif error not in ('authorization_pending', ''):
+				log_utils.log('SCROB: device authorization ended: %s' % error, level=log_utils.LOGWARNING)
+				return None
+			elapsed = time.time() - start
+			dialog.update(max(0, 100 - int(100 * elapsed / expires_in)), message)
+			control.sleep(interval * 1000)
+	finally:
+		dialog.close()
+	return None
+
 def scrobAuth(fromSettings=0):
 	try:
 		base = scrobBaseUrl()
-		apikey = getSetting('scrob.apikey')
-		if not base or not apikey:
+		if not base:
 			if fromSettings == 1: control.openSettings('5.7', 'plugin.video.umbrella')
-			control.notification(message='Enter a Scrob server URL and API key first', icon=scrob_icon)
+			control.notification(message='Enter a Scrob server URL first', icon=scrob_icon)
 			return False
-		response = getScrob('/history?page=1&page_size=1', method='GET', auth='api_key', silent=True)
-		if not response or response.status_code != 200:
-			control.notification(message='Scrob Authorization Error - Check URL/API Key', icon=scrob_icon)
+		device = _requestScrobDeviceCode()
+		if not device:
+			control.notification(message='Scrob Authorization Error - Check Server URL', icon=scrob_icon)
 			if fromSettings == 1: control.openSettings('5.7', 'plugin.video.umbrella')
 			return False
-		setSetting('scrob.isauthed', 'true')
+		tokens = _pollScrobDeviceToken(device)
+		if not tokens or not _saveScrobTokens(tokens):
+			control.notification(message='Scrob Authorization Cancelled or Expired', icon=scrob_icon)
+			if fromSettings == 1: control.openSettings('5.7', 'plugin.video.umbrella')
+			return False
+		setSetting('scrob.username', '')
+		setSetting('scrob.password', '')
 		control.notification(message='Scrob Authorized Successfully', icon=scrob_icon)
-		if getSetting('scrob.username') and getSetting('scrob.password'):
-			_scrobLogin(silent=False)
+		if True: # Device grant already supplies full write access.
+			pass
 		else:
 			# Explicit heads-up (not just a toast) about the two-tier auth model, since
 			# the API key alone quietly can't unwatch anything or manage lists — surfaced
@@ -257,6 +358,7 @@ def scrobRevoke(fromSettings=0):
 	setSetting('scrob.password', '')
 	setSetting('scrob.apikey', '')
 	setSetting('scrob.accesstoken', '')
+	setSetting('scrob.refreshtoken', '')
 	setSetting('scrob.tokenexpiry', '')
 	setSetting('scrob.isauthed', '')
 	control.homeWindow.setProperty('umbrella.updateSettings', 'true')

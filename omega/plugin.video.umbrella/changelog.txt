@@ -1,2 +1,2 @@
-[B]Update - v6.7.683 - August 27th, 2026 [/B]
---[Enhancement] Added support for dropping and undropping TV shows on Scrob.
+[B]Update - v6.7.684 - August 31st, 2026 [/B]
+--[Enhancement] Added support for Scrob device authorization using device token.
