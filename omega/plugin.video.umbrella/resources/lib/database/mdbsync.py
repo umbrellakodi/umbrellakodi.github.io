@@ -519,12 +519,15 @@ def get_watched_movies_full():
 		except: pass
 	return result
 
-def update_last_watched_at(key='last_watched_at'):
+def update_last_watched_at(key='last_watched_at', timestamp=None):
 	try:
 		dbcon = get_connection()
 		dbcur = get_connection_cursor(dbcon)
 		_ensure_watched_tables(dbcur)
-		timestamp = datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%S.000Z")
+		if timestamp is None:
+			timestamp = datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%S.000Z")
+		elif isinstance(timestamp, (int, float)):
+			timestamp = datetime.utcfromtimestamp(timestamp).strftime("%Y-%m-%dT%H:%M:%S.000Z")
 		dbcur.execute('''INSERT OR REPLACE INTO service Values (?, ?)''', (key, timestamp))
 		dbcur.connection.commit()
 	except:

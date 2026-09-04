@@ -944,7 +944,10 @@ def sync_watchedProgress(activities=None, forced=False):
 	try:
 		db_last = mdbsync.last_sync('last_watched_at')
 		api_last = getWatchedActivity(activities)
-		if not forced and db_last and (api_last - db_last) < 60: return
+		# Compare the actual remote activity cursor.  The old 60-second tolerance
+		# permanently skipped a watch made shortly after the previous sync because
+		# db_last was left unchanged and every later pass repeated the same skip.
+		if not forced and db_last and api_last <= db_last: return
 		from datetime import datetime as _dt
 		since = _dt.utcfromtimestamp(db_last).strftime('%Y-%m-%dT%H:%M:%SZ') if db_last else '1970-01-01T00:00:00Z'
 		offset = 0
@@ -952,6 +955,9 @@ def sync_watchedProgress(activities=None, forced=False):
 		while True:
 			url = f"/sync/watched?since={since}&limit={limit}&offset={offset}"
 			data = get_request(url)
+			# Do not advance the cursor when the request failed; the next service
+			# pass must retry the same activity window.
+			if data is None: return
 			if not data: break
 			for item in data.get('movies', []):
 				ids = item.get('movie', {}).get('ids', {})
@@ -980,12 +986,17 @@ def sync_watchedProgress(activities=None, forced=False):
 			pagination = data.get('pagination', {})
 			if not pagination.get('has_more', False): break
 			offset += limit
-		mdbsync.update_last_watched_at('last_watched_at')
-		mdbsync.update_last_watched_at('last_watched_movies_at')
-		mdbsync.update_last_watched_at('last_watched_episodes_at')
+		# Store MDBList's activity time rather than this device's wall-clock time.
+		# A local timestamp can advance beyond a delayed server event and cause a
+		# subsequent incremental request to miss that event on another device.
+		checkpoint = api_last or None
+		mdbsync.update_last_watched_at('last_watched_at', checkpoint)
+		mdbsync.update_last_watched_at('last_watched_movies_at', checkpoint)
+		mdbsync.update_last_watched_at('last_watched_episodes_at', checkpoint)
 		# invalidate indicator caches so next access fetches fresh data
 		mdbsync.cache_delete(mdbsync._hash_function(syncMovies, ()))
 		mdbsync.cache_delete(mdbsync._hash_function(syncTVShows, ()))
+		_clr_episode_progress_cache()
 		control.trigger_widget_refresh()
 	except: log_utils.error()
 

@@ -245,14 +245,6 @@ def artPath():
 	return joinPath(xbmcaddon.Addon('plugin.video.umbrella').getAddonInfo('path'), 'resources', 'artwork', theme)
 
 def themedIcon(filename):
-	# A third-party icon pack (e.g. a "smallbrella"-style alternate theme, downloaded
-	# under userIconFolders()) predates whatever provider icon was added most recently
-	# to Umbrella's own bundled set and simply won't have that file — artPath() only
-	# falls back to the bundled theme when the whole pack directory is missing, not
-	# per missing file. Resolve against the active pack first, then fall back to
-	# Umbrella's own bundled "umbrella" theme (which always has every icon Umbrella
-	# itself references) so a gap in a third-party pack shows the real icon instead
-	# of a broken/blank one.
 	path = joinPath(artPath(), filename)
 	if existsPath(path): return path
 	return joinPath(iconFolders(), 'umbrella', filename)
@@ -536,12 +528,6 @@ def getMenuEnabled(menu_title):
 
 def trigger_widget_refresh():
 	import time
-	# Playback completion can update several enabled tracking services in quick
-	# succession. Each service requests the same widget refresh, and overlapping
-	# UpdateLibrary calls can make Kodi append rows to a directory that is already
-	# updating ("CGUIMediaWindow::OnMessage - updating in progress"). Keep the
-	# timestamp on the home window so the guard is shared by concurrent plugin
-	# invokers and Player threads.
 	now = time.time()
 	try: last_refresh = float(homeWindow.getProperty('umbrella.widget_refresh_at') or 0)
 	except: last_refresh = 0

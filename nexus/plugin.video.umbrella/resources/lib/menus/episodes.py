@@ -1682,9 +1682,6 @@ class Episodes:
 				if self.notifications: control.notification(title=32326, message=33049)
 
 	def scrob_progress_list(self, url='', direct=False, upcoming=False):
-		# Let Scrob's canonical Next Up endpoint choose both the shows and episodes.
-		# That endpoint applies the user's hidden-show preferences; Umbrella only
-		# enriches its episode references with the metadata episodeDirectory needs.
 		self.list = []
 		try:
 			next_up = scrob.get_next_up()
@@ -1802,11 +1799,6 @@ class Episodes:
 		return self.list
 
 	def custom_calendar_items(self, media_type='shows', days=33, start_date=None):
-		# Flat episode-reference items from Custom's /calendars/my/shows/{date}/{days},
-		# mapped into the same shape trakt_list() produces so trakt_episodes_list can
-		# enrich them with TMDb data unmodified. Confirmed schema: ShowCalendarItem =
-		# {first_aired, episode: EpisodeOut, show: ShowOut} — first_aired lives on the
-		# calendar item itself, not on the nested episode object.
 		items = []
 		try:
 			raw = customtrakt.get_calendar(media_type, days, start_date=start_date)
@@ -1848,13 +1840,6 @@ class Episodes:
 		return items
 
 	def custom_calendar_recent(self, url, folderName=''):
-		# "Recent" needs a window that actually reaches into the past — Trakt's own
-		# equivalent link (mycalendarRecent_link) requests date[30] (today minus 30
-		# days) then locally filters down to premiered<=today. custom_calendar_items()
-		# defaults to starting *today* when no start_date is given (matching Upcoming/
-		# Premieres, which correctly want a future-only window), so without an explicit
-		# override here every item in the [today, today+33] window gets thrown away by
-		# the premiered<=today filter below, leaving Recent empty.
 		self.list = []
 		try:
 			recent_start = (self.date_time - timedelta(days=30)).strftime('%Y-%m-%d')
@@ -2588,10 +2573,6 @@ class Episodes:
 
 	def episodeDirectory(self, items, unfinished=False, next=True, playlist=False, folderName=''):
 		from sys import argv # some functions like ActivateWindow() throw invalid handle less this is imported here.
-		# A container refresh after playback can hand this method the same episode more
-		# than once (notably when a progress item expands into its remaining episodes).
-		# Kodi does not collapse duplicate plugin rows, so keep the first occurrence
-		# while preserving the provider's ordering and metadata.
 		unique_items = []
 		seen_episodes = set()
 		for episode_item in items or []:

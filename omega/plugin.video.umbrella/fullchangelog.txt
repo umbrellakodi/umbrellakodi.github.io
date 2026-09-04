@@ -1,29 +1,16 @@
-[B]Update - v6.7.685 - August 31st, 2026 [/B]
+[B]Update - v6.7.686 - Sept 4th, 2026 [/B]
+--[Fix] Fix for mdblist getting out of sync on multiple device environments.
+
+[B]Update - v6.7.86 - Sept 3rd, 2026 [/B]
 --[Enhancement] Added support for Scrob dropped.
-
-[B]Update - v6.7.684 - August 31st, 2026 [/B]
 --[Enhancement] Added support for Scrob device authorization using device token.
-
-[B]Update - v6.7.683 - August 27th, 2026 [/B]
---[Enhancement] Added support for dropping and undropping TV shows on Scrob.
-
-[B]Update - v6.7.682 - August 25th, 2026 [/B]
 --[Fix] Made changes to custom to increase limit to 1000 items.
 --[Change] Fixed issue with Trakt retries on mark episode as watched.
 --[Fix] Fixed issue where multiple container refreshes were sent after an item was watched.
-
-[B]Update - v6.7.681 - August 24th, 2026 [/B]
 --[Fix] Changes made to subtitle module to improve matching and detection.
-
-[B]Update - v6.7.680 - August 24th, 2026 [/B]
 --[Fix] Changed to use Scrob's history/next-up endpoint instead of reconstructing from local history.
-
-[B]Update - v6.7.679 - August 21st, 2026 [/B]
 --[Fix] Prevented overlapping container refreshes after multi-episode playback, from producing blank or duplicated episode menus.
 --[Fix] MDBList TV show collections now use the show-level collection feed.
-
-[B]Update - v6.7.678 - August 20th, 2026 [/B]
---[Fix] Fixed for episode progress to stop duplication of episodes after playback.
 
 [B]Update - v6.7.85 - August 19th, 2026 [/B]
 --[Fix] Fixed hosts.quality setting being used for sorting but not filtering.
