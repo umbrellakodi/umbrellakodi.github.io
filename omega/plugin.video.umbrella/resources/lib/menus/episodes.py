@@ -607,6 +607,9 @@ class Episodes:
 			control.sleep(200)
 			return control.refresh()
 		if url == 'mdbprogress':
+			# Refresh the local watched snapshot as well as the rendered list cache;
+			# otherwise cross-device changes remain invisible after this action.
+			mdblist.sync_watchedProgress(forced=True)
 			cache.remove(self.mdblist_progress_list, '/upnext', self.mdblist_directProgressScrape)
 			cache.remove(self.mdblist_progress_list, url, self.mdblist_directProgressScrape)
 			control.sleep(200)
@@ -819,7 +822,11 @@ class Episodes:
 	def mdblist_calendar(self, url, folderName=''):
 		self.list = []
 		try:
-			if mdblist.getWatchedActivity() > cache.timeout(self.mdblist_progress_list, url, self.mdblist_directProgressScrape):
+			activities = mdblist.getActivities()
+			if mdblist.getWatchedActivity(activities) > cache.timeout(self.mdblist_progress_list, url, self.mdblist_directProgressScrape):
+				# The progress list is reconstructed from mdbsync's local episode rows.
+				# Pull remote changes before rebuilding that cache.
+				mdblist.sync_watchedProgress(activities)
 				self.list = cache.get(self.mdblist_progress_list, 0, url, self.mdblist_directProgressScrape)
 			else:
 				self.list = cache.get(self.mdblist_progress_list, self.mdblist_hours, url, self.mdblist_directProgressScrape)

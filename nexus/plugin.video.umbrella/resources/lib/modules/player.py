@@ -29,6 +29,7 @@ from resources.lib.modules.source_utils import seas_ep_filter
 from urllib.request import urlopen, Request
 import fnmatch
 import os
+import re
 import time
 
 LOGINFO = 1
@@ -809,8 +810,8 @@ class Player(xbmc.Player):
 				# session; overlapping refreshes can leave an empty container and append the
 				# same directory rows twice. Only the final callback refreshes, and debounce
 				# that refresh across Player instances.
-				if (getSetting('crefresh') == 'true' and seekable and not playnext_transition
-						and not has_next_queued
+				if (getSetting('crefresh') == 'true' and not playnext_transition
+						and not has_next_queued and not control.player.isPlaying()
 						and 'plugin.video.umbrella' in control.infoLabel('Container.PluginName')):
 					now = time.time()
 					try: last_refresh = float(homeWindow.getProperty('umbrella.container_refresh_at') or 0)
@@ -1191,9 +1192,6 @@ class Subtitles:
 		return score
 
 	def get(self, title, year, imdb, season, episode):
-		try:
-			import re
-		except: return log_utils.error()
 		try:
 			quality = ['bluray', 'hdrip', 'brrip', 'bdrip', 'dvdrip', 'webrip', 'hdtv']
 			langs = []
@@ -1702,8 +1700,6 @@ class Bookmarks:
 					customtrakt.scrobbleMovie(imdb, tmdb, percent) if media_type == 'movie' else customtrakt.scrobbleEpisode(imdb, tmdb, tvdb, season, episode, percent)
 				if percent >= int(markwatched_percentage):
 					customtrakt.scrobbleReset(imdb, tmdb, tvdb, season, episode, refresh=False)
-					if not already_watched:
-						Thread(target=customtrakt.sync_watchedProgress, kwargs={'forced': True}).start()
 			elif service == 'floppy':
 				completed = percent >= int(markwatched_percentage)
 				if getSetting('debug.level') == '1':
@@ -1711,8 +1707,6 @@ class Bookmarks:
 				floppy.scrobbleStopMovie(imdb, tmdb, percent, completed=completed, current_time=current_time, total_time=media_length, already_watched=skip_scrobble) if media_type == 'movie' else floppy.scrobbleStopEpisode(imdb, tmdb, tvdb, season, episode, percent, completed=completed, current_time=current_time, total_time=media_length, already_watched=skip_scrobble)
 				if percent >= int(markwatched_percentage):
 					floppy.scrobbleReset(imdb, tmdb, tvdb, season, episode, refresh=False)
-					if not already_watched:
-						Thread(target=floppy.sync_watchedProgress, kwargs={'forced': True}).start()
 			elif service == 'scrob':
 				completed = percent >= int(markwatched_percentage)
 				if getSetting('debug.level') == '1':
@@ -1720,8 +1714,6 @@ class Bookmarks:
 				scrob.scrobbleStopMovie(imdb, tmdb, percent, completed=completed, current_time=current_time, total_time=media_length, already_watched=skip_scrobble) if media_type == 'movie' else scrob.scrobbleStopEpisode(imdb, tmdb, tvdb, season, episode, percent, completed=completed, current_time=current_time, total_time=media_length, already_watched=skip_scrobble)
 				if percent >= int(markwatched_percentage):
 					scrob.scrobbleReset(imdb, tmdb, tvdb, season, episode, refresh=False)
-					if not already_watched:
-						Thread(target=scrob.sync_watchedProgress, kwargs={'forced': True}).start()
 			else:
 				if not skip_scrobble and (seekable or percent >= int(markwatched_percentage)):
 					trakt.scrobbleMovie(imdb, tmdb, percent) if media_type == 'movie' else trakt.scrobbleEpisode(imdb, tmdb, tvdb, season, episode, percent)
