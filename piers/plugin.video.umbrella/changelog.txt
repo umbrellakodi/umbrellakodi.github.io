@@ -1,5 +1,2 @@
-[B]Update - v6.7.687 - Sept 5th, 2026 [/B]
---[Fix] Mdblist multiple device sync (possible fix)
---[Fix] Fix for progress episodes refreshing episodes with duplicates or none.
---[Fix] No longer allowing container refreshes during playback and limited to 1 container refresh after playback.
---[Fix] Fixed error for undefined module.
+[B]Update - v6.7.688 - Sept 6th, 2026 [/B]
+--[Fix] Changes made for refreshing container causing empty and duplicated list after playback was stopped.

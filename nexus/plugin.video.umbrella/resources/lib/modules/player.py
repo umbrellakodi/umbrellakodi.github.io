@@ -39,6 +39,30 @@ homeWindow = control.homeWindow
 playerWindow = control.playerWindow
 
 
+def _refresh_after_player_closes(request_id):
+	"""Refresh only after Kodi has restored the underlying window."""
+	try:
+		# used to detect when the full screen playback window has been destroyed.
+		for _ in range(20):
+			if (not control.player.isPlaying()
+					and not control.condVisibility('Window.IsActive(fullscreenvideo)')):
+				break
+			if control.monitor.waitForAbort(0.25): return
+		else:
+			log_utils.log('post-playback refresh abandoned: player window did not close', level=log_utils.LOGDEBUG)
+			return
+		if control.monitor.waitForAbort(0.75): return
+		if homeWindow.getProperty('umbrella.container_refresh_request') != request_id:
+			return
+		homeWindow.clearProperty('umbrella.container_refresh_request')
+		if 'plugin.video.umbrella' in control.infoLabel('Container.PluginName'):
+			log_utils.log('container.refresh issued after player window closed', level=log_utils.LOGDEBUG)
+			control.refresh()
+		else:
+			control.trigger_widget_refresh()
+	except: log_utils.error()
+
+
 class Player(xbmc.Player):
 	def __init__(self):
 		xbmc.Player.__init__(self)
@@ -805,21 +829,16 @@ class Player(xbmc.Player):
 				self.onPlayBackStopped_ran = True
 				self.playbackStopped_triggered = False
 				seekable, _scrobble_source = self._sendFinishedItemState()
-				# Do not refresh the directory between queued episodes. Kodi may deliver
-				# stop callbacks from more than one Player instance during a multi-episode
-				# session; overlapping refreshes can leave an empty container and append the
-				# same directory rows twice. Only the final callback refreshes, and debounce
-				# that refresh across Player instances.
+				# Never refresh from inside this callback. Kodi has not necessarily restored
+				# the underlying directory yet, so even one Container.Refresh here can reuse
+				# a closing plugin handle and produce an empty or duplicated listing.
 				if (getSetting('crefresh') == 'true' and not playnext_transition
-						and not has_next_queued and not control.player.isPlaying()
-						and 'plugin.video.umbrella' in control.infoLabel('Container.PluginName')):
-					now = time.time()
-					try: last_refresh = float(homeWindow.getProperty('umbrella.container_refresh_at') or 0)
-					except: last_refresh = 0
-					if now - last_refresh >= 2:
-						homeWindow.setProperty('umbrella.container_refresh_at', str(now))
-						log_utils.log('container.refresh issued at end of playback queue', level=log_utils.LOGDEBUG)
-						control.refresh() #not all skins refresh after playback stopped
+						and not has_next_queued):
+					request_id = str(time.time_ns())
+					homeWindow.setProperty('umbrella.container_refresh_request', request_id)
+					refresh_thread = Thread(target=_refresh_after_player_closes, args=(request_id,))
+					refresh_thread.daemon = True
+					refresh_thread.start()
 				#control.trigger_widget_refresh() # skinshortcuts handles widget refresh
 				#control.checkforSkin(action='off')
 				try:
