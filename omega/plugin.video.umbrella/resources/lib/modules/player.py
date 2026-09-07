@@ -51,16 +51,28 @@ def _refresh_after_player_closes(request_id):
 		else:
 			log_utils.log('post-playback refresh abandoned: player window did not close', level=log_utils.LOGDEBUG)
 			return
-		if control.monitor.waitForAbort(0.75): return
+		for _ in range(20):
+			if 'plugin.video.umbrella' in control.infoLabel('Container.PluginName'):
+				break
+			if control.monitor.waitForAbort(0.25): return
+		else:
+			log_utils.log('post-playback container refresh skipped: Umbrella directory was not restored', level=log_utils.LOGDEBUG)
+			return
+		if control.monitor.waitForAbort(0.5): return
 		if homeWindow.getProperty('umbrella.container_refresh_request') != request_id:
 			return
 		homeWindow.clearProperty('umbrella.container_refresh_request')
-		if 'plugin.video.umbrella' in control.infoLabel('Container.PluginName'):
-			log_utils.log('container.refresh issued after player window closed', level=log_utils.LOGDEBUG)
-			control.refresh()
-		else:
-			control.trigger_widget_refresh()
+		homeWindow.clearProperty('umbrella.playback_cleanup')
+		homeWindow.clearProperty('umbrella.widget_refresh_pending')
+		log_utils.log('container.refresh issued after player window closed', level=log_utils.LOGDEBUG)
+		control.refresh()
 	except: log_utils.error()
+	finally:
+		# Do not leave refreshes disabled if Kodi aborts or never restores the
+		# directory. A newer playback request owns a different request id.
+		if homeWindow.getProperty('umbrella.container_refresh_request') == request_id:
+			homeWindow.clearProperty('umbrella.container_refresh_request')
+			homeWindow.clearProperty('umbrella.playback_cleanup')
 
 
 class Player(xbmc.Player):
@@ -828,6 +840,11 @@ class Player(xbmc.Player):
 			if (not self.onPlayBackStopped_ran or (self.playbackStopped_triggered and not self.onPlayBackStopped_ran)) and not self.scrobble_sent: # Kodi callback unreliable and often not issued
 				self.onPlayBackStopped_ran = True
 				self.playbackStopped_triggered = False
+				# Every enabled tracking service may request a widget refresh while
+				# _sendFinishedItemState runs. Block all of them until Kodi has restored
+				# the directory; this applies equally to Custom, Trakt, Simkl, MDBList,
+				# Floppy and Scrob progress sources.
+				homeWindow.setProperty('umbrella.playback_cleanup', 'true')
 				seekable, _scrobble_source = self._sendFinishedItemState()
 				# Never refresh from inside this callback. Kodi has not necessarily restored
 				# the underlying directory yet, so even one Container.Refresh here can reuse
@@ -839,6 +856,8 @@ class Player(xbmc.Player):
 					refresh_thread = Thread(target=_refresh_after_player_closes, args=(request_id,))
 					refresh_thread.daemon = True
 					refresh_thread.start()
+				else:
+					homeWindow.clearProperty('umbrella.playback_cleanup')
 				#control.trigger_widget_refresh() # skinshortcuts handles widget refresh
 				#control.checkforSkin(action='off')
 				try:
@@ -847,7 +866,9 @@ class Player(xbmc.Player):
 				except:
 					log_utils.error()
 				log_utils.log('onPlayBackStopped callback', level=log_utils.LOGDEBUG)
-		except: log_utils.error()
+		except:
+			homeWindow.clearProperty('umbrella.playback_cleanup')
+			log_utils.error()
 
 	def onPlayBackEnded(self):
 		try:

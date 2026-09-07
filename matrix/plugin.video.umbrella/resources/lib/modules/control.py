@@ -532,7 +532,9 @@ def trigger_widget_refresh():
 	# owns the video/player window. UpdateLibrary during that transition can race
 	# Container.Refresh and leave the underlying episode directory empty or doubled.
 	try:
-		if player.isPlaying():
+		playback_cleanup = homeWindow.getProperty('umbrella.playback_cleanup') == 'true'
+		player_window_active = condVisibility('Window.IsActive(fullscreenvideo)')
+		if player.isPlaying() or player_window_active or playback_cleanup:
 			homeWindow.setProperty('umbrella.widget_refresh_pending', 'true')
 			return
 	except: pass

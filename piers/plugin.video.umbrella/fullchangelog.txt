@@ -1,3 +1,6 @@
+[B]Update - v6.7.689 - Sept 7th, 2026 [/B]
+--[Fix] Still working on blank episode lists after playback is stopped.
+
 [B]Update - v6.7.688 - Sept 6th, 2026 [/B]
 --[Fix] Changes made for refreshing container causing empty and duplicated list after playback was stopped.
 
