@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<includes>
+  <include name="Custom1Widgets">
+    <include content="WidgetListPoster">
+      <param name="content_path" value="plugin://plugin.video.umbrella/?action=movies&amp;url=trakttrending&amp;folderName=Trending+%28Trakt%29"/>
+      <param name="widget_header" value="Trending Movies (Trakt)"/>
+      <param name="widget_target" value="videos"/>
+      <param name="list_id" value="23011"/>
+    </include>
+    <include content="WidgetListPoster">
+      <param name="content_path" value="plugin://plugin.video.umbrella/?action=simkl_shows_progress&amp;url=simklshowsprogress&amp;folderName=Simkl+Show+Progress"/>
+      <param name="widget_header" value="Simkl Show Progress"/>
+      <param name="widget_target" value="videos"/>
+      <param name="list_id" value="23013"/>
+    </include>
+    <include content="WidgetListLandscape">
+      <param name="content_path" value="plugin://plugin.video.umbrella/?action=simkl_calendar&amp;url=/sync/all-items/shows/watching&amp;folderName=Simkl+Progress+Episodes"/>
+      <param name="widget_header" value="Simkl Progress Episodes"/>
+      <param name="widget_target" value="videos"/>
+      <param name="list_id" value="23014"/>
+    </include>
+  </include>
+</includes>

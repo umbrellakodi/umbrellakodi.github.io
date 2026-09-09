@@ -676,6 +676,7 @@ class Player(xbmc.Player):
 		#control.sleep(200)
 		homeWindow.clearProperty('umbrella.window_keep_alive')
 		for i in range(0, 500):
+			if self.onPlayBackStopped_ran or self.scrobble_sent: return
 			if self.isPlayback():
 				#control.closeAll() #i cannot remember what this was for.
 				break
@@ -737,6 +738,11 @@ class Player(xbmc.Player):
 				log_utils.log('Exception trying to seekTime() offset: %s'% self.offset, level=log_utils.LOGDEBUG)
 			self.playback_resumed = True
 		if getSetting('subtitles') == 'true': Subtitles().get(self.title, self.year, self.imdb, self.season, self.episode)
+		if self.onPlayBackStopped_ran or self.scrobble_sent or not self.isPlayingVideo(): return
+		try:
+			self.current_time = self.getTime()
+			self.media_length = self.getTotalTime()
+		except: pass
 		if not self.av_started_ran:
 			self.av_started_ran = True
 			scrobble_source = getSetting('scrobble.source')
@@ -1719,24 +1725,25 @@ class Bookmarks:
 		episode = episode if episode is not None else ''
 		try:
 			markwatched_percentage = int(getSetting('markwatched.percent')) or 85
-			if media_length == 0: return
-			percent = float((current_time / media_length)) * 100
+			# Closing the remote session must also work before Kodi reports a duration.
+			percent = float(current_time / media_length) * 100 if media_length > 0 else 0
 			seekable = (int(current_time) > 180 and (percent < int(markwatched_percentage)))
+			# Always close active sessions, even below the local three-minute bookmark threshold.
 			# Skip scrobble API call if item was already marked watched during playback (avoids duplicate submission)
 			skip_scrobble = already_watched and percent >= int(markwatched_percentage)
 			if service == 'simkl':
-				if not skip_scrobble and (seekable or percent >= int(markwatched_percentage)):
+				if not skip_scrobble:
 					simkl.scrobbleMovie(title, year, imdb, tmdb, percent) if media_type == 'movie' else simkl.scrobbleEpisode(tvshowtitle or title, year, imdb, tmdb, tvdb, season, episode, percent)
 				if percent >= int(markwatched_percentage): simkl.scrobbleReset(imdb, tmdb, tvdb, season, episode, refresh=False)
 			elif service == 'mdblist':
 				# Do not create a new pause bookmark immediately before clearing a
 				# completed item. If the subsequent clear is delayed or fails, that
 				# final pause point is synced back and leaves the episode in progress.
-				if not skip_scrobble and seekable:
+				if not skip_scrobble and percent < markwatched_percentage:
 					mdblist.scrobbleMovie(title, year, imdb, tmdb, percent) if media_type == 'movie' else mdblist.scrobbleEpisode(tvshowtitle or title, year, imdb, tmdb, tvdb, season, episode, percent)
 				if percent >= int(markwatched_percentage): mdblist.scrobbleReset(imdb, tmdb, tvdb, season, episode, refresh=False, already_watched=skip_scrobble)
 			elif service == 'custom':
-				if not skip_scrobble and (seekable or percent >= int(markwatched_percentage)):
+				if not skip_scrobble:
 					customtrakt.scrobbleMovie(imdb, tmdb, percent) if media_type == 'movie' else customtrakt.scrobbleEpisode(imdb, tmdb, tvdb, season, episode, percent)
 				if percent >= int(markwatched_percentage):
 					customtrakt.scrobbleReset(imdb, tmdb, tvdb, season, episode, refresh=False)
@@ -1755,7 +1762,7 @@ class Bookmarks:
 				if percent >= int(markwatched_percentage):
 					scrob.scrobbleReset(imdb, tmdb, tvdb, season, episode, refresh=False)
 			else:
-				if not skip_scrobble and (seekable or percent >= int(markwatched_percentage)):
+				if not skip_scrobble:
 					trakt.scrobbleMovie(imdb, tmdb, percent) if media_type == 'movie' else trakt.scrobbleEpisode(imdb, tmdb, tvdb, season, episode, percent)
 				if percent >= int(markwatched_percentage): trakt.scrobbleReset(imdb, tmdb, tvdb, season, episode, refresh=False)
 		except:

@@ -1,2 +1,2 @@
-[B]Update - v6.7.689 - Sept 7th, 2026 [/B]
---[Fix] Still working on blank episode lists after playback is stopped.
+[B]Update - v6.7.690 - Sept 9th, 2026 [/B]
+--[Fix] Removed guard for scrobble in first 3 minutes so immediate stops no longer continue to show as playing.

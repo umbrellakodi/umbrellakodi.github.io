@@ -1,5 +1,5 @@
 <?xml version='1.0' encoding='utf-8'?>
-<addons><addon id="plugin.video.umbrella" name="Umbrella" provider-name="Umbrella" version="6.7.689">
+<addons><addon id="plugin.video.umbrella" name="Umbrella" provider-name="Umbrella" version="6.7.690">
 	<requires>
 		<import addon="xbmc.python" version="3.0.0" />
 		<import addon="script.module.requests" />
@@ -262,8 +262,8 @@
 			<screenshot>resources/screenshots/screenshot003.jpg</screenshot>
 		</assets>
 		<news>
-[B]Update - v6.7.689 - Sept 7th, 2026 [/B]
---[Fix] Still working on blank episode lists after playback is stopped.
+[B]Update - v6.7.690 - Sept 9th, 2026 [/B]
+--[Fix] Removed guard for scrobble in first 3 minutes so immediate stops no longer continue to show as playing.
 		</news>
 	</extension>
 
@@ -402,6 +402,35 @@
         <description lang="en_NZ">Umbrestuary Helper for the Umbrestuary Skin.</description>
         <description lang="en_US">Umbrestuary Helper for the Umbrestuary Skin.</description>
     </extension>
+</addon><addon id="skin.nimbus" version="0.1.43" name="Nimbus" provider-name="Ivar Brandt">
+	<requires>
+		<import addon="xbmc.gui" version="5.17.0" />
+		<import addon="script.nimbus.helper" version="0.0.50" />
+	</requires>
+	<extension point="xbmc.gui.skin" debugging="false">
+		<res width="1920" height="1440" aspect="4:3" default="false" folder="xml" />
+		<res width="1920" height="1280" aspect="3:2" default="false" folder="xml" />
+		<res width="1920" height="1200" aspect="16:10" default="false" folder="xml" />
+		<res width="2040" height="1080" aspect="17:9" default="false" folder="xml" />
+		<res width="1920" height="1080" aspect="16:9" default="true" folder="xml" />
+		<res width="2560" height="1080" aspect="21:9" default="false" folder="xml" />
+		<res width="2338" height="1080" aspect="19.5:9" default="false" folder="xml" />
+		<res width="2160" height="1080" aspect="18:9" default="false" folder="xml" />
+	</extension>
+	<extension point="xbmc.addon.metadata">
+		<platform>all</platform>
+		<license>CC BY-SA 4.0, GNU GENERAL PUBLIC LICENSE Version 2.0</license>
+		<assets>
+			<icon>resources/icon.png</icon>
+			<fanart>resources/fanart.png</fanart>
+		</assets>
+		<summary lang="en_GB">Nimbus skin by Ivar Brandt</summary>
+		<summary lang="en_NZ">Nimbus skin by Ivar Brandt</summary>
+		<summary lang="en_US">Nimbus skin by Ivar Brandt</summary>
+		<description lang="en_GB">Nimbus Skin</description>
+		<description lang="en_NZ">Nimbus Skin</description>
+		<description lang="en_US">Nimbus Skin</description>
+	</extension>
 </addon><addon id="skin.umbrestuary" version="1.0.20" name="Umbrestuary" provider-name="Ivar Brandt, Umbrella">
 	<requires>
 		<import addon="xbmc.gui" version="5.17.0" />
