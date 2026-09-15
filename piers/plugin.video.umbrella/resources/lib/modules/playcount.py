@@ -384,6 +384,16 @@ def getSeasonOverlay(indicators, imdb, tvdb, season): # tvdb no longer used
 		return '4'
 
 def getEpisodeOverlay(indicators, imdb, tvdb, season, episode):
+	# Custom season indicators use server progress. Use that same snapshot for
+	# episodes, since the incremental local history may be incomplete or stale.
+	if customIndicators and imdb:
+		progress = customtrakt.getShowProgress(imdb)
+		if progress:
+			for s in progress.get('seasons', []):
+				if int(s.get('number', -1)) != int(season): continue
+				for e in s.get('episodes', []):
+					if int(e.get('number', -1)) == int(episode):
+						return '5' if e.get('completed') else '4'
 	if not indicators: return '4'
 	try:
 		if traktIndicators or simklIndicators or mdblistIndicators or customIndicators or floppyIndicators or scrobIndicators or punchplayIndicators:

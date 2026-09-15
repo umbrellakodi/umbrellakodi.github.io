@@ -1,2 +1,3 @@
-[B]Update - v6.7.691 - Sept 15th, 2026 [/B]
+[B]Update - v6.7.692 - Sept 15th, 2026 [/B]
 --[Change] Added punchplay as an optional provider for tracking.
+--[Fix] Fixed issue with cursor sync on multi device.

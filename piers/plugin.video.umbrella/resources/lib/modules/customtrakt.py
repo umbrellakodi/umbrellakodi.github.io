@@ -571,8 +571,11 @@ def markEpisodeAsWatched(imdb, tvdb, season, episode):
 	try:
 		season, episode = int('%01d' % int(season)), int('%01d' % int(episode))
 		result = getCustomAsJson('/sync/history', {'shows': [{'seasons': [{'episodes': [{'number': episode}], 'number': season}], 'ids': {'imdb': imdb, 'tvdb': tvdb}}]})
-		if not result: return False
+		if not result:
+			log_utils.log('Custom markEpisodeAsWatched IMDB: %s S%sE%s Result: False (empty response)' % (imdb, season, episode), level=log_utils.LOGDEBUG)
+			return False
 		success = result.get('added', {}).get('episodes', 0) != 0
+		log_utils.log('Custom markEpisodeAsWatched IMDB: %s S%sE%s Result: %s' % (imdb, season, episode, success), level=log_utils.LOGDEBUG)
 		if success:
 			customtraktsync.upsert_watched_episode(show_imdb=imdb, show_tvdb=str(tvdb), season=season, episode=episode, last_watched_at=_now_iso())
 			customtraktsync.cache_delete(customtraktsync._hash_function(syncTVShows, ()))
@@ -699,13 +702,13 @@ def sync_watchedProgress(activities=None, forced=False, progress_callback=None):
 		db_last = customtraktsync.last_sync('last_history_at')
 		api_last = getActivity(activities)
 		if not forced and db_last and (api_last - db_last) < 60: return
-		since = datetime.utcfromtimestamp(db_last).strftime('%Y-%m-%dT%H:%M:%SZ') if db_last else '1970-01-01T00:00:00Z'
+		since = datetime.utcfromtimestamp(db_last).strftime('%Y-%m-%dT%H:%M:%SZ') if db_last and not forced else '1970-01-01T00:00:00Z'
 		offset = 0
 		limit = 1000
 		while True:
 			url = '/sync/history?since=%s&limit=%s&page=%s' % (since, limit, (offset // limit) + 1)
 			data = getCustomAsJson(url)
-			if not data: break
+			if data is None: return # failed request must not advance the history cursor
 			items = data if isinstance(data, list) else data.get('items', [])
 			if not items: break
 			for item in items:
