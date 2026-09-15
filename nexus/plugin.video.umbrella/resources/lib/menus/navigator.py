@@ -12,6 +12,7 @@ from resources.lib.modules import mdblist
 from resources.lib.modules import customtrakt
 from resources.lib.modules import floppy
 from resources.lib.modules import scrob
+from resources.lib.modules import punchplay
 from resources.lib.modules.tmdb4 import getTMDbV4CredentialsInfo
 from resources.lib.modules import favourites
 from json import loads as jsloads
@@ -32,12 +33,14 @@ class Navigator:
 		self.customCredentials = customtrakt.getCustomCredentialsInfo()
 		self.floppyCredentials = floppy.getFloppyCredentialsInfo()
 		self.scrobCredentials = scrob.getScrobCredentialsInfo()
+		self.punchplayCredentials = punchplay.getPunchPlayCredentialsInfo()
 		self.traktIndicators = getTraktIndicatorsInfo()
 		self.simklIndicators = simkl.getSimKLIndicatorsInfo()
 		self.mdblistIndicators = mdblist.getMDBListIndicatorsInfo()
 		self.customIndicators = customtrakt.getCustomIndicatorsInfo()
 		self.floppyIndicators = floppy.getFloppyIndicatorsInfo()
 		self.scrobIndicators = scrob.getScrobIndicatorsInfo()
+		self.punchplayIndicators = punchplay.getPunchPlayIndicatorsInfo()
 		self.tmdbCredentials = getTMDbV4CredentialsInfo()
 		self.simkltoken = getSetting('simkltoken') != ''
 		self.alldebridCredentials = getSetting('alldebridtoken') != ''
@@ -112,7 +115,9 @@ class Navigator:
 		if key == 'floppy_with_indicators':return bool(self.floppyCredentials and (self.floppyIndicators or getSetting('floppy.markwatched') == 'true'))
 		if key == 'scrob_apikey':          return bool(getSetting('scrob.apikey'))
 		if key == 'scrob_credentials':     return bool(self.scrobCredentials)
+		if key == 'punchplay_credentials':     return bool(self.punchplayCredentials)
 		if key == 'scrob_with_indicators': return bool(self.scrobCredentials and (self.scrobIndicators or getSetting('scrob.markwatched') == 'true'))
+		if key == 'punchplay_with_indicators': return bool(self.punchplayCredentials and (self.punchplayIndicators or getSetting('punchplay.markwatched') == 'true'))
 		if key == 'tmdb_v4_token':           return bool(getSetting('tmdb.v4.accesstoken'))
 		if key == 'has_lib_movies':          return bool(self.hasLibMovies)
 		if key == 'favorite_movie':          return bool(self.favoriteMovie)
@@ -165,6 +170,7 @@ class Navigator:
 		'mymovies_trakt':    'Edit My Movies: Trakt',
 		'mymovies_floppy': 'Edit My Movies: Floppy',
 		'mymovies_scrob': 'Edit My Movies: Scrob',
+		'mymovies_punchplay': 'Edit My Movies: PunchPlay',
 		'mymovies_local': 'Edit My Movies: Local',
 		'mytvshows_mdblist':  'Edit My TV Shows: MDBList',
 		'mytvshows_custom':   'Edit My TV Shows: Custom',
@@ -173,6 +179,7 @@ class Navigator:
 		'mytvshows_trakt':    'Edit My TV Shows: Trakt',
 		'mytvshows_floppy': 'Edit My TV Shows: Floppy',
 		'mytvshows_scrob': 'Edit My TV Shows: Scrob',
+		'mytvshows_punchplay': 'Edit My TV Shows: PunchPlay',
 		'mytvshows_local': 'Edit My TV Shows: Local',
 	}
 
@@ -450,6 +457,9 @@ class Navigator:
 	def mymovies_scrob(self, folderName=''):
 		self._renderDbMenu('mymovies_scrob', 'myMoviesNavigatorEditor', 'Edit My Movies Menu', folderName=folderName)
 
+	def mymovies_punchplay(self, folderName=''):
+		self._renderDbMenu('mymovies_punchplay', 'myMoviesNavigatorEditor', 'Edit My Movies Menu', folderName=folderName)
+
 	def mymovies_local(self, folderName=''):
 		self._renderDbMenu('mymovies_local', 'myMoviesNavigatorEditor', 'Edit My Movies Menu', folderName=folderName)
 
@@ -480,6 +490,9 @@ class Navigator:
 
 	def mytvshows_scrob(self, folderName=''):
 		self._renderDbMenu('mytvshows_scrob', 'myTVShowsNavigatorEditor', 'Edit My TV Shows Menu', folderName=folderName)
+
+	def mytvshows_punchplay(self, folderName=''):
+		self._renderDbMenu('mytvshows_punchplay', 'myTVShowsNavigatorEditor', 'Edit My TV Shows Menu', folderName=folderName)
 
 	def mytvshows_local(self, folderName=''):
 		self._renderDbMenu('mytvshows_local', 'myTVShowsNavigatorEditor', 'Edit My TV Shows Menu', folderName=folderName)
@@ -640,6 +653,7 @@ class Navigator:
 			self.addDirectoryItem('[B]%s[/B]' % _custom_tools_label, 'tools_customToolsNavigator&folderName=%s' % quote_plus(_custom_tools_label), 'tools.png', 'DefaultAddonService.png', isFolder=True)
 		if self.floppyCredentials: self.addDirectoryItem('[B]Floppy Management Tools[/B]', 'tools_floppyToolsNavigator&folderName=%s' % quote_plus('Floppy Management Tools'), 'tools.png', 'DefaultAddonService.png', isFolder=True)
 		if self.scrobCredentials: self.addDirectoryItem('[B]Scrob Management Tools[/B]', 'tools_scrobToolsNavigator&folderName=%s' % quote_plus('Scrob Management Tools'), 'tools.png', 'DefaultAddonService.png', isFolder=True)
+		if self.punchplayCredentials: self.addDirectoryItem('[B]PunchPlay Management Tools[/B]', 'tools_punchplayToolsNavigator&folderName=%s' % quote_plus('PunchPlay Management Tools'), 'tools.png', 'DefaultAddonService.png', isFolder=True)
 		#-- Playback - 2
 		self.addDirectoryItem(32045, 'tools_openSettings&query=2.0', 'tools.png', 'DefaultAddonService.png', isFolder=False)
 		#-- Downloads - 10
@@ -749,6 +763,19 @@ class Navigator:
 		self.addDirectoryItem(getLS(40786) % self.highlight_color, 'movies_scrobDroppedManager', 'scrob.png', 'DefaultAddonService.png', isFolder=False)
 		self.addDirectoryItem(getLS(40787) % self.highlight_color, 'shows_scrobDroppedManager', 'scrob.png', 'DefaultAddonService.png', isFolder=False)
 		self.addDirectoryItem('Force Scrob Sync', 'tools_forceScrobSync', 'scrob.png', 'DefaultAddonService.png', isFolder=False)
+		self.endDirectory()
+
+	def punchplayTools(self, folderName=''):
+		if self.useContainerTitles: control.setContainerName(folderName)
+		if not self.punchplayCredentials:
+			self.addDirectoryItem('Authorize PunchPlay', 'punchplayAuth', 'punchplay.png', 'DefaultAddonService.png', isFolder=False)
+		else:
+			self.addDirectoryItem('Revoke PunchPlay', 'punchplayRevoke', 'punchplay.png', 'DefaultAddonService.png', isFolder=False)
+		self.addDirectoryItem(getLS(35059) % self.highlight_color, 'movies_punchplayUnfinishedManager', 'punchplay.png', 'DefaultAddonService.png', isFolder=False)
+		self.addDirectoryItem(getLS(35060) % self.highlight_color, 'episodes_punchplayUnfinishedManager', 'punchplay.png', 'DefaultAddonService.png', isFolder=False)
+		self.addDirectoryItem(getLS(40786) % self.highlight_color, 'movies_punchplayDroppedManager', 'punchplay.png', 'DefaultAddonService.png', isFolder=False)
+		self.addDirectoryItem(getLS(40787) % self.highlight_color, 'shows_punchplayDroppedManager', 'punchplay.png', 'DefaultAddonService.png', isFolder=False)
+		self.addDirectoryItem('Force PunchPlay Sync', 'tools_forcePunchPlaySync', 'punchplay.png', 'DefaultAddonService.png', isFolder=False)
 		self.endDirectory()
 
 	def loggingNavigator(self, folderName=''):
@@ -948,7 +975,7 @@ class Navigator:
 
 	def accountCheck(self):
 		if (not self.traktCredentials and not self.simklCredentials and not self.tmdbCredentials and not self.mdblistCredentials
-				and not self.customCredentials and not self.floppyCredentials and not self.scrobCredentials
+				and not self.customCredentials and not self.floppyCredentials and not self.scrobCredentials and not self.punchplayCredentials
 				and not (getSetting('indicators.alt') == '0' and getSetting('scrobble.source') == '0')):
 			control.hide()
 			control.notification(message=32042, icon='WARNING')

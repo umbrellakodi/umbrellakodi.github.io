@@ -92,6 +92,7 @@ simKLSyncFile = joinPath(dataPath, 'simKLSync.db')
 customTraktSyncFile = joinPath(dataPath, 'customTraktSync.db')
 floppySyncFile = joinPath(dataPath, 'floppySync.db')
 scrobSyncFile = joinPath(dataPath, 'scrobSync.db')
+punchplaySyncFile = joinPath(dataPath, 'punchplaySync.db')
 subsFile = joinPath(dataPath, 'substitute.db')
 fanarttvCacheFile = joinPath(dataPath, 'fanarttv.db')
 metaInternalCacheFile = joinPath(dataPath, 'video_cache.db')
@@ -526,7 +527,7 @@ def getMenuEnabled(menu_title):
 	if (is_enabled == '' or is_enabled == 'false'): return False
 	return True
 
-def trigger_widget_refresh():
+def trigger_widget_refresh(update_library=True, force=False):
 	import time
 	# Provider callbacks and background syncs can request this while Kodi still
 	# owns the video/player window. UpdateLibrary during that transition can race
@@ -541,7 +542,7 @@ def trigger_widget_refresh():
 	now = time.time()
 	try: last_refresh = float(homeWindow.getProperty('umbrella.widget_refresh_at') or 0)
 	except: last_refresh = 0
-	if now - last_refresh < 2:
+	if not force and now - last_refresh < 2:
 		return
 	homeWindow.setProperty('umbrella.widget_refresh_at', str(now))
 	homeWindow.clearProperty('umbrella.widget_refresh_pending')
@@ -549,7 +550,7 @@ def trigger_widget_refresh():
 	homeWindow.setProperty('widgetreload', timestr)
 	homeWindow.setProperty('widgetreload-episodes', timestr)
 	homeWindow.setProperty('widgetreload-movies', timestr)
-	if xbmc.getSkinDir() != 'skin.arctic.fuse.3':
+	if update_library and xbmc.getSkinDir() != 'skin.arctic.fuse.3':
 		execute('UpdateLibrary(video,/fake/path/to/force/refresh/on/home)')
 
 def refresh_playAction(): # for umbrella global CM play actions
@@ -580,6 +581,7 @@ def refresh_contextProperties():
 		'context.umbrella.customManager',
 		'context.umbrella.floppyManager',
 		'context.umbrella.scrobManager',
+		'context.umbrella.punchplayManager',
 		'context.umbrella.tmdbListManager',
 		'context.umbrella.tmdbWatchlist',
 		'context.umbrella.clearProviders',

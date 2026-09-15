@@ -108,6 +108,9 @@ def router(argv2):
 	elif action == 'mymovies_scrobNavigator':
 		from resources.lib.menus import navigator
 		navigator.Navigator().mymovies_scrob(folderName=folderName)
+	elif action == 'mymovies_punchplayNavigator':
+		from resources.lib.menus import navigator
+		navigator.Navigator().mymovies_punchplay(folderName=folderName)
 	elif action == 'mymovies_localNavigator':
 		from resources.lib.menus import navigator
 		navigator.Navigator().mymovies_local(folderName=folderName)
@@ -255,9 +258,15 @@ def router(argv2):
 	elif action == 'scrobAuth':
 		from resources.lib.modules import scrob
 		scrob.scrobAuth(fromSettings=1)
+	elif action == 'punchplayAuth':
+		from resources.lib.modules import punchplay
+		punchplay.punchplayAuth(fromSettings=1)
 	elif action == 'scrobRevoke':
 		from resources.lib.modules import scrob
 		scrob.scrobRevoke(fromSettings=1)
+	elif action == 'punchplayRevoke':
+		from resources.lib.modules import punchplay
+		punchplay.punchplayRevoke(fromSettings=1)
 	elif action == 'traktAccountInfo':
 		from resources.lib.modules import trakt as Trakt
 		Trakt.getTraktAccountInfo()
@@ -378,30 +387,51 @@ def router(argv2):
 	elif action == 'movies_scrobDroppedManager':
 		from resources.lib.menus import movies
 		movies.Movies().scrobDroppedManager()
+	elif action == 'movies_punchplayDroppedManager':
+		from resources.lib.menus import movies
+		movies.Movies().punchplayDroppedManager()
 	elif action == 'movies_floppyUnfinishedManager':
 		from resources.lib.menus import movies
 		movies.Movies().floppyUnfinishedManager()
 	elif action == 'scrob_movies_watched':
 		from resources.lib.menus import movies
 		movies.Movies().scrob_movies_watched(url, folderName=folderName)
+	elif action == 'punchplay_movies_library':
+		from resources.lib.menus import movies
+		movies.Movies().punchplay_library(params.get('category', 'collection'), url=url, folderName=folderName)
+	elif action == 'punchplay_movies_watched':
+		from resources.lib.menus import movies
+		movies.Movies().punchplay_movies_watched(url, folderName=folderName)
 	elif action == 'floppy_movies_unfinished':
 		from resources.lib.menus import movies
 		movies.Movies().floppy_unfinished(url, folderName=folderName)
 	elif action == 'scrob_movies_unfinished':
 		from resources.lib.menus import movies
 		movies.Movies().scrob_unfinished(url, folderName=folderName)
+	elif action == 'punchplay_movies_unfinished':
+		from resources.lib.menus import movies
+		movies.Movies().punchplay_unfinished(url, folderName=folderName)
 	elif action == 'simkl_movies_unfinished':
 		from resources.lib.menus import movies
 		movies.Movies().simkl_unfinished(url, folderName=folderName)
 	elif action == 'movies_scrobUnfinishedManager':
 		from resources.lib.menus import movies
 		movies.Movies().scrobUnfinishedManager()
+	elif action == 'movies_punchplayUnfinishedManager':
+		from resources.lib.menus import movies
+		movies.Movies().punchplayUnfinishedManager()
 	elif action == 'scrob_movies_userlists':
 		from resources.lib.menus import movies
 		movies.Movies().scrob_user_lists(folderName=folderName)
+	elif action == 'punchplay_movies_userlists':
+		from resources.lib.menus import movies
+		movies.Movies().punchplay_user_lists(folderName=folderName)
 	elif action == 'scrob_list_movies':
 		from resources.lib.menus import movies
 		movies.Movies().scrob_list_movies(params.get('list_id'), url=url, folderName=folderName)
+	elif action == 'punchplay_list_movies':
+		from resources.lib.menus import movies
+		movies.Movies().punchplay_list_movies(params.get('list_id'), url=url, folderName=folderName)
 	elif action == 'mdbOfficialListMovies':
 		from resources.lib.menus import movies
 		movies.Movies().getMDBOfficialLists(folderName=folderName)
@@ -480,9 +510,18 @@ def router(argv2):
 	elif action == 'shows_scrobDroppedManager':
 		from resources.lib.menus import tvshows
 		tvshows.TVshows().scrobDroppedManager()
+	elif action == 'shows_punchplayDroppedManager':
+		from resources.lib.menus import tvshows
+		tvshows.TVshows().punchplayDroppedManager()
 	elif action == 'scrob_shows_progress':
 		from resources.lib.menus import tvshows
 		tvshows.TVshows().scrob_progress(url, folderName=folderName)
+	elif action == 'punchplay_shows_library':
+		from resources.lib.menus import tvshows
+		tvshows.TVshows().punchplay_library(params.get('category', 'collection'), url=url, folderName=folderName)
+	elif action == 'punchplay_shows_progress':
+		from resources.lib.menus import tvshows
+		tvshows.TVshows().punchplay_progress(url, folderName=folderName)
 	elif action == 'mdbOfficialListTV':
 		from resources.lib.menus import tvshows
 		tvshows.TVshows().getMDBOfficialLists(folderName=folderName)
@@ -567,6 +606,9 @@ def router(argv2):
 	elif action == 'mytvshows_scrobNavigator':
 		from resources.lib.menus import navigator
 		navigator.Navigator().mytvshows_scrob(folderName=folderName)
+	elif action == 'mytvshows_punchplayNavigator':
+		from resources.lib.menus import navigator
+		navigator.Navigator().mytvshows_punchplay(folderName=folderName)
 	elif action == 'mytvshows_localNavigator':
 		from resources.lib.menus import navigator
 		navigator.Navigator().mytvshows_local(folderName=folderName)
@@ -834,9 +876,15 @@ def router(argv2):
 	elif action == 'scrob_episodes_progress':
 		from resources.lib.menus import episodes
 		episodes.Episodes().scrob_calendar(url, folderName=folderName)
+	elif action == 'punchplay_episodes_progress':
+		from resources.lib.menus import episodes
+		episodes.Episodes().punchplay_calendar(url, folderName=folderName)
 	elif action == 'scrob_upcoming_progress':
 		from resources.lib.menus import episodes
 		episodes.Episodes().scrob_upcoming_progress(url, folderName=folderName)
+	elif action == 'punchplay_upcoming_progress':
+		from resources.lib.menus import episodes
+		episodes.Episodes().punchplay_upcoming_progress(url, folderName=folderName)
 	elif action == 'floppy_episodes_unfinished':
 		from resources.lib.menus import episodes
 		episodes.Episodes().floppy_unfinished(url, folderName=folderName)
@@ -849,15 +897,27 @@ def router(argv2):
 	elif action == 'episodes_scrobUnfinishedManager':
 		from resources.lib.menus import episodes
 		episodes.Episodes().scrobUnfinishedManager()
+	elif action == 'episodes_punchplayUnfinishedManager':
+		from resources.lib.menus import episodes
+		episodes.Episodes().punchplayUnfinishedManager()
 	elif action == 'scrob_episodes_unfinished':
 		from resources.lib.menus import episodes
 		episodes.Episodes().scrob_unfinished(url, folderName=folderName)
+	elif action == 'punchplay_episodes_unfinished':
+		from resources.lib.menus import episodes
+		episodes.Episodes().punchplay_unfinished(url, folderName=folderName)
 	elif action == 'scrob_tvshows_userlists':
 		from resources.lib.menus import tvshows
 		tvshows.TVshows().scrob_user_lists(folderName=folderName)
+	elif action == 'punchplay_tvshows_userlists':
+		from resources.lib.menus import tvshows
+		tvshows.TVshows().punchplay_user_lists(folderName=folderName)
 	elif action == 'scrob_list_shows':
 		from resources.lib.menus import tvshows
 		tvshows.TVshows().scrob_list_shows(params.get('list_id'), url=url, folderName=folderName)
+	elif action == 'punchplay_list_shows':
+		from resources.lib.menus import tvshows
+		tvshows.TVshows().punchplay_list_shows(params.get('list_id'), url=url, folderName=folderName)
 	elif action == 'local_calendar':
 		from resources.lib.menus import episodes
 		episodes.Episodes().local_calendar(url, folderName=folderName)
@@ -1365,6 +1425,9 @@ def router(argv2):
 		elif action == 'tools_scrobToolsNavigator':
 			from resources.lib.menus import navigator
 			navigator.Navigator().scrobTools(folderName=folderName)
+		elif action == 'tools_punchplayToolsNavigator':
+			from resources.lib.menus import navigator
+			navigator.Navigator().punchplayTools(folderName=folderName)
 		elif action == 'tools_searchNavigator':
 			from resources.lib.menus import navigator
 			navigator.Navigator().search(folderName=folderName)
@@ -1435,6 +1498,12 @@ def router(argv2):
 			tvshow = (params.get('tvshow') == 'tvshow')
 			from resources.lib.modules import scrob
 			scrob.manager(name, imdb, tvdb, tmdb=tmdb, season=season, episode=episode, watched=watched, unfinished=unfinished, tvshow=tvshow)
+		elif action == 'tools_punchplayManager':
+			watched = (params.get('watched') == 'True') if params.get('watched') else None
+			unfinished = (params.get('unfinished') == 'True') if params.get('unfinished') else False
+			tvshow = (params.get('tvshow') == 'tvshow')
+			from resources.lib.modules import punchplay
+			punchplay.manager(name, imdb, tvdb, tmdb=tmdb, season=season, episode=episode, watched=watched, unfinished=unfinished, tvshow=tvshow)
 		elif action == 'tools_likeList':
 			from resources.lib.modules import trakt
 			trakt.like_list(params.get('list_owner'), params.get('list_name'), params.get('list_id'))
@@ -1462,6 +1531,9 @@ def router(argv2):
 		elif action == 'tools_forceScrobSync':
 			from resources.lib.modules import scrob
 			scrob.force_scrobSync()
+		elif action == 'tools_forcePunchPlaySync':
+			from resources.lib.modules import punchplay
+			punchplay.force_punchplaySync()
 		elif action == 'tools_clearLogFile':
 			from resources.lib.modules import log_utils
 			cleared = log_utils.clear_logFile()

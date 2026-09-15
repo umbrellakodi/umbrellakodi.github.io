@@ -1,2 +1,2 @@
-[B]Update - v6.7.690 - Sept 9th, 2026 [/B]
---[Fix] Removed guard for scrobble in first 3 minutes so immediate stops no longer continue to show as playing.
+[B]Update - v6.7.691 - Sept 15th, 2026 [/B]
+--[Change] Added punchplay as an optional provider for tracking.

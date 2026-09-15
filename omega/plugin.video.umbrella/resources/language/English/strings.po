@@ -6103,3 +6103,51 @@ msgstr ""
 msgctxt "#40793"
 msgid "Prefer forced subtitles"
 msgstr ""
+
+msgctxt "#40800"
+msgid "PunchPlay"
+msgstr ""
+
+msgctxt "#40801"
+msgid "PunchPlay client ID"
+msgstr ""
+
+msgctxt "#40802"
+msgid "PunchPlay client secret (optional for public clients)"
+msgstr ""
+
+msgctxt "#40803"
+msgid "Authorize PunchPlay"
+msgstr ""
+
+msgctxt "#40804"
+msgid "Revoke PunchPlay"
+msgstr ""
+
+msgctxt "#40805"
+msgid "PunchPlay username"
+msgstr ""
+
+msgctxt "#40806"
+msgid "Also mark watched on PunchPlay"
+msgstr ""
+
+msgctxt "#40807"
+msgid "PunchPlay Manager"
+msgstr ""
+
+msgctxt "#40808"
+msgid "Force PunchPlay sync"
+msgstr ""
+
+msgctxt "#40809"
+msgid "PunchPlay sync interval (minutes)"
+msgstr ""
+
+msgctxt "#40810"
+msgid "Show unaired progress episodes"
+msgstr ""
+
+msgctxt "#40811"
+msgid "PunchPlay notifications"
+msgstr ""

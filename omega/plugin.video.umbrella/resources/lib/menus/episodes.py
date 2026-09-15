@@ -8,7 +8,7 @@ from json import dumps as jsdumps, loads as jsloads
 import re
 from threading import Thread
 from urllib.parse import quote_plus, urlencode, parse_qsl, urlparse, urlsplit
-from resources.lib.database import cache, fanarttv_cache, traktsync, customtraktsync, floppysync, scrobsync
+from resources.lib.database import cache, fanarttv_cache, traktsync, customtraktsync, floppysync, scrobsync, punchplaysync
 from resources.lib.database import artwork as customArtwork
 from resources.lib.indexers.tmdb import TVshows as tmdb_indexer
 from resources.lib.indexers.fanarttv import FanartTv
@@ -22,6 +22,7 @@ from resources.lib.modules import mdblist
 from resources.lib.modules import customtrakt
 from resources.lib.modules import floppy
 from resources.lib.modules import scrob
+from resources.lib.modules import punchplay
 from resources.lib.modules import views
 from resources.lib.modules.playcount import getTVShowIndicators, getEpisodeOverlay, getShowCount, getSeasonIndicators
 from resources.lib.modules.player import Bookmarks
@@ -58,12 +59,14 @@ class Episodes:
 		self.customCredentials = customtrakt.getCustomCredentialsInfo()
 		self.floppyCredentials = floppy.getFloppyCredentialsInfo()
 		self.scrobCredentials = scrob.getScrobCredentialsInfo()
+		self.punchplayCredentials = punchplay.getPunchPlayCredentialsInfo()
 		self.trakt_directProgressScrape = getSetting('trakt.directProgress.scrape') == 'true'
 		self.simkl_directProgressScrape = getSetting('simkl.directProgress.scrape') == 'true'
 		self.mdblist_directProgressScrape = getSetting('mdblist.directProgress.scrape') == 'true'
 		self.custom_directProgressScrape = getSetting('custom.directProgress.scrape') == 'true'
 		self.floppy_directProgressScrape = getSetting('floppy.directProgress.scrape') == 'true'
 		self.scrob_directProgressScrape = getSetting('scrob.directProgress.scrape') == 'true'
+		self.punchplay_directProgressScrape = getSetting('punchplay.directProgress.scrape') == 'true'
 		self.trakt_progressFlatten = getSetting('trakt.progressFlatten') == 'true'
 		self.simkl_progressFlatten = getSetting('simkl.progressFlatten') == 'true'
 		self.mdblist_progressFlatten = getSetting('mdblist.progressFlatten') == 'true'
@@ -443,6 +446,46 @@ class Episodes:
 			from resources.lib.modules import log_utils
 			log_utils.error()
 
+	def punchplay_unfinished(self, url=None, create_directory=True, folderName=''):
+		self.list = []
+		try:
+			raw_items = punchplay.get_continue_watching()
+			items = []
+			for item in raw_items:
+				try:
+					media = item.get('media') or {}
+					if media.get('type') != 'episode': continue
+					show_tmdb = str(media.get('show_tmdb_id') or '')
+					season, episode = media.get('season_number'), media.get('episode_number')
+					if not show_tmdb or season is None or episode is None: continue
+					show_tvdb = str(media.get('show_tvdb_id') or '')
+					show_imdb = punchplay._resolve_tv_imdb(show_tmdb)
+					items.append({
+						'tvshowtitle': media.get('show_title', '') or '', 'title': media.get('title', '') or '',
+						'imdb': show_imdb, 'tmdb': show_tmdb, 'tvdb': show_tvdb,
+						'season': int(season), 'episode': int(episode),
+						'genre': '', 'mpaa': '', 'studio': '', 'duration': 0,
+						'progress': str(round(float(item.get('progress_percent') or 0) * 100, 1)),
+						'paused_at': item.get('watched_at', '') or '',
+					})
+				except:
+					from resources.lib.modules import log_utils
+					log_utils.error()
+			if not items:
+				if create_directory: self.episodeDirectory(self.list, unfinished=True, next=False, folderName=folderName)
+				return self.list
+			cache_key = 'punchplayunfinished'
+			self.list = cache.get(self.trakt_episodes_list, 0, cache_key, self.trakt_user, self.lang, items)
+			if self.list is None: self.list = []
+			self.list = sorted(self.list, key=lambda k: k['paused_at'], reverse=True)
+			if self.list and not self.showunaired:
+				self.list = [i for i in self.list if i.get('unaired', '') != 'true']
+			if create_directory: self.episodeDirectory(self.list, unfinished=True, next=False, folderName=folderName)
+			return self.list
+		except:
+			from resources.lib.modules import log_utils
+			log_utils.error()
+
 	def scrobUnfinishedManager(self):
 		try:
 			control.busy()
@@ -455,6 +498,25 @@ class Episodes:
 			if selected_items:
 				for i in selected_items:
 					scrob.scrobbleReset(imdb=i.get('imdb', ''), tvdb=i.get('tvdb', ''), season=i.get('season'), episode=i.get('episode'), refresh=False)
+				control.trigger_widget_refresh()
+				if 'plugin.video.umbrella' in control.infoLabel('Container.PluginName'): control.refresh()
+		except:
+			from resources.lib.modules import log_utils
+			log_utils.error()
+			control.hide()
+
+	def punchplayUnfinishedManager(self):
+		try:
+			control.busy()
+			list = self.punchplay_unfinished(create_directory=False)
+			control.hide()
+			from resources.lib.windows.traktepisodeprogress_manager import TraktEpisodeProgressManagerXML
+			window = TraktEpisodeProgressManagerXML('traktepisodeprogress_manager.xml', control.addonPath(control.addonId()), results=list)
+			selected_items = window.run()
+			del window
+			if selected_items:
+				for i in selected_items:
+					punchplay.scrobbleReset(imdb=i.get('imdb', ''), tmdb=i.get('tmdb', ''), tvdb=i.get('tvdb', ''), season=i.get('season'), episode=i.get('episode'), refresh=False)
 				control.trigger_widget_refresh()
 				if 'plugin.video.umbrella' in control.infoLabel('Container.PluginName'): control.refresh()
 		except:
@@ -626,8 +688,16 @@ class Episodes:
 			cache.remove(self.floppy_progress_list, 'floppyepisodesprogress?limit=%s&page=1' % (self.count or 20), self.floppy_directProgressScrape)
 			control.sleep(200)
 			return control.refresh()
+		if url == 'punchplayprogress':
+			cache.remove(self.punchplay_progress_list, 'punchplayepisodesprogress?limit=%s&page=1' % (self.count or 20), self.punchplay_directProgressScrape)
+			control.refresh()
+			return
 		if url == 'scrobprogress':
 			cache.remove(self.scrob_progress_list, 'scrobepisodesprogress?limit=%s&page=1' % (self.count or 20), self.scrob_directProgressScrape)
+			control.sleep(200)
+			return control.refresh()
+		if url == 'punchplayprogress':
+			cache.remove(self.punchplay_progress_list, 'punchplayepisodesprogress?limit=%s&page=1' % (self.count or 20), self.punchplay_directProgressScrape)
 			control.sleep(200)
 			return control.refresh()
 		try: url = getattr(self, url + '_link')
@@ -1672,10 +1742,73 @@ class Episodes:
 				control.hide()
 				if self.notifications: control.notification(title=32326, message=33049)
 
+	def punchplay_calendar(self, url, folderName=''):
+		self.list = []
+		try:
+			try:
+				if '?' not in url:
+					url = 'punchplayepisodesprogress?limit=%s&page=1' % (self.count or 20)
+				q = dict(parse_qsl(urlsplit(url).query))
+				index = int(q.get('page', 1)) - 1
+				page_limit = max(1, int(q['limit'])) if q.get('limit') else max(1, int(self.count) if self.count else 20)
+			except:
+				index = 0
+				page_limit = max(1, int(self.count) if self.count else 20)
+			self.list = cache.get(self.punchplay_progress_list, 0, url, self.punchplay_directProgressScrape)
+			self.sort(type='progress')
+			if self.list is None: self.list = []
+			prior_week = int(re.sub(r'[^0-9]', '', (self.date_time - timedelta(days=7)).strftime('%Y-%m-%d')))
+			sorted_list = []
+			top_items = [i for i in self.list if i.get('episode') == 1 and i.get('premiered') and (int(re.sub(r'[^0-9]', '', str(i['premiered']))) >= prior_week)]
+			sorted_list.extend(top_items)
+			sorted_list.extend([i for i in self.list if i not in top_items])
+			self.list = sorted_list
+			if self.list is None: self.list = []
+			self.list = [i for i in self.list if i.get('unaired', '') != 'true']
+			next_url = ''
+			hasNext = False
+			if getSetting('punchplay.paginate.lists') == 'true' and self.list:
+				paginated_ids = [self.list[x:x + page_limit] for x in range(0, len(self.list), page_limit)]
+				total_pages = len(paginated_ids)
+				self.list = paginated_ids[index] if index < total_pages else []
+				try:
+					if index + 1 >= total_pages: raise Exception()
+					next_page = index + 2
+					next_url = 'plugin://plugin.video.umbrella/?action=punchplay_episodes_progress&url=%s&page=%s&folderName=%s' % (
+						quote_plus('punchplayepisodesprogress?limit=%s&page=%s' % (page_limit, next_page)),
+						str(next_page), quote_plus(folderName))
+					hasNext = True
+				except: pass
+			for i in range(len(self.list)): self.list[i]['next'] = next_url
+			self.episodeDirectory(self.list, unfinished=False, next=hasNext, folderName=folderName)
+			return self.list
+		except:
+			from resources.lib.modules import log_utils
+			log_utils.error()
+			if not self.list:
+				control.hide()
+				if self.notifications: control.notification(title=32326, message=33049)
+
 	def scrob_upcoming_progress(self, url, folderName=''):
 		self.list = []
 		try:
 			self.list = cache.get(self.scrob_progress_list, 0, url, self.scrob_directProgressScrape, True)
+			if self.list:
+				self.list = sorted(self.list, key=lambda k: (k['premiered'] if k.get('premiered') else '3021-01-01', k.get('airtime', '')))
+			if self.list is None: self.list = []
+			self.episodeDirectory(self.list, unfinished=False, next=False, folderName=folderName)
+			return self.list
+		except:
+			from resources.lib.modules import log_utils
+			log_utils.error()
+			if not self.list:
+				control.hide()
+				if self.notifications: control.notification(title=32326, message=33049)
+
+	def punchplay_upcoming_progress(self, url, folderName=''):
+		self.list = []
+		try:
+			self.list = cache.get(self.punchplay_progress_list, 0, url, self.punchplay_directProgressScrape, True)
 			if self.list:
 				self.list = sorted(self.list, key=lambda k: (k['premiered'] if k.get('premiered') else '3021-01-01', k.get('airtime', '')))
 			if self.list is None: self.list = []
@@ -1694,7 +1827,7 @@ class Episodes:
 			next_up = scrob.get_next_up()
 			if not next_up: return self.list
 			items = []
-			for item in next_up:
+			for position, item in enumerate(next_up):
 				try:
 					show = item.get('show') or item.get('series') or {}
 					next_episode = item.get('next_episode') or item.get('episode') or item.get('media') or {}
@@ -1711,7 +1844,8 @@ class Episodes:
 						or item.get('series_tvdb_id') or item.get('show_tvdb') or item.get('series_tvdb'))
 					items.append({'imdb': str(imdb_id or ''), 'tmdb': str(tmdb_id or ''), 'tvdb': str(tvdb_id or ''),
 						'season': int(season), 'episode': int(episode),
-						'lastplayed': item.get('last_watched_at') or item.get('updated_at') or ''})
+						'lastplayed': item.get('last_watched_at') or item.get('updated_at') or '',
+						'_scrob_position': position})
 				except: pass
 			if not items: return self.list
 
@@ -1784,6 +1918,7 @@ class Episodes:
 						if extended_art: values.update(extended_art)
 					if not direct: values['action'] = 'episodes'
 					values['extended'] = True
+					values['_scrob_position'] = i['_scrob_position']
 					self.list.append(values)
 				except:
 					from resources.lib.modules import log_utils
@@ -1800,6 +1935,131 @@ class Episodes:
 				batch = threads[i:i + _chunk]
 				[t.start() for t in batch]
 				[t.join() for t in batch]
+			# Restore server order before the caller applies the user's sorting and pagination.
+			# This also makes tied or missing sort values independent of worker completion order.
+			self.list.sort(key=lambda item: item['_scrob_position'])
+			for item in self.list: item.pop('_scrob_position', None)
+		except:
+			from resources.lib.modules import log_utils
+			log_utils.error()
+		return self.list
+
+	def punchplay_progress_list(self, url='', direct=False, upcoming=False):
+		self.list = []
+		try:
+			next_up = punchplay.get_next_up(upcoming=upcoming)
+			if not next_up: return self.list
+			items = []
+			for position, item in enumerate(next_up):
+				try:
+					show = item.get('show') or item.get('series') or {}
+					next_episode = item.get('next_episode') or item.get('episode') or item.get('media') or {}
+					if not isinstance(next_episode, dict): next_episode = {}
+					season = next_episode.get('season_number', next_episode.get('season', item.get('season_number', item.get('next_season_number'))))
+					episode = next_episode.get('episode_number', next_episode.get('number', item.get('episode_number', item.get('next_episode_number'))))
+					if season is None or episode is None: continue
+					if not self.showspecials and int(season) == 0: continue
+					tmdb_id = (show.get('tmdb_id') or show.get('tmdb') or next_episode.get('show_tmdb_id') or item.get('show_tmdb_id')
+						or item.get('series_tmdb_id') or item.get('show_tmdb') or item.get('series_tmdb'))
+					imdb_id = (show.get('imdb_id') or show.get('imdb') or next_episode.get('show_imdb_id') or item.get('show_imdb_id')
+						or item.get('series_imdb_id') or item.get('show_imdb') or item.get('series_imdb'))
+					tvdb_id = (show.get('tvdb_id') or show.get('tvdb') or next_episode.get('show_tvdb_id') or item.get('show_tvdb_id')
+						or item.get('series_tvdb_id') or item.get('show_tvdb') or item.get('series_tvdb'))
+					items.append({'imdb': str(imdb_id or ''), 'tmdb': str(tmdb_id or ''), 'tvdb': str(tvdb_id or ''),
+						'season': int(season), 'episode': int(episode),
+						'lastplayed': item.get('last_watched_at') or item.get('updated_at') or '',
+						'_punchplay_position': position})
+				except: pass
+			if not items: return self.list
+
+			def items_list(i):
+				imdb_id = i.get('imdb', '')
+				tmdb_id = i.get('tmdb', '')
+				try:
+					next_season, next_episode = i['season'], i['episode']
+					if not tmdb_id and imdb_id:
+						tmdb_result = cache.get(tmdb_indexer().IdLookup, 96, imdb_id, i.get('tvdb', ''))
+						tmdb_id = str(tmdb_result.get('id')) if tmdb_result else ''
+					if not tmdb_id: return
+					showSeasons = cache.get(tmdb_indexer().get_showSeasons_meta, 96, tmdb_id)
+					if not showSeasons: return
+					seasons_meta = {s.get('season_number'): s for s in showSeasons.get('seasons', [])}
+					if next_season not in seasons_meta: return
+					seasonEpisodes = tmdb_indexer().get_seasonEpisodes_meta_checked(tmdb_id, next_season)
+					if not seasonEpisodes: return
+					episode_list = seasonEpisodes.get('episodes', [])
+					try: episode_meta = [x for x in episode_list if x.get('episode') == next_episode][0]
+					except: return
+					values = {}
+					values['imdb'] = imdb_id
+					values['tmdb'] = tmdb_id
+					values['tvdb'] = i.get('tvdb', '')
+					values['lastplayed'] = i.get('lastplayed', '')
+					values['snum'] = next_season
+					values['enum'] = next_episode
+					try:
+						show_summary = trakt.getTVShowSummary(imdb_id, full=True) if imdb_id else None
+						airs = (show_summary or {}).get('airs', {}) or {}
+						values['airday'] = airs.get('day', '')
+						values['airtime'] = airs.get('time', '')
+						values['airzone'] = airs.get('timezone', '')
+					except: pass
+					values['airinfo_enriched'] = True
+					if not episode_meta.get('plot'): episode_meta['plot'] = showSeasons.get('plot', '')
+					values.update(showSeasons)
+					values.update(seasonEpisodes)
+					values.update(episode_meta)
+					for k in ('episodes', 'snum', 'enum'): values.pop(k, None)
+					duration = values.get('duration')
+					if duration:
+						try: values['duration'] = int(duration) * 60
+						except: pass
+					air_date = values.get('premiered', '')
+					values['unaired'] = ''
+					if upcoming:
+						values['punchplayUpcomingProgress'] = True
+						try:
+							if values.get('status', '').lower() == 'ended': return
+							elif not air_date: values['unaired'] = 'true'
+							elif int(re.sub(r'[^0-9]', '', air_date)) > int(re.sub(r'[^0-9]', '', str(self.today_date))):
+								values['unaired'] = 'true'
+							else: return  # already aired (today or earlier) - not "upcoming"
+						except:
+							from resources.lib.modules import log_utils
+							log_utils.error('tvshowtitle = %s' % values.get('tvshowtitle', ''))
+					else:
+						values['punchplayProgress'] = True
+						try:
+							if values.get('status', '').lower() == 'ended': pass
+							elif not air_date: values['unaired'] = 'true'
+							elif int(re.sub(r'[^0-9]', '', air_date)) > int(re.sub(r'[^0-9]', '', str(self.today_date))):
+								values['unaired'] = 'true'
+						except: pass
+					if self.enable_fanarttv:
+						tvdb = values.get('tvdb', '')
+						extended_art = fanarttv_cache.get(FanartTv().get_tvshow_art, 336, tvdb)
+						if extended_art: values.update(extended_art)
+					if not direct: values['action'] = 'episodes'
+					values['extended'] = True
+					values['_punchplay_position'] = i['_punchplay_position']
+					self.list.append(values)
+				except:
+					from resources.lib.modules import log_utils
+					log_utils.error()
+
+			threads = []
+			for i in items:
+				threads.append(Thread(target=items_list, args=(i,)))
+			_unlimited = getSetting('dev.batch.unlimited') == 'true'
+			_bs = max(int(getSetting('dev.batch.size') or '10'), 1)
+			_chunk = max(len(threads), 1) if _unlimited else _bs
+			for i in range(0, len(threads), _chunk):
+				if control.monitor.abortRequested(): break
+				batch = threads[i:i + _chunk]
+				[t.start() for t in batch]
+				[t.join() for t in batch]
+			self.list.sort(key=lambda item: item['_punchplay_position'])
+			for item in self.list: item.pop('_punchplay_position', None)
 		except:
 			from resources.lib.modules import log_utils
 			log_utils.error()
@@ -2618,6 +2878,8 @@ class Episodes:
 		except: floppyUpcomingProgress = False
 		try: scrobUpcomingProgress = False if 'scrobUpcomingProgress' not in items[0] else True
 		except: scrobUpcomingProgress = False
+		try: punchplayUpcomingProgress = False if 'punchplayUpcomingProgress' not in items[0] else True
+		except: punchplayUpcomingProgress = False
 
 
 
@@ -2633,12 +2895,15 @@ class Episodes:
 		except: floppyProgress = False
 		try: scrobProgress = False if 'scrobProgress' not in items[0] else True
 		except: scrobProgress = False
+		try: punchplayProgress = False if 'punchplayProgress' not in items[0] else True
+		except: punchplayProgress = False
 		if traktProgress and self.trakt_directProgressScrape: progressMenu = getLS(32016)
 		elif simklProgress and self.simkl_directProgressScrape: progressMenu = getLS(32016)
 		elif mdblistProgress and self.mdblist_directProgressScrape: progressMenu = getLS(32016)
 		elif customProgress and self.custom_directProgressScrape: progressMenu = getLS(32016)
 		elif floppyProgress and self.floppy_directProgressScrape: progressMenu = getLS(32016)
 		elif scrobProgress and self.scrob_directProgressScrape: progressMenu = getLS(32016)
+		elif punchplayProgress and self.punchplay_directProgressScrape: progressMenu = getLS(32016)
 		else: progressMenu = getLS(32015)
 		if traktProgress: isMultiList = True
 		elif simklProgress: isMultiList = True
@@ -2695,6 +2960,7 @@ class Episodes:
 		customManagerMenu = '[COLOR %s]%s Manager[/COLOR]' % (self.highlight_color, customtrakt.getCustomServiceName())
 		floppyManagerMenu = '[COLOR %s]Floppy Manager[/COLOR]' % self.highlight_color
 		scrobManagerMenu = '[COLOR %s]Scrob Manager[/COLOR]' % self.highlight_color
+		punchplayManagerMenu = '[COLOR %s]PunchPlay Manager[/COLOR]' % self.highlight_color
 		tvshowBrowserMenu, addToLibrary, addToFavourites, removeFromFavourites = getLS(32071), getLS(32551), getLS(40463), getLS(40468)
 		clearSourcesMenu, rescrapeMenu, progressRefreshMenu = getLS(32611), getLS(32185), getLS(32194)
 		trailerMenu = getLS(40431)
@@ -2712,6 +2978,7 @@ class Episodes:
 				elif customUpcomingProgress: pass
 				elif floppyUpcomingProgress: pass
 				elif scrobUpcomingProgress: pass
+				elif punchplayUpcomingProgress: pass
 				elif traktProgress:
 					if not self.progress_showunaired and i.get('unaired', '') == 'true': continue
 				elif simklProgress:
@@ -2884,6 +3151,8 @@ class Episodes:
 						cm.append((floppyManagerMenu, 'RunPlugin(%s?action=tools_floppyManager&name=%s&imdb=%s&tvdb=%s&tmdb=%s&season=%s&episode=%s&watched=%s&unfinished=%s)' % (sysaddon, systvshowtitle, imdb, tvdb, tmdb, season, episode, watched, unfinished)))
 					if self.scrobCredentials:
 						cm.append((scrobManagerMenu, 'RunPlugin(%s?action=tools_scrobManager&name=%s&imdb=%s&tvdb=%s&tmdb=%s&season=%s&episode=%s&watched=%s&unfinished=%s)' % (sysaddon, systvshowtitle, imdb, tvdb, tmdb, season, episode, watched, unfinished)))
+					if self.punchplayCredentials:
+						cm.append((punchplayManagerMenu, 'RunPlugin(%s?action=tools_punchplayManager&name=%s&imdb=%s&tvdb=%s&tmdb=%s&season=%s&episode=%s&watched=%s&unfinished=%s)' % (sysaddon, systvshowtitle, imdb, tvdb, tmdb, season, episode, watched, unfinished)))
 					if watched:
 						meta.update({'playcount': 1, 'overlay': 5})
 						cm.append((unwatchedMenu, 'RunPlugin(%s?action=playcount_Episode&name=%s&imdb=%s&tvdb=%s&season=%s&episode=%s&query=4)' % (sysaddon, systvshowtitle, imdb, tvdb, season, episode)))
@@ -2904,8 +3173,10 @@ class Episodes:
 					cm.append((progressRefreshMenu, 'RunPlugin(%s?action=episodes_clrProgressCache&url=floppyprogress)' % sysaddon))
 				if scrobProgress and is_widget == False:
 					cm.append((progressRefreshMenu, 'RunPlugin(%s?action=episodes_clrProgressCache&url=scrobprogress)' % sysaddon))
+				if punchplayProgress and is_widget == False:
+					cm.append((progressRefreshMenu, 'RunPlugin(%s?action=episodes_clrProgressCache&url=punchplayprogress)' % sysaddon))
 				if isFolder:
-					if (traktProgress or simklProgress or mdblistProgress or customProgress or floppyProgress or scrobProgress) and is_widget == False:
+					if (traktProgress or simklProgress or mdblistProgress or customProgress or floppyProgress or scrobProgress or punchplayProgress) and is_widget == False:
 						cm.append((progressMenu, 'PlayMedia(%s)' % url))
 					url = '%s?action=episodes&tvshowtitle=%s&year=%s&imdb=%s&tmdb=%s&tvdb=%s&meta=%s&season=%s&episode=%s&art=%s' % (sysaddon, systvshowtitle, year, imdb, tmdb, tvdb, sysmeta, season, episode, sysart)
 				cm.append((playlistManagerMenu, 'RunPlugin(%s?action=playlist_Manager&name=%s&url=%s&meta=%s&art=%s)' % (sysaddon, syslabelProgress, sysurl, sysmeta, sysart)))
@@ -2923,7 +3194,7 @@ class Episodes:
 					# cm.append((tvshowBrowserMenu, 'Container.Update(%s?action=episodes&tvshowtitle=%s&year=%s&imdb=%s&tmdb=%s&tvdb=%s&meta=%s,return)' % (sysaddon, systvshowtitle, year, imdb, tmdb, tvdb, sysmeta)))
 
 				if not isFolder:
-					if (traktProgress or simklProgress or mdblistProgress or customProgress or floppyProgress or scrobProgress) and is_widget == False: cm.append((progressMenu, 'Container.Update(%s)' % Folderurl))
+					if (traktProgress or simklProgress or mdblistProgress or customProgress or floppyProgress or scrobProgress or punchplayProgress) and is_widget == False: cm.append((progressMenu, 'Container.Update(%s)' % Folderurl))
 					#cm.append((playbackMenu, 'RunPlugin(%s?action=alterSources&url=%s&meta=%s)' % (sysaddon, sysurl, sysmeta)))
 					if not rescrape_useDefault:
 						cm.append(('Rescrape Options ------>', 'PlayMedia(%s?action=rescrapeMenu&title=%s&year=%s&imdb=%s&tmdb=%s&tvdb=%s&season=%s&episode=%s&tvshowtitle=%s&premiered=%s&meta=%s)' % (

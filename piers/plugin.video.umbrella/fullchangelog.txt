@@ -1,20 +1,12 @@
-[B]Update - v6.7.690 - Sept 9th, 2026 [/B]
+[B]Update - v6.7.691 - Sept 15th, 2026 [/B]
+--[Change] Added punchplay as an optional provider for tracking.
+
+[B]Update - v6.7.87 - Sept 9th, 2026 [/B]
+--[Fix] Stabilized Scrob Progress episode ordering while preserving sorting options.
 --[Fix] Removed guard for scrobble in first 3 minutes so immediate stops no longer continue to show as playing.
-
-[B]Update - v6.7.689 - Sept 7th, 2026 [/B]
---[Fix] Still working on blank episode lists after playback is stopped.
-
-[B]Update - v6.7.688 - Sept 6th, 2026 [/B]
---[Fix] Changes made for refreshing container causing empty and duplicated list after playback was stopped.
-
-[B]Update - v6.7.687 - Sept 5th, 2026 [/B]
---[Fix] Mdblist multiple device sync (possible fix)
 --[Fix] Fix for progress episodes refreshing episodes with duplicates or none.
---[Fix] No longer allowing container refreshes during playback and limited to 1 container refresh after playback.
---[Fix] Fixed error for undefined module.
-
-[B]Update - v6.7.686 - Sept 4th, 2026 [/B]
 --[Fix] Fix for mdblist getting out of sync on multiple device environments.
+--[Fix] Reduced container refreshes to improve performance.
 
 [B]Update - v6.7.86 - Sept 3rd, 2026 [/B]
 --[Enhancement] Added support for Scrob dropped.
