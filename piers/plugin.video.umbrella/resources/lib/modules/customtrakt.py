@@ -846,10 +846,6 @@ def _fetchShowProgress(imdb):
 					if last_watched and last_watched >= reset_at: completed += 1
 					else: e['completed'] = False
 				s['completed'] = completed
-		log_utils.log('Custom show progress IMDB: %s Seasons: %s' % (imdb, [
-			{'season': s.get('number'), 'aired': s.get('aired'), 'completed': s.get('completed'),
-			 'episodes': [(e.get('number'), bool(e.get('completed'))) for e in s.get('episodes', [])]}
-			for s in results['seasons']]), level=log_utils.LOGDEBUG)
 		return results
 	except: log_utils.error()
 
@@ -875,9 +871,9 @@ def _seasons_from_progress(progress):
 		aired = int(s.get('aired', 0))
 		episodes = s.get('episodes') or []
 		# Explicit episode flags take precedence over contradictory aggregates.
-		# A partial list cannot establish that the whole season is watched.
+		# The episode array may include scheduled, unaired episodes, so its length
+		# must never increase the provider's aired count.
 		completed = sum(bool(e.get('completed')) for e in episodes) if episodes else int(s.get('completed', 0))
-		aired = max(aired, len(episodes))
 		completed = min(completed, aired)
 		counts[snum] = {'total': aired, 'watched': completed, 'unwatched': max(aired - completed, 0)}
 		if aired > 0 and completed == aired:

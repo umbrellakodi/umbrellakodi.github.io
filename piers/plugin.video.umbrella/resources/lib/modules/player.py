@@ -1812,7 +1812,12 @@ class Bookmarks:
 			if service == 'simkl':
 				if not skip_scrobble:
 					simkl.scrobbleMovie(title, year, imdb, tmdb, percent) if media_type == 'movie' else simkl.scrobbleEpisode(tvshowtitle or title, year, imdb, tmdb, tvdb, season, episode, percent)
-				if percent >= int(markwatched_percentage): simkl.scrobbleReset(imdb, tmdb, tvdb, season, episode, refresh=False)
+				if percent >= int(markwatched_percentage):
+					# Capture the local ID before the remote delete. Completion remains
+					# authoritative when Simkl already removed the playback entry.
+					resume_info = simklsync.fetch_bookmarks(imdb, tmdb, tvdb, season, episode, ret_type='resume_info')
+					simkl.scrobbleReset(imdb, tmdb, tvdb, season, episode, refresh=False)
+					if resume_info != '0': simklsync.delete_bookmark(resume_info[1])
 			elif service == 'mdblist':
 				# Do not create a new pause bookmark immediately before clearing a
 				# completed item. If the subsequent clear is delayed or fails, that

@@ -1,2 +1,2 @@
-[B]Update - v6.7.694 - Sept 16th, 2026 [/B]
---[Change] Changes made for playback monitoring and forced refresh.
+[B]Update - v6.7.695 - Sept 16th, 2026 [/B]
+--[Change] Changes made to reduce logging and fix incorrect episode counts.
