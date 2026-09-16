@@ -394,6 +394,11 @@ def getEpisodeOverlay(indicators, imdb, tvdb, season, episode):
 				for e in s.get('episodes', []):
 					if int(e.get('number', -1)) == int(episode):
 						return '5' if e.get('completed') else '4'
+				# Do not mix an authoritative progress snapshot with stale history.
+				if not s.get('episodes') and int(s.get('aired', 0)) > 0 and int(s.get('completed', 0)) == int(s.get('aired', 0)):
+					return '5' if 0 < int(episode) <= int(s['aired']) else '4'
+				return '4'
+			return '4'
 	if not indicators: return '4'
 	try:
 		if traktIndicators or simklIndicators or mdblistIndicators or customIndicators or floppyIndicators or scrobIndicators or punchplayIndicators:

@@ -3871,7 +3871,7 @@ class TVshows:
 				item.setArt(art)
 				try: 
 					count = getShowCount(indicators[1], imdb, tvdb) if indicators else None # if indicators and no matching imdb_id in watched items then it returns None and we use TMDb meta to avoid Trakt request
-					if count and meta.get('has_next_episode'):
+					if count and meta.get('has_next_episode') and not customtrakt.getCustomIndicatorsInfo():
 						tmdb_total = int(meta.get('total_aired_episodes') or 0)
 						if tmdb_total > count['total']:
 							count['total'] = tmdb_total
@@ -3887,7 +3887,7 @@ class TVshows:
 							count['unwatched'] = max(1, trakt_aired - trakt_watched) if trakt_aired > trakt_watched else 1
 					# Stale Trakt progress data (syncSeasons returned 0 watched/total): fall back to
 					# the more reliable watched/shows endpoint count before display.
-					if count is not None and count['watched'] == 0:
+					if count is not None and count['watched'] == 0 and trakt.getTraktIndicatorsInfo():
 						_trakt_watched = int(meta.get('trakt_watched_episodes') or 0)
 						_trakt_aired = int(meta.get('trakt_aired_episodes') or 0)
 						if _trakt_watched > 0:

@@ -1,5 +1,5 @@
 <?xml version='1.0' encoding='utf-8'?>
-<addons><addon id="plugin.video.umbrella" name="Umbrella" provider-name="Umbrella" version="6.7.692">
+<addons><addon id="plugin.video.umbrella" name="Umbrella" provider-name="Umbrella" version="6.7.693">
 	<requires>
 		<import addon="xbmc.python" version="3.0.0" />
 		<import addon="script.module.requests" />
@@ -271,9 +271,8 @@
 			<screenshot>resources/screenshots/screenshot003.jpg</screenshot>
 		</assets>
 		<news>
-[B]Update - v6.7.692 - Sept 15th, 2026 [/B]
---[Change] Added punchplay as an optional provider for tracking.
---[Fix] Fixed issue with cursor sync on multi device.
+[B]Update - v6.7.693 - Sept 15th, 2026 [/B]
+--[Change] Changes made for episode counts with custom server.
 		</news>
 	</extension>
 

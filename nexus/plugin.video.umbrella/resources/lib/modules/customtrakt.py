@@ -796,8 +796,40 @@ def watchedShows():
 def getShowProgress(imdb):
 	try:
 		if not imdb: return None
-		return customtraktsync.get(_fetchShowProgress, 15, imdb)
+		progress = customtraktsync.get(_fetchShowProgress, 15, imdb)
+		return _complete_progress_totals(progress, imdb) if progress else None
 	except: log_utils.error()
+
+def _complete_progress_totals(progress, imdb):
+	# Some Custom servers count only episodes stored in their own database as
+	# aired. Establish full season totals from metadata, including absent seasons.
+	try:
+		from resources.lib.database import cache as _cache
+		from resources.lib.indexers import tmdb as _tmdb
+		api = _tmdb.TVshows()
+		lookup = _cache.get(api.IdLookup, 96, imdb, '')
+		tmdb_id = str(lookup.get('id') or '') if lookup else ''
+		if not tmdb_id: return progress
+		meta = _cache.get(api.get_showSeasons_meta, 96, tmdb_id)
+		seasons = {int(s['number']): s for s in progress.get('seasons', [])}
+		today = datetime.utcnow().strftime('%Y-%m-%d')
+		for s in (meta or {}).get('seasons', []):
+			number = int(s.get('season_number', 0))
+			if not s.get('air_date') or s['air_date'] > today: continue
+			# A current season may contain future episodes; only correct completed
+			# seasons using episode_count without fetching individual air dates.
+			last = (meta or {}).get('last_episode_to_air') or {}
+			if (meta or {}).get('status') == 'Returning Series' and number >= int(last.get('season_number', number)): continue
+			season = seasons.get(number)
+			if season is None:
+				season = {'number': number, 'aired': 0, 'completed': 0, 'episodes': []}
+				progress.setdefault('seasons', []).append(season)
+				seasons[number] = season
+			season['aired'] = max(int(season.get('aired', 0)), int(s.get('episode_count', 0)))
+		return progress
+	except:
+		log_utils.error()
+		return progress
 
 def _fetchShowProgress(imdb):
 	try:
@@ -814,6 +846,10 @@ def _fetchShowProgress(imdb):
 					if last_watched and last_watched >= reset_at: completed += 1
 					else: e['completed'] = False
 				s['completed'] = completed
+		log_utils.log('Custom show progress IMDB: %s Seasons: %s' % (imdb, [
+			{'season': s.get('number'), 'aired': s.get('aired'), 'completed': s.get('completed'),
+			 'episodes': [(e.get('number'), bool(e.get('completed'))) for e in s.get('episodes', [])]}
+			for s in results['seasons']]), level=log_utils.LOGDEBUG)
 		return results
 	except: log_utils.error()
 
@@ -835,11 +871,16 @@ def _seasons_from_progress(progress):
 	for s in progress.get('seasons', []):
 		snum = s.get('number')
 		if snum is None: continue
+		if int(snum) == 0 and getSetting('tv.specials') != 'true': continue
 		aired = int(s.get('aired', 0))
-		completed = int(s.get('completed', 0))
-		counts[snum] = {'total': aired, 'watched': completed, 'unwatched': max(aired - completed, 0)}
 		episodes = s.get('episodes') or []
-		if episodes and all(e.get('completed') for e in episodes):
+		# Explicit episode flags take precedence over contradictory aggregates.
+		# A partial list cannot establish that the whole season is watched.
+		completed = sum(bool(e.get('completed')) for e in episodes) if episodes else int(s.get('completed', 0))
+		aired = max(aired, len(episodes))
+		completed = min(completed, aired)
+		counts[snum] = {'total': aired, 'watched': completed, 'unwatched': max(aired - completed, 0)}
+		if aired > 0 and completed == aired:
 			fully_watched.append(snum)
 	if not counts: return [[], {}]
 	return [['%01d' % int(s) for s in sorted(fully_watched)], counts]
@@ -873,6 +914,7 @@ def _local_syncSeasons(imdb, tvdb):
 		result_counts = {}
 		fully_watched = []
 		for s, watched_eps in by_season.items():
+			if s == 0 and getSetting('tv.specials') != 'true': continue
 			total = season_counts.get(s, len(set(watched_eps)))
 			watched = len(set(watched_eps))
 			result_counts[s] = {'total': total, 'watched': watched, 'unwatched': max(total - watched, 0)}
