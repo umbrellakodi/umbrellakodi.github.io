@@ -7039,3 +7039,30 @@ msgstr ""
 msgctxt "#40753"
 msgid "Upcoming Progress (Custom)"
 msgstr ""
+msgctxt "#40812"
+msgid "Enable Skip Intro"
+msgstr ""
+
+msgctxt "#40813"
+msgid "Skip Intro"
+msgstr ""
+
+msgctxt "#40814"
+msgid "Shows a Skip Intro button when community-provided timing data is available for the playing episode."
+msgstr ""
+
+msgctxt "#40815"
+msgid "Online Credits Timestamp"
+msgstr ""
+
+msgctxt "#40816"
+msgid "Fallback Time Before End (Seconds)"
+msgstr ""
+
+msgctxt "#40817"
+msgid "When the online services have no credits timestamp, show Play Next this many seconds before the episode ends."
+msgstr ""
+
+msgctxt "#40818"
+msgid "Closes in %s seconds"
+msgstr ""

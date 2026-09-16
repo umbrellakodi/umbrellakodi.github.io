@@ -610,6 +610,20 @@ def metadataClean(metadata):
 	return {k: v for k, v in iter(metadata.items()) if k in allowed}
 
 def set_info(item, meta, setUniqueIDs=None, resumetime='', fileNameandPath=None):
+	# Keep the legacy properties populated as well as Kodi's VideoInfoTag resume
+	# point. Several skins (including Nimbus) read Property(ResumeTime) directly,
+	# and this also leaves a usable marker if another metadata setter below fails.
+	if resumetime:
+		try:
+			total_time = float(meta.get('duration') or 2700)
+			resume_time = float(resumetime)
+			item.setProperties({
+				'ResumeTime': str(resume_time),
+				'TotalTime': str(total_time),
+				'WatchedProgress': str(int((resume_time / total_time) * 100)) if total_time > 0 else '0'
+			})
+		except:
+			pass
 	if getKodiVersion() >= 20:
 		try:
 			meta_get = meta.get

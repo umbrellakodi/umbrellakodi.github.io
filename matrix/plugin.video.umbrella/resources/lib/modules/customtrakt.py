@@ -578,6 +578,7 @@ def markEpisodeAsWatched(imdb, tvdb, season, episode):
 		log_utils.log('Custom markEpisodeAsWatched IMDB: %s S%sE%s Result: %s' % (imdb, season, episode, success), level=log_utils.LOGDEBUG)
 		if success:
 			customtraktsync.upsert_watched_episode(show_imdb=imdb, show_tvdb=str(tvdb), season=season, episode=episode, last_watched_at=_now_iso())
+			customtraktsync.delete_bookmark(imdb, str(tvdb or ''), season, episode)
 			customtraktsync.cache_delete(customtraktsync._hash_function(syncTVShows, ()))
 			customtraktsync.cache_delete(customtraktsync._hash_function(_fetchShowProgress, (imdb,)))
 		return success
