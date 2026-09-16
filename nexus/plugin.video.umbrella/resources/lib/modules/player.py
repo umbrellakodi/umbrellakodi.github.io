@@ -40,7 +40,7 @@ homeWindow = control.homeWindow
 playerWindow = control.playerWindow
 
 
-def _refresh_after_player_closes(request_id):
+def _refresh_after_player_closes(request_id, watched_update_thread=None):
 	"""Refresh only after Kodi has restored the underlying window."""
 	try:
 		# used to detect when the full screen playback window has been destroyed.
@@ -59,6 +59,12 @@ def _refresh_after_player_closes(request_id):
 		else:
 			log_utils.log('post-playback container refresh skipped: Umbrella directory was not restored', level=log_utils.LOGDEBUG)
 			return
+		# Episode watch-history updates run off the player callback thread. Do not
+		# rebuild the directory until the provider write and indicator sync finish.
+		if watched_update_thread and watched_update_thread.is_alive():
+			watched_update_thread.join(20)
+			if watched_update_thread.is_alive():
+				log_utils.log('post-playback refresh continuing after watched update timeout', level=log_utils.LOGWARNING)
 		if control.monitor.waitForAbort(0.5): return
 		if homeWindow.getProperty('umbrella.container_refresh_request') != request_id:
 			return
@@ -98,6 +104,7 @@ class Player(xbmc.Player):
 		self.playnext_percentage = int(getSetting('playnext.percent')) or 80
 		self.markwatched_percentage = int(getSetting('markwatched.percent')) or 85
 		self.watched_during_playback = False
+		self.watched_update_thread = None
 		self.traktCredentials = trakt.getTraktCredentialsInfo()
 		self.simklCredentials = simkl.getSimKLCredentialsInfo()
 		self.mdblistCredentials = mdblist.getMDBListCredentialsInfo()
@@ -573,7 +580,8 @@ class Player(xbmc.Player):
 							homeWindow.setProperty(pname, '5')
 							if self.debuglog:
 								log_utils.log('Sending Episode to be marked as watched. IMDB: %s TVDB: %s Season: %s Episode: %s Title: %s Watch Percentage Used: %s Current Percentage: %s' % (self.imdb, self.tvdb, self.season, self.episode, self.title, self.markwatched_percentage, self.getWatchedPercent()), level=log_utils.LOGDEBUG)
-							Thread(target=playcount.markEpisodeDuringPlayback, args=(self.imdb, self.tvdb, self.season, self.episode, '5')).start()
+							self.watched_update_thread = Thread(target=playcount.markEpisodeDuringPlayback, args=(self.imdb, self.tvdb, self.season, self.episode, '5'))
+							self.watched_update_thread.start()
 							self.watched_during_playback = True
 						if self.enable_playnext and not self.play_next_triggered:
 							playlist_size = int(control.playlist.size())
@@ -680,6 +688,7 @@ class Player(xbmc.Player):
 	def onAVStarted(self): 
 		playerWindow.clearProperty('umbrella.playnext.transition')
 		self.watched_during_playback = False
+		self.watched_update_thread = None
 		self.scrobble_sent = False
 		self.scrobble_sent = False
 		self.onPlayBackStopped_ran = False
@@ -886,7 +895,7 @@ class Player(xbmc.Player):
 						and not has_next_queued):
 					request_id = str(time.time_ns())
 					homeWindow.setProperty('umbrella.container_refresh_request', request_id)
-					refresh_thread = Thread(target=_refresh_after_player_closes, args=(request_id,))
+					refresh_thread = Thread(target=_refresh_after_player_closes, args=(request_id, self.watched_update_thread))
 					refresh_thread.daemon = True
 					refresh_thread.start()
 				else:
@@ -905,6 +914,7 @@ class Player(xbmc.Player):
 
 	def onPlayBackEnded(self):
 		try:
+			if getSetting('crefresh') == 'true': homeWindow.setProperty('umbrella.playback_cleanup', 'true')
 			Bookmarks().reset(self.current_time, self.media_length, self.name, self.year)
 			self.libForPlayback()
 			_scrobble_source = getSetting('scrobble.source')
@@ -961,6 +971,14 @@ class Player(xbmc.Player):
 			# episode even though the Play Next window found and displayed episode 3.
 			if not playingfile and not has_next_queued and (playlist_size <= 1 or playlist_position >= playlist_size - 1):
 				control.playlist.clear()
+			if getSetting('crefresh') == 'true' and not has_next_queued:
+				request_id = str(time.time_ns())
+				homeWindow.setProperty('umbrella.container_refresh_request', request_id)
+				refresh_thread = Thread(target=_refresh_after_player_closes, args=(request_id, self.watched_update_thread))
+				refresh_thread.daemon = True
+				refresh_thread.start()
+			else:
+				homeWindow.clearProperty('umbrella.playback_cleanup')
 			log_utils.log('onPlayBackEnded callback', level=log_utils.LOGDEBUG)
 			#control.checkforSkin(action='off')
 		except: log_utils.error()
@@ -1830,6 +1848,17 @@ class Bookmarks:
 			else:
 				if not skip_scrobble:
 					trakt.scrobbleMovie(imdb, tmdb, percent) if media_type == 'movie' else trakt.scrobbleEpisode(imdb, tmdb, tvdb, season, episode, percent)
-				if percent >= int(markwatched_percentage): trakt.scrobbleReset(imdb, tmdb, tvdb, season, episode, refresh=False)
+				if percent >= int(markwatched_percentage):
+					trakt.scrobbleReset(imdb, tmdb, tvdb, season, episode, refresh=False)
+					# Completion is authoritative even if Trakt already removed the remote
+					# playback entry and DELETE therefore did not return 204. Never retain
+					# a stale local resume point for a completed item.
+					if media_type == 'movie':
+						item = {'type': 'movie', 'movie': {'ids': {'imdb': imdb}}}
+					else:
+						item = {'type': 'episode', 'episode': {'season': season, 'number': episode},
+								'show': {'ids': {'imdb': imdb, 'tvdb': tvdb}}}
+					from resources.lib.database import traktsync as _traktsync
+					_traktsync.delete_bookmark([item])
 		except:
 			log_utils.error()
