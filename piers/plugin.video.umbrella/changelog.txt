@@ -1,5 +1,2 @@
-[B]Update - v6.7.696 - Sept 16th, 2026 [/B]
---[Fix] Change made to avoid resume popup happening two times.
---[Change] Moved continuous playback settings to the playback settings tab from tv shows tab.
---[Change] Added Skip Intro option. All credit to kodifitzwell. Uses Theme from continious playback setting.
---[Change] Made changes for re-watching shows and the way interface works. A previously watched show will now be marked as partially watched if re-watched and not completed.
+[B]Update - v6.7.697 - Sept 17th, 2026 [/B]
+--[Change] Change made for resume point to reduce kodi warnings.

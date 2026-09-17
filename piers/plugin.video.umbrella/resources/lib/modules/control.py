@@ -610,24 +610,21 @@ def metadataClean(metadata):
 	return {k: v for k, v in iter(metadata.items()) if k in allowed}
 
 def set_info(item, meta, setUniqueIDs=None, resumetime='', fileNameandPath=None):
-	# Keep the legacy properties populated as well as Kodi's VideoInfoTag resume
-	# point. Several skins (including Nimbus) read Property(ResumeTime) directly,
-	# and this also leaves a usable marker if another metadata setter below fails.
+	# ResumeTime and TotalTime are deprecated ListItem properties on Kodi 20+.
+	# Keep the custom progress property for skins, and use VideoInfoTag's resume
+	# point below on supported Kodi versions.
 	if resumetime:
 		try:
 			total_time = float(meta.get('duration') or 2700)
 			resume_time = float(resumetime)
-			item.setProperties({
-				'ResumeTime': str(resume_time),
-				'TotalTime': str(total_time),
-				'WatchedProgress': str(int((resume_time / total_time) * 100)) if total_time > 0 else '0'
-			})
+			item.setProperty('WatchedProgress', str(int((resume_time / total_time) * 100)) if total_time > 0 else '0')
 		except:
 			pass
 	if getKodiVersion() >= 20:
 		try:
 			meta_get = meta.get
 			info_tag = item.getVideoInfoTag()
+			if resumetime: info_tag.setResumePoint(float(resumetime), float(meta_get('duration') or 2700))
 			info_tag.setMediaType(meta_get('mediatype'))
 			if setUniqueIDs:
 				info_tag.setUniqueIDs(setUniqueIDs)
@@ -672,7 +669,6 @@ def set_info(item, meta, setUniqueIDs=None, resumetime='', fileNameandPath=None)
 			info_tag.setDirectors(to_list(meta_get('director', [])))
 			if setUniqueIDs:
 				info_tag.setIMDBNumber(setUniqueIDs.get('imdb'))
-			if resumetime: info_tag.setResumePoint(float(resumetime), float(meta.get('duration') or 2700))
 			if meta_get('mediatype') in ['tvshow', 'season']:
 				info_tag.setTvShowTitle(meta_get('tvshowtitle'))
 				info_tag.setTvShowStatus(meta_get('status'))
