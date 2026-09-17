@@ -1384,6 +1384,11 @@
 					<default>false</default>
 					<control type="toggle"/>
 				</setting>
+				<setting id="skip.recap.enable" type="boolean" label="40819" help="40821">
+					<level>0</level>
+					<default>false</default>
+					<control type="toggle"/>
+				</setting>
 			</group>
 			<group id="3" label="32372">
 				<setting id="crefresh" type="boolean" label="32373" help="">

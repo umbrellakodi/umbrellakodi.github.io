@@ -31,6 +31,19 @@ def _validated_intro(start, end, milliseconds=False):
 	return start, end
 
 
+def _segment_list(items, milliseconds=False):
+	if isinstance(items, dict): items = [items]
+	if not isinstance(items, list): return []
+	segments = []
+	for item in items:
+		if not isinstance(item, dict): continue
+		segment = _validated_intro(item.get('start_ms' if milliseconds else 'start_sec'),
+				item.get('end_ms' if milliseconds else 'end_sec'), milliseconds)
+		if segment: segments.append(segment)
+	segments.sort(key=lambda segment: segment[0])
+	return segments
+
+
 class SegmentScraper:
 	def __init__(self, imdb, tmdb, season, episode, request_get=None):
 		self.params = {
@@ -50,13 +63,14 @@ class SegmentScraper:
 				log_utils.log('Skip Intro: %s lookup failed: %s' % (provider, exc),
 							  level=getattr(log_utils, 'LOGDEBUG', 0))
 			except Exception: pass
-			return {'intro': None, 'credits': None}
+			return {'intro': None, 'recaps': [], 'credits': None}
 
 	@staticmethod
 	def _parse_introdb(data):
 		intro, outro = data.get('intro') or {}, data.get('outro') or {}
 		return {
 			'intro': _validated_intro(intro.get('start_sec'), intro.get('end_sec')),
+			'recaps': _segment_list(data.get('recap')),
 			'credits': _seconds(outro.get('start_sec'))
 		}
 
@@ -69,6 +83,7 @@ class SegmentScraper:
 		credits = credit_items[0] if credit_items and isinstance(credit_items[0], dict) else {}
 		return {
 			'intro': _validated_intro(intro.get('start_ms'), intro.get('end_ms'), True),
+			'recaps': _segment_list(data.get('recap'), True),
 			'credits': _seconds(credits.get('start_ms'), True)
 		}
 
@@ -91,8 +106,10 @@ class SegmentScraper:
 		for thread in threads:
 			thread.join()
 		intro = credits = None
+		recaps = []
 		for result in results:
 			result = result or {}
 			if intro is None: intro = result.get('intro')
+			if not recaps: recaps = result.get('recaps') or []
 			if credits is None: credits = result.get('credits')
-		return intro, credits
+		return intro, recaps, credits

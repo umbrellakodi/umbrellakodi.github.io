@@ -7066,3 +7066,15 @@ msgstr ""
 msgctxt "#40818"
 msgid "Closes in %s seconds"
 msgstr ""
+
+msgctxt "#40819"
+msgid "Enable Skip Recap"
+msgstr ""
+
+msgctxt "#40820"
+msgid "Skip Recap?"
+msgstr ""
+
+msgctxt "#40821"
+msgid "Shows a Skip Recap button when community-provided timing data is available for the playing episode."
+msgstr ""

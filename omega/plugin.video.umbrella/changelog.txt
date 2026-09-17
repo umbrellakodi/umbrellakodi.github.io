@@ -1,2 +1,3 @@
-[B]Update - v6.7.697 - Sept 17th, 2026 [/B]
+[B]Update - v6.7.698 - Sept 17th, 2026 [/B]
 --[Change] Change made for resume point to reduce kodi warnings.
+--[Enhancement] Added skip recap option in playback settings. Uses theme from continuous playback.

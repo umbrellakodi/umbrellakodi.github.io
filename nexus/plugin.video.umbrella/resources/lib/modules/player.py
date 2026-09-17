@@ -122,10 +122,13 @@ class Player(xbmc.Player):
 		self.playnext_theme = getSetting('playnext.theme')
 		self.playnext_min = getSetting('playnext.min.seconds')
 		self.skip_intro_enabled = getSetting('skip.intro.enable') == 'true'
+		self.skip_recap_enabled = getSetting('skip.recap.enable') == 'true'
 		self.skip_intro = None
+		self.skip_recaps = []
 		self.segment_credits = None
 		self.segment_lookup_complete = False
 		self.skip_intro_prompted = False
+		self.skip_recaps_prompted = set()
 		self.skip_intro_lookup_started = False
 		self.custom_rewatch = False
 		playerWindow.setProperty('umbrella.playnextPlayPressed', str(0))
@@ -543,7 +546,7 @@ class Player(xbmc.Player):
 		try: running_path = self.getPlayingFile() # original video that playlist playback started with
 		except: running_path = ''
 		if (self.media_type == 'episode' and running_path
-				and (self.skip_intro_enabled or self.playnext_method == '3')):
+				and (self.skip_intro_enabled or self.skip_recap_enabled or self.playnext_method == '3')):
 			self._start_skip_intro_lookup(running_path)
 		if playerWindow.getProperty('umbrella.playlistStart_position'): pass
 		else:
@@ -561,6 +564,7 @@ class Player(xbmc.Player):
 					if _total > 0: self.media_length = max(self.media_length, _total)
 				except: pass
 				self._maybe_show_skip_intro(running_path)
+				self._maybe_show_skip_recap(running_path)
 				try:
 
 					if self.scrobCredentials and (getSetting('scrobble.source') == '6' or getSetting('scrob.markwatched') == 'true'):
@@ -688,12 +692,13 @@ class Player(xbmc.Player):
 		def lookup():
 			try:
 				from resources.lib.indexers.segments import SegmentScraper
-				intro, credits = SegmentScraper(self.imdb, self.tmdb, self.season, self.episode).run()
+				intro, recaps, credits = SegmentScraper(self.imdb, self.tmdb, self.season, self.episode).run()
 				if self.isPlayingVideo() and self.getPlayingFile() == running_path:
 					if self.skip_intro_enabled: self.skip_intro = intro
+					if self.skip_recap_enabled: self.skip_recaps = recaps
 					self.segment_credits = credits
 					if self.debuglog:
-						log_utils.log('Playback segments: intro=%s credits=%s' % (intro, credits), level=log_utils.LOGDEBUG)
+						log_utils.log('Playback segments: intro=%s recaps=%s credits=%s' % (intro, recaps, credits), level=log_utils.LOGDEBUG)
 			except Exception:
 				log_utils.error()
 			finally:
@@ -710,18 +715,34 @@ class Player(xbmc.Player):
 			self.skip_intro_prompted = True
 			return
 		if self.current_time < intro_start: return
-		self.skip_intro_prompted = True
+		if self._show_skip_segment(running_path, intro_end, 40813):
+			self.skip_intro_prompted = True
+
+	def _maybe_show_skip_recap(self, running_path):
+		if not self.skip_recaps: return
+		for index, recap in enumerate(self.skip_recaps):
+			if index in self.skip_recaps_prompted: continue
+			recap_start, recap_end = recap
+			if self.current_time > recap_end:
+				self.skip_recaps_prompted.add(index)
+				continue
+			if self.current_time < recap_start: return
+			if self._show_skip_segment(running_path, recap_end, 40820):
+				self.skip_recaps_prompted.add(index)
+			return
+
+	def _show_skip_segment(self, running_path, segment_end, label_id):
+		if playerWindow.getProperty('umbrella.skipintro.dialog') == 'true': return False
+		playerWindow.setProperty('umbrella.skipintro.dialog', 'true')
 		def show_dialog():
-			if playerWindow.getProperty('umbrella.skipintro.dialog') == 'true': return
-			playerWindow.setProperty('umbrella.skipintro.dialog', 'true')
 			try:
-				from resources.lib.windows.skip_intro import SkipIntroXML
+				from resources.lib.windows.skip_intro import SkipSegmentXML
 				skip_window = 'skip_intro.xml'
 				if self.playnext_theme == '1': skip_window = 'skip_intro_ah.xml'
 				elif self.playnext_theme == '2': skip_window = 'skip_intro_aura.xml'
 				elif self.playnext_theme == '3': skip_window = 'skip_intro_ah_compact.xml'
-				window = SkipIntroXML(skip_window, control.addonPath(control.addonId()),
-						playing_file=running_path, intro_end=intro_end)
+				window = SkipSegmentXML(skip_window, control.addonPath(control.addonId()),
+						playing_file=running_path, segment_end=segment_end, label_id=label_id)
 				window.doModal()
 				del window
 			except Exception:
@@ -731,6 +752,7 @@ class Player(xbmc.Player):
 		thread = Thread(target=show_dialog)
 		thread.daemon = True
 		thread.start()
+		return True
 			
 	def isPlayingFile(self):
 		if self._running_path is None or self._running_path.startswith("plugin://"):
@@ -774,6 +796,16 @@ class Player(xbmc.Player):
 		self.play_next_triggered = False
 		self.preScrape_triggered = False
 		self.subtitletime = None
+		# Segment data belongs to the episode that just started. Player instances
+		# survive playlist transitions, so retaining these values can make a prior
+		# episode's failed lookup force the fallback on every following episode.
+		self.skip_intro = None
+		self.skip_recaps = []
+		self.segment_credits = None
+		self.segment_lookup_complete = False
+		self.skip_intro_prompted = False
+		self.skip_recaps_prompted = set()
+		self.skip_intro_lookup_started = False
 		#control.sleep(200)
 		homeWindow.clearProperty('umbrella.window_keep_alive')
 		for i in range(0, 500):

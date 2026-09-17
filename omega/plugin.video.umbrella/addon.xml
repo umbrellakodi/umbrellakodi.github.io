@@ -1,4 +1,4 @@
-<addon id="plugin.video.umbrella" name="Umbrella" provider-name="Umbrella" version="6.7.697">
+<addon id="plugin.video.umbrella" name="Umbrella" provider-name="Umbrella" version="6.7.698">
 	<requires>
 		<import addon="xbmc.python" version="3.0.0" />
 		<import addon="script.module.requests" />
@@ -270,8 +270,10 @@
 			<screenshot>resources/screenshots/screenshot003.jpg</screenshot>
 		</assets>
 		<news>
-[B]Update - v6.7.697 - Sept 17th, 2026 [/B]
+[B]Update - v6.7.698 - Sept 17th, 2026 [/B]
 --[Change] Change made for resume point to reduce kodi warnings.
+--[Enhancement] Added skip recap option in playback settings. Uses theme from continuous playback.
+--[Change] Changes for Torbox Authorization popup due to complaints of not being able to authorize.
 		</news>
 	</extension>
 

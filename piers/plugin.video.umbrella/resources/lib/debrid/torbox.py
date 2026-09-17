@@ -309,25 +309,31 @@ class TorBox:
 			data = result['data']
 			device_code = data['device_code']
 			user_code = data['code']
-			verify_url = data.get('friendly_verification_url', data.get('verification_url', 'https://torbox.app/oauth/device'))
+			# TorBox returns two URLs for different purposes. The friendly URL is the
+			# short address users should type, while verification_url carries the app
+			# context and is the correct QR/direct-link target.
+			verification_url = (data.get('verification_url') or data.get('verification_uri')
+					or 'https://torbox.app/oauth/device?app=Umbrella')
+			friendly_url = (data.get('friendly_verification_url') or data.get('friendly_url')
+					or verification_url)
 			interval = int(data.get('interval', 5))
 			token_ttl = 600
 			expiry = token_ttl
 			if getSetting('dialogs.useumbrelladialog') == 'true':
 				from resources.lib.modules import tools
-				tb_qr = tools.make_qr(verify_url, 'tb_qr.png')
+				tb_qr = tools.make_qr(verification_url, 'tb_qr.png')
 				self.progressDialog = control.getProgressWindow('TorBox', tb_qr, 1 if tb_qr else 0)
 				self.progressDialog.set_controls()
 			else:
 				self.progressDialog = control.progressDialog
 				self.progressDialog.create('TorBox')
-			self.progressDialog.update(0, line % (getLS(32513) % (highlight_color, verify_url), getLS(32514) % (highlight_color, user_code), getLS(40390)))
+			self.progressDialog.update(0, line % (getLS(32513) % (highlight_color, friendly_url), getLS(32514) % (highlight_color, user_code), getLS(40390)))
 			access_token = None
 			while not access_token and token_ttl > 0 and not self.progressDialog.iscanceled():
 				control.sleep(interval * 1000)
 				token_ttl -= interval
 				progress_percent = 100 - int(float(expiry - token_ttl) / expiry * 100)
-				self.progressDialog.update(progress_percent, line % (getLS(32513) % (highlight_color, verify_url), getLS(32514) % (highlight_color, user_code), getLS(40390)))
+				self.progressDialog.update(progress_percent, line % (getLS(32513) % (highlight_color, friendly_url), getLS(32514) % (highlight_color, user_code), getLS(40390)))
 				try:
 					poll = requests.post('%s/user/auth/device/token' % base_url, json={'device_code': device_code}, timeout=self.timeout)
 					poll_result = poll.json()
