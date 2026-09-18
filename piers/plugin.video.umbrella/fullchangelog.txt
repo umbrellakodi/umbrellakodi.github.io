@@ -1,3 +1,6 @@
+[B]Update - v6.7.700 - Sept 18th, 2026 [/B]
+--[Enhancement] Added cloud folders from Torbox as source select results to retain metadata for tracking watched episodes from cloud files.
+
 [B]Update - v6.7.699 - Sept 18th, 2026 [/B]
 --[Fix] Fix for punch not marking as watched after first episode when using continuous playback.
 

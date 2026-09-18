@@ -1800,6 +1800,9 @@ def router(argv2):
 	elif action == 'showDebridPack':
 		from resources.lib.modules.sources import Sources
 		Sources().debridPackDialog(params.get('caller'), name, url, source)
+	elif action == 'browseTorboxCloudPack':
+		from resources.lib.modules.sources import Sources
+		Sources().torboxCloudPackDialog(params.get('id'), mediatype, name)
 	elif action == 'sourceInfo':
 		from resources.lib.modules.sources import Sources
 		Sources().sourceInfo(source)
