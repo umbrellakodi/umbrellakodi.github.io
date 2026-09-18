@@ -55,6 +55,11 @@ def getFloppyIndicatorsInfo():
 	return getSetting('indicators.alt') == '5'
 
 
+def isReadOnly():
+	"""True when another add-on owns automatic Floppy playback reporting."""
+	return getSetting('floppy.readonly') == 'true'
+
+
 #### Core request plumbing (mirrors customtrakt.py's getCustom, minus the reauth loop) ####
 
 def getFloppy(url, post=None, method=None, silent=False):
@@ -461,6 +466,7 @@ def _scrobble_seconds(watched_percent, current_time, total_time):
 	return int(watched_percent), 100
 
 def scrobbleStart(media_type, title='', tvshowtitle='', year='0', imdb='', tmdb='', tvdb='', season='', episode='', watched_percent=0, current_time=0, total_time=0):
+	if isReadOnly(): return
 	try:
 		ids = {}
 		if tmdb: ids['tmdb'] = str(tmdb)
@@ -475,6 +481,7 @@ def scrobbleStart(media_type, title='', tvshowtitle='', year='0', imdb='', tmdb=
 	except: log_utils.error()
 
 def scrobbleMovie(imdb, tmdb, watched_percent, current_time=0, total_time=0):
+	if isReadOnly(): return
 	try:
 		ids = {}
 		if tmdb: ids['tmdb'] = str(tmdb)
@@ -488,6 +495,7 @@ def scrobbleMovie(imdb, tmdb, watched_percent, current_time=0, total_time=0):
 	except: log_utils.error()
 
 def scrobbleEpisode(imdb, tmdb, tvdb, season, episode, watched_percent, current_time=0, total_time=0):
+	if isReadOnly(): return
 	try:
 		season, episode = int('%01d' % int(season)), int('%01d' % int(episode))
 		ids = {}
@@ -504,6 +512,7 @@ def scrobbleEpisode(imdb, tmdb, tvdb, season, episode, watched_percent, current_
 	except: log_utils.error()
 
 def scrobbleStopMovie(imdb, tmdb, watched_percent, completed=False, current_time=0, total_time=0, already_watched=False):
+	if isReadOnly(): return
 	try:
 		ids = {}
 		if tmdb: ids['tmdb'] = str(tmdb)
@@ -523,6 +532,7 @@ def scrobbleStopMovie(imdb, tmdb, watched_percent, completed=False, current_time
 	except: log_utils.error()
 
 def scrobbleStopEpisode(imdb, tmdb, tvdb, season, episode, watched_percent, completed=False, current_time=0, total_time=0, already_watched=False):
+	if isReadOnly(): return
 	try:
 		season, episode = int('%01d' % int(season)), int('%01d' % int(episode))
 		ids = {}

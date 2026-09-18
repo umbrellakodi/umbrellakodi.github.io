@@ -551,6 +551,16 @@ def trigger_widget_refresh(update_library=True, force=False):
 	homeWindow.setProperty('widgetreload-episodes', timestr)
 	homeWindow.setProperty('widgetreload-movies', timestr)
 	if update_library and xbmc.getSkinDir() != 'skin.arctic.fuse.3':
+		# Several enabled account services can finish one after another. Each one
+		# updates the widget properties above, but using UpdateLibrary for every
+		# completion makes Kodi visibly reload the home container several times per
+		# sync pass. Coalesce only the expensive/global Kodi refresh; callers using
+		# force=True (explicit user actions) still refresh immediately.
+		try: last_library_refresh = float(homeWindow.getProperty('umbrella.widget_library_refresh_at') or 0)
+		except: last_library_refresh = 0
+		if not force and now - last_library_refresh < 300:
+			return
+		homeWindow.setProperty('umbrella.widget_library_refresh_at', str(now))
 		execute('UpdateLibrary(video,/fake/path/to/force/refresh/on/home)')
 
 def refresh_playAction(): # for umbrella global CM play actions

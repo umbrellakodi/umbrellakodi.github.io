@@ -528,7 +528,7 @@ def markMovieDuringPlayback(imdb, watched):
 			if int(watched) == 5: customtrakt.markMovieAsWatched(imdb)
 			else: customtrakt.markMovieAsNotWatched(imdb)
 			if customIndicators: customtrakt.cachesyncMovies()
-		elif watch_history_service == '5' and floppyCredentials:
+		elif watch_history_service == '5' and floppyCredentials and not floppy.isReadOnly():
 			if int(watched) == 5: floppy.markMovieAsWatched(imdb)
 			else: floppy.markMovieAsNotWatched(imdb)
 			if floppyIndicators: floppy.cachesyncMovies()
@@ -553,7 +553,7 @@ def markMovieDuringPlayback(imdb, watched):
 		if watch_history_service != '4' and getSetting('custom.markwatched') == 'true' and customCredentials:
 			if int(watched) == 5: customtrakt.markMovieAsWatched(imdb)
 			else: customtrakt.markMovieAsNotWatched(imdb)
-		if watch_history_service != '5' and getSetting('floppy.markwatched') == 'true' and floppyCredentials:
+		if watch_history_service != '5' and getSetting('floppy.markwatched') == 'true' and floppyCredentials and not floppy.isReadOnly():
 			if int(watched) == 5: floppy.markMovieAsWatched(imdb)
 			else: floppy.markMovieAsNotWatched(imdb)
 		if watch_history_service != '6' and getSetting('scrob.markwatched') == 'true' and scrobCredentials:
@@ -584,7 +584,7 @@ def markEpisodeDuringPlayback(imdb, tvdb, season, episode, watched):
 			if int(watched) == 5: customtrakt.markEpisodeAsWatched(imdb, tvdb, season, episode)
 			else: customtrakt.markEpisodeAsNotWatched(imdb, tvdb, season, episode)
 			if customIndicators: customtrakt.cachesyncTV(imdb, tvdb)
-		elif watch_history_service == '5' and floppyCredentials:
+		elif watch_history_service == '5' and floppyCredentials and not floppy.isReadOnly():
 			if int(watched) == 5: floppy.markEpisodeAsWatched(imdb, tvdb, season, episode)
 			else: floppy.markEpisodeAsNotWatched(imdb, tvdb, season, episode)
 			if floppyIndicators: floppy.cachesyncTV(imdb, tvdb)
@@ -609,7 +609,7 @@ def markEpisodeDuringPlayback(imdb, tvdb, season, episode, watched):
 		if watch_history_service != '4' and getSetting('custom.markwatched') == 'true' and customCredentials:
 			if int(watched) == 5: customtrakt.markEpisodeAsWatched(imdb, tvdb, season, episode)
 			else: customtrakt.markEpisodeAsNotWatched(imdb, tvdb, season, episode)
-		if watch_history_service != '5' and getSetting('floppy.markwatched') == 'true' and floppyCredentials:
+		if watch_history_service != '5' and getSetting('floppy.markwatched') == 'true' and floppyCredentials and not floppy.isReadOnly():
 			if int(watched) == 5: floppy.markEpisodeAsWatched(imdb, tvdb, season, episode)
 			else: floppy.markEpisodeAsNotWatched(imdb, tvdb, season, episode)
 		if watch_history_service != '6' and getSetting('scrob.markwatched') == 'true' and scrobCredentials:

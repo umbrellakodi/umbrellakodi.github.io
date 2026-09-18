@@ -1,2 +1,2 @@
-[B]Update - v6.7.700 - Sept 18th, 2026 [/B]
---[Enhancement] Added cloud folders from Torbox as source select results to retain metadata for tracking watched episodes from cloud files.
+[B]Update - v6.7.702 - Sept 18th, 2026 [/B]
+--[Change] Added an option to disable writes to Floppy for users using additional addons for Floppy writes. (Umbrella Settings > Floppy > Disable Floppy Writes)

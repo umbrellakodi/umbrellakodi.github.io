@@ -2885,6 +2885,7 @@
 							<and>
 								<condition operator="!is" setting="floppy.token"/>
 								<condition operator="!is" setting="indicators.alt">5</condition>
+								<condition operator="is" setting="floppy.readonly">false</condition>
 							</and>
 						</dependency>
 					</dependencies>
@@ -4127,6 +4128,11 @@
 					<constraints>
 						<allowempty>true</allowempty>
 					</constraints>
+					<dependencies>
+						<dependency type="visible">
+							<condition operator="is" setting="floppy.isauthed"/>
+						</dependency>
+					</dependencies>
 					<control type="button" format="action">
 						<close>true</close>
 					</control>
@@ -4139,7 +4145,7 @@
 					</constraints>
 					<dependencies>
 						<dependency type="visible">
-							<condition operator="!is" setting="floppy.token"/>
+							<condition operator="!is" setting="floppy.isauthed"/>
 						</dependency>
 					</dependencies>
 					<control type="button" format="action">
@@ -4164,6 +4170,16 @@
 				<setting id="floppy.general.notifications" type="boolean" label="40760" help="">
 					<level>0</level>
 					<default>true</default>
+					<dependencies>
+						<dependency type="visible">
+							<condition operator="!is" setting="floppy.token"/>
+						</dependency>
+					</dependencies>
+					<control type="toggle"/>
+				</setting>
+				<setting id="floppy.readonly" type="boolean" label="40822" help="40823">
+					<level>0</level>
+					<default>false</default>
 					<dependencies>
 						<dependency type="visible">
 							<condition operator="!is" setting="floppy.token"/>

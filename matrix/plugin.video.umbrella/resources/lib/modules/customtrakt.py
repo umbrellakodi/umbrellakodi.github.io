@@ -255,6 +255,10 @@ def re_auth(headers):
 			else:
 				log_utils.log('CUSTOM: Error while re-authorizing: %s : %s' % (status_code, response.text), level=log_utils.LOGWARNING)
 				if status_code in ('401', '403'):
+					control.notification(
+						title=getCustomServiceName(),
+						message='Authorization expired. Please re-authorize in Umbrella settings.',
+						icon=custom_icon)
 					_clear_custom_auth_settings()
 				_reauth_failed = True
 				return False
