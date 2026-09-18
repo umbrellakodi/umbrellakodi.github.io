@@ -793,6 +793,13 @@ class Player(xbmc.Player):
 		self.scrobble_sent = False
 		self.scrobble_sent = False
 		self.onPlayBackStopped_ran = False
+		# A Player instance survives Play Next playlist transitions. Start a fresh
+		# tracking lifecycle for every item so services with session-based playback
+		# events (notably PunchPlay) receive start/progress before the final stop.
+		self.av_started_ran = False
+		self.playback_resumed = False
+		self._scrob_heartbeat_at = 0
+		self._punchplay_heartbeat_at = 0
 		self.play_next_triggered = False
 		self.preScrape_triggered = False
 		self.subtitletime = None

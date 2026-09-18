@@ -1,3 +1,6 @@
+[B]Update - v6.7.699 - Sept 18th, 2026 [/B]
+--[Fix] Fix for punch not marking as watched after first episode when using continuous playback.
+
 [B]Update - v6.7.698 - Sept 17th, 2026 [/B]
 --[Change] Change made for resume point to reduce kodi warnings.
 --[Enhancement] Added skip recap option in playback settings. Uses theme from continuous playback.

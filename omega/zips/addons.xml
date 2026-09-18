@@ -1,5 +1,5 @@
 <?xml version='1.0' encoding='utf-8'?>
-<addons><addon id="plugin.video.umbrella" name="Umbrella" provider-name="Umbrella" version="6.7.698">
+<addons><addon id="plugin.video.umbrella" name="Umbrella" provider-name="Umbrella" version="6.7.699">
 	<requires>
 		<import addon="xbmc.python" version="3.0.0" />
 		<import addon="script.module.requests" />
@@ -271,10 +271,8 @@
 			<screenshot>resources/screenshots/screenshot003.jpg</screenshot>
 		</assets>
 		<news>
-[B]Update - v6.7.698 - Sept 17th, 2026 [/B]
---[Change] Change made for resume point to reduce kodi warnings.
---[Enhancement] Added skip recap option in playback settings. Uses theme from continuous playback.
---[Change] Changes for Torbox Authorization popup due to complaints of not being able to authorize.
+[B]Update - v6.7.699 - Sept 18th, 2026 [/B]
+--[Fix] Fix for punch not marking as watched after first episode when using continuous playback.
 		</news>
 	</extension>
 
@@ -391,6 +389,28 @@
         <disclaimer lang="vi_VN">Plugin này không được xác nhận bởi Google</disclaimer>
         <disclaimer lang="zh_CN">此插件未被谷歌认可</disclaimer>
         <disclaimer lang="zh_TW">此附加元件未由Google支持</disclaimer>
+    </extension>
+</addon><addon id="script.nimbus.helper" name="Nimbus Helper" version="0.0.52" provider-name="Ivar Brandt">
+    <requires>
+        <import addon="xbmc.python" version="3.0.0" />
+        <import addon="script.module.requests" version="2.19.1" />
+        <import addon="script.module.pil" version="1.1.7" />
+    </requires>
+    <extension point="xbmc.python.library" library="resources/lib/default.py" />
+    <extension point="xbmc.service" library="resources/lib/service.py" start="startup" />
+    <extension point="xbmc.addon.metadata">
+        <news />
+        <platform>all</platform>
+        <license>GPL-2.0-only</license>
+        <forum />
+        <source />
+        <assets>
+            <icon>resources/media/icon.png</icon>
+            <fanart>resources/media/fanart.jpg</fanart>
+        </assets>
+        <description lang="en_GB">Nimbus Helper for the Nimbus Skin.</description>
+        <description lang="en_NZ">Nimbus Helper for the Nimbus Skin.</description>
+        <description lang="en_US">Nimbus Helper for the Nimbus Skin.</description>
     </extension>
 </addon><addon id="script.umbrestuary.helper" name="Umbrestuary Helper" version="0.6.16" provider-name="Tikipeter, Ivar Brandt">
     <requires>
