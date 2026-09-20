@@ -112,8 +112,10 @@ def _tokens():
 
 
 def getPunchPlayCredentialsInfo():
+    tokens = _tokens() if CLIENT_ID.strip() and getSetting('punchplay.accesstoken') else {}
     return bool(CLIENT_ID.strip() and getSetting('punchplay.accesstoken')
-                and getSetting('punchplay.isauthed') == 'true' and _tokens())
+                and getSetting('punchplay.isauthed') == 'true' and tokens
+                and not tokens.get('reauth_required'))
 
 
 def getPunchPlayWriteCredentialsInfo():
@@ -152,6 +154,8 @@ def _refresh(failed_token=None, generation=None):
             current = json.loads(row[0]) if row else {}
             if generation and current.get('generation') != generation:
                 raise PunchPlayError('PunchPlay account changed; request cancelled.')
+            if current.get('reauth_required'):
+                raise PunchPlayError('Please authorize PunchPlay again.')
             if current.get('client_id') != _credentials()['client_id'] or not current.get('refresh_token'):
                 raise PunchPlayError('Please authorize PunchPlay again.')
             if failed_token and current.get('access_token') != failed_token:
@@ -161,6 +165,16 @@ def _refresh(failed_token=None, generation=None):
             response = _session.post(BASE_URL + '/auth/refresh',
                                      json=dict(_credentials(), refresh_token=current['refresh_token']), timeout=20)
             if response.status_code != 200:
+                try: invalid_grant = response.json().get('error') == 'invalid_grant'
+                except (ValueError, AttributeError): invalid_grant = False
+                if invalid_grant:
+                    # Persist across plugin invocations so every heartbeat does
+                    # not retry the same rejected refresh token and hit limits.
+                    current['reauth_required'] = True
+                    _put(con, 'tokens', current)
+                    con.commit()
+                    setSetting('punchplay.isauthed', 'false')
+                    control.notification(title='PunchPlay', message='Session expired. Please authorize PunchPlay again in settings.')
                 raise _error(response)
             result = _save_tokens(dict(response.json(), generation=current.get('generation')), con)
             con.commit()
@@ -183,6 +197,8 @@ def _request(path, method='GET', body=None, headers=None, auth=True):
     if auth:
         if not tokens:
             raise PunchPlayError('Please authorize PunchPlay.')
+        if tokens.get('reauth_required'):
+            raise PunchPlayError('Please authorize PunchPlay again.')
         if tokens.get('expires_at', 0) <= time.time() + 60:
             tokens = _refresh(generation=generation)
     for attempt in range(3):

@@ -1,2 +1,2 @@
-[B]Update - v6.7.702 - Sept 18th, 2026 [/B]
---[Change] Added an option to disable writes to Floppy for users using additional addons for Floppy writes. (Umbrella Settings > Floppy > Disable Floppy Writes)
+[B]Update - v6.7.703 - Sept 19th, 2026 [/B]
+--[Change] Another change for punchplay not wanting to mark episodes as watched after first episode on continuous playback.

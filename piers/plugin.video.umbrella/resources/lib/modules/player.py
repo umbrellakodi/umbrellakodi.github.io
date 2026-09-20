@@ -99,6 +99,7 @@ class Player(xbmc.Player):
 		self.scrobble_sent = False
 		self.scrobble_sent = False
 		self.av_started_ran = False
+		self._playback_path = None
 		self.media_type = None
 		self.DBID = None
 		self.offset = '0'
@@ -802,15 +803,18 @@ class Player(xbmc.Player):
 
 ### Kodi player callback methods ###
 	def onAVStarted(self): 
+		# Each resolved playlist item has its own Player. Kodi can deliver the
+		# next item's callbacks to the previous instance while it is finishing.
+		if self.av_started_ran or self.media_type is None: return
+		try: self._playback_path = self.getPlayingFile()
+		except: pass
 		playerWindow.clearProperty('umbrella.playnext.transition')
 		self.watched_during_playback = False
 		self.watched_update_thread = None
 		self.scrobble_sent = False
 		self.scrobble_sent = False
 		self.onPlayBackStopped_ran = False
-		# A Player instance survives Play Next playlist transitions. Start a fresh
-		# tracking lifecycle for every item so services with session-based playback
-		# events (notably PunchPlay) receive start/progress before the final stop.
+		# Initialize tracking for this resolved item only.
 		self.av_started_ran = False
 		self.playback_resumed = False
 		self._scrob_heartbeat_at = 0
@@ -1044,6 +1048,14 @@ class Player(xbmc.Player):
 
 	def onPlayBackEnded(self):
 		try:
+			# A delayed end event from the previous playlist item can arrive after
+			# this item's AVStarted. Do not close the session still playing here.
+			if self._playback_path and self.isPlayingVideo():
+				try:
+					if self.getPlayingFile() == self._playback_path:
+						log_utils.log('Ignoring previous playlist item end callback during active playback', level=log_utils.LOGDEBUG)
+						return
+				except: pass
 			if getSetting('crefresh') == 'true': homeWindow.setProperty('umbrella.playback_cleanup', 'true')
 			Bookmarks().reset(self.current_time, self.media_length, self.name, self.year)
 			self.libForPlayback()
