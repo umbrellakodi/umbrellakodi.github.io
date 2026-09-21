@@ -1,4 +1,10 @@
+
+[B]Update - v6.7.704 - Sept 21st, 2026 [/B]
+--[Fix] Fix for possible duplication in mdblist episode.
+--[Logging] Added logging for mdblist episode duplication.
+
 [B]Update - v6.7.703 - Sept 19th, 2026 [/B]
+--[Fix] Prevent mixed IMDb/TMDb records from producing duplicate MDBList Progress Episodes rows. Added listing diagnostics for post-playback refresh issues.
 --[Change] Another change for punchplay not wanting to mark episodes as watched after first episode on continuous playback.
 
 [B]Update - v6.7.702 - Sept 18th, 2026 [/B]

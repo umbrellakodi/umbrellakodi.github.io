@@ -49,6 +49,7 @@ def _remote_playback_enabled(scrobble_source, provider_source, markwatched_setti
 def _refresh_after_player_closes(request_id, watched_update_thread=None):
 	"""Refresh only after Kodi has restored the underlying window."""
 	try:
+		control.log_refresh_diagnostic('post-playback-worker-start', 'worker=%s' % request_id)
 		# used to detect when the full screen playback window has been destroyed.
 		for _ in range(20):
 			if (not control.player.isPlaying()
@@ -73,7 +74,9 @@ def _refresh_after_player_closes(request_id, watched_update_thread=None):
 				log_utils.log('post-playback refresh continuing after watched update timeout', level=log_utils.LOGWARNING)
 		if control.monitor.waitForAbort(0.5): return
 		if homeWindow.getProperty('umbrella.container_refresh_request') != request_id:
+			control.log_refresh_diagnostic('post-playback-worker-superseded', 'worker=%s' % request_id)
 			return
+		control.log_refresh_diagnostic('post-playback-worker-dispatch', 'worker=%s' % request_id)
 		homeWindow.clearProperty('umbrella.container_refresh_request')
 		homeWindow.clearProperty('umbrella.playback_cleanup')
 		homeWindow.clearProperty('umbrella.widget_refresh_pending')

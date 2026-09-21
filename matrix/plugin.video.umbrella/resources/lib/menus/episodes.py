@@ -34,6 +34,50 @@ getSetting = control.setting
 KODI_VERSION = control.getKodiVersion()
 
 
+def _mdblist_progress_shows(episodes, watched_shows):
+	"""Combine provider IDs before calculating each show's furthest episode."""
+	def clean(value):
+		return '' if value in (None, '', 'None', '0', 0) else str(value)
+	imdb_tmdb, tvdb_tmdb = {}, {}
+	for row in list(episodes) + list(watched_shows):
+		imdb, tmdb, tvdb = map(clean, row[:3])
+		if tmdb:
+			if imdb: imdb_tmdb[imdb] = tmdb
+			if tvdb: tvdb_tmdb[tvdb] = tmdb
+	def identity(row):
+		imdb, tmdb, tvdb = map(clean, row[:3])
+		tmdb = tmdb or imdb_tmdb.get(imdb, '') or tvdb_tmdb.get(tvdb, '')
+		key = ('tmdb', tmdb) if tmdb else ('imdb', imdb) if imdb else ('tvdb', tvdb)
+		return key, imdb, tmdb, tvdb
+	shows = {}
+	for row in episodes:
+		key, imdb, tmdb, tvdb = identity(row)
+		if not key[1]: continue
+		show = shows.setdefault(key, {'imdb': '', 'tmdb': '', 'tvdb': '', 'watched_set': set()})
+		for field, value in [('imdb', imdb), ('tmdb', tmdb), ('tvdb', tvdb)]:
+			if value: show[field] = value
+		show['watched_set'].add((int(row[3]), int(row[4])))
+	for row in watched_shows:
+		key = identity(row)[0]
+		if key in shows:
+			shows[key]['lastplayed'] = max(shows[key].get('lastplayed', ''), row[3] or '')
+	return list(shows.values())
+
+
+def _unique_mdblist_progress(items):
+	# Generated rows always have the resolved show TMDb ID. IMDb can be absent
+	# on one copy of the same show, including rows in an existing progress cache.
+	result, seen = [], set()
+	for item in items or []:
+		show = item.get('tmdb') or item.get('imdb') or item.get('tvdb')
+		if show:
+			key = (str(show), int(item['season']), int(item['episode']))
+			if key in seen: continue
+			seen.add(key)
+		result.append(item)
+	return result
+
+
 class Episodes:
 	def __init__(self, notifications=True):
 		self.list = []
@@ -891,6 +935,10 @@ class Episodes:
 
 	def mdblist_calendar(self, url, folderName=''):
 		self.list = []
+		from uuid import uuid4
+		from sys import argv
+		self._mdb_build_id = uuid4().hex[:12]
+		control.log_refresh_diagnostic('mdb-build-start', 'build=%s handle=%s' % (self._mdb_build_id, argv[1]))
 		try:
 			activities = mdblist.getActivities()
 			if mdblist.getWatchedActivity(activities) > cache.timeout(self.mdblist_progress_list, url, self.mdblist_directProgressScrape):
@@ -905,6 +953,14 @@ class Episodes:
 			if self.list and any(not i.get('airinfo_enriched') for i in self.list):
 				cache.remove(self.mdblist_progress_list, url, self.mdblist_directProgressScrape)
 				self.list = cache.get(self.mdblist_progress_list, 0, url, self.mdblist_directProgressScrape)
+			from resources.lib.modules import log_utils
+			from sys import argv
+			raw_count = len(self.list or [])
+			self.list = _unique_mdblist_progress(self.list)
+			log_utils.log('MDBList progress directory handle=%s: %s rows, %s unique episodes' %
+				(argv[1], raw_count, len(self.list)), level=log_utils.LOGDEBUG)
+			control.log_refresh_diagnostic('mdb-build-data', 'build=%s raw=%s unique=%s' %
+				(self._mdb_build_id, raw_count, len(self.list)))
 			self.sort(type='progress')
 			if self.list is None: self.list = []
 			# place new season ep1's at top of list for 1 week
@@ -959,6 +1015,9 @@ class Episodes:
 				control.hide()
 				if self.notifications: control.notification(title=32326, message=33049)
 
+		finally:
+			control.log_refresh_diagnostic('mdb-build-finish', 'build=%s handle=%s' % (self._mdb_build_id, argv[1]))
+
 	def mdblist_progress_list(self, url='/upnext', direct=False):
 		# MDBList's own /upnext endpoint (get_up_next()) was returning S1E1 for shows
 		# watched out of order — it depends on MDBList's server-side watched-history
@@ -972,18 +1031,9 @@ class Episodes:
 			from resources.lib.database import mdbsync
 			episodes = mdbsync.get_watched_episodes()
 			if not episodes: return self.list
-			shows = {}
-			for (show_imdb, show_tmdb, show_tvdb, season, episode) in episodes:
-				key = show_imdb or show_tmdb
-				if not key: continue
-				shows.setdefault(key, {'imdb': show_imdb, 'tmdb': show_tmdb, 'tvdb': show_tvdb, 'watched_set': set()})
-				shows[key]['watched_set'].add((int(season), int(episode)))
-			try:
-				for (show_imdb, show_tmdb, show_tvdb, last_watched_at) in mdbsync.get_watched_shows():
-					key = show_imdb or show_tmdb
-					if key in shows: shows[key]['lastplayed'] = last_watched_at
-			except: pass
-			items = list(shows.values())
+			try: watched_shows = mdbsync.get_watched_shows()
+			except: watched_shows = []
+			items = _mdblist_progress_shows(episodes, watched_shows)
 		except: return self.list
 		if not items: return self.list
 
@@ -2840,6 +2890,10 @@ class Episodes:
 
 	def episodeDirectory(self, items, unfinished=False, next=True, playlist=False, folderName=''):
 		from sys import argv # some functions like ActivateWindow() throw invalid handle less this is imported here.
+		mdb_build = getattr(self, '_mdb_build_id', '')
+		submitted_items = 0
+		if mdb_build:
+			control.log_refresh_diagnostic('mdb-render-start', 'build=%s handle=%s input=%s' % (mdb_build, argv[1], len(items or [])))
 		unique_items = []
 		seen_episodes = set()
 		for episode_item in items or []:
@@ -3296,7 +3350,12 @@ class Episodes:
 				else:
 					item.addContextMenuItems(cm)
 				if playlist: append((url, item, isFolder))
-				else: control.addItem(handle=syshandle, url=url, listitem=item, isFolder=isFolder)
+				else:
+					added = control.addItem(handle=syshandle, url=url, listitem=item, isFolder=isFolder)
+					submitted_items += 1
+					if mdb_build:
+						control.log_refresh_diagnostic('mdb-add-item', 'build=%s handle=%s row=%s tmdb=%s season=%s episode=%s accepted=%s' %
+							(mdb_build, syshandle, submitted_items, tmdb, season, episode, added))
 			except:
 				from resources.lib.modules import log_utils
 				log_utils.error()
@@ -3324,6 +3383,8 @@ class Episodes:
 				else: control.addItem(handle=syshandle, url=url, listitem=item, isFolder=True)
 			except: pass
 		if playlist: return listitems
+		if mdb_build:
+			control.log_refresh_diagnostic('mdb-end-directory', 'build=%s handle=%s submitted_episodes=%s' % (mdb_build, syshandle, submitted_items))
 		if isMultiList and multi_unwatchedEnabled: # Show multi episodes as show, in order to display unwatched count if enabled.
 			control.content(syshandle, 'tvshows')
 			control.directory(syshandle, cacheToDisc=False) # disable cacheToDisc so unwatched counts loads fresh data counts if changes made
@@ -3332,6 +3393,8 @@ class Episodes:
 			control.content(syshandle, 'episodes')
 			control.directory(syshandle, cacheToDisc=False) # disable cacheToDisc so unwatched counts loads fresh data counts if changes made
 			views.setView('episodes', {'skin.estuary': 55, 'skin.confluence': 504})
+		if mdb_build:
+			control.log_refresh_diagnostic('mdb-render-finish', 'build=%s handle=%s submitted_episodes=%s' % (mdb_build, syshandle, submitted_items))
 
 	def addDirectory(self, items, queue=False, folderName=''):
 		from sys import argv # some functions like ActivateWindow() throw invalid handle less this is imported here.
