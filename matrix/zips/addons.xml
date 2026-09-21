@@ -1,5 +1,5 @@
 <?xml version='1.0' encoding='utf-8'?>
-<addons><addon id="plugin.video.umbrella" name="Umbrella" provider-name="Umbrella" version="6.7.704">
+<addons><addon id="plugin.video.umbrella" name="Umbrella" provider-name="Umbrella" version="6.7.705">
 	<requires>
 		<import addon="xbmc.python" version="3.0.0" />
 		<import addon="script.module.requests" />
@@ -271,9 +271,8 @@
 			<screenshot>resources/screenshots/screenshot003.jpg</screenshot>
 		</assets>
 		<news>
-[B]Update - v6.7.704 - Sept 21st, 2026 [/B]
---[Fix] Fix for possible duplication in mdblist episode.
---[Logging] Added logging for mdblist episode duplication.
+[B]Update - v6.7.705 - Sept 21st, 2026 [/B]
+--[Fix] Share overlapping MDBList progress rebuilds and shorten optional cache-write waits to reduce blank-list delays after playback.
 		</news>
 	</extension>
 

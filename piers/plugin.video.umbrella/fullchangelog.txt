@@ -1,4 +1,7 @@
 
+[B]Update - v6.7.705 - Sept 21st, 2026 [/B]
+--[Fix] Share overlapping MDBList progress rebuilds and shorten optional cache-write waits to reduce blank-list delays after playback.
+
 [B]Update - v6.7.704 - Sept 21st, 2026 [/B]
 --[Fix] Fix for possible duplication in mdblist episode.
 --[Logging] Added logging for mdblist episode duplication.

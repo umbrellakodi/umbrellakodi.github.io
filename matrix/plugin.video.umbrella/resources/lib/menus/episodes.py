@@ -945,14 +945,14 @@ class Episodes:
 				# The progress list is reconstructed from mdbsync's local episode rows.
 				# Pull remote changes before rebuilding that cache.
 				mdblist.sync_watchedProgress(activities)
-				self.list = cache.get(self.mdblist_progress_list, 0, url, self.mdblist_directProgressScrape)
+				self.list = cache.get_coalesced(self.mdblist_progress_list, 0, url, self.mdblist_directProgressScrape)
 			else:
-				self.list = cache.get(self.mdblist_progress_list, self.mdblist_hours, url, self.mdblist_directProgressScrape)
+				self.list = cache.get_coalesced(self.mdblist_progress_list, self.mdblist_hours, url, self.mdblist_directProgressScrape)
 			# Progress rows cached before air-schedule enrichment do not contain the
 			# fields needed by the Air Information label. Rebuild those rows once.
 			if self.list and any(not i.get('airinfo_enriched') for i in self.list):
 				cache.remove(self.mdblist_progress_list, url, self.mdblist_directProgressScrape)
-				self.list = cache.get(self.mdblist_progress_list, 0, url, self.mdblist_directProgressScrape)
+				self.list = cache.get_coalesced(self.mdblist_progress_list, 0, url, self.mdblist_directProgressScrape)
 			from resources.lib.modules import log_utils
 			from sys import argv
 			raw_count = len(self.list or [])
