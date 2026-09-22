@@ -6924,10 +6924,6 @@ msgctxt "#40670"
 msgid "Revoke MDBList Authorization"
 msgstr ""
 
-msgctxt "#40671"
-msgid "Umbrella TorBox Referral Link"
-msgstr ""
-
 msgctxt "#40672"
 msgid "Source Sort Order"
 msgstr ""

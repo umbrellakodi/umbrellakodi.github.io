@@ -1,5 +1,8 @@
+[B]Update - v6.7.706 - Sept 22nd, 2026 [/B]
+--[Fix] Avoid an extra post-playback refresh when Kodi is already reloading MDBList Progress Episodes.
 
 [B]Update - v6.7.705 - Sept 21st, 2026 [/B]
+--[Change] Removed the TorBox referral option and window.
 --[Fix] Share overlapping MDBList progress rebuilds and shorten optional cache-write waits to reduce blank-list delays after playback.
 
 [B]Update - v6.7.704 - Sept 21st, 2026 [/B]

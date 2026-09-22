@@ -46,9 +46,31 @@ def _remote_playback_enabled(scrobble_source, provider_source, markwatched_setti
 		and (scrobble_source == provider_source or getSetting(markwatched_setting) == 'true'))
 
 
+def _mdblist_restore_started(since):
+	"""Give Kodi's return-to-directory reload a chance before queuing another."""
+	from urllib.parse import urlsplit, parse_qsl
+	def is_progress():
+		path = control.infoLabel('Container.FolderPath')
+		return (urlsplit(path).netloc == 'plugin.video.umbrella'
+			and dict(parse_qsl(urlsplit(path).query)).get('action') == 'mdblist_calendar')
+	if not is_progress(): return False
+	for _ in range(40):
+		try: started = float(homeWindow.getProperty('umbrella.mdb.build_started') or 0)
+		except (ValueError, TypeError): started = 0
+		if started >= since:
+			control.log_refresh_diagnostic('post-playback-refresh-skipped-mdb-reloading')
+			return True
+		# An existing populated directory still needs the explicit watched refresh.
+		if control.infoLabel('Container.NumItems') not in ('', '0'): return False
+		if control.monitor.waitForAbort(0.25): return True
+		if not is_progress(): return True # user navigated away while waiting
+	return False # no automatic reload appeared; retain the explicit fallback
+
+
 def _refresh_after_player_closes(request_id, watched_update_thread=None):
 	"""Refresh only after Kodi has restored the underlying window."""
 	try:
+		refresh_started = time.time()
 		control.log_refresh_diagnostic('post-playback-worker-start', 'worker=%s' % request_id)
 		# used to detect when the full screen playback window has been destroyed.
 		for _ in range(20):
@@ -72,6 +94,7 @@ def _refresh_after_player_closes(request_id, watched_update_thread=None):
 			watched_update_thread.join(20)
 			if watched_update_thread.is_alive():
 				log_utils.log('post-playback refresh continuing after watched update timeout', level=log_utils.LOGWARNING)
+		if _mdblist_restore_started(refresh_started): return
 		if control.monitor.waitForAbort(0.5): return
 		if homeWindow.getProperty('umbrella.container_refresh_request') != request_id:
 			control.log_refresh_diagnostic('post-playback-worker-superseded', 'worker=%s' % request_id)

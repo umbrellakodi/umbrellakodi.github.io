@@ -1113,9 +1113,6 @@ def router(argv2):
 		elif action == 'tb_ToggleAirlock':
 			from resources.lib.debrid import torbox
 			torbox.TorBox().toggle_airlock(params.get('id'), mediatype, name)
-		elif action == 'tb_ReferralLink':
-			from resources.lib.debrid import torbox
-			torbox.TorBox().referral_link()
 		if action == 'tb_ServiceNavigator':
 			from resources.lib.menus import navigator
 			navigator.Navigator().torbox_service()

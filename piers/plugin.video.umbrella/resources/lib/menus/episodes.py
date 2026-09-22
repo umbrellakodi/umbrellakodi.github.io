@@ -938,6 +938,8 @@ class Episodes:
 		from uuid import uuid4
 		from sys import argv
 		self._mdb_build_id = uuid4().hex[:12]
+		from time import time
+		control.homeWindow.setProperty('umbrella.mdb.build_started', str(time()))
 		control.log_refresh_diagnostic('mdb-build-start', 'build=%s handle=%s' % (self._mdb_build_id, argv[1]))
 		try:
 			activities = mdblist.getActivities()
