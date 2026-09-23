@@ -71,6 +71,7 @@ _MOVIES_DEFAULTS = [
 	('mv_fav_movies',          '40465', 'getFavouritesMovies&url=favourites_movies',          'movies.png',      'movies.png',        1, 1, 1, 36, 0, 'favorite_movie', 0, None),
 	('mv_person_search',       '33044', 'moviePerson',                                        'imdb.png',        'people-search.png', 0, 1, 1, 37, 0, 'not_lite',       0, None),
 	('mv_movie_search',        '33042', 'movieSearch',                                        'trakt.png',       'search.png',        1, 1, 1, 38, 0, 'not_lite',       0, None),
+	('mv_punchplay_catalog', 'PunchPlay Catalog', 'punchplay_catalog_menu', 'punchplay.png', 'punchplay.png', 1, 1, 1, 39, 0, None, 0, None),
 ]
 
 _TVSHOWS_DEFAULTS = [
@@ -105,6 +106,7 @@ _TVSHOWS_DEFAULTS = [
 	('tv_fav_tvshows',        '40466', 'getFavouritesTVShows&url=favourites_tvshows','tvshows.png','tvshows.png',    1, 1, 1, 28, 0, 'favorite_tvshows', 0, None),
 	('tv_person_search',      '33045', 'tvPerson',                                'imdb.png',    'people-search.png',0, 1, 1, 29, 0, 'not_lite',        0, None),
 	('tv_search',             '33043', 'tvSearch',                                'trakt.png',   'search.png',       1, 1, 1, 30, 0, 'not_lite',        0, None),
+	('tv_punchplay_catalog', 'PunchPlay Catalog', 'punchplay_catalog_menu', 'punchplay.png', 'punchplay.png', 1, 1, 1, 31, 0, None, 0, None),
 ]
 
 _MYMOVIES_DEFAULTS = [
@@ -193,6 +195,7 @@ _MYMOVIES_PUNCHPLAY_DEFAULTS = [
 	('mymv_punchplay_dropped', 'Dropped (PunchPlay)', 'punchplay_movies_library&category=dropped', 'punchplay.png', 'punchplay.png', 1, 1, 1, 13, 0, 'punchplay_credentials', 1, None),
 	('mymv_punchplay_collection', 'Collection (PunchPlay)', 'punchplay_movies_library&category=collection', 'punchplay.png', 'punchplay.png', 1, 1, 1, 14, 0, 'punchplay_credentials', 1, None),
 	('mymv_punchplay_favourites', 'Favourites (PunchPlay)', 'punchplay_movies_library&category=favourites', 'punchplay.png', 'punchplay.png', 1, 1, 1, 15, 0, 'punchplay_credentials', 1, None),
+	('mymv_punchplay_calendar', 'My Calendar (PunchPlay)', 'punchplay_calendar_menu&media_type=movie', 'punchplay.png', 'calendar.png', 1, 1, 1, 16, 0, 'punchplay_credentials', 0, None),
 ]
 
 _MYMOVIES_LOCAL_DEFAULTS = [
@@ -313,6 +316,7 @@ _MYTVSHOWS_PUNCHPLAY_DEFAULTS = [
 	('mytv_punchplay_dropped', 'Dropped (PunchPlay)', 'punchplay_shows_library&category=dropped', 'punchplay.png', 'punchplay.png', 1, 1, 1, 13, 0, 'punchplay_credentials', 1, None),
 	('mytv_punchplay_collection', 'Collection (PunchPlay)', 'punchplay_shows_library&category=collection', 'punchplay.png', 'punchplay.png', 1, 1, 1, 14, 0, 'punchplay_credentials', 1, None),
 	('mytv_punchplay_favourites', 'Favourites (PunchPlay)', 'punchplay_shows_library&category=favourites', 'punchplay.png', 'punchplay.png', 1, 1, 1, 15, 0, 'punchplay_credentials', 1, None),
+	('mytv_punchplay_calendar', 'My Calendar (PunchPlay)', 'punchplay_calendar_menu&media_type=episode', 'punchplay.png', 'calendar.png', 1, 1, 1, 16, 0, 'punchplay_credentials', 0, None),
 ]
 
 _MYTVSHOWS_LOCAL_DEFAULTS = [
@@ -362,7 +366,7 @@ _defaults_version_file = control.joinPath(control.dataPath, 'menu_defaults.v')
 # regardless of addon version (e.g. to fix a migration bug) — the on-disk marker below
 # is keyed on addonVersion+this, not addonVersion alone, so incrementing it forces one
 # more sync pass even for users already marked up to date on the current addon version.
-_MENU_SCHEMA_REVISION = '14'
+_MENU_SCHEMA_REVISION = '15'
 
 
 def _read_synced_version():
@@ -552,6 +556,10 @@ def _sync_defaults(dbcon):
 	dbcon.commit()
 	# Insert items added after initial release for existing users
 	_NEW_DEFAULT_ITEMS = [
+		('movies', 'mv_punchplay_catalog', 'PunchPlay Catalog', 'punchplay_catalog_menu', 'punchplay.png', 'punchplay.png', 1, 1, 1, 39, 0, None, 0, None),
+		('tvshows', 'tv_punchplay_catalog', 'PunchPlay Catalog', 'punchplay_catalog_menu', 'punchplay.png', 'punchplay.png', 1, 1, 1, 31, 0, None, 0, None),
+		('mymovies_punchplay', 'mymv_punchplay_calendar', 'My Calendar (PunchPlay)', 'punchplay_calendar_menu&media_type=movie', 'punchplay.png', 'calendar.png', 1, 1, 1, 16, 0, 'punchplay_credentials', 0, None),
+		('mytvshows_punchplay', 'mytv_punchplay_calendar', 'My Calendar (PunchPlay)', 'punchplay_calendar_menu&media_type=episode', 'punchplay.png', 'calendar.png', 1, 1, 1, 16, 0, 'punchplay_credentials', 0, None),
 		('mymovies', 'mymv_mdblist_folder',  'MDBList',  'mymovies_mdblistNavigator',  'mdblist.png',  'mdblist.png',  1, 1, 1, 2, 0, 'mdblist_token',        0, None),
 		('mymovies', 'mymv_custom_folder',   'Custom',   'mymovies_customNavigator',   'icon.png',     'icon.png',     1, 1, 1, 3, 0, 'custom_token',         0, None),
 		('mymovies', 'mymv_tmdb_folder',     'TMDb',     'mymovies_tmdbNavigator',     'tmdb.png',     'tmdb.png',     1, 1, 1, 4, 0, 'tmdb_v4_token',        0, None),

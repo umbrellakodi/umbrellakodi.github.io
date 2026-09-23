@@ -1351,6 +1351,7 @@ class TVshows:
 					values = {
 						'name': '%s (%s)' % (name, count),
 						'action': 'custom_list_shows&list_id=%s' % quote_plus(list_id),
+						'context': 'custom://lists/%s' % list_id,
 						'image': 'icon.png', 'icon': 'DefaultVideoPlaylists.png', 'url': '',
 					}
 					self.list.append(values)
@@ -1434,6 +1435,7 @@ class TVshows:
 					values = {
 						'name': '%s (%s)' % (name, count),
 						'action': 'floppy_list_shows&list_id=%s' % quote_plus(list_id),
+						'context': 'floppy://lists/%s' % list_id,
 						'image': lst.get('image') or 'icon.png', 'icon': 'DefaultVideoPlaylists.png', 'url': '',
 					}
 					self.list.append(values)
@@ -3211,6 +3213,7 @@ class TVshows:
 					values = {
 						'name': '%s (%s)' % (name, count),
 						'action': 'scrob_list_shows&list_id=%s' % list_id,
+						'context': 'scrob://lists/%s' % list_id,
 						'image': 'scrob.png', 'icon': 'scrob.png', 'url': '',
 					}
 					self.list.append(values)
@@ -3233,6 +3236,7 @@ class TVshows:
 					values = {
 						'name': '%s (%s)' % (name, count),
 						'action': 'punchplay_list_shows&list_id=%s' % list_id,
+						'context': 'punchplay://lists/%s' % list_id,
 						'image': 'punchplay.png', 'icon': 'punchplay.png', 'url': '',
 					}
 					self.list.append(values)
@@ -4042,7 +4046,7 @@ class TVshows:
 				if queue: cm.append((queueMenu, 'RunPlugin(%s?action=playlist_QueueItem)' % sysaddon))
 				try:
 					if getSetting('library.service.update') == 'true':
-						cm.append((addToLibrary, 'RunPlugin(%s?action=library_tvshowsToLibrary&url=%s&name=%s)' % (sysaddon, quote_plus(i['context']), name)))
+						cm.append((addToLibrary, 'RunPlugin(%s?action=library_tvshowsToLibrary&url=%s&name=%s)' % (sysaddon, quote_plus(i['context']), quote_plus(name))))
 				except: pass
 				cm.append(('[COLOR %s]Umbrella Settings[/COLOR]' % self.highlight_color, 'RunPlugin(%s?action=tools_openSettings)' % sysaddon))
 				item = control.item(label=name, offscreen=True)

@@ -111,6 +111,19 @@ def router(argv2):
 	elif action == 'mymovies_punchplayNavigator':
 		from resources.lib.menus import navigator
 		navigator.Navigator().mymovies_punchplay(folderName=folderName)
+	elif action == 'punchplay_catalog_menu':
+		from resources.lib.menus import punchplay as punchplay_menu
+		punchplay_menu.catalog_menu(params.get('media_type'))
+	elif action == 'punchplay_catalog':
+		from resources.lib.menus import punchplay as punchplay_menu
+		punchplay_menu.catalog(params.get('media_type', 'movie'), params.get('category', 'popular'),
+			kind=params.get('kind'), page=params.get('page', 1), folder_name=folderName or '')
+	elif action == 'punchplay_calendar_menu':
+		from resources.lib.menus import punchplay as punchplay_menu
+		punchplay_menu.calendar_menu(params.get('media_type', 'movie'))
+	elif action == 'punchplay_my_calendar':
+		from resources.lib.menus import punchplay as punchplay_menu
+		punchplay_menu.calendar(params.get('month'), params.get('media_type', 'movie'))
 	elif action == 'mymovies_localNavigator':
 		from resources.lib.menus import navigator
 		navigator.Navigator().mymovies_local(folderName=folderName)

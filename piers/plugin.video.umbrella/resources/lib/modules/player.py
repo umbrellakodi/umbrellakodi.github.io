@@ -149,7 +149,7 @@ class Player(xbmc.Player):
 		self._punchplay_heartbeat_at = 0
 		self.prefer_tmdbArt = getSetting('prefer.tmdbArt') == 'true'
 		self.subtitletime = None
-		self.debuglog = getSetting('debug.level') == '1'
+		self.debuglog = getSetting('debug.enabled') == 'true' and getSetting('debug.level') == '1'
 		self.multi_season = getSetting('umbrella.multiSeason') == 'true'
 		self.playnext_method = getSetting('playnext.method')
 		self.playnext_theme = getSetting('playnext.theme')
@@ -1234,7 +1234,7 @@ class PlayNext(xbmc.Player):
 		self.stillwatching_count = int(getSetting('stillwatching.count'))
 		self.playing_file = None
 		self.providercache_hours = int(getSetting('cache.providers'))
-		self.debuglog = control.setting('debug.level') == '1'
+		self.debuglog = control.setting('debug.enabled') == 'true' and control.setting('debug.level') == '1'
 		self.playnext_method = control.setting('playnext.method')
 		self.playnext_theme = getSetting('playnext.theme')
 
@@ -1399,7 +1399,7 @@ class PlayNext(xbmc.Player):
 
 class Subtitles:
 	def __init__(self):
-		self.debuglog = control.setting('debug.level') == '1'
+		self.debuglog = control.setting('debug.enabled') == 'true' and control.setting('debug.level') == '1'
 		self.playnext_method = getSetting('playnext.method')
 
 	def _language_code(self, language):
@@ -1763,7 +1763,7 @@ class Subtitles:
 
 class Bookmarks:
 	def __init__(self):
-		self.debuglog = control.setting('debug.level') == '1'
+		self.debuglog = control.setting('debug.enabled') == 'true' and control.setting('debug.level') == '1'
 		self.traktCredentials = trakt.getTraktCredentialsInfo()
 		self.simklCredentials = simkl.getSimKLCredentialsInfo()
 		self.mdblistCredentials = mdblist.getMDBListCredentialsInfo()

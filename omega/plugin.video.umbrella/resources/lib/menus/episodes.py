@@ -3098,6 +3098,8 @@ class Episodes:
 						new_date = tools.convert_time(stringTime=premiered, zoneFrom='utc', zoneTo='local', formatInput='%Y-%m-%dT%H:%M:%S.000Z', formatOutput='%Y-%m-%d')
 						i.update({'premiered': new_date}) # adjust for Trakt utc
 					except: pass
+				if i.get('punchplay_date'):
+					labelProgress += ' [%s]' % i['punchplay_date']
 				systitle, systvshowtitle, syspremiered = quote_plus(title), quote_plus(tvshowtitle), quote_plus(premiered)
 				meta = dict((k, v) for k, v in iter(i.items()) if v is not None and v != '')
 				if isMultiList and multi_unwatchedEnabled: mediatype = 'tvshow'

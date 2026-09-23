@@ -17,6 +17,7 @@ from resources.lib.database import punchplaysync
 from resources.lib.modules import control, log_utils
 
 BASE_URL = 'https://punchplay.tv/api/platform/v1'
+PUBLIC_URL = 'https://punchplay.tv/api/public/v1'
 CLIENT_ID = 'ppc_a1ff58cf1a767f044d66308b'
 CLIENT_SECRET = 'pps_c8a0d48febe54904858bac23ac17cc412008aa0e7cc36bc7fe03206657b766a2'
 SCOPES = ('profile:read history:read history:write playback:read playback:write '
@@ -185,8 +186,12 @@ def _refresh(failed_token=None, generation=None):
             con.close()
 
 
-def _request(path, method='GET', body=None, headers=None, auth=True):
+def _request(path, method='GET', body=None, headers=None, auth=True, public=False):
     global _server_clock
+    if public:
+        if method != 'GET':
+            raise PunchPlayError('The public catalog is read-only.')
+        auth = False
     # Native DELETE routes parse JSON even where OpenAPI documents no body.
     if method == 'DELETE' and body is None:
         body = {}
@@ -209,7 +214,7 @@ def _request(path, method='GET', body=None, headers=None, auth=True):
         if auth:
             request_headers['Authorization'] = 'Bearer ' + tokens['access_token']
         try:
-            response = _session.request(method, BASE_URL + path, json=body,
+            response = _session.request(method, (PUBLIC_URL if public else BASE_URL) + path, json=body,
                                         headers=request_headers, timeout=20)
         except requests.RequestException:
             # Retry only reads and explicitly idempotent mutations.
@@ -1042,7 +1047,100 @@ def get_library_items(category, kind):
 
 
 def get_calendar(month):
+    try:
+        month = datetime.strptime(month, '%Y-%m').strftime('%Y-%m')
+    except (TypeError, ValueError):
+        raise PunchPlayError('Invalid calendar month.')
     return _request('/calendar?' + urlencode({'month': month}))
+
+
+def get_catalog(media_type='movie', category='popular'):
+    if media_type not in ('movie', 'show', 'anime') or category not in (
+            'trending', 'popular', 'top_rated', 'now_playing', 'upcoming'):
+        raise PunchPlayError('Unknown catalog category.')
+    query = {'type': media_type}
+    path = '/catalog/trending' if category == 'trending' else '/catalog/discover'
+    if category != 'trending':
+        query['category'] = category
+    # The public contract returns a complete items array, without pagination.
+    data = _request(path + '?' + urlencode(query), public=True)
+    if not isinstance(data, dict) or not isinstance(data.get('items'), list):
+        raise PunchPlayError('Unexpected PunchPlay catalog response.')
+    return data['items']
+
+
+def get_calendar_items(month, media_type):
+    if media_type not in ('movie', 'episode'):
+        raise PunchPlayError('Unknown calendar media type.')
+    data = get_calendar(month)
+    if not isinstance(data, dict) or not isinstance(data.get('days'), list):
+        raise PunchPlayError('Unexpected PunchPlay calendar response.')
+    items = []
+    for day in data['days']:
+        for item in day['items']:
+            kind = item.get('kind')
+            if (media_type == 'movie' and kind in ('movie', 'movie-digital') or
+                    media_type == 'episode' and kind == 'episode'):
+                values = dict(item)
+                values['date'] = day['date']
+                items.append(values)
+    return sorted(items, key=lambda i: (i['date'], i.get('title', '').casefold()))
+
+
+def get_export_lists():
+    """Stable sources consumed by the existing library import scheduler."""
+    lists = get_lists()  # Propagate failures; never replace saved choices with an empty result.
+    sources = [('watchlist', 'Watchlist', 0), ('favourites', 'Favourites', 0),
+               ('collection', 'Collection', 0)]
+    sources += [('lists/%s' % int(i['id']), i['name'], i.get('itemCount', 0))
+                for i in sorted(lists, key=lambda i: i['name'].casefold()) if not i.get('isWatchlist')]
+    return [{'name': name, 'list_name': name, 'url': 'punchplay://' + source,
+             'list_id': 'punchplay_' + source.replace('/', '_'), 'list_count': count,
+             'action': 'mixed', 'list_owner': '', 'list_owner_slug': '', 'likes': 0, 'selected': ''}
+            for source, name, count in sources]
+
+
+def get_export_items(url, media_type=None):
+    """Read every page fresh; deduplicate collection editions by routable kind and TMDB ID."""
+    if not url.startswith('punchplay://'):
+        raise PunchPlayError('Invalid PunchPlay library source.')
+    source = url[len('punchplay://'):]
+    if source == 'watchlist':
+        watchlist = next((i for i in get_lists() if i.get('isWatchlist')), None)
+        if watchlist is None:
+            raise PunchPlayError('PunchPlay did not return a Watchlist.')
+        rows = get_list_items(watchlist['id'])
+    elif source in ('favourites', 'collection'):
+        rows = _pages('/me/%s?limit=100' % source)
+    elif source.startswith('lists/') and source[6:].isdigit():
+        rows = get_list_items(int(source[6:]))
+    else:
+        raise PunchPlayError('Unknown PunchPlay library source.')
+    items, seen = [], set()
+    for row in rows:
+        kind = row.get('kind') or row.get('type')
+        if kind not in ('movie', 'show') or media_type and kind != media_type:
+            continue
+        tmdb = str(row.get('tmdbId') or '')
+        key = (kind, tmdb)
+        if not tmdb.isdigit() or int(tmdb) <= 0 or key in seen:
+            continue
+        seen.add(key)
+        item = _normal_item(row)
+        # Lists may omit the release year. Resolve it before writing library filenames.
+        if not item['title'] or not item['year']:
+            title = _title(kind, tmdb=tmdb)['title']
+            item['title'] = item['title'] or title['name']
+            item['year'] = item['year'] or str(title.get('year') or (title.get('releaseDate') or '')[:4])
+        if not item['title'] or not item['year'].isdigit():
+            raise PunchPlayError('Missing title or release year for library export (%s %s).' % key)
+        item['imdb'] = _resolve_movie_imdb(tmdb) if kind == 'movie' else _resolve_tv_imdb(tmdb)
+        item['mediatype'] = 'movies' if kind == 'movie' else 'tvshows'
+        item['originaltitle'] = item['title']
+        if kind == 'show':
+            item['tvshowtitle'] = item['title']
+        items.append(item)
+    return items
 
 
 def remove_dropped_items(tmdb_ids, media_type):

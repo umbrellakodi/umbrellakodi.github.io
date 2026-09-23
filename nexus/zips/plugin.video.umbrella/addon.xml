@@ -1,4 +1,4 @@
-<addon id="plugin.video.umbrella" name="Umbrella" provider-name="Umbrella" version="6.7.707">
+<addon id="plugin.video.umbrella" name="Umbrella" provider-name="Umbrella" version="6.7.708">
 	<requires>
 		<import addon="xbmc.python" version="3.0.0" />
 		<import addon="script.module.requests" />
@@ -270,9 +270,21 @@
 			<screenshot>resources/screenshots/screenshot003.jpg</screenshot>
 		</assets>
 		<news>
-[B]Update - v6.7.707 - Sept 22nd, 2026 [/B]
---[Fix] Clear remote Scrob playback progress and report Scrob/PunchPlay unfinished-manager removal failures.
---[Fix] Floppy unfinished managers and Clear Scrobble Progress now remove remote playback progress and report failed removals.
+[B]Update - v6.7.708 - Sept 23rd, 2026 [/B]
+--[Enhancement] Added PunchPlay as an optional tracking provider. (Addon Settings > Online Services > PunchPlay)
+--[Enhancement] Added Skip Intro (credit to kodifitzwell) and Skip Recap options using the continuous playback theme.
+--[Enhancement] Added TorBox cloud folders to source selection with metadata for watched-episode tracking.
+--[Change] Moved continuous playback settings to the Playback tab.
+--[Change] Added import to library from Floppy, Scrob, and Punchplay.
+--[Change] Added Disable Floppy Writes under Umbrella Settings > Online Services > Floppy for users who track playback through other addons.
+--[Change] Incomplete rewatches now show as partially watched.
+--[Change] Removed the TorBox referral option and window.
+--[Fix] Fixed duplicate MDBList Progress Episodes and reduced blank-list delays after playback.
+--[Fix] Improved playback monitoring and reduced unnecessary background and post-playback refreshes.
+--[Fix] Fixed episode counts, including multiple services counts, and cursor sync across devices.
+--[Fix] Fixed duplicate resume prompts and reduced Kodi resume-point warnings.
+--[Fix] Clear Scrobble Progress and unfinished managers now clear remote Scrob/Floppy playback progress and report Scrob, Floppy, and PunchPlay removal failures.
+--[Logging] Reduced logging and restricted playback and refresh diagnostics to Umbrella debug logging.
 		</news>
 	</extension>
 

@@ -414,7 +414,7 @@ def closeOk():
 def log_refresh_diagnostic(event, detail=''):
 	"""Trace refresh ordering without logging container URLs or credentials."""
 	try:
-		if setting('debug.level') != '1': return
+		if setting('debug.enabled') != 'true' or setting('debug.level') != '1': return
 		import os
 		import threading
 		from resources.lib.modules import log_utils

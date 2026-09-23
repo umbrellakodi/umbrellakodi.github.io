@@ -146,10 +146,25 @@ class Navigator:
 					label = label.replace('Custom', custom_name)
 			icon_file = item['icon'] if self.iconLogos else item['poster']
 			action = '%s&folderName=%s' % (item['action'], quote_plus(label)) if item['is_folder'] else item['action']
+			contexts = [(editor_label, '%s&menu_name=%s' % (editor_action, menu_name))]
+			if menu_name in ('mymovies_punchplay', 'mytvshows_punchplay') and getSetting('library.service.update') == 'true':
+				category = item['action'].split('category=')[-1]
+				if category in ('collection', 'favourites'):
+					export_action = 'library_moviesToLibrary' if menu_name == 'mymovies_punchplay' else 'library_tvshowsToLibrary'
+					contexts.append((getLS(32551), '%s&url=%s&name=%s' %
+						(export_action, quote_plus('punchplay://' + category), quote_plus(label))))
+			if menu_name in ('mymovies_custom', 'mytvshows_custom', 'mymovies_floppy', 'mytvshows_floppy') and getSetting('library.service.update') == 'true':
+				service = menu_name.split('_')[-1]
+				category = item['item_id'].split('_')[-1]
+				category = {'onhold': 'hold'}.get(category, category)
+				if category in ('watchlist', 'collection') or service == 'floppy' and category in ('watching', 'hold', 'completed', 'dropped'):
+					export_action = 'library_moviesToLibrary' if menu_name.startswith('mymovies_') else 'library_tvshowsToLibrary'
+					contexts.append((getLS(32551), '%s&url=%s&name=%s' %
+						(export_action, quote_plus(service + '://' + category), quote_plus(label))))
 			self.addDirectoryItem(label, action, icon_file, icon_file,
 				isFolder=bool(item['is_folder']), isAction=bool(item['is_action']),
 				queue=bool(item['queue']),
-				multi_context=[(editor_label, '%s&menu_name=%s' % (editor_action, menu_name))])
+				multi_context=contexts)
 			rendered += 1
 		if rendered == 0:
 			self.addDirectoryItem(editor_label, '%s&menu_name=%s' % (editor_action, menu_name),
