@@ -860,7 +860,7 @@ def get_resume_percent(tmdb, season=None, episode=None):
     return item['progress_percent'] * 100 if item else 0
 
 
-def scrobbleReset(imdb, tmdb=None, tvdb=None, season=None, episode=None, refresh=True,
+def _resetPlaybackProgress(imdb, tmdb=None, tvdb=None, season=None, episode=None, refresh=True,
                   widgetRefresh=False, clear_local=True):
     tmdb = tmdb or _resolve_tmdb('movie' if season is None else 'show', imdb, tvdb)
     item = get_resume_item(tmdb, season, episode)
@@ -874,6 +874,32 @@ def scrobbleReset(imdb, tmdb=None, tvdb=None, season=None, episode=None, refresh
         control.refresh()
     if widgetRefresh:
         control.trigger_widget_refresh()
+    return True
+
+def scrobbleReset(imdb, tmdb=None, tvdb=None, season=None, episode=None, refresh=True,
+                  widgetRefresh=False, clear_local=True):
+    try:
+        if not getPunchPlayCredentialsInfo(): raise PunchPlayError('Please authorize PunchPlay.')
+        if not tmdb: tmdb = _resolve_tmdb('movie' if season is None else 'show', imdb, tvdb)
+        if not tmdb: raise PunchPlayError('Unable to identify title.')
+        result = _resetPlaybackProgress(imdb, tmdb, tvdb, season, episode, False, False, clear_local)
+        if refresh or widgetRefresh: finishProgressRemoval(1, 1)
+        return result
+    except Exception:
+        log_utils.error()
+        if refresh or widgetRefresh: finishProgressRemoval(0, 1)
+        return False
+
+
+def finishProgressRemoval(succeeded, total):
+	failed = total - succeeded
+	message = 'Removed playback progress for %s item(s).' % succeeded
+	if failed: message += ' Failed to remove %s item(s); check the log and PunchPlay authorization.' % failed
+	control.notification(title='PunchPlay', message=message)
+	if succeeded:
+		control.trigger_widget_refresh(force=True)
+		if 'plugin.video.umbrella' in control.infoLabel('Container.PluginName'): control.refresh()
+
 
 
 def get_next_up(upcoming=False):
@@ -1194,7 +1220,8 @@ def manager(name, imdb=None, tvdb=None, tmdb=None, season=None, episode=None,
             return
         source = tmdb or _resolve_tmdb(kind, imdb, tvdb)
         if action == 'resume':
-            scrobbleReset(imdb, source, tvdb, season, episode, False)
+            scrobbleReset(imdb, source, tvdb, season, episode, refresh=refresh, widgetRefresh=True)
+            return
         elif action.startswith('watchlist_'):
             _watchlist(source, kind, action.endswith('remove'))
             _notify('%s %s PunchPlay Watchlist' % (name, 'removed from' if action.endswith('remove') else 'added to'))

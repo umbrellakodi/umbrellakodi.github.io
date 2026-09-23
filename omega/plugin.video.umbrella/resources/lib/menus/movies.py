@@ -2560,11 +2560,11 @@ class Movies:
 			selected_items = window.run()
 			del window
 			if selected_items:
+				succeeded = 0
 				for imdb in selected_items:
 					item = next((i for i in list if i.get('imdb') == imdb), {})
-					floppy.scrobbleReset(imdb=imdb, tmdb=item.get('tmdb', ''), refresh=False)
-				control.trigger_widget_refresh()
-				if 'plugin.video.umbrella' in control.infoLabel('Container.PluginName'): control.refresh()
+					succeeded += bool(floppy.removePlaybackProgress(imdb=imdb, tmdb=item.get('tmdb', '')))
+				floppy.finishProgressRemoval(succeeded, len(selected_items))
 		except:
 			from resources.lib.modules import log_utils
 			log_utils.error()
@@ -2642,11 +2642,11 @@ class Movies:
 			selected_items = window.run()
 			del window
 			if selected_items:
+				succeeded = 0
 				for imdb in selected_items:
 					item = next((i for i in list if i.get('imdb') == imdb), {})
-					scrob.scrobbleReset(imdb=imdb, tmdb=item.get('tmdb', ''), refresh=False)
-				control.trigger_widget_refresh()
-				if 'plugin.video.umbrella' in control.infoLabel('Container.PluginName'): control.refresh()
+					succeeded += bool(scrob.scrobbleReset(imdb=imdb, tmdb=item.get('tmdb', ''), refresh=False))
+				scrob.finishProgressRemoval(succeeded, len(selected_items))
 		except:
 			from resources.lib.modules import log_utils
 			log_utils.error()
@@ -2662,11 +2662,11 @@ class Movies:
 			selected_items = window.run()
 			del window
 			if selected_items:
+				succeeded = 0
 				for imdb in selected_items:
 					item = next((i for i in list if i.get('imdb') == imdb), {})
-					punchplay.scrobbleReset(imdb=imdb, tmdb=item.get('tmdb', ''), refresh=False)
-				control.trigger_widget_refresh()
-				if 'plugin.video.umbrella' in control.infoLabel('Container.PluginName'): control.refresh()
+					succeeded += bool(punchplay.scrobbleReset(imdb=imdb, tmdb=item.get('tmdb', ''), refresh=False))
+				punchplay.finishProgressRemoval(succeeded, len(selected_items))
 		except:
 			from resources.lib.modules import log_utils
 			log_utils.error()

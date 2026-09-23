@@ -392,11 +392,11 @@ class Episodes:
 			selected_items = window.run()
 			del window
 			if selected_items:
+				succeeded = 0
 				for i in selected_items:
 					item = next((x for x in list if x.get('imdb') == i.get('imdb') and str(x.get('season')) == str(i.get('season')) and str(x.get('episode')) == str(i.get('episode'))), {})
-					floppy.scrobbleReset(imdb=i.get('imdb', ''), tmdb=item.get('tmdb', ''), tvdb=i.get('tvdb', ''), season=i.get('season'), episode=i.get('episode'), refresh=False)
-				control.trigger_widget_refresh()
-				if 'plugin.video.umbrella' in control.infoLabel('Container.PluginName'): control.refresh()
+					succeeded += bool(floppy.removePlaybackProgress(imdb=i.get('imdb', ''), tmdb=item.get('tmdb', ''), tvdb=i.get('tvdb', ''), season=i.get('season'), episode=i.get('episode')))
+				floppy.finishProgressRemoval(succeeded, len(selected_items))
 		except:
 			from resources.lib.modules import log_utils
 			log_utils.error()
@@ -540,10 +540,10 @@ class Episodes:
 			selected_items = window.run()
 			del window
 			if selected_items:
+				succeeded = 0
 				for i in selected_items:
-					scrob.scrobbleReset(imdb=i.get('imdb', ''), tvdb=i.get('tvdb', ''), season=i.get('season'), episode=i.get('episode'), refresh=False)
-				control.trigger_widget_refresh()
-				if 'plugin.video.umbrella' in control.infoLabel('Container.PluginName'): control.refresh()
+					succeeded += bool(scrob.scrobbleReset(imdb=i.get('imdb', ''), tvdb=i.get('tvdb', ''), season=i.get('season'), episode=i.get('episode'), refresh=False))
+				scrob.finishProgressRemoval(succeeded, len(selected_items))
 		except:
 			from resources.lib.modules import log_utils
 			log_utils.error()
@@ -559,10 +559,10 @@ class Episodes:
 			selected_items = window.run()
 			del window
 			if selected_items:
+				succeeded = 0
 				for i in selected_items:
-					punchplay.scrobbleReset(imdb=i.get('imdb', ''), tmdb=i.get('tmdb', ''), tvdb=i.get('tvdb', ''), season=i.get('season'), episode=i.get('episode'), refresh=False)
-				control.trigger_widget_refresh()
-				if 'plugin.video.umbrella' in control.infoLabel('Container.PluginName'): control.refresh()
+					succeeded += bool(punchplay.scrobbleReset(imdb=i.get('imdb', ''), tmdb=i.get('tmdb', ''), tvdb=i.get('tvdb', ''), season=i.get('season'), episode=i.get('episode'), refresh=False))
+				punchplay.finishProgressRemoval(succeeded, len(selected_items))
 		except:
 			from resources.lib.modules import log_utils
 			log_utils.error()

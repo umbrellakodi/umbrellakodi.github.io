@@ -1,2 +1,3 @@
-[B]Update - v6.7.706 - Sept 22nd, 2026 [/B]
---[Fix] Avoid an extra post-playback refresh when Kodi is already reloading MDBList Progress Episodes.
+[B]Update - v6.7.707 - Sept 22nd, 2026 [/B]
+--[Fix] Clear remote Scrob playback progress and report Scrob/PunchPlay unfinished-manager removal failures.
+--[Fix] Floppy unfinished managers and Clear Scrobble Progress now remove remote playback progress and report failed removals.
