@@ -515,6 +515,9 @@ class Navigator:
 	def anime(self, lite=False, folderName=''):
 		self.addDirectoryItem(32001, 'anime_Movies&url=anime&folderName=%s' % quote_plus(getLS(32001)), 'movies.png', 'DefaultMovies.png')
 		self.addDirectoryItem(32002, 'anime_TVshows&url=anime&folderName=%s' % quote_plus(getLS(32002)), 'tvshows.png', 'DefaultTVShows.png')
+		for category, label in [('trending', 'Trending'), ('popular', 'Popular'), ('top_rated', 'Top Rated'), ('now_playing', 'Now Playing'), ('upcoming', 'Upcoming')]:
+			name = label + ' (PunchPlay)' if self.indexLabels else label
+			self.addDirectoryItem(name, 'punchplay_catalog&media_type=anime&category=%s&folderName=%s' % (category, quote_plus(name)), 'punchplay.png', 'punchplay.png')
 		if self.useContainerTitles: control.setContainerName(folderName)
 		self.endDirectory()
 

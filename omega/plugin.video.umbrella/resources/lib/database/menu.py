@@ -71,7 +71,11 @@ _MOVIES_DEFAULTS = [
 	('mv_fav_movies',          '40465', 'getFavouritesMovies&url=favourites_movies',          'movies.png',      'movies.png',        1, 1, 1, 36, 0, 'favorite_movie', 0, None),
 	('mv_person_search',       '33044', 'moviePerson',                                        'imdb.png',        'people-search.png', 0, 1, 1, 37, 0, 'not_lite',       0, None),
 	('mv_movie_search',        '33042', 'movieSearch',                                        'trakt.png',       'search.png',        1, 1, 1, 38, 0, 'not_lite',       0, None),
-	('mv_punchplay_catalog', 'PunchPlay Catalog', 'punchplay_catalog_menu', 'punchplay.png', 'punchplay.png', 1, 1, 1, 39, 0, None, 0, None),
+	('mv_punchplay_trending', 'Trending (PunchPlay)', 'punchplay_catalog&media_type=movie&category=trending', 'punchplay.png', 'trending.png', 1, 1, 1, 12, 0, None, 0, '32442'),
+	('mv_punchplay_popular', 'Popular (PunchPlay)', 'punchplay_catalog&media_type=movie&category=popular', 'punchplay.png', 'most-popular.png', 1, 1, 1, 7, 0, None, 0, '32430'),
+	('mv_punchplay_top_rated', 'Top Rated (PunchPlay)', 'punchplay_catalog&media_type=movie&category=top_rated', 'punchplay.png', 'most-voted.png', 1, 1, 1, 11, 0, None, 0, '32440'),
+	('mv_punchplay_now_playing', 'Now Playing (PunchPlay)', 'punchplay_catalog&media_type=movie&category=now_playing', 'punchplay.png', 'in-theaters.png', 1, 1, 1, 0, 0, None, 0, '32422'),
+	('mv_punchplay_upcoming', 'Upcoming (PunchPlay)', 'punchplay_catalog&media_type=movie&category=upcoming', 'punchplay.png', 'in-theaters.png', 1, 1, 1, 2, 0, None, 0, '32426'),
 ]
 
 _TVSHOWS_DEFAULTS = [
@@ -106,7 +110,11 @@ _TVSHOWS_DEFAULTS = [
 	('tv_fav_tvshows',        '40466', 'getFavouritesTVShows&url=favourites_tvshows','tvshows.png','tvshows.png',    1, 1, 1, 28, 0, 'favorite_tvshows', 0, None),
 	('tv_person_search',      '33045', 'tvPerson',                                'imdb.png',    'people-search.png',0, 1, 1, 29, 0, 'not_lite',        0, None),
 	('tv_search',             '33043', 'tvSearch',                                'trakt.png',   'search.png',       1, 1, 1, 30, 0, 'not_lite',        0, None),
-	('tv_punchplay_catalog', 'PunchPlay Catalog', 'punchplay_catalog_menu', 'punchplay.png', 'punchplay.png', 1, 1, 1, 31, 0, None, 0, None),
+	('tv_punchplay_trending', 'Trending (PunchPlay)', 'punchplay_catalog&media_type=show&category=trending', 'punchplay.png', 'trending.png', 1, 1, 1, 4, 0, None, 0, '32442'),
+	('tv_punchplay_popular', 'Popular (PunchPlay)', 'punchplay_catalog&media_type=show&category=popular', 'punchplay.png', 'most-popular.png', 1, 1, 1, 1, 0, None, 0, '32430'),
+	('tv_punchplay_top_rated', 'Top Rated (PunchPlay)', 'punchplay_catalog&media_type=show&category=top_rated', 'punchplay.png', 'most-voted.png', 1, 1, 1, 3, 0, None, 0, '32440'),
+	('tv_punchplay_now_playing', 'Now Playing (PunchPlay)', 'punchplay_catalog&media_type=show&category=now_playing', 'punchplay.png', 'in-theaters.png', 1, 1, 1, 18, 0, None, 0, '32422'),
+	('tv_punchplay_upcoming', 'Upcoming (PunchPlay)', 'punchplay_catalog&media_type=show&category=upcoming', 'punchplay.png', 'in-theaters.png', 1, 1, 1, 20, 0, None, 0, '32426'),
 ]
 
 _MYMOVIES_DEFAULTS = [
@@ -366,7 +374,7 @@ _defaults_version_file = control.joinPath(control.dataPath, 'menu_defaults.v')
 # regardless of addon version (e.g. to fix a migration bug) — the on-disk marker below
 # is keyed on addonVersion+this, not addonVersion alone, so incrementing it forces one
 # more sync pass even for users already marked up to date on the current addon version.
-_MENU_SCHEMA_REVISION = '15'
+_MENU_SCHEMA_REVISION = '16'
 
 
 def _read_synced_version():
@@ -428,6 +436,8 @@ def _migrate_schema(dbcon):
 
 
 def _sync_defaults(dbcon):
+	# Replace the old public catalog folders without touching user-created shortcuts.
+	dbcon.execute("DELETE FROM menu_items WHERE is_custom=0 AND ((menu_name='movies' AND item_id='mv_punchplay_catalog') OR (menu_name='tvshows' AND item_id='tv_punchplay_catalog'))")
 	# Full defaults resync.
 	_field_sync = {
 		row[0]: (row[1], row[3], row[4], row[12])
@@ -556,8 +566,16 @@ def _sync_defaults(dbcon):
 	dbcon.commit()
 	# Insert items added after initial release for existing users
 	_NEW_DEFAULT_ITEMS = [
-		('movies', 'mv_punchplay_catalog', 'PunchPlay Catalog', 'punchplay_catalog_menu', 'punchplay.png', 'punchplay.png', 1, 1, 1, 39, 0, None, 0, None),
-		('tvshows', 'tv_punchplay_catalog', 'PunchPlay Catalog', 'punchplay_catalog_menu', 'punchplay.png', 'punchplay.png', 1, 1, 1, 31, 0, None, 0, None),
+		('movies', 'mv_punchplay_trending', 'Trending (PunchPlay)', 'punchplay_catalog&media_type=movie&category=trending', 'punchplay.png', 'trending.png', 1, 1, 1, 12, 0, None, 0, '32442'),
+		('movies', 'mv_punchplay_popular', 'Popular (PunchPlay)', 'punchplay_catalog&media_type=movie&category=popular', 'punchplay.png', 'most-popular.png', 1, 1, 1, 7, 0, None, 0, '32430'),
+		('movies', 'mv_punchplay_top_rated', 'Top Rated (PunchPlay)', 'punchplay_catalog&media_type=movie&category=top_rated', 'punchplay.png', 'most-voted.png', 1, 1, 1, 11, 0, None, 0, '32440'),
+		('movies', 'mv_punchplay_now_playing', 'Now Playing (PunchPlay)', 'punchplay_catalog&media_type=movie&category=now_playing', 'punchplay.png', 'in-theaters.png', 1, 1, 1, 0, 0, None, 0, '32422'),
+		('movies', 'mv_punchplay_upcoming', 'Upcoming (PunchPlay)', 'punchplay_catalog&media_type=movie&category=upcoming', 'punchplay.png', 'in-theaters.png', 1, 1, 1, 2, 0, None, 0, '32426'),
+		('tvshows', 'tv_punchplay_trending', 'Trending (PunchPlay)', 'punchplay_catalog&media_type=show&category=trending', 'punchplay.png', 'trending.png', 1, 1, 1, 4, 0, None, 0, '32442'),
+		('tvshows', 'tv_punchplay_popular', 'Popular (PunchPlay)', 'punchplay_catalog&media_type=show&category=popular', 'punchplay.png', 'most-popular.png', 1, 1, 1, 1, 0, None, 0, '32430'),
+		('tvshows', 'tv_punchplay_top_rated', 'Top Rated (PunchPlay)', 'punchplay_catalog&media_type=show&category=top_rated', 'punchplay.png', 'most-voted.png', 1, 1, 1, 3, 0, None, 0, '32440'),
+		('tvshows', 'tv_punchplay_now_playing', 'Now Playing (PunchPlay)', 'punchplay_catalog&media_type=show&category=now_playing', 'punchplay.png', 'in-theaters.png', 1, 1, 1, 18, 0, None, 0, '32422'),
+		('tvshows', 'tv_punchplay_upcoming', 'Upcoming (PunchPlay)', 'punchplay_catalog&media_type=show&category=upcoming', 'punchplay.png', 'in-theaters.png', 1, 1, 1, 20, 0, None, 0, '32426'),
 		('mymovies_punchplay', 'mymv_punchplay_calendar', 'My Calendar (PunchPlay)', 'punchplay_calendar_menu&media_type=movie', 'punchplay.png', 'calendar.png', 1, 1, 1, 16, 0, 'punchplay_credentials', 0, None),
 		('mytvshows_punchplay', 'mytv_punchplay_calendar', 'My Calendar (PunchPlay)', 'punchplay_calendar_menu&media_type=episode', 'punchplay.png', 'calendar.png', 1, 1, 1, 16, 0, 'punchplay_credentials', 0, None),
 		('mymovies', 'mymv_mdblist_folder',  'MDBList',  'mymovies_mdblistNavigator',  'mdblist.png',  'mdblist.png',  1, 1, 1, 2, 0, 'mdblist_token',        0, None),
