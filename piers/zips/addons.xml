@@ -276,7 +276,7 @@
 		</news>
 	</extension>
 
-</addon><addon id="script.nimbus.helper" name="Nimbus Helper" version="0.0.52" provider-name="Ivar Brandt">
+</addon><addon id="script.nimbus.helper" name="Nimbus Helper" version="0.0.53" provider-name="Ivar Brandt">
     <requires>
         <import addon="xbmc.python" version="3.0.0" />
         <import addon="script.module.requests" version="2.19.1" />
