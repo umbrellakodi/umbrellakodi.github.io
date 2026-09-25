@@ -1,3 +1,6 @@
+[B]Update - v6.7.710 - Sept 25th, 2026 [/B]
+--[Fix] Changes made for when scrobble is set to local to allow for items to still be marked as watched with online services.
+
 [B]Update - v6.7.709 - Sept 24th, 2026 [/B]
 --[Fix] Sorting change to stop rounding on sizes.
 
