@@ -340,20 +340,15 @@ def services_syncs():
 			current_time = time.time()
 			if (current_time - last_simkl_sync) >= (60 * simkl_syncInterval):
 				activities = simkl.get_request('/sync/activities')
-				activities = json.dumps(activities)
-				from resources.lib.modules import log_utils
-				log_utils.log('SimKl Sync Service is running.', 1)
-				if not control.monitor.abortRequested():
-					if getSetting('bookmarks') == 'true' and getSetting('scrobble.source') == '2':
-						simkl.sync_playbackProgress(forced=True)
-					if getSetting('bookmarks') == 'true' and getSetting('scrobble.source') == '2':
-						simkl.sync_playbackProgress(forced=True)
-					simkl.sync_watchedProgress(activities)
-				if not control.monitor.abortRequested():
-					if getSetting('indicators.alt') == '2':
-						simkl.sync_watched(activities) #
-					simkl.sync_all_watchlists(activities)
 				last_simkl_sync = current_time
+				if isinstance(activities, dict) and not control.monitor.abortRequested():
+					if getSetting('bookmarks') == 'true' and getSetting('scrobble.source') == '2':
+						simkl.sync_playbackProgress(activities)
+					simkl.sync_watchedProgress(activities)
+					if getSetting('indicators.alt') == '2' or getSetting('simkl.markwatched') == 'true':
+						simkl.sync_watched(activities)
+					simkl.sync_all_watchlists(activities)
+					simkl.sync_pending_seasons()
 		if control.monitor.abortRequested(): break
 		if internets and not video_playing and mdblist.getMDBListCredentialsInfo():
 			current_time = time.time()

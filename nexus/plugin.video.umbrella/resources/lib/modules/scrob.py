@@ -423,6 +423,9 @@ def _now_iso():
 #### Mark watched — API-key-only, via a Kodi scrobble webhook payload ####
 
 def _webhook_event(method, media_type, imdb='', tmdb='', tvdb='', title='', tvshowtitle='', year='0', season=None, episode=None, time_seconds=0, total_seconds=0, end=None):
+	if tmdb and media_type != 'movie':
+		from resources.lib.modules.episode_mapping import supported
+		if supported(tmdb): imdb, tvdb = '', ''
 	try:
 		unique_id = {}
 		if tmdb: unique_id['tmdb'] = str(tmdb)
@@ -472,9 +475,9 @@ def markMovieAsWatched(imdb, tmdb=''):
 		log_utils.error()
 		return False
 
-def markEpisodeAsWatched(imdb, tvdb, season, episode):
+def markEpisodeAsWatched(imdb, tvdb, season, episode, tmdb=''):
 	try:
-		tmdb = _resolve_tmdb('tv', imdb=imdb, tvdb=tvdb)
+		tmdb = str(tmdb) if tmdb else _resolve_tmdb('tv', imdb=imdb, tvdb=tvdb)
 		if not tmdb: return False
 		season, episode = int('%01d' % int(season)), int('%01d' % int(episode))
 		success = _webhook_mark_watched('episode', imdb=imdb, tmdb=tmdb, tvdb=tvdb, season=season, episode=episode)
@@ -531,9 +534,9 @@ def markTVShowAsWatched(imdb, tvdb):
 		log_utils.error()
 		return False
 
-def markSeasonAsWatched(imdb, tvdb, season):
+def markSeasonAsWatched(imdb, tvdb, season, tmdb=''):
 	try:
-		tmdb = _resolve_tmdb('tv', imdb=imdb, tvdb=tvdb)
+		tmdb = str(tmdb) if tmdb else _resolve_tmdb('tv', imdb=imdb, tvdb=tvdb)
 		if not tmdb: return False
 		season = int('%01d' % int(season))
 		if getScrobWriteCredentialsInfo():
@@ -604,12 +607,12 @@ def markMovieAsNotWatched(imdb, tmdb=''):
 		log_utils.error()
 		return False
 
-def markEpisodeAsNotWatched(imdb, tvdb, season, episode):
+def markEpisodeAsNotWatched(imdb, tvdb, season, episode, tmdb=''):
 	try:
 		if not getScrobWriteCredentialsInfo():
 			log_utils.log('SCROB: unwatch requires a Scrob username/password (JWT) — API key alone cannot unwatch', level=log_utils.LOGWARNING)
 			return False
-		tmdb = _resolve_tmdb('tv', imdb=imdb, tvdb=tvdb)
+		tmdb = str(tmdb) if tmdb else _resolve_tmdb('tv', imdb=imdb, tvdb=tvdb)
 		if not tmdb: return False
 		season, episode = int('%01d' % int(season)), int('%01d' % int(episode))
 		response = getScrob('/history/item?tmdb_id=%s&media_type=episode' % tmdb, method='DELETE', auth='jwt', silent=True)
@@ -643,12 +646,12 @@ def markTVShowAsNotWatched(imdb, tvdb):
 		log_utils.error()
 		return False
 
-def markSeasonAsNotWatched(imdb, tvdb, season):
+def markSeasonAsNotWatched(imdb, tvdb, season, tmdb=''):
 	try:
 		if not getScrobWriteCredentialsInfo():
 			log_utils.log('SCROB: unwatch requires a Scrob username/password (JWT) — API key alone cannot unwatch', level=log_utils.LOGWARNING)
 			return False
-		tmdb = _resolve_tmdb('tv', imdb=imdb, tvdb=tvdb)
+		tmdb = str(tmdb) if tmdb else _resolve_tmdb('tv', imdb=imdb, tvdb=tvdb)
 		if not tmdb: return False
 		season = int('%01d' % int(season))
 		response = getScrob('/history/season?series_tmdb_id=%s&season_number=%s' % (tmdb, season), method='DELETE', auth='jwt', silent=True)
@@ -664,7 +667,11 @@ def markSeasonAsNotWatched(imdb, tvdb, season):
 		return False
 
 
-def watch(content_type, name, imdb=None, tvdb=None, season=None, episode=None, refresh=True):
+def watch(content_type, name, imdb=None, tvdb=None, season=None, episode=None, refresh=True, tmdb=''):
+	if content_type != 'movie' and tmdb:
+		from resources.lib.modules import episode_mapping, anthology_tracking
+		if episode_mapping.supported(tmdb):
+			return anthology_tracking.manager_write('scrob', tmdb, season, episode, False, refresh)
 	control.busy()
 	success = False
 	if content_type == 'movie': success = markMovieAsWatched(imdb)
@@ -680,7 +687,11 @@ def watch(content_type, name, imdb=None, tvdb=None, season=None, episode=None, r
 		if success is True: control.notification(title='Scrob', message='%s Marked as Watched on Scrob' % name)
 		else: control.notification(title='Scrob', message='%s Failed to Mark as Watched on Scrob' % name)
 
-def unwatch(content_type, name, imdb=None, tvdb=None, season=None, episode=None, refresh=True):
+def unwatch(content_type, name, imdb=None, tvdb=None, season=None, episode=None, refresh=True, tmdb=''):
+	if content_type != 'movie' and tmdb:
+		from resources.lib.modules import episode_mapping, anthology_tracking
+		if episode_mapping.supported(tmdb):
+			return anthology_tracking.manager_write('scrob', tmdb, season, episode, True, refresh)
 	control.busy()
 	has_write = getScrobWriteCredentialsInfo()
 	success = False
@@ -1456,9 +1467,9 @@ def manager(name, imdb=None, tvdb=None, tmdb=None, season=None, episode=None, re
 		if select == -1: return
 		action_key = items[select][1]
 		if action_key == 'watch':
-			watch(content_type, name, imdb=imdb, tvdb=tvdb, season=season, episode=episode, refresh=refresh)
+			watch(content_type, name, imdb=imdb, tmdb=tmdb, tvdb=tvdb, season=season, episode=episode, refresh=refresh)
 		elif action_key == 'unwatch':
-			unwatch(content_type, name, imdb=imdb, tvdb=tvdb, season=season, episode=episode, refresh=refresh)
+			unwatch(content_type, name, imdb=imdb, tmdb=tmdb, tvdb=tvdb, season=season, episode=episode, refresh=refresh)
 		elif action_key == 'scrobbleReset':
 			scrobbleReset(imdb=imdb, tmdb=tmdb, tvdb=tvdb, season=season, episode=episode, refresh=True)
 		elif action_key in ('drop', 'undrop'):

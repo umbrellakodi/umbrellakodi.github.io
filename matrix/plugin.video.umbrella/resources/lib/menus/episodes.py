@@ -186,7 +186,7 @@ class Episodes:
 					from resources.lib.modules.playcount import getTVShowIndicators, getEpisodeOverlay
 					_progress_ind = getTVShowIndicators()
 					if _progress_ind:
-						while self.list and getEpisodeOverlay(_progress_ind, self.list[0].get('imdb', ''), str(self.list[0].get('tvdb', '')), self.list[0].get('season', 0), self.list[0].get('episode', 0)) == '5':
+						while self.list and getEpisodeOverlay(_progress_ind, self.list[0].get('imdb', ''), str(self.list[0].get('tvdb', '')), self.list[0].get('season', 0), self.list[0].get('episode', 0), tmdb=self.list[0].get('tmdb', '')) == '5':
 							self.list = self.list[1:]
 				except: pass
 				if self.trakt_progressFlatten or self.mdblist_progressFlatten:
@@ -882,7 +882,8 @@ class Episodes:
 					self.list = cache.get(self.simkl_progress_list, 0, api_url, self.simkl_directProgressScrape)
 				else: self.list = cache.get(self.simkl_progress_list, self.simkl_hours, api_url, self.simkl_directProgressScrape)
 				# Rebuild progress rows cached before air-schedule enrichment.
-				if self.list and any(not i.get('airinfo_enriched') for i in self.list):
+				from resources.lib.modules.episode_mapping import combined
+				if self.list and any(not i.get('airinfo_enriched') or (combined(i) and not i.get('anthology_mapping')) for i in self.list):
 					cache.remove(self.simkl_progress_list, api_url, self.simkl_directProgressScrape)
 					self.list = []
 					self.list = cache.get(self.simkl_progress_list, 0, api_url, self.simkl_directProgressScrape)
@@ -1277,9 +1278,9 @@ class Episodes:
 		try:
 			from resources.lib.database import watchedcache as wc
 			show_ids = wc.get_in_progress_show_imdb_ids()
-			if not show_ids: return self.list
 			items = []
 			for imdb_id, last_played in show_ids:
+				if not imdb_id: continue
 				try:
 					watched_eps = wc.get_watched_episode_ids(imdb_id)
 					if not watched_eps: continue
@@ -1292,14 +1293,21 @@ class Episodes:
 					watched_set = {(ep[0], ep[1]) for ep in watched_eps}
 					items.append({'imdb': imdb_id, 'watched_set': watched_set, 'lastplayed': lp})
 				except: pass
+			from resources.lib.modules.episode_mapping import MONSTER
+			for story in MONSTER:
+				rows = wc.get_episodes_watched('episode', '', story)
+				watched_set = {(int(r['season']), int(r['episode'])) for r in rows if int(r['overlay']) == 5}
+				if watched_set: items.append({'imdb': '', 'tmdb': story, 'watched_set': watched_set, 'lastplayed': ''})
 			if not items: return self.list
 
 			def items_list(i):
 				imdb_id = i.get('imdb', '')
 				watched_set = i.get('watched_set', set())
 				try:
-					tmdb_result = cache.get(tmdb_indexer().IdLookup, 96, imdb_id, '')
-					tmdb_id = str(tmdb_result.get('id')) if tmdb_result else ''
+					tmdb_id = i.get('tmdb', '')
+					if not tmdb_id:
+						tmdb_result = cache.get(tmdb_indexer().IdLookup, 96, imdb_id, '')
+						tmdb_id = str(tmdb_result.get('id')) if tmdb_result else ''
 					if not tmdb_id: return
 					showSeasons = cache.get(tmdb_indexer().get_showSeasons_meta, 96, tmdb_id)
 					if not showSeasons: return
@@ -1419,11 +1427,12 @@ class Episodes:
 			if not episodes: return self.list
 			shows = {}
 			for (show_imdb, show_tmdb, show_tvdb, season, episode) in episodes:
-				shows.setdefault(show_imdb, {'imdb': show_imdb, 'tmdb': show_tmdb, 'tvdb': show_tvdb, 'watched_set': set()})
-				shows[show_imdb]['watched_set'].add((int(season), int(episode)))
+				shows.setdefault(('tmdb', str(show_tmdb)) if show_tmdb else ('imdb', show_imdb), {'imdb': show_imdb, 'tmdb': show_tmdb, 'tvdb': show_tvdb, 'watched_set': set()})
+				shows[('tmdb', str(show_tmdb)) if show_tmdb else ('imdb', show_imdb)]['watched_set'].add((int(season), int(episode)))
 			try:
 				for (show_imdb, show_tmdb, show_tvdb, last_watched_at) in customtraktsync.get_watched_shows():
-					if show_imdb in shows: shows[show_imdb]['lastplayed'] = last_watched_at
+					key = ('tmdb', str(show_tmdb)) if show_tmdb else ('imdb', show_imdb)
+					if key in shows: shows[key]['lastplayed'] = last_watched_at
 			except: pass
 			items = list(shows.values())
 			if not items: return self.list
@@ -2767,8 +2776,13 @@ class Episodes:
 		if not result: return
 		items = []
 		# progress_showunaired = getSetting('trakt.progress.showunaired') == 'true'
+		from resources.lib.modules.episode_mapping import progress_stories
 		for item in result:
 			try:
+				mapped = progress_stories(item)
+				if mapped is not None:
+					items.extend(mapped)
+					continue
 				values = {} ; num_1 = 0
 				#season_sort = sorted(item['seasons'][:], key=lambda k: k['number'], reverse=False) # simkl sometimes places season0 at end and episodes out of order. So we sort it to be sure.
 				season_sort = sorted(item.get('seasons', []), key=lambda k: k.get('number', 0), reverse=False)
@@ -3196,11 +3210,11 @@ class Episodes:
 ####-Context Menu and Overlays-####
 				cm = []
 				try:
-					watched = getEpisodeOverlay(indicators, imdb, tvdb, season, episode) == '5'
+					watched = getEpisodeOverlay(indicators, imdb, tvdb, season, episode, tmdb=tmdb) == '5'
 					if self.traktCredentials:
-						cm.append((traktManagerMenu, 'RunPlugin(%s?action=tools_traktManager&name=%s&imdb=%s&tvdb=%s&season=%s&episode=%s&watched=%s&unfinished=%s)' % (sysaddon, systvshowtitle, imdb, tvdb, season, episode, watched, unfinished)))
+						cm.append((traktManagerMenu, 'RunPlugin(%s?action=tools_traktManager&name=%s&imdb=%s&tmdb=%s&tvdb=%s&season=%s&episode=%s&watched=%s&unfinished=%s)' % (sysaddon, systvshowtitle, imdb, tmdb, tvdb, season, episode, watched, unfinished)))
 					if self.simklCredentials:
-						cm.append((simklManagerMenu, 'RunPlugin(%s?action=tools_simklManager&name=%s&imdb=%s&tvdb=%s&season=%s&episode=%s&watched=%s)' % (sysaddon, systvshowtitle, imdb, tvdb, season, episode, watched)))
+						cm.append((simklManagerMenu, 'RunPlugin(%s?action=tools_simklManager&name=%s&imdb=%s&tmdb=%s&tvdb=%s&season=%s&episode=%s&watched=%s)' % (sysaddon, systvshowtitle, imdb, tmdb, tvdb, season, episode, watched)))
 					if self.mdblist_authed:
 						cm.append((mdblistManagerMenu, 'RunPlugin(%s?action=tools_mdbWatchlist&name=%s&imdb=%s&tvdb=%s&tmdb=%s&season=%s&episode=%s&watched=%s)' % (sysaddon, systvshowtitle, imdb, tvdb, tmdb, season, episode, watched)))
 					if self.customCredentials:
@@ -3213,10 +3227,10 @@ class Episodes:
 						cm.append((punchplayManagerMenu, 'RunPlugin(%s?action=tools_punchplayManager&name=%s&imdb=%s&tvdb=%s&tmdb=%s&season=%s&episode=%s&watched=%s&unfinished=%s)' % (sysaddon, systvshowtitle, imdb, tvdb, tmdb, season, episode, watched, unfinished)))
 					if watched:
 						meta.update({'playcount': 1, 'overlay': 5})
-						cm.append((unwatchedMenu, 'RunPlugin(%s?action=playcount_Episode&name=%s&imdb=%s&tvdb=%s&season=%s&episode=%s&query=4)' % (sysaddon, systvshowtitle, imdb, tvdb, season, episode)))
+						cm.append((unwatchedMenu, 'RunPlugin(%s?action=playcount_Episode&name=%s&imdb=%s&tmdb=%s&tvdb=%s&season=%s&episode=%s&query=4)' % (sysaddon, systvshowtitle, imdb, tmdb, tvdb, season, episode)))
 					else:
 						meta.update({'playcount': 0, 'overlay': 4})
-						cm.append((watchedMenu, 'RunPlugin(%s?action=playcount_Episode&name=%s&imdb=%s&tvdb=%s&season=%s&episode=%s&query=5)' % (sysaddon, systvshowtitle, imdb, tvdb, season, episode)))
+						cm.append((watchedMenu, 'RunPlugin(%s?action=playcount_Episode&name=%s&imdb=%s&tmdb=%s&tvdb=%s&season=%s&episode=%s&query=5)' % (sysaddon, systvshowtitle, imdb, tmdb, tvdb, season, episode)))
 				except: pass
 				Folderurl = '%s?action=episodes&tvshowtitle=%s&year=%s&imdb=%s&tmdb=%s&tvdb=%s&meta=%s&season=%s&episode=%s&art=%s' % (sysaddon, systvshowtitle, year, imdb, tmdb, tvdb, sysmeta, season, episode, sysart)
 				if traktProgress and is_widget == False:
@@ -3283,7 +3297,7 @@ class Episodes:
 				if isMultiList and multi_unwatchedEnabled:
 					if 'ForceAirEnabled' not in i:
 						try:
-							try: count = getShowCount(getSeasonIndicators(imdb, tvdb, has_next_episode=i.get('has_next_episode', False), tmdb_total_aired=meta.get('total_aired_episodes'))[1], imdb, tvdb) # if indicators and no matching imdb_id in watched items then it returns None and we use TMDb meta to avoid Trakt request
+							try: count = getShowCount(getSeasonIndicators(imdb, tvdb, tmdb=tmdb, has_next_episode=i.get('has_next_episode', False), tmdb_total_aired=meta.get('total_aired_episodes'))[1], imdb, tvdb) # if indicators and no matching imdb_id in watched items then it returns None and we use TMDb meta to avoid Trakt request
 							except: count = None
 							if count:
 								total_aired = int(meta.get('total_aired_episodes') or 0)

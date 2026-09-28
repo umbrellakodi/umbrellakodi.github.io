@@ -26,6 +26,9 @@ def fetch_bookmarks(imdb, tmdb='', tvdb='', season=None, episode=None, ret_all=N
 									studio TEXT, duration TEXT, percent_played TEXT, paused_at TEXT, UNIQUE(resume_id, imdb, tmdb, tvdb, season, episode));''')
 			dbcur.connection.commit()
 			return [] if ret_all else progress
+		from resources.lib.modules import episode_mapping
+		if not ret_all and episode and episode_mapping.supported(tmdb):
+			return episode_mapping.bookmark(dbcur, 'simkl', tmdb, season, episode, ret_type)
 		if ret_all:
 			if ret_type == 'movies':
 				match = dbcur.execute('''SELECT * FROM bookmarks WHERE (tvshowtitle='')''').fetchall()
@@ -103,6 +106,9 @@ def fetch_bookmarks(imdb, tmdb='', tvdb='', season=None, episode=None, ret_all=N
 		except: pass
 		try: dbcon.close()
 		except: pass
+	if isinstance(progress, list) and ret_type != 'movies':
+		from resources.lib.modules.episode_mapping import display_episode
+		progress = [display_episode(row) for row in progress]
 	return progress
 
 def insert_bookmarks(items):
@@ -771,6 +777,52 @@ def set_sync_time(service_key):
 		try: dbcon.close()
 		except: pass
 
+def queue_season_refresh(imdb, tvdb):
+	if not imdb and not tvdb: return
+	con = get_connection()
+	try:
+		con.execute('CREATE TABLE IF NOT EXISTS season_refresh (imdb TEXT, tvdb TEXT, refreshed INTEGER DEFAULT 0, pending INTEGER DEFAULT 1, PRIMARY KEY (imdb, tvdb))')
+		con.execute('INSERT OR IGNORE INTO season_refresh (imdb, tvdb) VALUES (?, ?)', (imdb, str(tvdb)))
+		# Persistent metadata disagreement must not re-request the same show on every render.
+		con.execute('UPDATE season_refresh SET pending=1 WHERE imdb=? AND tvdb=? AND refreshed<?', (imdb, str(tvdb), int(time()) - 86400))
+		con.commit()
+	finally:
+		con.close()
+
+
+def pending_season_refreshes():
+	con = get_connection()
+	try:
+		if not con.execute("SELECT 1 FROM sqlite_master WHERE name='season_refresh'").fetchone(): return []
+		return [{'imdb': row[0], 'tvdb': row[1]} for row in con.execute('SELECT imdb,tvdb FROM season_refresh WHERE pending=1 LIMIT 100')]
+	finally:
+		con.close()
+
+
+def complete_season_refreshes(batch):
+	con = get_connection()
+	try:
+		if not con.execute("SELECT 1 FROM sqlite_master WHERE name='season_refresh'").fetchone(): return
+		con.executemany('UPDATE season_refresh SET refreshed=?,pending=0 WHERE imdb=? AND tvdb=?',
+			[(int(time()), show.get('imdb') or '', str(show.get('tvdb') or '')) for show in batch])
+		con.commit()
+	finally:
+		con.close()
+
+
+def clear_account():
+	"""Discard all account-specific caches on a successful sign-in or sign-out."""
+	dbcon = get_connection()
+	try:
+		for table in ('movies_plantowatch', 'shows_plantowatch', 'shows_watching',
+			'shows_hold', 'movies_dropped', 'shows_dropped', 'movies_completed',
+			'shows_completed', 'watched', 'bookmarks', 'next_episodes', 'service', 'season_refresh'):
+			dbcon.execute('DROP TABLE IF EXISTS %s' % table)
+		dbcon.commit()
+	finally:
+		dbcon.close()
+
+
 def delete_tables(tables):
 	cleared = False
 	try:
@@ -906,18 +958,22 @@ def get(function, duration, *args, simkl_id=None, data=None):
 			try: result = literal_eval(cache_result['value'])
 			except: result = None
 			if is_cache_valid(cache_result['date'], duration): return result
-		if simkl_id: fresh_result = repr(function(*args, simkl_id=simkl_id)) # may need a try-except block for server timeouts
-		else: fresh_result = repr(function(*args))
+		kwargs = {}
+		if simkl_id: kwargs['simkl_id'] = simkl_id
+		# Reuse the batch response without including it in the persistent cache key.
+		if data is not None: kwargs['data'] = data
+		fresh_result = repr(function(*args, **kwargs))
 
 		if cache_result and (result and len(result) == 1) and fresh_result == '[]': # fix for syncSeason mark unwatched season when it's the last item remaining
-			if result[0].isdigit():
+			if isinstance(result[0], str) and result[0].isdigit():
 				remove(function, *args)
 				return []
 
 		invalid = False
 		try: # Sometimes None is returned as a string instead of None type for "fresh_result"
 			if not fresh_result: invalid = True
-			elif fresh_result == 'None' or fresh_result == '' or fresh_result == '[]' or fresh_result == '{}': invalid = True
+			elif fresh_result in ('None', '', '{}'): invalid = True
+			elif fresh_result == '[]' and getattr(function, '__name__', '') not in ('syncMovies', 'syncTVShows'): invalid = True
 			elif len(fresh_result) == 0: invalid = True
 		except: pass
 

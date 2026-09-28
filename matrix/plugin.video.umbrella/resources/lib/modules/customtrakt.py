@@ -602,7 +602,11 @@ def markEpisodeAsNotWatched(imdb, tvdb, season, episode):
 	except: log_utils.error()
 
 
-def watch(content_type, name, imdb=None, tvdb=None, season=None, episode=None, refresh=True):
+def watch(content_type, name, imdb=None, tvdb=None, season=None, episode=None, refresh=True, tmdb=''):
+	if content_type != 'movie' and tmdb:
+		from resources.lib.modules import episode_mapping, anthology_tracking
+		if episode_mapping.supported(tmdb):
+			return anthology_tracking.manager_write('customtrakt', tmdb, season, episode, False, refresh)
 	control.busy()
 	success = False
 	if content_type == 'movie': success = markMovieAsWatched(imdb)
@@ -618,7 +622,11 @@ def watch(content_type, name, imdb=None, tvdb=None, season=None, episode=None, r
 		if success is True: control.notification(title=getCustomServiceName(), message=getLS(40729) % ('[COLOR %s]%s[/COLOR]' % (getSetting('highlight.color'), name), getCustomServiceName()))
 		else: control.notification(title=getCustomServiceName(), message=getLS(40730) % ('[COLOR %s]%s[/COLOR]' % (getSetting('highlight.color'), name), getCustomServiceName()))
 
-def unwatch(content_type, name, imdb=None, tvdb=None, season=None, episode=None, refresh=True):
+def unwatch(content_type, name, imdb=None, tvdb=None, season=None, episode=None, refresh=True, tmdb=''):
+	if content_type != 'movie' and tmdb:
+		from resources.lib.modules import episode_mapping, anthology_tracking
+		if episode_mapping.supported(tmdb):
+			return anthology_tracking.manager_write('customtrakt', tmdb, season, episode, True, refresh)
 	control.busy()
 	success = False
 	if content_type == 'movie': success = markMovieAsNotWatched(imdb)
@@ -650,7 +658,10 @@ def scrobbleMovie(imdb, tmdb, watched_percent):
 def scrobbleEpisode(imdb, tmdb, tvdb, season, episode, watched_percent):
 	try:
 		season, episode = int('%01d' % int(season)), int('%01d' % int(episode))
-		success = getCustom('/scrobble/pause', {'show': {'ids': {'tvdb': tvdb, 'imdb': imdb}}, 'episode': {'season': season, 'number': episode}, 'progress': watched_percent})
+		post = {'show': {'ids': {'tvdb': tvdb, 'imdb': imdb}}, 'episode': {'season': season, 'number': episode}, 'progress': watched_percent}
+		from resources.lib.modules.episode_mapping import scrobble_payload
+		post = scrobble_payload(post, 'customtrakt', tmdb)
+		success = getCustom('/scrobble/pause', post)
 		if success:
 			control.sleep(1000)
 			sync_playbackProgress(forced=True)
@@ -664,6 +675,8 @@ def scrobbleStart(media_type, title='', tvshowtitle='', year='0', imdb='', tmdb=
 		else:
 			post = {'show': {'title': tvshowtitle or title, 'year': int(year) if year else 0, 'ids': {'tvdb': int(tvdb) if tvdb else None, 'imdb': imdb}},
 					'episode': {'season': int(season) if season else 1, 'number': int(episode) if episode else 1}, 'progress': float(watched_percent)}
+		from resources.lib.modules.episode_mapping import scrobble_payload
+		post = scrobble_payload(post, 'customtrakt', tmdb)
 		getCustom('/scrobble/start', post)
 	except: log_utils.error()
 
@@ -677,7 +690,7 @@ def scrobbleReset(imdb, tmdb=None, tvdb=None, season=None, episode=None, refresh
 		success = getCustom('/sync/playback/%s' % resume_info[1]) is not None
 		control.hide()
 		if success:
-			if clear_local: customtraktsync.delete_bookmark(imdb, tvdb or '', season or '', episode or '')
+			if clear_local: customtraktsync.delete_bookmark(imdb, tvdb or '', season or '', episode or '', tmdb=tmdb)
 			if refresh: control.refresh()
 			if widgetRefresh: control.trigger_widget_refresh()
 	except: log_utils.error()
@@ -729,7 +742,7 @@ def sync_watchedProgress(activities=None, forced=False, progress_callback=None):
 						show = item.get('show', {})
 						show_ids = show.get('ids', {})
 						show_imdb = str(show_ids.get('imdb') or '')
-						if not show_imdb: continue
+						if not show_imdb and not show_ids.get('tmdb'): continue
 						customtraktsync.upsert_watched_episode(show_imdb=show_imdb, show_tmdb=str(show_ids.get('tmdb') or ''), show_tvdb=str(show_ids.get('tvdb') or ''),
 							season=ep.get('season', 0), episode=ep.get('number', 0), last_watched_at=item.get('watched_at', ''))
 				except: pass
@@ -778,10 +791,11 @@ def syncTVShows():
 		if not episodes: return []
 		shows = {}
 		for (show_imdb, show_tmdb, show_tvdb, season, episode) in episodes:
-			if show_imdb not in shows:
-				shows[show_imdb] = {'ids': {'imdb': show_imdb, 'tmdb': show_tmdb, 'tvdb': show_tvdb}, 'by_season': {}}
+			key = ('tmdb', str(show_tmdb)) if show_tmdb else ('imdb', show_imdb)
+			if key not in shows:
+				shows[key] = {'ids': {'imdb': show_imdb, 'tmdb': show_tmdb, 'tvdb': show_tvdb}, 'by_season': {}}
 			s = int(season)
-			shows[show_imdb]['by_season'].setdefault(s, []).append(int(episode))
+			shows[key]['by_season'].setdefault(s, []).append(int(episode))
 		indicators = []
 		for v in shows.values():
 			ep_ranges = {s: _make_episode_ranges(sorted(eps)) for s, eps in v['by_season'].items()}
@@ -1236,9 +1250,9 @@ def manager(name, imdb=None, tvdb=None, tmdb=None, season=None, episode=None, re
 		if select == -1: return
 		action_key = items[select][1]
 		if action_key == 'watch':
-			watch(content_type, name, imdb=imdb, tvdb=tvdb, season=season, episode=episode, refresh=refresh)
+			watch(content_type, name, imdb=imdb, tmdb=tmdb, tvdb=tvdb, season=season, episode=episode, refresh=refresh)
 		elif action_key == 'unwatch':
-			unwatch(content_type, name, imdb=imdb, tvdb=tvdb, season=season, episode=episode, refresh=refresh)
+			unwatch(content_type, name, imdb=imdb, tmdb=tmdb, tvdb=tvdb, season=season, episode=episode, refresh=refresh)
 		elif action_key == 'scrobbleReset':
 			scrobbleReset(imdb=imdb, tmdb=tmdb, tvdb=tvdb, season=season, episode=episode, refresh=True)
 		elif action_key == 'watchlist_add':

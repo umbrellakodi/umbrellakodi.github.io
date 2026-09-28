@@ -637,7 +637,7 @@ class Player(xbmc.Player):
 							homeWindow.setProperty(pname, '5')
 							if self.debuglog:
 								log_utils.log('Sending Episode to be marked as watched. IMDB: %s TVDB: %s Season: %s Episode: %s Title: %s Watch Percentage Used: %s Current Percentage: %s' % (self.imdb, self.tvdb, self.season, self.episode, self.title, self.markwatched_percentage, self.getWatchedPercent()), level=log_utils.LOGDEBUG)
-							self.watched_update_thread = Thread(target=playcount.markEpisodeDuringPlayback, args=(self.imdb, self.tvdb, self.season, self.episode, '5'))
+							self.watched_update_thread = Thread(target=playcount.markEpisodeDuringPlayback, args=(self.imdb, self.tvdb, self.season, self.episode, '5', self.tmdb))
 							self.watched_update_thread.start()
 							self.watched_during_playback = True
 						if self.enable_playnext and not self.play_next_triggered:
@@ -998,7 +998,7 @@ class Player(xbmc.Player):
 				if not self.watched_during_playback:
 					# Watched history is independent of the resume/scrobble source.
 					if self.media_type == 'episode':
-						playcount.markEpisodeDuringPlayback(self.imdb, self.tvdb, self.season, self.episode, '5')
+						playcount.markEpisodeDuringPlayback(self.imdb, self.tvdb, self.season, self.episode, '5', tmdb=self.tmdb)
 					elif self.media_type == 'movie':
 						playcount.markMovieDuringPlayback(self.imdb, '5')
 					self.watched_during_playback = True
@@ -1020,6 +1020,7 @@ class Player(xbmc.Player):
 				playerWindow.clearProperty('umbrella.preResolved_season')
 				playerWindow.clearProperty('umbrella.preResolved_episode')
 				playerWindow.clearProperty('umbrella.preResolved_imdb')
+				playerWindow.clearProperty('umbrella.preResolved_tmdb')
 				playerWindow.clearProperty('umbrella.playlistStart_position')
 			homeWindow.clearProperty('umbrella.window_keep_alive')
 			clear_local_bookmarks()
@@ -1103,7 +1104,7 @@ class Player(xbmc.Player):
 					if _pct >= int(self.markwatched_percentage):
 						# Watched history is independent of the resume/scrobble source.
 						if self.media_type == 'episode':
-							playcount.markEpisodeDuringPlayback(self.imdb, self.tvdb, self.season, self.episode, '5')
+							playcount.markEpisodeDuringPlayback(self.imdb, self.tvdb, self.season, self.episode, '5', tmdb=self.tmdb)
 						elif self.media_type == 'movie':
 							playcount.markMovieDuringPlayback(self.imdb, '5')
 						self.watched_during_playback = True
@@ -1820,7 +1821,7 @@ class Bookmarks:
 				from resources.lib.database import customtraktsync
 				if episode and customtraktsync.is_watched_episode(imdb, tmdb, tvdb, season, episode):
 					# Clear progress from the completed watch and start a distinct rewatch cycle.
-					customtraktsync.delete_bookmark(imdb, tvdb or '', season, episode)
+					customtraktsync.delete_bookmark(imdb, tvdb or '', season, episode, tmdb=tmdb)
 					self.custom_rewatch = True
 					return '0'
 				if not runtime or runtime == 'None': return offset
@@ -2009,7 +2010,7 @@ class Bookmarks:
 						item = {'type': 'movie', 'movie': {'ids': {'imdb': imdb}}}
 					else:
 						item = {'type': 'episode', 'episode': {'season': season, 'number': episode},
-								'show': {'ids': {'imdb': imdb, 'tvdb': tvdb}}}
+								'show': {'ids': {'imdb': imdb, 'tvdb': tvdb, 'tmdb': tmdb}}}
 					from resources.lib.database import traktsync as _traktsync
 					_traktsync.delete_bookmark([item])
 		except:

@@ -512,7 +512,7 @@ class TVshows:
 		if self.list is None: self.list = []
 		for i in self.list:
 			imdb, tvdb = i.get('imdb'), i.get('tvdb')
-			try: indicators = getSeasonIndicators(imdb, tvdb)
+			try: indicators = getSeasonIndicators(imdb, tvdb, tmdb=i.get('tmdb', ''))
 			except: indicators = None
 			count = getShowCount(indicators[1], imdb, tvdb) if indicators else None
 			i.update({'watched_count': count})
@@ -1533,6 +1533,8 @@ class TVshows:
 			except:
 				q = dict(parse_qsl(urlsplit(url).query))
 			self.list = simklsync.fetch_plantowatch('shows_plantowatch')
+			from resources.lib.modules.episode_mapping import display_shows
+			self.list = display_shows(self.list)
 			useNext = True
 			if create_directory:
 				self.sort(type='shows.plantowatch') # sort before local pagination
@@ -1567,6 +1569,8 @@ class TVshows:
 			except:
 				q = dict(parse_qsl(urlsplit(url).query))
 			self.list = simklsync.fetch_completed('shows_completed')
+			from resources.lib.modules.episode_mapping import display_shows
+			self.list = display_shows(self.list)
 			useNext = True
 			if create_directory:
 				self.sort() # sort before local pagination
@@ -1601,6 +1605,8 @@ class TVshows:
 			except:
 				q = dict(parse_qsl(urlsplit(url).query))
 			self.list = simklsync.fetch_dropped('shows_dropped')
+			from resources.lib.modules.episode_mapping import display_shows
+			self.list = display_shows(self.list)
 			useNext = True
 			if create_directory:
 				self.sort() # sort before local pagination
@@ -1635,6 +1641,8 @@ class TVshows:
 			except:
 				q = dict(parse_qsl(urlsplit(url).query))
 			self.list = simklsync.fetch_hold('shows_hold')
+			from resources.lib.modules.episode_mapping import display_shows
+			self.list = display_shows(self.list)
 			useNext = True
 			if create_directory:
 				self.sort() # sort before local pagination
@@ -1669,6 +1677,8 @@ class TVshows:
 			except:
 				q = dict(parse_qsl(urlsplit(url).query))
 			self.list = simklsync.fetch_watching('shows_watching')
+			from resources.lib.modules.episode_mapping import display_shows
+			self.list = display_shows(self.list)
 			useNext = True
 			if create_directory:
 				self.sort(type='progress')
@@ -1703,6 +1713,8 @@ class TVshows:
 			except:
 				q = dict(parse_qsl(urlsplit(url).query))
 			self.list = simklsync.fetch_hold('shows_dropped')
+			from resources.lib.modules.episode_mapping import display_shows
+			self.list = display_shows(self.list)
 			useNext = True
 			if create_directory:
 				self.sort() # sort before local pagination
@@ -2491,14 +2503,14 @@ class TVshows:
 				filtered = []
 				for i in self.list:
 					try:
-						indicators = getSeasonIndicators(i.get('imdb', ''), i.get('tvdb', ''), has_next_episode=i.get('has_next_episode', False))
+						indicators = getSeasonIndicators(i.get('imdb', ''), i.get('tvdb', ''), tmdb=i.get('tmdb', ''), has_next_episode=i.get('has_next_episode', False))
 						watched = (getTVShowOverlay(indicators[1] if indicators else None, i.get('imdb', ''), i.get('tvdb', '')) == '5') if indicators else False
 						if watched and i.get('has_next_episode'):
 							watched = False
 							trakt.cachesyncSeasons(i.get('imdb', ''), i.get('tvdb', ''), timeout=0) # refresh cache so counts reflect new episodes
 							# Re-check local count (no augmentation): if 0 unwatched, has_next_episode is stale; restore watched=True
 							try:
-								re_indicators = getSeasonIndicators(i.get('imdb', ''), i.get('tvdb', ''), has_next_episode=True)
+								re_indicators = getSeasonIndicators(i.get('imdb', ''), i.get('tvdb', ''), tmdb=i.get('tmdb', ''), has_next_episode=True)
 								if re_indicators:
 									re_count = getShowCount(re_indicators[1], i.get('imdb', ''), i.get('tvdb', ''))
 									if re_count is not None and int(re_count.get('unwatched', 0)) == 0:
@@ -3737,7 +3749,7 @@ class TVshows:
 							else: continue
 					except: pass
 				
-				try: indicators = getSeasonIndicators(imdb, tvdb, has_next_episode=i.get('has_next_episode', False), tmdb_total_aired=i.get('total_aired_episodes'), force_lookup=(isCollection and self.collection_hideWatched))
+				try: indicators = getSeasonIndicators(imdb, tvdb, tmdb=tmdb, has_next_episode=i.get('has_next_episode', False), tmdb_total_aired=i.get('total_aired_episodes'), force_lookup=(isCollection and self.collection_hideWatched))
 				except: indicators = None
 				meta = dict((k, v) for k, v in iter(i.items()) if v is not None and v != '')
 				meta.update({'code': imdb, 'imdbnumber': imdb, 'mediatype': 'tvshow', 'tag': [imdb, tmdb]}) # "tag" and "tagline" for movies only, but works in my skin mod so leave
@@ -3817,16 +3829,16 @@ class TVshows:
 						# whichever provider is the active indicators source internally.
 						watched = False
 						try:
-							re_indicators = getSeasonIndicators(imdb, tvdb, has_next_episode=True, tmdb_total_aired=meta.get('total_aired_episodes'))
+							re_indicators = getSeasonIndicators(imdb, tvdb, tmdb=tmdb, has_next_episode=True, tmdb_total_aired=meta.get('total_aired_episodes'))
 							re_count = getShowCount(re_indicators[1], imdb, tvdb) if re_indicators else None
 							if re_count and int(re_count.get('unwatched', 0)) == 0: watched = True
 						except: pass
 					if self.traktCredentials:
-						cm.append((traktManagerMenu, 'RunPlugin(%s?action=tools_traktManager&name=%s&imdb=%s&tvdb=%s&watched=%s&tvshow=tvshow)' % (sysaddon, systitle, imdb, tvdb, watched)))
+						cm.append((traktManagerMenu, 'RunPlugin(%s?action=tools_traktManager&name=%s&imdb=%s&tmdb=%s&tvdb=%s&watched=%s&tvshow=tvshow)' % (sysaddon, systitle, imdb, tmdb, tvdb, watched)))
 					if self.simklCredentials:
-						cm.append((simklManagerMenu, 'RunPlugin(%s?action=tools_simklManager&name=%s&imdb=%s&tvdb=%s&watched=%s&tvshow=tvshow)' % (sysaddon, systitle, imdb, tvdb, watched)))
+						cm.append((simklManagerMenu, 'RunPlugin(%s?action=tools_simklManager&name=%s&imdb=%s&tmdb=%s&tvdb=%s&watched=%s&tvshow=tvshow)' % (sysaddon, systitle, imdb, tmdb, tvdb, watched)))
 					if self.mdblist_authed:
-						cm.append((mdblistManagerMenu, 'RunPlugin(%s?action=tools_mdbWatchlist&name=%s&imdb=%s&tvdb=%s&tmdb=%s&watched=%s)' % (sysaddon, systitle, imdb, tvdb, tmdb, watched)))
+						cm.append((mdblistManagerMenu, 'RunPlugin(%s?action=tools_mdbWatchlist&name=%s&imdb=%s&tvdb=%s&tmdb=%s&watched=%s&tvshow=tvshow)' % (sysaddon, systitle, imdb, tvdb, tmdb, watched)))
 					if self.customCredentials:
 						cm.append((customManagerMenu, 'RunPlugin(%s?action=tools_customManager&name=%s&imdb=%s&tvdb=%s&watched=%s&tvshow=tvshow)' % (sysaddon, systitle, imdb, tvdb, watched)))
 					if self.floppyCredentials:
@@ -3837,10 +3849,10 @@ class TVshows:
 						cm.append((punchplayManagerMenu, 'RunPlugin(%s?action=tools_punchplayManager&name=%s&imdb=%s&tvdb=%s&tmdb=%s&watched=%s&tvshow=tvshow)' % (sysaddon, systitle, imdb, tvdb, tmdb, watched)))
 					if watched:
 						meta.update({'playcount': 1, 'overlay': 5})
-						cm.append((unwatchedMenu, 'RunPlugin(%s?action=playcount_TVShow&name=%s&imdb=%s&tvdb=%s&query=4)' % (sysaddon, systitle, imdb, tvdb)))
+						cm.append((unwatchedMenu, 'RunPlugin(%s?action=playcount_TVShow&name=%s&imdb=%s&tmdb=%s&tvdb=%s&query=4)' % (sysaddon, systitle, imdb, tmdb, tvdb)))
 					else:
 						meta.update({'playcount': 0, 'overlay': 4})
-						cm.append((watchedMenu, 'RunPlugin(%s?action=playcount_TVShow&name=%s&imdb=%s&tvdb=%s&query=5)' % (sysaddon, systitle, imdb, tvdb)))
+						cm.append((watchedMenu, 'RunPlugin(%s?action=playcount_TVShow&name=%s&imdb=%s&tmdb=%s&tvdb=%s&query=5)' % (sysaddon, systitle, imdb, tmdb, tvdb)))
 				except: pass
 				if self.tmdbv4Credentials:
 					cm.append((getLS(40606) if getLS(40606) else 'TMDB List Manager', 'RunPlugin(%s?action=tools_tmdbListManager&name=%s&tmdb=%s&mediatype=tv)' % (sysaddon, systitle, tmdb)))

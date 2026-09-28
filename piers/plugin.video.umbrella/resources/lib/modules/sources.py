@@ -76,16 +76,20 @@ class Sources:
 				playerWindow.clearProperty('umbrella.preResolved_season')
 				playerWindow.clearProperty('umbrella.preResolved_episode')
 				playerWindow.clearProperty('umbrella.preResolved_imdb')
+				playerWindow.clearProperty('umbrella.preResolved_tmdb')
 			preResolved_nextUrl = playerWindow.getProperty('umbrella.preResolved_nextUrl')
 			if preResolved_nextUrl != '' and (episode is None or getSetting('play.mode.tv') != '0'):
 				preResolved_season = playerWindow.getProperty('umbrella.preResolved_season')
 				preResolved_episode = playerWindow.getProperty('umbrella.preResolved_episode')
 				preResolved_imdb = playerWindow.getProperty('umbrella.preResolved_imdb')
-				_match = preResolved_imdb == str(imdb) and preResolved_season == str(season) and preResolved_episode == str(episode)
+				preResolved_tmdb = playerWindow.getProperty('umbrella.preResolved_tmdb')
+				from resources.lib.modules.episode_mapping import preresolved_matches
+				_match = preresolved_matches(imdb, tmdb, season, episode, preResolved_imdb, preResolved_tmdb, preResolved_season, preResolved_episode)
 				playerWindow.clearProperty('umbrella.preResolved_nextUrl')
 				playerWindow.clearProperty('umbrella.preResolved_season')
 				playerWindow.clearProperty('umbrella.preResolved_episode')
 				playerWindow.clearProperty('umbrella.preResolved_imdb')
+				playerWindow.clearProperty('umbrella.preResolved_tmdb')
 				if _match:
 					control.sleep(500)
 					try: meta = jsloads(unquote(meta.replace('%22', '\\"')))
@@ -530,6 +534,7 @@ class Sources:
 		except: log_utils.error('Error playItem: ')
 
 	def getSources(self, title, year, imdb, tmdb, tvdb, season, episode, tvshowtitle, premiered, meta=None, preScrape=False):
+		self.scrape_tmdb = tmdb
 		self.window = None
 		if preScrape:
 			self.isPrescrape = True
@@ -865,6 +870,7 @@ class Sources:
 								playerWindow.setProperty('umbrella.preResolved_season', str(next_meta.get('season', '')))
 								playerWindow.setProperty('umbrella.preResolved_episode', str(next_meta.get('episode', '')))
 								playerWindow.setProperty('umbrella.preResolved_imdb', str(next_meta.get('imdb', '')))
+								playerWindow.setProperty('umbrella.preResolved_tmdb', str(next_meta.get('tmdb', '')))
 								if self.debuglog:
 									log_utils.log('preResolved_nextUrl : %s' % url, level=log_utils.LOGDEBUG)
 							else:
@@ -925,6 +931,15 @@ class Sources:
 		except: log_utils.error()
 
 	def getEpisodeSource(self, imdb, season, episode, data, source, call, pack):
+		from resources.lib.modules.episode_mapping import scrape_variants
+		variants = [data] if self.custom_query == 'true' else scrape_variants(getattr(self, 'scrape_tmdb', ''), data)
+		for variant in variants:
+			if control.monitor.abortRequested(): return
+			cache_id = ('anthology-v1:%s:%s' % (variant['_scrape_tmdb'], variant['_scrape_convention'])) if variant.get('_scrape_tmdb') else imdb
+			self._getEpisodeSource(cache_id, variant['season'], variant['episode'], variant, source, call, pack)
+
+	def _getEpisodeSource(self, imdb, season, episode, data, source, call, pack):
+		from resources.lib.modules.episode_mapping import tag_sources
 		try:
 			dbcon = database.connect(sourceFile, timeout=60)
 			dbcon.execute('''PRAGMA page_size = 32768''')
@@ -949,7 +964,7 @@ class Sources:
 					db_singleEpisodes_valid = abs(self.time - timestamp) < single_expiry
 					if db_singleEpisodes_valid:
 						sources = eval(db_singleEpisodes[4])
-						return self.scraper_sources.extend(sources)
+						return self.scraper_sources.extend(tag_sources(sources, data))
 			except: log_utils.error()
 		elif pack == 'season': # seasonPacks db check
 			try:
@@ -960,7 +975,7 @@ class Sources:
 					if db_seasonPacks_valid:
 						sources = eval(db_seasonPacks[4])
 						sources = [i for i in sources if not 'episode_start' in i or i['episode_start'] <= int(episode) <= i['episode_end']] # filter out range items that do not apply to current episode for return
-						return self.scraper_sources.extend(sources)
+						return self.scraper_sources.extend(tag_sources(sources, data))
 			except: log_utils.error()
 		elif pack == 'show': # showPacks db check
 			try:
@@ -971,7 +986,7 @@ class Sources:
 					if db_showPacks_valid:
 						sources = eval(db_showPacks[4])
 						sources = [i for i in sources if i.get('last_season') >= int(season)] # filter out range items that do not apply to current season for return
-						return self.scraper_sources.extend(sources)
+						return self.scraper_sources.extend(tag_sources(sources, data))
 			except: log_utils.error()
 
 		try: #dummy write or threads wait till return from scrapers...write for each is needed
@@ -985,7 +1000,7 @@ class Sources:
 				if sources:
 					dbcur.execute('''INSERT OR REPLACE INTO rel_src Values (?, ?, ?, ?, ?, ?)''', (source, imdb, season, episode, repr(sources), datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")))
 					dbcur.connection.commit()
-					return self.scraper_sources.extend(sources)
+					return self.scraper_sources.extend(tag_sources(sources, data))
 				return
 			except: return log_utils.error()
 		elif pack == 'season': # seasonPacks scraper call
@@ -996,18 +1011,18 @@ class Sources:
 					dbcur.execute('''INSERT OR REPLACE INTO rel_src Values (?, ?, ?, ?, ?, ?)''', (source, imdb, season,'', repr(sources), datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")))
 					dbcur.connection.commit()
 					sources = [i for i in sources if not 'episode_start' in i or i['episode_start'] <= int(episode) <= i['episode_end']] # filter out range items that do not apply to current episode for return
-					return self.scraper_sources.extend(sources)
+					return self.scraper_sources.extend(tag_sources(sources, data))
 				return
 			except: return log_utils.error()
 		elif pack == 'show': # showPacks scraper call
 			try:
 				sources = []
-				sources = call().sources_packs(data, self.hostprDict, search_series=True, total_seasons=self.total_seasons, bypass_filter=self.dev_disable_show_filter)
+				sources = call().sources_packs(data, self.hostprDict, search_series=True, total_seasons=data.get('_scrape_total_seasons', self.total_seasons), bypass_filter=self.dev_disable_show_filter)
 				if sources:
 					dbcur.execute('''INSERT OR REPLACE INTO rel_src Values (?, ?, ?, ?, ?, ?)''', (source, imdb, '', '', repr(sources), datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")))
 					dbcur.connection.commit()
 					sources = [i for i in sources if i.get('last_season') >= int(season)] # filter out range items that do not apply to current season for return
-					return self.scraper_sources.extend(sources)
+					return self.scraper_sources.extend(tag_sources(sources, data))
 			except: log_utils.error()
 
 	def sourcesFilter(self):
@@ -1437,6 +1452,8 @@ class Sources:
 						season = homeWindow.getProperty(self.seasonProperty)
 						episode = homeWindow.getProperty(self.episodeProperty)
 						title = homeWindow.getProperty(self.titleProperty)
+					from resources.lib.modules.episode_mapping import source_coordinates
+					season, episode = source_coordinates(item, meta if isinstance(meta, dict) else {}, season, episode)
 					if debrid_provider == 'Real-Debrid':
 						from resources.lib.debrid.realdebrid import RealDebrid as debrid_function
 					elif debrid_provider == 'Premiumize.me':
@@ -1841,7 +1858,12 @@ class Sources:
 				if 'package' in i:
 					dsize = i.get('size')
 					if not dsize: continue
-					if i['package'] == 'season':
+					from resources.lib.modules.episode_mapping import MONSTER
+					if i.get('scrape_convention') == 'anthology' and i.get('scrape_tmdb') in MONSTER:
+						if i['package'] == 'season': divider = MONSTER[i['scrape_tmdb']][1]
+						else: divider = sum(v[1] for v in MONSTER.values() if v[0] <= int(i['last_season']))
+						if not divider: continue
+					elif i['package'] == 'season':
 						divider = int(seasoncount)
 						if not divider: continue
 					else:
@@ -1962,6 +1984,9 @@ class Sources:
 			dbcur.execute('''SELECT count(name) FROM sqlite_master WHERE type='table' AND name='rel_src';''') # table exists so both will
 			if dbcur.fetchone()[0] == 1:
 				dbcur.execute('''DELETE FROM rel_src WHERE imdb_id=?''', (imdb,)) # DEL the "rel_src" list of cached links
+				from resources.lib.modules.episode_mapping import supported
+				if supported(tmdb):
+					dbcur.execute('DELETE FROM rel_src WHERE imdb_id IN (?, ?)', ('anthology-v1:%s:anthology' % tmdb, 'anthology-v1:%s:split' % tmdb))
 				dbcur.connection.commit()
 		except: log_utils.error()
 		finally: dbcur.close() ; dbcon.close()
