@@ -372,7 +372,7 @@ def getEpisodeOverlay(indicators, imdb, tvdb, season, episode, tmdb=''):
 		if episode_mapping.supported(tmdb):
 			provider = anthology_tracking.PROVIDERS.get(getSetting('indicators.alt'), 'local')
 			if provider == 'local': indicators = anthology_tracking.local_indicators(tmdb)
-			return '5' if int(season) == 1 and int(episode) in episode_mapping.watched_episodes(indicators, provider, tmdb) else '4'
+			return '5' if int(episode) in episode_mapping.watched_episodes(indicators, provider, tmdb, season) else '4'
 	# Custom season indicators use server progress. Use that same snapshot for
 	# episodes, since the incremental local history may be incomplete or stale.
 	if customIndicators and imdb:

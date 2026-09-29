@@ -1,5 +1,5 @@
 <?xml version='1.0' encoding='utf-8'?>
-<addons><addon id="plugin.video.umbrella" name="Umbrella" provider-name="Umbrella" version="6.7.711">
+<addons><addon id="plugin.video.umbrella" name="Umbrella" provider-name="Umbrella" version="6.7.712">
 	<requires>
 		<import addon="xbmc.python" version="3.0.0" />
 		<import addon="script.module.requests" />
@@ -271,8 +271,10 @@
 			<screenshot>resources/screenshots/screenshot003.jpg</screenshot>
 		</assets>
 		<news>
-[B]Update - v6.7.711 - Sept 28th, 2026 [/B]
---[Fix] Made changes for mdblist marking episodes.
+[B]Update - v6.7.712 - Sept 28th, 2026 [/B]
+--[Fix] Mapped The Great British Bake Off (2017) regular seasons to continuous UK numbering for source searches and pack selection. Added separate watched history and resume handling for the TMDB entry, with SIMKL season translation and progress support.
+--[Fix] Apply embedded subtitle preferences before accepting the current language. Detect SDH and forced tracks using Kodi track flags and names, including when only the HI or forced preference is enabled.
+--[Fix] MDBList Scrobble Reset no longer marks items watched. Completed playback still updates watched status.
 		</news>
 	</extension>
 

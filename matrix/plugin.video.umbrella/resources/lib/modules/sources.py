@@ -1858,8 +1858,10 @@ class Sources:
 				if 'package' in i:
 					dsize = i.get('size')
 					if not dsize: continue
-					from resources.lib.modules.episode_mapping import MONSTER
-					if i.get('scrape_convention') == 'anthology' and i.get('scrape_tmdb') in MONSTER:
+					from resources.lib.modules.episode_mapping import MONSTER, bake_off_pack_count
+					mapped_count = bake_off_pack_count(i)
+					if mapped_count is not None: divider = mapped_count
+					elif i.get('scrape_convention') == 'anthology' and i.get('scrape_tmdb') in MONSTER:
 						if i['package'] == 'season': divider = MONSTER[i['scrape_tmdb']][1]
 						else: divider = sum(v[1] for v in MONSTER.values() if v[0] <= int(i['last_season']))
 						if not divider: continue

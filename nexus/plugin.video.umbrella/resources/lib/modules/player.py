@@ -1410,24 +1410,32 @@ class Subtitles:
 		return aliases.get(language[:3], language[:3])
 
 	def _select_embedded(self, preferred_language):
-		if getSetting('subtitles.prefer.embedded') != 'true': return False
 		preferred_code = self._language_code(preferred_language)
 		prefer_hi = getSetting('subtitles.prefer.hearing_impaired') == 'true'
 		prefer_forced = getSetting('subtitles.prefer.forced') == 'true'
+		if getSetting('subtitles.prefer.embedded') != 'true' and not (prefer_hi or prefer_forced): return False
 		# Some input streams report their tracks shortly after onAVStarted.
 		for attempt in range(5):
-			try: streams = xbmc.Player().getAvailableSubtitleStreams() or []
+			# JSON-RPC includes track names and flags; the Python player API may
+			# return only language codes, hiding the distinction between SDH tracks.
+			try:
+				response = jsloads(control.jsonrpc(jsdumps({'jsonrpc': '2.0', 'id': 1,
+					'method': 'Player.GetProperties', 'params': {'playerid': 1, 'properties': ['subtitles']}})))
+				streams = response.get('result', {}).get('subtitles') or []
 			except: streams = []
+			if not streams:
+				try: streams = [{'index': i, 'language': s, 'name': s} for i, s in enumerate(xbmc.Player().getAvailableSubtitleStreams() or [])]
+				except: streams = []
 			matches = []
-			for index, stream in enumerate(streams):
-				if self._language_code(stream) != preferred_code: continue
-				label = str(stream).lower()
-				is_hi = any(token in label for token in ('hearing impaired', 'hearing-impaired', 'sdh', '[cc]', ' closed caption'))
-				is_forced = 'forced' in label or 'foreign parts' in label
+			for stream in streams:
+				if self._language_code(stream.get('language') or stream.get('name')) != preferred_code: continue
+				label = str(stream.get('name') or '').lower()
+				is_hi = bool(stream.get('isimpaired')) or bool(re.search(r'\b(sdh|cc|hi)\b|hearing[ -]impaired|closed caption', label))
+				is_forced = bool(stream.get('isforced')) or 'forced' in label or 'foreign parts' in label
 				score = (20 if is_hi == prefer_hi else -20) + (30 if is_forced == prefer_forced else -30)
-				matches.append((score, index))
+				matches.append((score, stream['index']))
 			if matches:
-				xbmc.Player().setSubtitleStream(max(matches)[1])
+				xbmc.Player().setSubtitleStream(max(matches, key=lambda item: item[0])[1])
 				return True
 			if attempt < 4: control.sleep(250)
 		return False
@@ -1456,13 +1464,14 @@ class Subtitles:
 
 			try: subLang = xbmc.Player().getSubtitles()
 			except: subLang = ''
-			if self._language_code(subLang) == self._language_code(langs[0]):
+			embedded_selected = self._select_embedded(langs[0])
+			if not embedded_selected and self._language_code(subLang) == self._language_code(langs[0]):
 				if getSetting('subtitles.notification') == 'true':
 					if Player().isPlayback():
 						control.sleep(1000)
 						control.notification(message=getLS(32393) % subLang.upper(), time=5000)
 				return log_utils.log(getLS(32393) % subLang.upper(), level=log_utils.LOGDEBUG)
-			if self._select_embedded(langs[0]):
+			if embedded_selected:
 				if getSetting('subtitles.notification') == 'true':
 					if Player().isPlayback():
 						control.sleep(1000)
@@ -1972,7 +1981,7 @@ class Bookmarks:
 				# final pause point is synced back and leaves the episode in progress.
 				if not skip_scrobble and percent < markwatched_percentage:
 					mdblist.scrobbleMovie(title, year, imdb, tmdb, percent) if media_type == 'movie' else mdblist.scrobbleEpisode(tvshowtitle or title, year, imdb, tmdb, tvdb, season, episode, percent)
-				if percent >= int(markwatched_percentage): mdblist.scrobbleReset(imdb, tmdb, tvdb, season, episode, refresh=False, already_watched=skip_scrobble)
+				if percent >= int(markwatched_percentage): mdblist.scrobbleReset(imdb, tmdb, tvdb, season, episode, refresh=False, already_watched=skip_scrobble, completed=True)
 			elif service == 'custom':
 				if not skip_scrobble:
 					customtrakt.scrobbleMovie(imdb, tmdb, percent) if media_type == 'movie' else customtrakt.scrobbleEpisode(imdb, tmdb, tvdb, season, episode, percent)

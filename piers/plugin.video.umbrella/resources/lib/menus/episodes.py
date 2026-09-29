@@ -1293,8 +1293,8 @@ class Episodes:
 					watched_set = {(ep[0], ep[1]) for ep in watched_eps}
 					items.append({'imdb': imdb_id, 'watched_set': watched_set, 'lastplayed': lp})
 				except: pass
-			from resources.lib.modules.episode_mapping import MONSTER
-			for story in MONSTER:
+			from resources.lib.modules.episode_mapping import titles
+			for story in titles():
 				rows = wc.get_episodes_watched('episode', '', story)
 				watched_set = {(int(r['season']), int(r['episode'])) for r in rows if int(r['overlay']) == 5}
 				if watched_set: items.append({'imdb': '', 'tmdb': story, 'watched_set': watched_set, 'lastplayed': ''})

@@ -1226,7 +1226,7 @@ def scrobbleEpisode(tvshowtitle, year, imdb, tmdb, tvdb, season, episode, watche
 		log_utils.log('MDBList Scrobble Episode. imdb: %s S%sE%s percent: %s' % (imdb, season, episode, watched_percent), level=log_utils.LOGDEBUG)
 	except: log_utils.error()
 
-def scrobbleReset(imdb, tmdb='', tvdb='', season=None, episode=None, refresh=False, clear_local=True, already_watched=False):
+def scrobbleReset(imdb, tmdb='', tvdb='', season=None, episode=None, refresh=False, clear_local=True, already_watched=False, completed=False):
 	if not getMDBListCredentialsInfo(): return
 	try:
 		if episode:
@@ -1241,7 +1241,9 @@ def scrobbleReset(imdb, tmdb='', tvdb='', season=None, episode=None, refresh=Fal
 			if tmdb: ids['tmdb'] = int(tmdb)
 			post = {'movie': {'ids': ids}, 'progress': 0}
 		get_request('/scrobble/clear', post=post)
-		if not already_watched:
+		# Manual resets clear resume progress without adding watch history.
+		# Only completed playback may need to submit a watched update.
+		if completed and not already_watched:
 			if episode:
 				_post_sync_watched(show_ids={'imdb': imdb, 'tmdb': tmdb, 'tvdb': tvdb},
 					seasons_dict={int(season) if season else 1: [int(episode)]})
