@@ -1389,6 +1389,16 @@
 					<default>false</default>
 					<control type="toggle"/>
 				</setting>
+				<setting id="skip.intro.auto" type="boolean" label="40824" help="40825">
+					<level>0</level>
+					<default>false</default>
+					<control type="toggle"/>
+				</setting>
+				<setting id="skip.recap.auto" type="boolean" label="40826" help="40827">
+					<level>0</level>
+					<default>false</default>
+					<control type="toggle"/>
+				</setting>
 			</group>
 			<group id="3" label="32372">
 				<setting id="crefresh" type="boolean" label="32373" help="">

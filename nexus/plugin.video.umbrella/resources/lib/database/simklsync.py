@@ -858,6 +858,58 @@ def delete_tables(tables):
 		except: pass
 	return cleared
 
+def replace_watchlists(response):
+	"""Atomically reconcile a validated full account response; keep data on failure."""
+	if not isinstance(response, dict) or any(not isinstance(response.get(k), list) for k in ('movies', 'shows')):
+		return False
+	dbcon = None
+	try:
+		statuses = {'movies': ('plantowatch', 'completed', 'dropped'),
+			'shows': ('plantowatch', 'completed', 'watching', 'hold', 'dropped')}
+		buckets = {category + '_' + status: [] for category, values in statuses.items() for status in values}
+		for category in statuses:
+			for row in response[category]:
+				item = row.get('movie' if category == 'movies' else 'show')
+				if not isinstance(item, dict) or not isinstance(item.get('ids'), dict) or not any(item['ids'].get(k) for k in ('imdb', 'tmdb', 'tvdb', 'simkl')):
+					return False
+				status = row.get('status')
+				# Movie watching/on-hold entries have no corresponding menu table.
+				if status not in ('plantowatch', 'completed', 'watching', 'hold', 'dropped'): return False
+				if status in statuses[category]: buckets[category + '_' + status].append(row)
+		dbcon = get_connection()
+		# The legacy connection disables journaling; snapshots need rollback.
+		dbcon.execute('PRAGMA journal_mode = DELETE')
+		dbcon.execute('PRAGMA synchronous = NORMAL')
+		dbcon.execute('BEGIN')
+		dbcon.execute('CREATE TABLE IF NOT EXISTS service (setting TEXT, value TEXT, UNIQUE(setting))')
+		stamp = datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%S.000Z')
+		for table, rows in buckets.items():
+			extra = ', last_watched_at TEXT' if table.endswith('_completed') else ''
+			dbcon.execute('CREATE TABLE IF NOT EXISTS %s (title TEXT, year TEXT, premiered TEXT, imdb TEXT, tmdb TEXT, tvdb TEXT, simkl TEXT, rating FLOAT, votes INTEGER, listed_at TEXT%s, UNIQUE(imdb, tmdb, tvdb, simkl))' % (table, extra))
+			columns = 'title, year, premiered, imdb, tmdb, tvdb, simkl, rating, votes, listed_at'
+			has_watched = any(col[1] == 'last_watched_at' for col in dbcon.execute('PRAGMA table_info(%s)' % table))
+			if has_watched: columns += ', last_watched_at'
+			dbcon.execute('DELETE FROM %s' % table)
+			for row in rows:
+				item = row.get('movie') or row.get('show')
+				ids = item['ids']
+				values = [item.get('title') or '', str(item.get('year') or ''), (item.get('first_aired') or '').split('T')[0]]
+				values.extend(str(ids.get(k) or '') for k in ('imdb', 'tmdb', 'tvdb', 'simkl'))
+				values.extend([item.get('rating') or '', item.get('votes') or '', row.get('added_to_watchlist_at') or stamp])
+				if has_watched: values.append(row.get('last_watched_at') or '')
+				dbcon.execute('INSERT OR REPLACE INTO %s (%s) VALUES (%s)' % (table, columns, ','.join('?' for _ in values)), values)
+		for status in ('plantowatch', 'completed', 'watching', 'hold', 'dropped'):
+			dbcon.execute('INSERT OR REPLACE INTO service VALUES (?, ?)', ('last_%s_at' % status, stamp))
+		dbcon.commit()
+		return True
+	except Exception:
+		if dbcon: dbcon.rollback()
+		log_utils.error()
+		return False
+	finally:
+		if dbcon: dbcon.close()
+
+
 def upsert_items(items, table, service_key, table_type='plantowatch'):
 	"""Delete each item by ID from ALL status tables, then insert into target table.
 	Per Simkl dev recommendation for date_from delta syncing — avoids full table wipes."""

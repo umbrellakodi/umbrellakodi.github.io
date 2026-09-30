@@ -1,4 +1,4 @@
-<addon id="plugin.video.umbrella" name="Umbrella" provider-name="Umbrella" version="6.7.712">
+<addon id="plugin.video.umbrella" name="Umbrella" provider-name="Umbrella" version="6.7.713">
 	<requires>
 		<import addon="xbmc.python" version="3.0.0" />
 		<import addon="script.module.requests" />
@@ -270,10 +270,13 @@
 			<screenshot>resources/screenshots/screenshot003.jpg</screenshot>
 		</assets>
 		<news>
-[B]Update - v6.7.712 - Sept 28th, 2026 [/B]
---[Fix] Mapped The Great British Bake Off (2017) regular seasons to continuous UK numbering for source searches and pack selection. Added separate watched history and resume handling for the TMDB entry, with SIMKL season translation and progress support.
---[Fix] Apply embedded subtitle preferences before accepting the current language. Detect SDH and forced tracks using Kodi track flags and names, including when only the HI or forced preference is enabled.
---[Fix] MDBList Scrobble Reset no longer marks items watched. Completed playback still updates watched status.
+[B]Update - v6.7.713 - Sept 30th, 2026 [/B]
+--[Fix] Fixed Monster stories missing from Custom provider In-progress Shows when shared or empty IMDb IDs mixed watched counts or completion status.
+--[Enhancement] Added separate Automatically skip intro and Automatically skip recap settings under Playback. Both default to off and skip without prompting when segment timing data is available.
+--[Fix] SIMKL Progress Episodes and related episode metadata now refresh on the SIMKL service interval even when account activity has not changed.
+--[Fix] SIMKL watchlist sync now reconciles additions, removals and status changes, refreshes widgets after successful updates, and preserves cached lists if a response or database update fails.
+--[Fix] Trakt, SIMKL, MDBList, Custom, Floppy, Scrob and PunchPlay now honor their own service intervals with scheduling checks every 30 seconds. Interval changes take effect without restarting; background sync still pauses during video playback.
+--[Fix] Removed duplicate background playback-sync requests for Trakt, MDBList, Custom and Floppy.
 		</news>
 	</extension>
 

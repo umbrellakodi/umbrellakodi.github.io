@@ -26,13 +26,7 @@ FormatDateTime = '%Y-%m-%d %H:%M:%S'
 FormatDate = '%Y-%m-%d'
 FormatTime = '%H:%M:%S'
 FormatTimeShort = '%H:%M'
-service_syncInterval = int(getSetting('background.service.syncInterval')) if getSetting('background.service.syncInterval') else 30
-simkl_syncInterval = int(getSetting('simkl.service.syncInterval')) if getSetting('simkl.service.syncInterval') else 30
-mdblist_syncInterval = int(getSetting('mdblist.service.syncInterval')) if getSetting('mdblist.service.syncInterval') else 30
-custom_syncInterval = int(getSetting('custom.service.syncInterval')) if getSetting('custom.service.syncInterval') else 30
-floppy_syncInterval = int(getSetting('floppy.service.syncInterval')) if getSetting('floppy.service.syncInterval') else 30
-scrob_syncInterval = int(getSetting('scrob.service.syncInterval')) if getSetting('scrob.service.syncInterval') else 30
-punchplay_syncInterval = int(getSetting('punchplay.service.syncInterval')) if getSetting('punchplay.service.syncInterval') else 30
+
 
 # def datetime_from_string(self, string, format=FormatDateTime):
 	# try:
@@ -286,7 +280,13 @@ def setScrobbleService():
 		from resources.lib.modules import log_utils
 		log_utils.error()
 
+def _service_interval(setting, default=30):
+	try: return max(5, int(getSetting(setting) or str(default)))
+	except (TypeError, ValueError): return default
+
+
 def services_syncs():
+	last_trakt_sync = 0
 	last_simkl_sync = 0
 	last_mdblist_sync = 0
 	last_custom_sync = 0
@@ -294,6 +294,14 @@ def services_syncs():
 	last_scrob_sync = 0
 	last_punchplay_sync = 0
 	while not control.monitor.abortRequested():
+		# Re-read these settings so changes take effect without restarting Kodi.
+		service_syncInterval = _service_interval('background.service.syncInterval', 15)
+		simkl_syncInterval = _service_interval('simkl.service.syncInterval')
+		mdblist_syncInterval = _service_interval('mdblist.service.syncInterval')
+		custom_syncInterval = _service_interval('custom.service.syncInterval')
+		floppy_syncInterval = _service_interval('floppy.service.syncInterval')
+		scrob_syncInterval = _service_interval('scrob.service.syncInterval')
+		punchplay_syncInterval = _service_interval('punchplay.service.syncInterval')
 		control.sleep(5000) # wait 5sec in case of device wake from sleep
 		try:
 			internets = control.condVisibility('System.InternetState') #added for some systems have removed Internet State apparently.
@@ -304,11 +312,12 @@ def services_syncs():
 			from resources.lib.modules import log_utils
 			log_utils.error()
 		if control.monitor.abortRequested(): break
-		if internets and trakt.getTraktCredentialsInfo(): # run service in case user auth's trakt later
+		if internets and trakt.getTraktCredentialsInfo() and time.time() - last_trakt_sync >= 60 * service_syncInterval:
 			from resources.lib.modules import log_utils
 			if control.condVisibility('Player.HasVideo'):
 				log_utils.log('Trakt Sync: skipping — video is playing', 1)
 			else:
+				last_trakt_sync = time.time()
 				log_utils.log('Trakt Sync Service is running.', 1)
 				activities = trakt.getTraktAsJson('/sync/last_activities', silent=True)
 				all_activity_ts = activities.get('all', '') if activities else ''
@@ -319,8 +328,6 @@ def services_syncs():
 				else:
 					if all_ts > 0: traktsync.insert_service('last_all_activity', all_activity_ts)
 					if not control.monitor.abortRequested():
-						if getSetting('bookmarks') == 'true' and getSetting('scrobble.source') == '1':
-							trakt.sync_playbackProgress(activities)
 						if getSetting('bookmarks') == 'true' and getSetting('scrobble.source') == '1':
 							trakt.sync_playbackProgress(activities)
 						trakt.sync_watchedProgress(activities, trigger_refresh=False)
@@ -373,8 +380,6 @@ def services_syncs():
 				if not control.monitor.abortRequested():
 					if getSetting('bookmarks') == 'true' and getSetting('scrobble.source') == '3':
 						mdblist.sync_playbackProgress()
-					if getSetting('bookmarks') == 'true' and getSetting('scrobble.source') == '3':
-						mdblist.sync_playbackProgress()
 				last_mdblist_sync = current_time
 		if control.monitor.abortRequested(): break
 		if internets and not video_playing and customtrakt.getCustomCredentialsInfo():
@@ -384,8 +389,6 @@ def services_syncs():
 				from resources.lib.modules import log_utils
 				log_utils.log('%s Service Sync is running.' % customtrakt.getCustomServiceName(), 1)
 				if not control.monitor.abortRequested():
-					if getSetting('bookmarks') == 'true' and getSetting('scrobble.source') == '4':
-						customtrakt.sync_playbackProgress(activities, forced=True)
 					if getSetting('bookmarks') == 'true' and getSetting('scrobble.source') == '4':
 						customtrakt.sync_playbackProgress(activities, forced=True)
 					customtrakt.sync_watchedProgress(activities)
@@ -401,8 +404,6 @@ def services_syncs():
 				from resources.lib.modules import log_utils
 				log_utils.log('Floppy Service Sync is running.', 1)
 				if not control.monitor.abortRequested():
-					if getSetting('bookmarks') == 'true' and getSetting('scrobble.source') == '5':
-						floppy.sync_playbackProgress()
 					if getSetting('bookmarks') == 'true' and getSetting('scrobble.source') == '5':
 						floppy.sync_playbackProgress()
 					floppy.sync_watchedProgress(forced=True)
@@ -432,7 +433,9 @@ def services_syncs():
 				except Exception:
 					from resources.lib.modules import log_utils
 					log_utils.log('PunchPlay background sync failed; cached state retained.', 1)
-		if control.monitor.waitForAbort(60*service_syncInterval): break
+		# Short local checks honor independent intervals and live setting changes.
+		# Network work remains gated by each provider's last sync above.
+		if control.monitor.waitForAbort(30): break
 
 def originCountry_Select():
 	countryDict = {'Australia': 'AU', 'Austria': 'AT', 'Brazil': 'BR', 'Bulgaria': 'BG', 'Canada': 'CA', 'China': 'CN', 'Denmark': 'DK', 'Estonia': 'EE',

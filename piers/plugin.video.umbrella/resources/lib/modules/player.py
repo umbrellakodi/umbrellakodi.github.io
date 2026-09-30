@@ -154,8 +154,10 @@ class Player(xbmc.Player):
 		self.playnext_method = getSetting('playnext.method')
 		self.playnext_theme = getSetting('playnext.theme')
 		self.playnext_min = getSetting('playnext.min.seconds')
-		self.skip_intro_enabled = getSetting('skip.intro.enable') == 'true'
-		self.skip_recap_enabled = getSetting('skip.recap.enable') == 'true'
+		self.skip_intro_auto = getSetting('skip.intro.auto') == 'true'
+		self.skip_recap_auto = getSetting('skip.recap.auto') == 'true'
+		self.skip_intro_enabled = getSetting('skip.intro.enable') == 'true' or self.skip_intro_auto
+		self.skip_recap_enabled = getSetting('skip.recap.enable') == 'true' or self.skip_recap_auto
 		self.skip_intro = None
 		self.skip_recaps = []
 		self.segment_credits = None
@@ -749,7 +751,7 @@ class Player(xbmc.Player):
 			self.skip_intro_prompted = True
 			return
 		if self.current_time < intro_start: return
-		if self._show_skip_segment(running_path, intro_end, 40813):
+		if self._skip_segment(running_path, intro_start, intro_end, 40813, self.skip_intro_auto):
 			self.skip_intro_prompted = True
 
 	def _maybe_show_skip_recap(self, running_path):
@@ -761,9 +763,24 @@ class Player(xbmc.Player):
 				self.skip_recaps_prompted.add(index)
 				continue
 			if self.current_time < recap_start: return
-			if self._show_skip_segment(running_path, recap_end, 40820):
+			if self._skip_segment(running_path, recap_start, recap_end, 40820, self.skip_recap_auto):
 				self.skip_recaps_prompted.add(index)
 			return
+
+	def _skip_segment(self, running_path, segment_start, segment_end, label_id, automatic):
+		if not automatic:
+			return self._show_skip_segment(running_path, segment_end, label_id)
+		try:
+			if not self.isPlayingVideo() or self.getPlayingFile() != running_path: return False
+			current = self.getTime()
+			if current >= segment_end: return True
+			if current < segment_start: return False
+			self.seekTime(segment_end)
+			self.current_time = segment_end
+			return True
+		except Exception:
+			log_utils.error()
+			return False
 
 	def _show_skip_segment(self, running_path, segment_end, label_id):
 		if playerWindow.getProperty('umbrella.skipintro.dialog') == 'true': return False

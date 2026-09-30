@@ -880,7 +880,7 @@ class Episodes:
 			if '/sync/all-items/shows/watching' in api_url:
 				if simkl.getProgressActivity() > cache.timeout(self.simkl_progress_list, api_url, self.simkl_directProgressScrape):
 					self.list = cache.get(self.simkl_progress_list, 0, api_url, self.simkl_directProgressScrape)
-				else: self.list = cache.get(self.simkl_progress_list, self.simkl_hours, api_url, self.simkl_directProgressScrape)
+				else: self.list = cache.get(self.simkl_progress_list, min(self.simkl_hours, simkl.progress_cache_hours()), api_url, self.simkl_directProgressScrape)
 				# Rebuild progress rows cached before air-schedule enrichment.
 				from resources.lib.modules.episode_mapping import combined
 				if self.list and any(not i.get('airinfo_enriched') or (combined(i) and not i.get('anthology_mapping')) for i in self.list):
@@ -2823,7 +2823,7 @@ class Episodes:
 						from resources.lib.modules import log_utils
 						return log_utils.log('tvshowtitle: (%s) missing tmdb_id: ids={imdb: %s, tmdb: %s, tvdb: %s}' % (i['tvshowtitle'], imdb, tmdb, tvdb), __name__, log_utils.LOGDEBUG) # log TMDb shows that they do not have
 			try:
-				showSeasons = cache.get(tmdb_indexer().get_showSeasons_meta, 96, tmdb)
+				showSeasons = cache.get(tmdb_indexer().get_showSeasons_meta, simkl.progress_cache_hours(), tmdb)
 				if not showSeasons: return
 				key = i['snum'] - 1 if showSeasons['seasons'][0]['season_number'] != 0 else i['snum']
 				try: next_episode_num = i['enum'] + 1 if showSeasons['seasons'][key]['episode_count'] > i['enum'] else 1
@@ -2831,7 +2831,7 @@ class Episodes:
 				next_season_num = i['snum'] if next_episode_num == i['enum'] + 1 else i['snum'] + 1
 				if next_season_num > showSeasons['total_seasons']: return
 				if not self.showspecials and next_season_num == 0: return
-				seasonEpisodes = tmdb_indexer().get_seasonEpisodes_meta_checked(tmdb, next_season_num)
+				seasonEpisodes = cache.get(tmdb_indexer().get_seasonEpisodes_meta, simkl.progress_cache_hours(), tmdb, next_season_num)
 				if not seasonEpisodes: return
 				seasonEpisodes = dict((k,v) for k, v in iter(seasonEpisodes.items()) if v is not None and v != '') # remove empty keys so .update() doesn't over-write good meta with empty values.
 				try: episode_meta = [x for x in seasonEpisodes.get('episodes') if x.get('episode') == next_episode_num][0] # to pull just the episode meta we need

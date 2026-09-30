@@ -2835,10 +2835,13 @@ class TVshows:
 			indicators = customtrakt.syncTVShows()
 			if not indicators: return self.list
 
-			def check_show(ids):
+			from resources.lib.modules.episode_mapping import supported
+
+			def check_show(ids, ep_ranges):
 				try:
 					imdb, tmdb, tvdb = ids.get('imdb', ''), ids.get('tmdb', ''), ids.get('tvdb', '')
-					progress = customtrakt.getShowProgress(imdb) if imdb else None
+					# Shared IMDb IDs cannot identify an individual split-catalog story.
+					progress = customtrakt.getShowProgress(imdb) if imdb and not supported(tmdb) else None
 					if progress:
 						aired, completed = int(progress.get('aired', 0)), int(progress.get('completed', 0))
 						if aired and completed >= aired: return  # fully watched, not "in progress"
@@ -2851,7 +2854,7 @@ class TVshows:
 					if not progress:
 						# no server-side progress data for this show yet — fall back to
 						# comparing local watched count against TMDb's total episode count
-						watched_count = sum(e - s + 1 for ranges in ep_ranges_by_imdb.get(imdb, {}).values() for s, e in ranges)
+						watched_count = sum(e - s + 1 for season, ranges in ep_ranges.items() if int(season) > 0 for s, e in ranges)
 						showSeasons = cache.get(tmdb_indexer().get_showSeasons_meta, 96, tmdb)
 						total = sum(s.get('episode_count', 0) for s in (showSeasons or {}).get('seasons', []) if s.get('season_number', 0) > 0)
 						if total and watched_count >= total: return
@@ -2866,8 +2869,7 @@ class TVshows:
 					self.list.append(values)
 				except: log_utils.error()
 
-			ep_ranges_by_imdb = {ids.get('imdb', ''): ep_ranges for (ids, watched_count, ep_ranges) in indicators}
-			threads = [Thread(target=check_show, args=(ids,)) for (ids, watched_count, ep_ranges) in indicators]
+			threads = [Thread(target=check_show, args=(ids, ep_ranges)) for (ids, watched_count, ep_ranges) in indicators]
 			# Throttled: each thread makes a blocking GET /shows/{imdb}/progress/watched
 			# call — starting all of them at once can overwhelm a single-worker Custom
 			# server and stall the whole directory listing until Kodi kills the script.

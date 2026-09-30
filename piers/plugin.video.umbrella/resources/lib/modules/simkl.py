@@ -1160,6 +1160,11 @@ def getDroppedActivity(activities=None):
 	except: 
 		return 0
 
+def progress_cache_hours():
+	try: return max(5, int(getSetting('simkl.service.syncInterval') or '30')) / 60.0
+	except (TypeError, ValueError): return 0.5
+
+
 def sync_watchedProgress(activities=None, forced=False):
 	try:
 		from resources.lib.menus import episodes
@@ -1167,7 +1172,7 @@ def sync_watchedProgress(activities=None, forced=False):
 		url = '/sync/all-items/shows/watching'
 		progressActivity = getProgressActivity(activities)
 		local_listCache = cache.timeout(episodes.Episodes().simkl_progress_list, url, direct)
-		if forced or (progressActivity > local_listCache) or progressActivity == 0:
+		if forced or (progressActivity > local_listCache) or progressActivity == 0 or time.time() - local_listCache >= progress_cache_hours() * 3600:
 			cache.get(episodes.Episodes().simkl_progress_list, 0, url, direct)
 			if forced: log_utils.log('Forced - SimKl Progress List Sync Complete', __name__, log_utils.LOGDEBUG)
 			else:
@@ -1330,78 +1335,15 @@ def _get_all_watchlists_activity(activities=None):
 
 
 def sync_all_watchlists(activities=None, forced=False):
-	"""Unified watchlist sync. Delta path: 1 request to /sync/all-items/?date_from instead of 8.
-	Forced/full path delegates to individual sync functions unchanged."""
+	"""Reconcile a full snapshot, including removals, once per service interval."""
 	try:
-		if forced:
-			sync_plantowatch(forced=True)
-			sync_completed(forced=True)
-			sync_watching(forced=True)
-			sync_hold(forced=True)
-			sync_dropped(forced=True)
-			return
-
-		last_syncs = {
-			'last_plantowatch_at': simklsync.last_sync('last_plantowatch_at'),
-			'last_completed_at':   simklsync.last_sync('last_completed_at'),
-			'last_watching_at':    simklsync.last_sync('last_watching_at'),
-			'last_hold_at':        simklsync.last_sync('last_hold_at'),
-			'last_dropped_at':     simklsync.last_sync('last_dropped_at'),
-		}
-
-		# Any table that has never been synced needs a full sync first
-		needs_full = [k for k, v in last_syncs.items() if v == 0]
-		if needs_full:
-			if 'last_plantowatch_at' in needs_full: sync_plantowatch(forced=True)
-			if 'last_completed_at' in needs_full:   sync_completed(forced=True)
-			if 'last_watching_at' in needs_full:    sync_watching(forced=True)
-			if 'last_hold_at' in needs_full:        sync_hold(forced=True)
-			if 'last_dropped_at' in needs_full:     sync_dropped(forced=True)
-			return
-
-		# All tables have existing data; check if anything changed
-		api_latest = _get_all_watchlists_activity(activities)
-		date_from_ts = min(last_syncs.values())
-		if api_latest <= date_from_ts:
-			return  # Nothing changed since our oldest sync
-
-		date_from = _ts_to_iso(date_from_ts)
-		log_utils.log('Simkl watchlists delta sync (1 request from %s)' % date_from, __name__, log_utils.LOGINFO)
-		response = get_request('/sync/all-items/?date_from=%s' % date_from)
-		if response is None: return
-
-		# Map (media_type, status) → (table, timestamp_col)
-		dispatch = {
-			('movies', 'plantowatch'): ('movies_plantowatch', 'last_plantowatch_at'),
-			('movies', 'completed'):   ('movies_completed',   'last_completed_at'),
-			('movies', 'dropped'):     ('movies_dropped',     'last_dropped_at'),
-			('shows',  'plantowatch'): ('shows_plantowatch',  'last_plantowatch_at'),
-			('shows',  'completed'):   ('shows_completed',    'last_completed_at'),
-			('shows',  'watching'):    ('shows_watching',     'last_watching_at'),
-			('shows',  'hold'):        ('shows_hold',         'last_hold_at'),
-			('shows',  'dropped'):     ('shows_dropped',      'last_dropped_at'),
-		}
-
-		from collections import defaultdict
-		buckets = defaultdict(list)
-		for item in response.get('movies', []):
-			status = item.get('status')
-			if ('movies', status) in dispatch: buckets[('movies', status)].append(item)
-		for item in response.get('shows', []):
-			status = item.get('status')
-			if ('shows', status) in dispatch: buckets[('shows', status)].append(item)
-
-		for key, items in buckets.items():
-			if items:
-				table, ts_col = dispatch[key]
-				simklsync.upsert_items(items, table, ts_col, key[1])
-
-		# Advance every service timestamp so min() never regresses on next sync
-		for ts_col in last_syncs:
-			simklsync.set_sync_time(ts_col)
-
-	except Exception as e:
-		log_utils.error('Error in sync_all_watchlists: %s' % str(e))
+		# A delta cannot identify entries removed entirely from the account.
+		# One unfiltered request replaces the previous delta request.
+		response = get_request('/sync/all-items/')
+		if simklsync.replace_watchlists(response):
+			control.trigger_widget_refresh()
+	except Exception:
+		log_utils.error()
 
 
 def sync_dropped(activities=None, forced=False):
