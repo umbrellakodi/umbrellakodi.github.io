@@ -1,4 +1,4 @@
-<addon id="plugin.video.umbrella" name="Umbrella" provider-name="Umbrella" version="6.7.713">
+<addon id="plugin.video.umbrella" name="Umbrella" provider-name="Umbrella" version="6.7.714">
 	<requires>
 		<import addon="xbmc.python" version="3.0.0" />
 		<import addon="script.module.requests" />
@@ -270,13 +270,9 @@
 			<screenshot>resources/screenshots/screenshot003.jpg</screenshot>
 		</assets>
 		<news>
-[B]Update - v6.7.713 - Sept 30th, 2026 [/B]
---[Fix] Fixed Monster stories missing from Custom provider In-progress Shows when shared or empty IMDb IDs mixed watched counts or completion status.
---[Enhancement] Added separate Automatically skip intro and Automatically skip recap settings under Playback. Both default to off and skip without prompting when segment timing data is available.
---[Fix] SIMKL Progress Episodes and related episode metadata now refresh on the SIMKL service interval even when account activity has not changed.
---[Fix] SIMKL watchlist sync now reconciles additions, removals and status changes, refreshes widgets after successful updates, and preserves cached lists if a response or database update fails.
---[Fix] Trakt, SIMKL, MDBList, Custom, Floppy, Scrob and PunchPlay now honor their own service intervals with scheduling checks every 30 seconds. Interval changes take effect without restarting; background sync still pauses during video playback.
---[Fix] Removed duplicate background playback-sync requests for Trakt, MDBList, Custom and Floppy.
+[B]Update - v6.7.714 - Oct 1st, 2026 [/B]
+--[Fix] Merge mixed-ID Custom watched history before calculating Progress Episodes and In-progress Shows, preserving separate split-catalog stories and counting duplicate watched episodes once.
+--[Logging] Handle temporary contention during optional metadata cache writes without repeated error tracebacks. Other database failures remain logged.
 		</news>
 	</extension>
 

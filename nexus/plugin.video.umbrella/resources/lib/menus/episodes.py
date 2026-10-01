@@ -1425,16 +1425,10 @@ class Episodes:
 		try:
 			episodes = customtraktsync.get_watched_episodes()
 			if not episodes: return self.list
-			shows = {}
-			for (show_imdb, show_tmdb, show_tvdb, season, episode) in episodes:
-				shows.setdefault(('tmdb', str(show_tmdb)) if show_tmdb else ('imdb', show_imdb), {'imdb': show_imdb, 'tmdb': show_tmdb, 'tvdb': show_tvdb, 'watched_set': set()})
-				shows[('tmdb', str(show_tmdb)) if show_tmdb else ('imdb', show_imdb)]['watched_set'].add((int(season), int(episode)))
-			try:
-				for (show_imdb, show_tmdb, show_tvdb, last_watched_at) in customtraktsync.get_watched_shows():
-					key = ('tmdb', str(show_tmdb)) if show_tmdb else ('imdb', show_imdb)
-					if key in shows: shows[key]['lastplayed'] = last_watched_at
-			except: pass
-			items = list(shows.values())
+			from resources.lib.modules.progress_identity import group_watched_shows
+			try: watched_shows = customtraktsync.get_watched_shows() or []
+			except: watched_shows = []
+			items = group_watched_shows(episodes, watched_shows)
 			if not items: return self.list
 
 			def items_list(i):
