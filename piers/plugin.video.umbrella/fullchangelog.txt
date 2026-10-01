@@ -1,3 +1,6 @@
+[B]Update - v6.7.715 - Oct 1st, 2026 [/B]
+--[Change] Working on getting the progress shows to display properly with the split-id series.
+
 [B]Update - v6.7.714 - Oct 1st, 2026 [/B]
 --[Fix] Merge mixed-ID Custom watched history before calculating Progress Episodes and In-progress Shows, preserving separate split-catalog stories and counting duplicate watched episodes once.
 --[Logging] Handle temporary contention during optional metadata cache writes without repeated error tracebacks. Other database failures remain logged.

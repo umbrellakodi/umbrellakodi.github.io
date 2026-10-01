@@ -2834,6 +2834,18 @@ class TVshows:
 		try:
 			indicators = customtrakt.syncTVShows()
 			if not indicators: return self.list
+			from resources.lib.modules.progress_identity import group_watched_shows
+			try: watched_shows = customtraktsync.get_watched_shows() or []
+			except: watched_shows = []
+			# Reconcile partial IDs just as episode progress does, keeping split
+			# catalog stories separate when they share an IMDb ID.
+			show_ids = [(ids.get('imdb', ''), ids.get('tmdb', ''), ids.get('tvdb', ''), 1, 1)
+				for ids, _, _ in indicators]
+			progress_shows = group_watched_shows(show_ids, watched_shows)
+			last_watched = {tuple(show[field] for field in ('imdb', 'tmdb', 'tvdb')): show.get('lastplayed', '')
+				for show in progress_shows}
+			last_watched_by_tmdb = {show['tmdb']: show.get('lastplayed', '')
+				for show in progress_shows if show['tmdb']}
 
 			from resources.lib.modules.episode_mapping import supported
 
@@ -2864,6 +2876,8 @@ class TVshows:
 					values['imdb'] = imdb
 					values['tmdb'] = tmdb
 					values['tvdb'] = tvdb
+					values['lastplayed'] = last_watched_by_tmdb.get(str(tmdb),
+						last_watched.get((imdb, ids.get('tmdb', ''), tvdb), ''))
 					values['mediatype'] = 'tvshows'
 					values['has_next_episode'] = True
 					self.list.append(values)
