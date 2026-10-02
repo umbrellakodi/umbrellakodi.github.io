@@ -52,7 +52,7 @@ class TVshows:
 		self.tvdb_key = getSetting('tvdb.apikey')
 		self.user = str(self.tvdb_key)
 		self.useContainerTitles = getSetting('enable.containerTitles') == 'true'
-		self.trakt_directProgressScrape = getSetting('trakt.directProgress.scrape') == 'true'
+		self.trakt_directProgressScrape = getSetting('services.directProgress.scrape') == 'true'
 		self.trakt_progress_hours = int(getSetting('cache.traktprogress'))
 		self.watched_progress = getSetting('tvshows.progress.watched') == 'true'
 		if datetime.today().month > 6:
@@ -1103,7 +1103,7 @@ class TVshows:
 			useNext = True
 			if create_directory:
 				self.sort() # sort before local pagination
-				if getSetting('trakt.paginate.lists') == 'true' and self.list:
+				if getSetting('services.paginate.lists') == 'true' and self.list:
 					if len(self.list) == int(self.page_limit):
 						useNext = False
 					paginated_ids = [self.list[x:x + int(self.page_limit)] for x in range(0, len(self.list), int(self.page_limit))]
@@ -1139,7 +1139,7 @@ class TVshows:
 			useNext = True
 			if create_directory:
 				self.sort(type='shows.watchlist') # sort before local pagination
-				if getSetting('trakt.paginate.lists') == 'true' and self.list:
+				if getSetting('services.paginate.lists') == 'true' and self.list:
 					if len(self.list) == int(self.page_limit):
 						useNext = False
 					paginated_ids = [self.list[x:x + int(self.page_limit)] for x in range(0, len(self.list), int(self.page_limit))]
@@ -1175,7 +1175,7 @@ class TVshows:
 			useNext = True
 			if create_directory:
 				self.sort()
-				if getSetting('custom.paginate.lists') == 'true' and self.list:
+				if getSetting('services.paginate.lists') == 'true' and self.list:
 					if len(self.list) <= int(self.page_limit):
 						useNext = False
 					paginated_ids = [self.list[x:x + int(self.page_limit)] for x in range(0, len(self.list), int(self.page_limit))]
@@ -1214,7 +1214,7 @@ class TVshows:
 			useNext = True
 			if create_directory:
 				self.sort(type='shows.watchlist')
-				if getSetting('custom.paginate.lists') == 'true' and self.list:
+				if getSetting('services.paginate.lists') == 'true' and self.list:
 					if len(self.list) <= int(self.page_limit):
 						useNext = False
 					paginated_ids = [self.list[x:x + int(self.page_limit)] for x in range(0, len(self.list), int(self.page_limit))]
@@ -1250,7 +1250,7 @@ class TVshows:
 			useNext = True
 			if create_directory:
 				self.sort()
-				if getSetting('custom.paginate.lists') == 'true' and self.list:
+				if getSetting('services.paginate.lists') == 'true' and self.list:
 					if len(self.list) <= int(self.page_limit):
 						useNext = False
 					paginated_ids = [self.list[x:x + int(self.page_limit)] for x in range(0, len(self.list), int(self.page_limit))]
@@ -1388,7 +1388,7 @@ class TVshows:
 			useNext = True
 			if create_directory:
 				self.sort()
-				if getSetting('custom.paginate.lists') == 'true' and self.list:
+				if getSetting('services.paginate.lists') == 'true' and self.list:
 					paginated_ids = [self.list[x:x + int(self.page_limit)] for x in range(0, len(self.list), int(self.page_limit))]
 					# useNext must reflect whether there's a page AFTER this one, not just
 					# whether the list needed paginating at all — checking total length
@@ -1467,7 +1467,7 @@ class TVshows:
 			useNext = True
 			if create_directory:
 				self.sort()
-				if getSetting('floppy.paginate.lists') == 'true' and self.list:
+				if getSetting('services.paginate.lists') == 'true' and self.list:
 					paginated_ids = [self.list[x:x + int(self.page_limit)] for x in range(0, len(self.list), int(self.page_limit))]
 					if index >= len(paginated_ids) - 1: useNext = False
 					self.list = paginated_ids[index] if index < len(paginated_ids) else []
@@ -1501,7 +1501,7 @@ class TVshows:
 			useNext = True
 			if create_directory:
 				self.sort()
-				if getSetting('floppy.paginate.lists') == 'true' and self.list:
+				if getSetting('services.paginate.lists') == 'true' and self.list:
 					if len(self.list) <= int(self.page_limit):
 						useNext = False
 					paginated_ids = [self.list[x:x + int(self.page_limit)] for x in range(0, len(self.list), int(self.page_limit))]
@@ -1538,7 +1538,7 @@ class TVshows:
 			useNext = True
 			if create_directory:
 				self.sort(type='shows.plantowatch') # sort before local pagination
-				if getSetting('simkl.paginate.lists') == 'true' and self.list:
+				if getSetting('services.paginate.lists') == 'true' and self.list:
 					if len(self.list) == int(self.page_limit):
 						useNext = False
 					paginated_ids = [self.list[x:x + int(self.page_limit)] for x in range(0, len(self.list), int(self.page_limit))]
@@ -1574,7 +1574,7 @@ class TVshows:
 			useNext = True
 			if create_directory:
 				self.sort() # sort before local pagination
-				if getSetting('simkl.paginate.lists') == 'true' and self.list:
+				if getSetting('services.paginate.lists') == 'true' and self.list:
 					if len(self.list) == int(self.page_limit):
 						useNext = False
 					paginated_ids = [self.list[x:x + int(self.page_limit)] for x in range(0, len(self.list), int(self.page_limit))]
@@ -1610,7 +1610,7 @@ class TVshows:
 			useNext = True
 			if create_directory:
 				self.sort() # sort before local pagination
-				if getSetting('simkl.paginate.lists') == 'true' and self.list:
+				if getSetting('services.paginate.lists') == 'true' and self.list:
 					if len(self.list) == int(self.page_limit):
 						useNext = False
 					paginated_ids = [self.list[x:x + int(self.page_limit)] for x in range(0, len(self.list), int(self.page_limit))]
@@ -1646,7 +1646,7 @@ class TVshows:
 			useNext = True
 			if create_directory:
 				self.sort() # sort before local pagination
-				if getSetting('simkl.paginate.lists') == 'true' and self.list:
+				if getSetting('services.paginate.lists') == 'true' and self.list:
 					if len(self.list) == int(self.page_limit):
 						useNext = False
 					paginated_ids = [self.list[x:x + int(self.page_limit)] for x in range(0, len(self.list), int(self.page_limit))]
@@ -1682,7 +1682,7 @@ class TVshows:
 			useNext = True
 			if create_directory:
 				self.sort(type='progress')
-				if getSetting('simkl.paginate.lists') == 'true' and self.list:
+				if getSetting('services.paginate.lists') == 'true' and self.list:
 					if len(self.list) == int(self.page_limit):
 						useNext = False
 					paginated_ids = [self.list[x:x + int(self.page_limit)] for x in range(0, len(self.list), int(self.page_limit))]
@@ -1718,7 +1718,7 @@ class TVshows:
 			useNext = True
 			if create_directory:
 				self.sort() # sort before local pagination
-				if getSetting('simkl.paginate.lists') == 'true' and self.list:
+				if getSetting('services.paginate.lists') == 'true' and self.list:
 					if len(self.list) == int(self.page_limit):
 						useNext = False
 					paginated_ids = [self.list[x:x + int(self.page_limit)] for x in range(0, len(self.list), int(self.page_limit))]
@@ -1843,7 +1843,7 @@ class TVshows:
 	def trakt_list(self, url, user, folderName):
 		self.list = []
 		if ',return' in url: url = url.split(',return')[0]
-		if getSetting('trakt.paginate.lists') != 'true':
+		if getSetting('services.paginate.lists') != 'true':
 			if '/trending' in url or '/popular' in url:
 				items = trakt.getTraktAsJson(url)
 			else:
@@ -1981,7 +1981,7 @@ class TVshows:
 		self.sort() # sort before local pagination
 		total_pages = 1
 		useNext = True
-		if getSetting('trakt.paginate.lists') == 'true':
+		if getSetting('services.paginate.lists') == 'true':
 			if len(self.list) == int(self.page_limit):
 				useNext = False
 			paginated_ids = [self.list[x:x + int(self.page_limit)] for x in range(0, len(self.list), int(self.page_limit))]
@@ -2119,7 +2119,7 @@ class TVshows:
 		if not self.list: return
 		self.sort() # sort before local pagination
 		next = ''
-		if getSetting('mdblist.paginate.lists') == 'true':
+		if getSetting('services.paginate.lists') == 'true':
 			total_pages = 1
 			if len(self.list) == int(self.page_limit):
 				useNext = False
@@ -2297,7 +2297,7 @@ class TVshows:
 			self.worker()
 			self.sort(type='shows.watchlist')
 			next = ''
-			if getSetting('mdblist.paginate.lists') == 'true' and self.list:
+			if getSetting('services.paginate.lists') == 'true' and self.list:
 				paginated_ids = [self.list[x:x + int(self.page_limit)] for x in range(0, len(self.list), int(self.page_limit))]
 				total_pages = len(paginated_ids)
 				self.list = paginated_ids[index] if index < total_pages else []
@@ -2331,7 +2331,7 @@ class TVshows:
 			self.worker()
 			self.sort(type='shows.watchlist')
 			next = ''
-			if getSetting('mdblist.paginate.lists') == 'true' and self.list:
+			if getSetting('services.paginate.lists') == 'true' and self.list:
 				paginated_ids = [self.list[x:x + int(self.page_limit)] for x in range(0, len(self.list), int(self.page_limit))]
 				total_pages = len(paginated_ids)
 				self.list = paginated_ids[index] if index < total_pages else []
@@ -2526,7 +2526,7 @@ class TVshows:
 				self.list = filtered
 			useNext = True
 			next = ''
-			if getSetting('trakt.paginate.lists') == 'true' and self.list:
+			if getSetting('services.paginate.lists') == 'true' and self.list:
 				paginated_ids = [self.list[x:x + int(self.page_limit)] for x in range(0, len(self.list), int(self.page_limit))]
 				total_pages = len(paginated_ids)
 				self.list = paginated_ids[index] if index < total_pages else []
@@ -2588,7 +2588,7 @@ class TVshows:
 			if self.list is None: self.list = []
 			next_url = ''
 			hasNext = False
-			if getSetting('simkl.paginate.lists') == 'true' and self.list:
+			if getSetting('services.paginate.lists') == 'true' and self.list:
 				paginated_ids = [self.list[x:x + int(self.page_limit)] for x in range(0, len(self.list), int(self.page_limit))]
 				total_pages = len(paginated_ids)
 				self.list = paginated_ids[index] if index < total_pages else []
@@ -2654,7 +2654,7 @@ class TVshows:
 			self.sort(type='progress')
 			if self.list is None: self.list = []
 			next = ''
-			if getSetting('mdblist.paginate.lists') == 'true' and self.list:
+			if getSetting('services.paginate.lists') == 'true' and self.list:
 				paginated_ids = [self.list[x:x + int(self.page_limit)] for x in range(0, len(self.list), int(self.page_limit))]
 				total_pages = len(paginated_ids)
 				self.list = paginated_ids[index] if index < total_pages else []
@@ -2803,7 +2803,7 @@ class TVshows:
 			self.sort(type='progress')
 			if self.list is None: self.list = []
 			next = ''
-			if getSetting('custom.paginate.lists') == 'true' and self.list:
+			if getSetting('services.paginate.lists') == 'true' and self.list:
 				paginated_ids = [self.list[x:x + int(self.page_limit)] for x in range(0, len(self.list), int(self.page_limit))]
 				total_pages = len(paginated_ids)
 				self.list = paginated_ids[index] if index < total_pages else []
@@ -2929,7 +2929,7 @@ class TVshows:
 			self.sort(type='progress')
 			if self.list is None: self.list = []
 			next = ''
-			if getSetting('floppy.paginate.lists') == 'true' and self.list:
+			if getSetting('services.paginate.lists') == 'true' and self.list:
 				paginated_ids = [self.list[x:x + int(self.page_limit)] for x in range(0, len(self.list), int(self.page_limit))]
 				total_pages = len(paginated_ids)
 				self.list = paginated_ids[index] if index < total_pages else []
@@ -3076,7 +3076,7 @@ class TVshows:
 			self.sort(type='progress')
 			if self.list is None: self.list = []
 			next = ''
-			if getSetting('scrob.paginate.lists') == 'true' and self.list:
+			if getSetting('services.paginate.lists') == 'true' and self.list:
 				paginated_ids = [self.list[x:x + int(self.page_limit)] for x in range(0, len(self.list), int(self.page_limit))]
 				total_pages = len(paginated_ids)
 				self.list = paginated_ids[index] if index < total_pages else []
@@ -3112,7 +3112,7 @@ class TVshows:
 			self.sort(type='progress')
 			if self.list is None: self.list = []
 			next = ''
-			if getSetting('punchplay.paginate.lists') == 'true' and self.list:
+			if getSetting('services.paginate.lists') == 'true' and self.list:
 				paginated_ids = [self.list[x:x + int(self.page_limit)] for x in range(0, len(self.list), int(self.page_limit))]
 				total_pages = len(paginated_ids)
 				self.list = paginated_ids[index] if index < total_pages else []
@@ -3302,7 +3302,7 @@ class TVshows:
 			useNext = True
 			if create_directory:
 				self.sort()
-				if getSetting('scrob.paginate.lists') == 'true' and self.list:
+				if getSetting('services.paginate.lists') == 'true' and self.list:
 					if len(self.list) <= int(self.page_limit):
 						useNext = False
 					paginated_ids = [self.list[x:x + int(self.page_limit)] for x in range(0, len(self.list), int(self.page_limit))]
@@ -3348,7 +3348,7 @@ class TVshows:
 			useNext = True
 			if create_directory:
 				self.sort()
-				if getSetting('punchplay.paginate.lists') == 'true' and self.list:
+				if getSetting('services.paginate.lists') == 'true' and self.list:
 					if len(self.list) <= int(self.page_limit):
 						useNext = False
 					paginated_ids = [self.list[x:x + int(self.page_limit)] for x in range(0, len(self.list), int(self.page_limit))]
@@ -3395,7 +3395,7 @@ class TVshows:
 			useNext = True
 			if create_directory:
 				self.sort()
-				if getSetting('punchplay.paginate.lists') == 'true' and self.list:
+				if getSetting('services.paginate.lists') == 'true' and self.list:
 					if len(self.list) <= int(self.page_limit):
 						useNext = False
 					paginated_ids = [self.list[x:x + int(self.page_limit)] for x in range(0, len(self.list), int(self.page_limit))]
@@ -3519,7 +3519,7 @@ class TVshows:
 				except: log_utils.error()
 			useNext = True
 			self.sort(type='watched')
-			if getSetting('mdblist.paginate.lists') == 'true' and self.list:
+			if getSetting('services.paginate.lists') == 'true' and self.list:
 				if len(self.list) <= int(self.page_limit):
 					useNext = False
 				paginated_ids = [self.list[x:x + int(self.page_limit)] for x in range(0, len(self.list), int(self.page_limit))]
@@ -3573,7 +3573,7 @@ class TVshows:
 				except: log_utils.error()
 			useNext = True
 			self.sort(type='watched')
-			if getSetting('custom.paginate.lists') == 'true' and self.list:
+			if getSetting('services.paginate.lists') == 'true' and self.list:
 				if len(self.list) <= int(self.page_limit):
 					useNext = False
 				paginated_ids = [self.list[x:x + int(self.page_limit)] for x in range(0, len(self.list), int(self.page_limit))]
@@ -3695,7 +3695,7 @@ class TVshows:
 		if self.useContainerTitles: control.setContainerName(folderName)
 		returnHome = control.folderPath()
 		control.setHomeWindowProperty('umbrella.returnhome', returnHome)
-		if getSetting('trakt.directProgress.scrape') == 'true' and getSetting('enable.playnext') == 'true':
+		if getSetting('services.directProgress.scrape') == 'true' and getSetting('enable.playnext') == 'true':
 			pass
 		else:
 			control.playlist.clear()

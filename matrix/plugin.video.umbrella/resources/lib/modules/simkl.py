@@ -359,7 +359,7 @@ def watch(content_type, name, imdb=None, tvdb=None, season=None, episode=None, r
 	control.trigger_widget_refresh()
 	if season and not episode: name = '%s-Season%s...' % (name, season)
 	if season and episode: name = '%s-S%sxE%02d...' % (name, season, int(episode))
-	if getSetting('simkl.general.notifications') == 'true':
+	if getSetting('services.general.notifications') == 'true':
 		if success is True: control.notification(title=40342, message=getLS(40561) % ('[COLOR %s]%s[/COLOR]' % (highlightColor, name)))
 		else: control.notification(title=40342, message=getLS(40560) % ('[COLOR %s]%s[/COLOR]' % (highlightColor, name)))
 	if not success: log_utils.log(getLS(40560) % name + ' : ids={imdb: %s, tvdb: %s}' % (imdb, tvdb), __name__, level=log_utils.LOGDEBUG)
@@ -389,7 +389,7 @@ def unwatch(content_type, name, imdb=None, tvdb=None, season=None, episode=None,
 	control.trigger_widget_refresh()
 	if season and not episode: name = '%s-Season%s...' % (name, season)
 	if season and episode: name = '%s-S%sxE%02d...' % (name, season, int(episode))
-	if getSetting('simkl.general.notifications') == 'true':
+	if getSetting('services.general.notifications') == 'true':
 		if success is True: control.notification(title=40342, message=getLS(40563) % ('[COLOR %s]%s[/COLOR]' % (highlightColor, name)))
 		else: control.notification(title=40342, message=getLS(40562) % ('[COLOR %s]%s[/COLOR]' % (highlightColor, name)))
 	if not success: log_utils.log(getLS(40562) % name + ' : ids={imdb: %s, tvdb: %s}' % (imdb, tvdb), __name__, level=log_utils.LOGDEBUG)
@@ -1168,7 +1168,7 @@ def progress_cache_hours():
 def sync_watchedProgress(activities=None, forced=False):
 	try:
 		from resources.lib.menus import episodes
-		direct = getSetting('simkl.directProgress.scrape') == 'true'
+		direct = getSetting('services.directProgress.scrape') == 'true'
 		url = '/sync/all-items/shows/watching'
 		progressActivity = getProgressActivity(activities)
 		local_listCache = cache.timeout(episodes.Episodes().simkl_progress_list, url, direct)
@@ -1585,7 +1585,7 @@ def manager(name, imdb=None, tvdb=None, season=None, episode=None, refresh=True,
 				control.hide()
 				if refresh: control.refresh()
 				control.trigger_widget_refresh()
-				if getSetting('simkl.general.notifications') == 'true': control.notification(title=name, message=message + ' (%s)' % listname)
+				if getSetting('services.general.notifications') == 'true': control.notification(title=name, message=message + ' (%s)' % listname)
 	except:
 		log_utils.error()
 		control.hide()

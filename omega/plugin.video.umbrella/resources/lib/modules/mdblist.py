@@ -1519,7 +1519,7 @@ def watch(content_type, name, imdb=None, tvdb=None, tmdb=None, season=None, epis
 	control.trigger_widget_refresh()
 	if season and not episode: name = '%s-Season%s...' % (name, season)
 	if season and episode: name = '%s-S%sxE%02d...' % (name, season, int(episode))
-	if getSetting('mdblist.general.notifications') == 'true':
+	if getSetting('services.general.notifications') == 'true':
 		if success is True: control.notification(title='MDBList', message=getLS(40641) % ('[COLOR %s]%s[/COLOR]' % (highlightColor, name)))
 		else: control.notification(title='MDBList', message=getLS(40640) % ('[COLOR %s]%s[/COLOR]' % (highlightColor, name)))
 	if not success: log_utils.log(getLS(40640) % name + ' : ids={imdb: %s, tvdb: %s}' % (imdb, tvdb), __name__, level=log_utils.LOGDEBUG)
@@ -1548,6 +1548,6 @@ def unwatch(content_type, name, imdb=None, tvdb=None, tmdb=None, season=None, ep
 	control.trigger_widget_refresh()
 	if season and not episode: name = '%s-Season%s...' % (name, season)
 	if season and episode: name = '%s-S%sxE%02d...' % (name, season, int(episode))
-	if getSetting('mdblist.general.notifications') == 'true':
+	if getSetting('services.general.notifications') == 'true':
 		if success is True: control.notification(title='MDBList', message=getLS(40643) % ('[COLOR %s]%s[/COLOR]' % (highlightColor, name)))
 		else: control.notification(title='MDBList', message=getLS(40642) % ('[COLOR %s]%s[/COLOR]' % (highlightColor, name)))

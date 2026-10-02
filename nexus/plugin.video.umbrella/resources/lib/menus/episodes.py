@@ -104,16 +104,16 @@ class Episodes:
 		self.floppyCredentials = floppy.getFloppyCredentialsInfo()
 		self.scrobCredentials = scrob.getScrobCredentialsInfo()
 		self.punchplayCredentials = punchplay.getPunchPlayCredentialsInfo()
-		self.trakt_directProgressScrape = getSetting('trakt.directProgress.scrape') == 'true'
-		self.simkl_directProgressScrape = getSetting('simkl.directProgress.scrape') == 'true'
-		self.mdblist_directProgressScrape = getSetting('mdblist.directProgress.scrape') == 'true'
-		self.custom_directProgressScrape = getSetting('custom.directProgress.scrape') == 'true'
-		self.floppy_directProgressScrape = getSetting('floppy.directProgress.scrape') == 'true'
-		self.scrob_directProgressScrape = getSetting('scrob.directProgress.scrape') == 'true'
-		self.punchplay_directProgressScrape = getSetting('punchplay.directProgress.scrape') == 'true'
-		self.trakt_progressFlatten = getSetting('trakt.progressFlatten') == 'true'
-		self.simkl_progressFlatten = getSetting('simkl.progressFlatten') == 'true'
-		self.mdblist_progressFlatten = getSetting('mdblist.progressFlatten') == 'true'
+		self.trakt_directProgressScrape = getSetting('services.directProgress.scrape') == 'true'
+		self.simkl_directProgressScrape = getSetting('services.directProgress.scrape') == 'true'
+		self.mdblist_directProgressScrape = getSetting('services.directProgress.scrape') == 'true'
+		self.custom_directProgressScrape = getSetting('services.directProgress.scrape') == 'true'
+		self.floppy_directProgressScrape = getSetting('services.directProgress.scrape') == 'true'
+		self.scrob_directProgressScrape = getSetting('services.directProgress.scrape') == 'true'
+		self.punchplay_directProgressScrape = getSetting('services.directProgress.scrape') == 'true'
+		self.trakt_progressFlatten = getSetting('services.progressFlatten') == 'true'
+		self.simkl_progressFlatten = getSetting('services.progressFlatten') == 'true'
+		self.mdblist_progressFlatten = getSetting('services.progressFlatten') == 'true'
 		self.trakt_link = 'https://api.trakt.tv'
 		self.trakthistory_link = 'https://api.trakt.tv/users/me/history/shows?limit=%s&page=1' % self.count
 		self.progress_link = 'https://api.trakt.tv/users/me/watched/shows'
@@ -258,7 +258,7 @@ class Episodes:
 			useNext = True
 			next_url = ''
 			page_limit = max(1, int(self.count) if self.count else 20)
-			if create_directory and getSetting('trakt.paginate.lists') == 'true' and self.list and len(self.list) > page_limit:
+			if create_directory and getSetting('services.paginate.lists') == 'true' and self.list and len(self.list) > page_limit:
 				try:
 					q = dict(parse_qsl(urlsplit(url).query)) if '?' in url else {}
 					index = int(q.get('page', 1)) - 1
@@ -841,7 +841,7 @@ class Episodes:
 				self.list = [i for i in self.list if i.get('unaired', '') != 'true']
 			hasNext = True if isTraktHistory else False
 			next_url = ''
-			if isProgressView and getSetting('trakt.paginate.lists') == 'true' and self.list:
+			if isProgressView and getSetting('services.paginate.lists') == 'true' and self.list:
 				paginated_ids = [self.list[x:x + page_limit] for x in range(0, len(self.list), page_limit)]
 				total_pages = len(paginated_ids)
 				self.list = paginated_ids[index] if index < total_pages else []
@@ -912,7 +912,7 @@ class Episodes:
 				self.list = [i for i in self.list if i.get('unaired', '') != 'true']
 			hasNext = False
 			next_url = ''
-			if getSetting('simkl.paginate.lists') == 'true' and self.list:
+			if getSetting('services.paginate.lists') == 'true' and self.list:
 				paginated_ids = [self.list[x:x + page_limit] for x in range(0, len(self.list), page_limit)]
 				total_pages = len(paginated_ids)
 				self.list = paginated_ids[index] if index < total_pages else []
@@ -989,7 +989,7 @@ class Episodes:
 				self.list = [i for i in self.list if i.get('unaired', '') != 'true']
 			hasNext = False
 			next_url = ''
-			if getSetting('mdblist.paginate.lists') == 'true' and self.list:
+			if getSetting('services.paginate.lists') == 'true' and self.list:
 				try:
 					q = dict(parse_qsl(urlsplit(url).query)) if '?' in url else {}
 					index = int(q.get('page', 1)) - 1
@@ -1577,7 +1577,7 @@ class Episodes:
 				self.list = [i for i in self.list if i.get('unaired', '') != 'true']
 			next_url = ''
 			hasNext = False
-			if getSetting('floppy.paginate.lists') == 'true' and self.list:
+			if getSetting('services.paginate.lists') == 'true' and self.list:
 				paginated_ids = [self.list[x:x + page_limit] for x in range(0, len(self.list), page_limit)]
 				total_pages = len(paginated_ids)
 				self.list = paginated_ids[index] if index < total_pages else []
@@ -1775,7 +1775,7 @@ class Episodes:
 			self.list = [i for i in self.list if i.get('unaired', '') != 'true']
 			next_url = ''
 			hasNext = False
-			if getSetting('scrob.paginate.lists') == 'true' and self.list:
+			if getSetting('services.paginate.lists') == 'true' and self.list:
 				paginated_ids = [self.list[x:x + page_limit] for x in range(0, len(self.list), page_limit)]
 				total_pages = len(paginated_ids)
 				self.list = paginated_ids[index] if index < total_pages else []
@@ -1822,7 +1822,7 @@ class Episodes:
 			self.list = [i for i in self.list if i.get('unaired', '') != 'true']
 			next_url = ''
 			hasNext = False
-			if getSetting('punchplay.paginate.lists') == 'true' and self.list:
+			if getSetting('services.paginate.lists') == 'true' and self.list:
 				paginated_ids = [self.list[x:x + page_limit] for x in range(0, len(self.list), page_limit)]
 				total_pages = len(paginated_ids)
 				self.list = paginated_ids[index] if index < total_pages else []

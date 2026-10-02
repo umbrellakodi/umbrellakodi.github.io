@@ -128,7 +128,7 @@ def getPunchPlayIndicatorsInfo():
 
 
 def _notify(message):
-    if getSetting('punchplay.general.notifications') == 'true':
+    if getSetting('services.general.notifications') == 'true':
         control.notification(title='PunchPlay', message=message)
 
 

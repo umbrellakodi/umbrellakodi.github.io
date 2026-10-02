@@ -432,7 +432,7 @@ def watch(content_type, name, imdb=None, tvdb=None, season=None, episode=None, r
 	control.trigger_widget_refresh()
 	if season and not episode: name = '%s-Season%s...' % (name, season)
 	if season and episode: name = '%s-S%sxE%02d...' % (name, season, int(episode))
-	if getSetting('floppy.general.notifications') == 'true':
+	if getSetting('services.general.notifications') == 'true':
 		if success is True: control.notification(title='Floppy', message='%s Marked as Watched on Floppy' % name)
 		else: control.notification(title='Floppy', message='%s Failed to Mark as Watched on Floppy' % name)
 
@@ -452,7 +452,7 @@ def unwatch(content_type, name, imdb=None, tvdb=None, season=None, episode=None,
 	control.trigger_widget_refresh()
 	if season and not episode: name = '%s-Season%s...' % (name, season)
 	if season and episode: name = '%s-S%sxE%02d...' % (name, season, int(episode))
-	if getSetting('floppy.general.notifications') == 'true':
+	if getSetting('services.general.notifications') == 'true':
 		if success is True: control.notification(title='Floppy', message='%s Marked as Unwatched on Floppy' % name)
 		else: control.notification(title='Floppy', message='%s Failed to Mark as Unwatched on Floppy' % name)
 
@@ -1248,7 +1248,7 @@ def manager(name, imdb=None, tvdb=None, tmdb=None, season=None, episode=None, re
 				sync_collection(forced=True)
 				if refresh: control.refresh()
 		elif action_key == 'list_add':
-			notify = getSetting('floppy.general.notifications') == 'true'
+			notify = getSetting('services.general.notifications') == 'true'
 			resolved_tmdb = tmdb or _resolve_tmdb(media_type, imdb=imdb, tvdb=tvdb)
 			if not resolved_tmdb: return
 			lists = get_user_lists()
@@ -1270,7 +1270,7 @@ def manager(name, imdb=None, tvdb=None, tmdb=None, season=None, episode=None, re
 			else:
 				if notify: control.notification(title='Floppy', message='Failed to add to list')
 		elif action_key == 'list_remove':
-			notify = getSetting('floppy.general.notifications') == 'true'
+			notify = getSetting('services.general.notifications') == 'true'
 			resolved_tmdb = tmdb or _resolve_tmdb(media_type, imdb=imdb, tvdb=tvdb)
 			if not resolved_tmdb: return
 			lists = get_user_lists()

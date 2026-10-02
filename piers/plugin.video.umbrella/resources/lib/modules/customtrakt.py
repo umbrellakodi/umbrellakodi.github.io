@@ -347,7 +347,7 @@ def customAuth(fromSettings=0):
 	try:
 		deviceCode = getCustomDeviceCode()
 		if not deviceCode:
-			if fromSettings == 1: control.openSettings('5.5', 'plugin.video.umbrella')
+			if fromSettings == 1: control.openSettings('14.2', 'plugin.video.umbrella')
 			control.notification(message='%s Service Authorization Error' % getCustomServiceName(), icon=custom_icon)
 			return False
 		tokenResponse = getCustomDeviceToken(deviceCode)
@@ -373,7 +373,7 @@ def customAuth(fromSettings=0):
 					control.setSetting('custom.user.name', str(account_info['user']['username']))
 			except: pass
 			control.notification(message='%s Service Authorized Successfully' % getCustomServiceName(), icon=custom_icon)
-			if fromSettings == 1: control.openSettings('5.5', 'plugin.video.umbrella')
+			if fromSettings == 1: control.openSettings('14.2', 'plugin.video.umbrella')
 			if not control.yesnoDialog('Do you want to set %s as your service for your watched and unwatched indicators?' % getCustomServiceName(), '', '', 'Indicators', 'No', 'Yes'): return True
 			global _reauth_failed
 			_reauth_failed = False
@@ -388,7 +388,7 @@ def customAuth(fromSettings=0):
 			from threading import Thread
 			Thread(target=sync_watched, kwargs={'forced': True}).start()
 			return True
-		if fromSettings == 1: control.openSettings('5.5', 'plugin.video.umbrella')
+		if fromSettings == 1: control.openSettings('14.2', 'plugin.video.umbrella')
 		control.notification(message='%s Service Authorization Error' % getCustomServiceName(), icon=custom_icon)
 		return False
 	except:
@@ -421,7 +421,7 @@ def customRevoke(fromSettings=0):
 		control.homeWindow.setProperty(_REAUTH_BUSY_PROP, '')
 		control.homeWindow.setProperty(_CUSTOM_TOKEN_PROP, '')
 		if fromSettings == 1:
-			control.openSettings('5.5', 'plugin.video.umbrella')
+			control.openSettings('14.2', 'plugin.video.umbrella')
 			control.dialog.ok(getCustomServiceName(), '%s Service Authorization Revoked' % getCustomServiceName())
 	except:
 		log_utils.error()
@@ -618,7 +618,7 @@ def watch(content_type, name, imdb=None, tvdb=None, season=None, episode=None, r
 	control.trigger_widget_refresh()
 	if season and not episode: name = '%s-Season%s...' % (name, season)
 	if season and episode: name = '%s-S%sxE%02d...' % (name, season, int(episode))
-	if getSetting('custom.general.notifications') == 'true':
+	if getSetting('services.general.notifications') == 'true':
 		if success is True: control.notification(title=getCustomServiceName(), message=getLS(40729) % ('[COLOR %s]%s[/COLOR]' % (getSetting('highlight.color'), name), getCustomServiceName()))
 		else: control.notification(title=getCustomServiceName(), message=getLS(40730) % ('[COLOR %s]%s[/COLOR]' % (getSetting('highlight.color'), name), getCustomServiceName()))
 
@@ -638,7 +638,7 @@ def unwatch(content_type, name, imdb=None, tvdb=None, season=None, episode=None,
 	control.trigger_widget_refresh()
 	if season and not episode: name = '%s-Season%s...' % (name, season)
 	if season and episode: name = '%s-S%sxE%02d...' % (name, season, int(episode))
-	if getSetting('custom.general.notifications') == 'true':
+	if getSetting('services.general.notifications') == 'true':
 		if success is True: control.notification(title=getCustomServiceName(), message=getLS(40731) % ('[COLOR %s]%s[/COLOR]' % (getSetting('highlight.color'), name), getCustomServiceName()))
 		else: control.notification(title=getCustomServiceName(), message=getLS(40732) % ('[COLOR %s]%s[/COLOR]' % (getSetting('highlight.color'), name), getCustomServiceName()))
 
@@ -1277,7 +1277,7 @@ def manager(name, imdb=None, tvdb=None, tmdb=None, season=None, episode=None, re
 				sync_dropped(forced=True)
 				if refresh: control.refresh()
 		elif action_key == 'list_add':
-			notify = getSetting('custom.general.notifications') == 'true'
+			notify = getSetting('services.general.notifications') == 'true'
 			lists = get_user_lists()
 			options = [l.get('name', '') for l in lists] + ['[COLOR %s]+ New List[/COLOR]' % hc]
 			list_select = control.selectDialog(options, heading=control.addonInfo('name') + ' - %s Lists' % getCustomServiceName())
@@ -1297,7 +1297,7 @@ def manager(name, imdb=None, tvdb=None, tmdb=None, season=None, episode=None, re
 			else:
 				if notify: control.notification(title=getCustomServiceName(), message='Failed to add to list')
 		elif action_key == 'list_remove':
-			notify = getSetting('custom.general.notifications') == 'true'
+			notify = getSetting('services.general.notifications') == 'true'
 			lists = get_user_lists()
 			if not lists:
 				if notify: control.notification(title=getCustomServiceName(), message='No lists found')

@@ -683,7 +683,7 @@ def watch(content_type, name, imdb=None, tvdb=None, season=None, episode=None, r
 	control.trigger_widget_refresh()
 	if season and not episode: name = '%s-Season%s...' % (name, season)
 	if season and episode: name = '%s-S%sxE%02d...' % (name, season, int(episode))
-	if getSetting('scrob.general.notifications') == 'true':
+	if getSetting('services.general.notifications') == 'true':
 		if success is True: control.notification(title='Scrob', message='%s Marked as Watched on Scrob' % name)
 		else: control.notification(title='Scrob', message='%s Failed to Mark as Watched on Scrob' % name)
 
@@ -707,7 +707,7 @@ def unwatch(content_type, name, imdb=None, tvdb=None, season=None, episode=None,
 	if season and episode: name = '%s-S%sxE%02d...' % (name, season, int(episode))
 	if not has_write:
 		control.notification(title='Scrob', message='Unwatch requires a Scrob username/password (see settings)')
-	elif getSetting('scrob.general.notifications') == 'true':
+	elif getSetting('services.general.notifications') == 'true':
 		if success is True: control.notification(title='Scrob', message='%s Marked as Unwatched on Scrob' % name)
 		else: control.notification(title='Scrob', message='%s Failed to Mark as Unwatched on Scrob' % name)
 

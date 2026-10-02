@@ -391,7 +391,7 @@ def traktRevoke(fromSettings=0):
 		# Capture before clearing so we can invalidate the correct cache entries below
 		_revoke_user = getSetting('trakt.user.name').strip()
 		_revoke_lang = control.apiLanguage()['tmdb']
-		_revoke_direct = getSetting('trakt.directProgress.scrape') == 'true'
+		_revoke_direct = getSetting('services.directProgress.scrape') == 'true'
 		control.homeWindow.setProperty('umbrella.updateSettings', 'false')
 		control.setSetting('trakt.user.name', '')
 		control.setSetting('trakt.token.expires', '')
@@ -612,7 +612,7 @@ def watch(content_type, name, imdb=None, tvdb=None, season=None, episode=None, r
 	control.trigger_widget_refresh()
 	if season and not episode: name = '%s-Season%s...' % (name, season)
 	if season and episode: name = '%s-S%sxE%02d...' % (name, season, int(episode))
-	if getSetting('trakt.general.notifications') == 'true':
+	if getSetting('services.general.notifications') == 'true':
 		if success is True: control.notification(title=32315, message=getLS(35502) % ('[COLOR %s]%s[/COLOR]' % (highlight_color, name)))
 		else: control.notification(title=32315, message=getLS(35504) % ('[COLOR %s]%s[/COLOR]' % (highlight_color, name)))
 	if not success: log_utils.log(getLS(35504) % name + ' : ids={imdb: %s, tvdb: %s}' % (imdb, tvdb), __name__, level=log_utils.LOGDEBUG)
@@ -642,7 +642,7 @@ def unwatch(content_type, name, imdb=None, tvdb=None, season=None, episode=None,
 	control.trigger_widget_refresh()
 	if season and not episode: name = '%s-Season%s...' % (name, season)
 	if season and episode: name = '%s-S%sxE%02d...' % (name, season, int(episode))
-	if getSetting('trakt.general.notifications') == 'true':
+	if getSetting('services.general.notifications') == 'true':
 		if success is True: control.notification(title=32315, message=getLS(35503) % ('[COLOR %s]%s[/COLOR]' % (highlight_color, name)))
 		else: control.notification(title=32315, message=getLS(35505) % ('[COLOR %s]%s[/COLOR]' % (highlight_color, name)))
 	if not success: log_utils.log(getLS(35505) % name + ' : ids={imdb: %s, tvdb: %s}' % (imdb, tvdb), __name__, level=log_utils.LOGDEBUG)
@@ -784,7 +784,7 @@ def hideItem(name, imdb=None, tvdb=None, season=None, episode=None, refresh=True
 			sync_hidden_progress(forced=True)
 			if refresh: control.refresh()
 			control.trigger_widget_refresh()
-			if getSetting('trakt.general.notifications') == 'true':
+			if getSetting('services.general.notifications') == 'true':
 				control.notification(title=32315, message=getLS(33053) % name)
 	except: log_utils.error()
 
@@ -802,7 +802,7 @@ def removeCollectionItems(type, id_list):
 			control.trigger_widget_refresh()
 			if type == 'movies': traktsync.delete_collection_items(id_list, 'movies_collection')
 			else: traktsync.delete_collection_items(id_list, 'shows_collection')
-			if getSetting('trakt.general.notifications') == 'true':
+			if getSetting('services.general.notifications') == 'true':
 				control.notification(title='Trakt Collection Manager', message='Successfuly Removed %s Item%s' % (total_items, 's' if total_items >1 else ''))
 	except: log_utils.error()
 
@@ -820,7 +820,7 @@ def removeWatchlistItems(type, id_list):
 			control.trigger_widget_refresh()
 			if type == 'movies': traktsync.delete_watchList_items(id_list, 'movies_watchlist')
 			else: traktsync.delete_watchList_items(id_list, 'shows_watchlist')
-			if getSetting('trakt.general.notifications') == 'true':
+			if getSetting('services.general.notifications') == 'true':
 				control.notification(title='Trakt Watch List Manager', message='Successfuly Removed %s Item%s' % (total_items, 's' if total_items >1 else ''))
 	except: log_utils.error()
 
@@ -933,7 +933,7 @@ def manager(name, imdb=None, tvdb=None, season=None, episode=None, refresh=True,
 				control.hide()
 				if refresh: control.refresh()
 				control.trigger_widget_refresh()
-				if getSetting('trakt.general.notifications') == 'true': control.notification(title=name, message=message + ' (%s)' % list)
+				if getSetting('services.general.notifications') == 'true': control.notification(title=name, message=message + ' (%s)' % list)
 	except:
 		log_utils.error()
 		control.hide()
@@ -2092,7 +2092,7 @@ def sync_watchedProgress(activities=None, forced=False, trigger_refresh=True):
 		from resources.lib.menus import episodes
 		trakt_user = getSetting('trakt.user.name').strip()
 		lang = control.apiLanguage()['tmdb']
-		direct = getSetting('trakt.directProgress.scrape') == 'true'
+		direct = getSetting('services.directProgress.scrape') == 'true'
 		url = 'https://api.trakt.tv/users/me/watched/shows'
 		progressActivity = getProgressActivity(activities)
 		local_listCache = cache.timeout(episodes.Episodes().trakt_progress_list, url, trakt_user, lang, direct)
