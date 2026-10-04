@@ -3563,6 +3563,17 @@
 						<heading>40768</heading>
 					</control>
 				</setting>
+				<setting id="scrob.apikey" type="string" label="40769" help="">
+					<level>0</level>
+					<default/>
+					<constraints>
+						<allowempty>true</allowempty>
+					</constraints>
+					<control type="edit" format="string">
+						<heading>40769</heading>
+						<hidden>true</hidden>
+					</control>
+				</setting>
 				<setting id="showScrobAuth" type="action" label="40772" help="">
 					<level>0</level>
 					<data>RunPlugin(plugin://plugin.video.umbrella/?action=scrobAuth)</data>
@@ -6086,22 +6097,6 @@
 					<default>false</default>
 					<visible>false</visible>
 					<control type="toggle"/>
-				</setting>
-				<setting id="scrob.apikey" type="string" label="40769" help="">
-					<level>0</level>
-					<default/>
-					<constraints>
-						<allowempty>true</allowempty>
-					</constraints>
-					<dependencies>
-						<dependency type="visible">
-							<condition on="property" name="InfoBool">false</condition>
-						</dependency>
-					</dependencies>
-					<control type="edit" format="string">
-						<heading>40769</heading>
-						<hidden>true</hidden>
-					</control>
 				</setting>
 				<setting id="scrob.accesstoken" type="string" label="" help="">
 					<level>0</level>

@@ -1,3 +1,6 @@
+[B]Update - v6.7.717 - Oct 4th, 2026 [/B]
+--[Change] Added Scrob api key back due to issues with device code authorization.
+
 [B]Update - v6.7.716 - Oct 2nd, 2026 [/B]
 --[Change] Moved all similar settings from different providers into a single shared settings section at top of online services.
 
