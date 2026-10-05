@@ -1,5 +1,5 @@
 <?xml version='1.0' encoding='utf-8'?>
-<addons><addon id="plugin.video.umbrella" name="Umbrella" provider-name="Umbrella" version="6.7.717">
+<addons><addon id="plugin.video.umbrella" name="Umbrella" provider-name="Umbrella" version="6.7.718">
 	<requires>
 		<import addon="xbmc.python" version="3.0.0" />
 		<import addon="script.module.requests" />
@@ -271,8 +271,8 @@
 			<screenshot>resources/screenshots/screenshot003.jpg</screenshot>
 		</assets>
 		<news>
-[B]Update - v6.7.717 - Oct 4th, 2026 [/B]
---[Change] Added Scrob api key back due to issues with device code authorization.
+[B]Update - v6.7.718 - Oct 5th, 2026 [/B]
+--[Feature] Added TV season pack preferences through the source context menu. Source-select, auto-play, and next-episode pre-scrapes try the chosen pack and debrid service, falling back to source selection when unavailable. Explicit source selection bypasses the preference so it can be replaced or cleared.
 		</news>
 	</extension>
 

@@ -1377,7 +1377,9 @@ class PlayNext(xbmc.Player):
 
 	def prescrapeNext(self):
 		try:
-			if getSetting('play.mode.tv') == '0': return
+			if getSetting('play.mode.tv') == '0':
+				from resources.lib.modules import source_preferences
+				if not source_preferences.get(self.getNext_meta()): return
 			playlist_pos = control.playlist.getposition()
 			playlist_size = control.playlist.size()
 			if playlist_size > 0 and playlist_pos != (playlist_size - 1):

@@ -17,6 +17,7 @@ from resources.lib.modules import control
 from resources.lib.modules import debrid
 from resources.lib.modules import log_utils
 from resources.lib.modules import string_tools
+from resources.lib.modules import source_preferences
 from resources.lib.modules.source_utils import supported_video_extensions, getFileType, aliases_check
 from resources.lib.cloud_scrapers import cloudSources
 from resources.lib.internal_scrapers import internalSources
@@ -66,6 +67,7 @@ class Sources:
 		self.useTitleSubs = getSetting('sources.useTitleSubs') == 'true'
 
 	def play(self, title, year, imdb, tmdb, tvdb, season, episode, tvshowtitle, premiered, meta, select, rescrape=None):
+		force_selection = select == '0' or rescrape == 'true'
 		if not self.prem_providers:
 			control.sleep(200) ; control.hide()
 			return control.notification(message=33034)
@@ -78,7 +80,7 @@ class Sources:
 				playerWindow.clearProperty('umbrella.preResolved_imdb')
 				playerWindow.clearProperty('umbrella.preResolved_tmdb')
 			preResolved_nextUrl = playerWindow.getProperty('umbrella.preResolved_nextUrl')
-			if preResolved_nextUrl != '' and (episode is None or getSetting('play.mode.tv') != '0'):
+			if preResolved_nextUrl != '' and not force_selection:
 				preResolved_season = playerWindow.getProperty('umbrella.preResolved_season')
 				preResolved_episode = playerWindow.getProperty('umbrella.preResolved_episode')
 				preResolved_imdb = playerWindow.getProperty('umbrella.preResolved_imdb')
@@ -259,10 +261,15 @@ class Sources:
 			self.season = season ; self.episode = episode
 			self.ids = {'imdb': self.imdb, 'tmdb': self.tmdb, 'tvdb': self.tvdb}
 			if len(items) > 0:
-				if select == '0':
+				preference = source_preferences.get(self.meta) if not force_selection else None
+				url = None
+				if preference:
+					matches = source_preferences.matching(items, preference)
+					if matches: url = self.sourcesAutoPlay(matches)
+				if (preference and not url) or (not preference and select == '0'):
 					control.sleep(200)
 					return self.sourceSelect(title, items, uncached_items, self.meta)
-				else: url = self.sourcesAutoPlay(items)
+				elif not preference: url = self.sourcesAutoPlay(items)
 			if url == 'close://' or url is None:
 				self.url = url
 				return self.errorForSources()
@@ -834,7 +841,10 @@ class Sources:
 		return self.sources
 
 	def preResolve(self, next_sources, next_meta):
+		playerWindow.clearProperty('umbrella.preResolved_nextUrl')
 		try:
+			preference = source_preferences.get(next_meta)
+			if preference: next_sources = source_preferences.matching(next_sources, preference)
 			next_sources = [i for i in next_sources if not i.get('cloud_folder')]
 			if not next_sources: raise Exception()
 			homeWindow.setProperty(self.metaProperty, jsdumps(next_meta))
@@ -1374,6 +1384,7 @@ class Sources:
 		return filter
 
 	def sourcesAutoPlay(self, items):
+		url = None
 		#control.hide()
 		#control.sleep(200)
 		items = [i for i in items if not i.get('cloud_folder')]
