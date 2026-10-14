@@ -866,14 +866,14 @@ def _fetchShowProgress(imdb):
 	except: log_utils.error()
 
 
-def syncSeasons(imdb, tvdb):
+def syncSeasons(imdb, tvdb, tmdb=''):
 	try:
 		if not getCustomCredentialsInfo(): return None
-		if not imdb and not tvdb: return None
+		if not imdb and not tvdb and not tmdb: return None
 		if imdb:
 			progress = getShowProgress(imdb)
 			if progress: return _seasons_from_progress(progress)
-		return _local_syncSeasons(imdb, tvdb)
+		return _local_syncSeasons(imdb, tvdb, tmdb)
 	except: log_utils.error()
 
 
@@ -898,23 +898,23 @@ def _seasons_from_progress(progress):
 	return [['%01d' % int(s) for s in sorted(fully_watched)], counts]
 
 
-def _local_syncSeasons(imdb, tvdb):
+def _local_syncSeasons(imdb, tvdb, tmdb=''):
 	try:
 		episodes = customtraktsync.get_watched_episodes()
-		if not episodes: return [[], {}]
-		show_eps = [(s, e) for (si, st, sv, s, e) in episodes if si == imdb or sv == tvdb]
-		if not show_eps: return [[], {}]
-		from collections import defaultdict
-		by_season = defaultdict(list)
-		for (s, e) in show_eps: by_season[int(s)].append(int(e))
 		from resources.lib.database import cache as _cache
 		from resources.lib.indexers import tmdb as _tmdb
-		tmdb_id = ''
-		if imdb or tvdb:
+		tmdb_id = str(tmdb or '')
+		if not tmdb_id and (imdb or tvdb):
 			try:
 				result = _cache.get(_tmdb.TVshows().IdLookup, 96, imdb, tvdb)
 				tmdb_id = str(result.get('id', '')) if result else ''
 			except: pass
+		from resources.lib.modules.progress_identity import group_watched_shows, matches_show
+		from collections import defaultdict
+		by_season = defaultdict(list)
+		for show in group_watched_shows(episodes or []):
+			if matches_show(show, imdb, tmdb_id, tvdb):
+				for s, e in show['watched_set']: by_season[s].append(e)
 		season_counts = {}
 		if tmdb_id:
 			try:
@@ -925,12 +925,13 @@ def _local_syncSeasons(imdb, tvdb):
 			except: pass
 		result_counts = {}
 		fully_watched = []
-		for s, watched_eps in by_season.items():
+		for s in sorted(set(by_season) | set(season_counts)):
+			watched_eps = by_season.get(s, [])
 			if s == 0 and getSetting('tv.specials') != 'true': continue
 			total = season_counts.get(s, len(set(watched_eps)))
 			watched = len(set(watched_eps))
 			result_counts[s] = {'total': total, 'watched': watched, 'unwatched': max(total - watched, 0)}
-			if watched >= total: fully_watched.append(s)
+			if total > 0 and watched >= total: fully_watched.append(s)
 		return [[str(s) for s in sorted(fully_watched)], result_counts]
 	except: log_utils.error()
 
@@ -971,11 +972,11 @@ def cachesyncTV(imdb, tvdb):
 		[i.join() for i in threads]
 	except: log_utils.error()
 
-def cachesyncSeasons(imdb, tvdb='', timeout=720):
+def cachesyncSeasons(imdb, tvdb='', timeout=720, tmdb=''):
 	try:
 		imdb = imdb or ''
 		tvdb = tvdb or ''
-		return customtraktsync.get(syncSeasons, timeout, imdb, tvdb)
+		return customtraktsync.get(syncSeasons, timeout, imdb, tvdb, tmdb) if tmdb else customtraktsync.get(syncSeasons, timeout, imdb, tvdb)
 	except: log_utils.error()
 
 def seasonCount(imdb, tvdb):

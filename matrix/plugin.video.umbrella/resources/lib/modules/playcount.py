@@ -195,7 +195,7 @@ def getSeasonIndicators(imdb, tvdb, refresh=False, has_next_episode=False, tmdb_
 			return indicators
 		elif customIndicators:
 			# syncSeasons derives totals from TMDb season meta (96h cache) — always fetch fresh from local DB
-			indicators = customtrakt.cachesyncSeasons(imdb, tvdb, timeout=0)
+			indicators = customtrakt.cachesyncSeasons(imdb, tvdb, timeout=0, tmdb=tmdb)
 			counts = indicators[1] if indicators and len(indicators) > 1 else {}
 			cached_total = sum(v.get('total', 0) for v in counts.values()) if counts else 0
 			stale = has_next_episode or (tmdb_total_aired and int(tmdb_total_aired) > cached_total)
@@ -391,7 +391,8 @@ def getEpisodeOverlay(indicators, imdb, tvdb, season, episode, tmdb=''):
 	if not indicators: return '4'
 	try:
 		if traktIndicators or simklIndicators or mdblistIndicators or customIndicators or floppyIndicators or scrobIndicators or punchplayIndicators:
-			eps_data = [i[2] for i in indicators if (i[0].get('imdb') == imdb or str(i[0].get('tvdb')) == tvdb)]
+			from resources.lib.modules.progress_identity import matches_show
+			eps_data = [i[2] for i in indicators if matches_show(i[0], imdb, tmdb, tvdb)]
 			eps_data = eps_data[0] if eps_data else []
 			if isinstance(eps_data, dict): # range format: {season: [(start_ep, end_ep), ...]}
 				s_ranges = eps_data.get(int(season), [])

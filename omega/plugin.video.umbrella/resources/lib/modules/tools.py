@@ -50,6 +50,7 @@ def localZone():
 
 def convert_time(stringTime, stringDay=None, abbreviate=False, formatInput=FormatTimeShort, formatOutput=None, zoneFrom=ZoneUtc, zoneTo=ZoneLocal, remove_zeroes=False):
 	result = ''
+	original_time = stringTime
 	try:
 		# If only time is given, the date will be set to 1900-01-01 and there are conversion problems if this goes down to 1899.
 		if formatInput == '%H:%M':
@@ -65,7 +66,15 @@ def convert_time(stringTime, stringDay=None, abbreviate=False, formatInput=Forma
 		elif zoneTo == ZoneLocal: zoneTo = pytz.timezone(localZone())
 		else: zoneTo = pytz.timezone(zoneTo)
 
-		timeobject = cleandate.datetime_from_string(string_date=stringTime, format=formatNew, date_only=False)
+		# Provider airtimes may include seconds even when the UI displays minutes.
+		# Parse them before calling the logging date helper, preserving timezone conversion.
+		timeobject = None
+		if formatNew.endswith('%H:%M'):
+			try: timeobject = datetime.strptime(stringTime, formatNew + ':%S')
+			except (ValueError, TypeError): pass
+		if timeobject is None:
+			timeobject = cleandate.datetime_from_string(string_date=stringTime, format=formatNew, date_only=False)
+		if timeobject is None: return original_time
 
 		if stringDay:
 			stringDay = stringDay.lower()
@@ -427,9 +436,11 @@ def services_syncs():
 		if internets and not video_playing and punchplay.getPunchPlayCredentialsInfo():
 			current_time = time.time()
 			if (current_time - last_punchplay_sync) >= (60 * punchplay_syncInterval):
+				# Failed attempts must also respect the configured interval, otherwise
+				# the heartbeat repeatedly retries a throttled/unavailable service.
+				last_punchplay_sync = current_time
 				try:
 					punchplay.sync_account()
-					last_punchplay_sync = current_time
 				except Exception:
 					from resources.lib.modules import log_utils
 					log_utils.log('PunchPlay background sync failed; cached state retained.', 1)

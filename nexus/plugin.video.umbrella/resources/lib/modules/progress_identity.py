@@ -1,6 +1,16 @@
 """Reconcile partial provider IDs without combining split-catalog stories."""
 
 
+def matches_show(ids, imdb='', tmdb='', tvdb=''):
+    def clean(value):
+        return '' if value in (None, '', 'None', '0', 0) else str(value)
+    wanted = dict(imdb=clean(imdb), tmdb=clean(tmdb), tvdb=clean(tvdb))
+    actual = {field: clean(ids.get(field)) for field in wanted}
+    if wanted['tmdb'] and actual['tmdb']:
+        return wanted['tmdb'] == actual['tmdb']
+    return any(value and value == actual[field] for field, value in wanted.items())
+
+
 def group_watched_shows(episodes, watched_shows=()):
     def clean(value):
         return '' if value in (None, '', 'None', '0', 0) else str(value)

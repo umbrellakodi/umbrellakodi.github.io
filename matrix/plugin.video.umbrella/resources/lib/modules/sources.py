@@ -665,9 +665,14 @@ class Sources:
 				progressDialog = control.progressDialogBG
 				progressDialog.create(header, '')
 				debrid_message = '[COLOR %s][B]Please wait...  Checking Providers[/B][/COLOR]' % self.highlight_color
-			self.prepareSources()
-			sourceDict = self.sourceDict
 			progressDialog.update(0, getLS(32600)) # preparing sources
+			trakt_aliases = self.prepareSources_dialog(progressDialog, imdb, content)
+			if trakt_aliases is None:
+				homeWindow.clearProperty('umbrella.window_keep_alive')
+				homeWindow.clearProperty('fs_filterless_search')
+				progressDialog.close()
+				return []
+			sourceDict = self.sourceDict
 			if content == 'movie': sourceDict = [(i[0], i[1]) for i in sourceDict if i[1].hasMovies]
 			else: sourceDict = [(i[0], i[1]) for i in sourceDict if i[1].hasEpisodes]
 			if getSetting('cf.disable') == 'true': sourceDict = [(i[0], i[1]) for i in sourceDict if not any(x in i[0] for x in self.sourcecfDict)]
@@ -679,7 +684,6 @@ class Sources:
 			threads = [] ; threads_append = threads.append
 
 			if content == 'movie':
-				trakt_aliases = self.getAliasTitles(imdb, content) # cached for 7 days in trakt module called
 				try: aliases.extend([i for i in trakt_aliases if not i in aliases]) # combine TMDb and Trakt aliases
 				except: pass
 				data = {'title': title, 'aliases': aliases, 'year': year, 'imdb': imdb}
@@ -690,7 +694,6 @@ class Sources:
 				if self.season_isAiring == 'false':
 					if (not self.dev_mode) or (not self.dev_disable_season_packs): scraperDict.extend([(i[0], i[1], 'season') for i in sourceDict if i[1].pack_capable])
 					if (not self.dev_mode) or (not self.dev_disable_show_packs): scraperDict.extend([(i[0], i[1], 'show') for i in sourceDict if i[1].pack_capable])
-				trakt_aliases = self.getAliasTitles(imdb, content) # cached for 7 days in trakt module called
 				try: aliases.extend([i for i in trakt_aliases if not i in aliases]) # combine TMDb and Trakt aliases
 				except: pass
 				try: country_codes = self.meta.get('country_codes', [])
@@ -752,8 +755,11 @@ class Sources:
 			try:
 				if control.monitor.abortRequested(): return sysexit()
 				try:
-					if progressDialog.iscanceled(): 
-						break
+					if progressDialog.iscanceled():
+						homeWindow.clearProperty('umbrella.window_keep_alive')
+						homeWindow.clearProperty('fs_filterless_search')
+						progressDialog.close()
+						return []
 				except: pass
 
 				if terminate_onCloud:
@@ -833,7 +839,7 @@ class Sources:
 		self.tvshowtitle = tvshowtitle
 		self.year = year
 		homeWindow.clearProperty('fs_filterless_search')
-		if len(self.sources) > 0: self.sourcesFilter()
+		if len(self.sources) > 0: self.sourcesFilter(progressDialog)
 		if homeWindow.getProperty('umbrella.window_keep_alive') != 'true':
 			try: progressDialog.close()
 			except: pass
@@ -892,6 +898,29 @@ class Sources:
 		finally:
 			homeWindow.clearProperty('umbrella.preResolving')
 		control.sleep(200)
+
+	def prepareSources_dialog(self, progressDialog, imdb, content, timeout=30):
+		# Keep cache locks and optional Trakt alias requests off the dialog thread.
+		result = []
+		def prepare():
+			try:
+				self.prepareSources()
+				result.append(self.getAliasTitles(imdb, content) or [])
+			except: log_utils.error()
+		worker = Thread(target=prepare)
+		worker.daemon = True
+		worker.start()
+		deadline = time() + timeout
+		while worker.is_alive():
+			if control.monitor.abortRequested(): return None
+			try:
+				if progressDialog.iscanceled(): return None
+			except: pass # Background dialogs do not expose cancellation.
+			if time() >= deadline:
+				log_utils.log('Source preparation timed out; continuing without Trakt aliases', level=log_utils.LOGWARNING)
+				return []
+			control.sleep(50)
+		return result[0] if result else []
 
 	def prepareSources(self):
 		try:
@@ -1035,7 +1064,7 @@ class Sources:
 					return self.scraper_sources.extend(tag_sources(sources, data))
 			except: log_utils.error()
 
-	def sourcesFilter(self):
+	def sourcesFilter(self, progressDialog=None):
 		if not self.isPrescrape: control.busy()
 		if getSetting('remove.duplicates') == 'true': self.sources = self.filter_dupes()
 		if self.mediatype == 'movie':
@@ -1215,15 +1244,18 @@ class Sources:
 		deepcopy_sources = [i for i in deepcopy_sources if 'magnet:' in i['url']]
 		if deepcopy_sources: hashList = [i['hash'] for i in deepcopy_sources]
 		threads = [] ; self.filter = []
+		cache_results = []
+		hoster_sources = [dict(i) for i in self.sources if 'magnet:' not in i['url']]
 		valid_hosters = set([i['source'] for i in self.sources if 'magnet:' not in i['url']])
 		control.hide()
 
 		def checkStatus(function, debrid_name, valid_hoster):
 			try:
 				cached = None
-				if deepcopy_sources: cached = function(deepcopy_sources, hashList)
-				if cached: self.filter += [dict(list(i.items()) + [('debrid', debrid_name)]) for i in cached] # this makes a new instance so no need for deepcopy beyond the one time done now
-				if valid_hoster: self.filter += [dict(list(i.items()) + [('debrid', debrid_name)]) for i in self.sources if i['source'] in valid_hoster and 'magnet:' not in i['url']]
+				if deepcopy_sources: cached = function(deepcopy(deepcopy_sources), hashList)
+				results = [dict(i, debrid=debrid_name) for i in cached] if cached else []
+				if valid_hoster: results += [dict(i, debrid=debrid_name) for i in hoster_sources if i['source'] in valid_hoster]
+				cache_results.append(results)
 			except: log_utils.error()
 		for d in self.debrid_resolvers:
 			if d.name == 'Real-Debrid' and getSetting('realdebrid.enable') == 'true':
@@ -1258,8 +1290,25 @@ class Sources:
 					threads.append(Thread(target=checkStatus, args=(self.tb_cache_chk_list, d.name, valid_hoster)))
 				except: log_utils.error()
 		if threads:
-			[i.start() for i in threads]
-			[i.join() for i in threads]
+			for worker in threads:
+				worker.daemon = True
+				worker.start()
+			deadline = time() + 60
+			while any(worker.is_alive() for worker in threads):
+				cancelled = control.monitor.abortRequested()
+				try:
+					cancelled = cancelled or (progressDialog is not None and progressDialog.iscanceled())
+				except: pass
+				if cancelled:
+					self.sources = []
+					homeWindow.clearProperty('umbrella.window_keep_alive')
+					return
+				if time() >= deadline:
+					log_utils.log('Provider cache checks timed out; using completed results', level=log_utils.LOGWARNING)
+					break
+				control.sleep(50)
+		# Workers only publish to their local result list, never the active source list.
+		for results in list(cache_results): self.filter.extend(results)
 		#self.filter += direct # add direct links in to be considered in priority sorting
 		self.filter += directstart
 		try:
