@@ -157,6 +157,12 @@ def router(argv2):
 	elif action == 'combinedSearchResults':
 		from resources.lib.modules import search
 		search.Search().combined_results(name, url)
+	elif action == 'combinedSearchHistory':
+		from resources.lib.modules import search
+		search.Search().combined_history()
+	elif action == 'combinedSearchnew':
+		from resources.lib.modules import search
+		search.Search().combined_search_new()
 	elif action == 'movieSearch':
 		from resources.lib.menus import movies
 		movies.Movies().search(folderName=folderName)

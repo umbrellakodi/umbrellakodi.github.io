@@ -10,10 +10,50 @@ from urllib.parse import quote_plus
 class Search:
 
 	def combined_search(self):
+		control.execute('ActivateWindow(Videos,plugin://plugin.video.umbrella/?action=combinedSearchHistory,return)')
+
+	def combined_history(self):
+		from sqlite3 import dbapi2 as database
+		from contextlib import closing
+		from resources.lib.menus.navigator import Navigator
+		from resources.lib.modules import log_utils
+		nav = Navigator()
+		nav.addDirectoryItem(control.lang(32603) % control.setting('highlight.color'), 'combinedSearchnew', 'search.png', 'DefaultAddonsSearch.png', isFolder=False)
+		terms = []
+		try:
+			control.makeFile(control.dataPath)
+			with closing(database.connect(control.searchFile)) as dbcon:
+				with dbcon:
+					dbcon.execute('CREATE TABLE IF NOT EXISTS combined (ID INTEGER PRIMARY KEY AUTOINCREMENT, term)')
+					terms = [row[0] for row in dbcon.execute('SELECT DISTINCT term FROM combined ORDER BY term COLLATE NOCASE')]
+		except Exception:
+			log_utils.error()
+		for term in terms:
+			nav.addDirectoryItem(term, 'combinedSearchResults&name=%s' % quote_plus(term), 'search.png', 'DefaultAddonsSearch.png', isSearch=True, table='combined')
+		if terms:
+			nav.addDirectoryItem(32605, 'cache_clearSearch', 'tools.png', 'DefaultAddonService.png', isFolder=False)
+		nav.endDirectory()
+
+	def save_combined_term(self, term):
+		from sqlite3 import dbapi2 as database
+		from contextlib import closing
+		from resources.lib.modules import log_utils
+		try:
+			control.makeFile(control.dataPath)
+			with closing(database.connect(control.searchFile)) as dbcon:
+				with dbcon:
+					for table in ('combined', 'movies', 'tvshow'):
+						dbcon.execute('CREATE TABLE IF NOT EXISTS %s (ID INTEGER PRIMARY KEY AUTOINCREMENT, term)' % table)
+						dbcon.execute('INSERT INTO %s (term) VALUES (?)' % table, (term,))
+		except Exception:
+			log_utils.error()
+
+	def combined_search_new(self):
 		keyboard = control.keyboard('', control.lang(40829) or 'Search Movies & TV Shows...')
 		keyboard.doModal()
 		term = keyboard.getText().strip() if keyboard.isConfirmed() else ''
 		if not term: return control.closeAll()
+		self.save_combined_term(term)
 		control.closeAll()
 		control.execute('ActivateWindow(Videos,plugin://plugin.video.umbrella/?action=combinedSearchResults&name=%s,return)' % quote_plus(term))
 
