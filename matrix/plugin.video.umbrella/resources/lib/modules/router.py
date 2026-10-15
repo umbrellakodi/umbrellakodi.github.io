@@ -151,6 +151,12 @@ def router(argv2):
 	elif action == 'tmdbmoviePage':
 		from resources.lib.menus import movies
 		movies.Movies().getTMDb(url, folderName=folderName)
+	elif action == 'combinedSearch':
+		from resources.lib.modules import search
+		search.Search().combined_search()
+	elif action == 'combinedSearchResults':
+		from resources.lib.modules import search
+		search.Search().combined_results(name, url)
 	elif action == 'movieSearch':
 		from resources.lib.menus import movies
 		movies.Movies().search(folderName=folderName)

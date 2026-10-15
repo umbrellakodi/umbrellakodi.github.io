@@ -8,6 +8,64 @@ import re
 from urllib.parse import quote_plus
 
 class Search:
+
+	def combined_search(self):
+		keyboard = control.keyboard('', control.lang(40829) or 'Search Movies & TV Shows...')
+		keyboard.doModal()
+		term = keyboard.getText().strip() if keyboard.isConfirmed() else ''
+		if not term: return control.closeAll()
+		control.closeAll()
+		control.execute('ActivateWindow(Videos,plugin://plugin.video.umbrella/?action=combinedSearchResults&name=%s,return)' % quote_plus(term))
+
+	def combined_results(self, term, urls=None):
+		from json import dumps, loads
+		from sys import argv
+		from resources.lib.menus.movies import Movies
+		from resources.lib.menus.tvshows import TVshows
+		from resources.lib.modules import log_utils
+
+		movie_menu, tv_menu = Movies(), TVshows()
+		if urls:
+			links = loads(urls)
+		else:
+			links = {}
+			for kind, menu, setting in (('movies', movie_menu, 'searchmovie.indexer'), ('tvshows', tv_menu, 'searchtv.indexer')):
+				if menu.traktCredentials and control.setting(setting) == '1':
+					links[kind] = menu.search_link + quote_plus(term)
+				else:
+					links[kind] = menu.search_tmdb_link % ('%s', quote_plus(term))
+		next_links = {}
+		found = False
+		for kind, menu in (('movies', movie_menu), ('tvshows', tv_menu)):
+			link = links.get(kind)
+			if not link: continue
+			try:
+				if '/3/search/' in link:
+					items = menu.getTMDb(link, create_directory=False) or []
+				else:
+					items = menu.get(link, create_directory=False) or []
+				if not items: continue
+				found = True
+				next_link = items[0].get('next')
+				if next_link: next_links[kind] = next_link
+				if kind == 'movies':
+					menu.movieDirectory(items, next=False, finalize=False, label_media=True, folderName=term)
+				else:
+					menu.tvshowDirectory(items, next=False, finalize=False, label_media=True, folderName=term)
+			except Exception:
+				log_utils.error()
+		handle = int(argv[1])
+		if next_links:
+			link = 'plugin://plugin.video.umbrella/?action=combinedSearchResults&name=%s&url=%s' % (quote_plus(term), quote_plus(dumps(next_links)))
+			item = control.item(label=control.lang(32053), offscreen=True)
+			item.setArt({'icon': control.addonNext(), 'thumb': control.addonNext()})
+			item.setProperty('SpecialSort', 'bottom')
+			control.addItem(handle=handle, url=link, listitem=item, isFolder=True)
+		if not found: control.notification(message=33049)
+		control.hide()
+		control.content(handle, 'videos')
+		control.directory(handle, cacheToDisc=False)
+
 	def init(self):
 		self.page_limit = control.getSetting('page.item.limit')
 		self.keyword_link = 'https://www.imdb.com/search/keyword/?keywords=%s&sort=moviemeter&title_type=%s&count=%s' % ('%s', '%s', self.page_limit)

@@ -3690,7 +3690,7 @@ class TVshows:
 			
 			log_utils.error()
 
-	def tvshowDirectory(self, items, next=True, isProgress=False, isWatched=False, isCollection=False, folderName='Umbrella'):
+	def tvshowDirectory(self, items, next=True, isProgress=False, isWatched=False, isCollection=False, folderName='Umbrella', finalize=True, label_media=False):
 		from sys import argv # some functions like ActivateWindow() throw invalid handle less this is imported here.
 		if self.useContainerTitles: control.setContainerName(folderName)
 		returnHome = control.folderPath()
@@ -3897,6 +3897,7 @@ class TVshows:
 ####################################
 				if trailer: meta.update({'trailer': trailer}) # removed temp so it's not passed to CM items, only skin
 				else: meta.update({'trailer': '%s?action=play_Trailer&type=%s&name=%s&year=%s&imdb=%s' % (sysaddon, 'show', systitle, year, imdb)})
+				if label_media: label += ' [I](%s)[/I]' % getLS(32002)
 				item = control.item(label=label, offscreen=True)
 				#if 'castandart' in i: item.setCast(i['castandart'])
 				if 'castandart' in i: meta.update({"cast": ['castandart']}) #changed for kodi20 setinfo method
@@ -4026,6 +4027,7 @@ class TVshows:
 			except:
 				
 				log_utils.error()
+		if not finalize: return
 		control.content(syshandle, 'tvshows')
 		control.directory(syshandle, cacheToDisc=False) # disable cacheToDisc so unwatched counts loads fresh data counts if changes made
 		views.setView('tvshows', {'skin.estuary': 55, 'skin.confluence': 500})

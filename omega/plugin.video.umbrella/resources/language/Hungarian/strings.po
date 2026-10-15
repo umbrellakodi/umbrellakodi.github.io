@@ -6200,3 +6200,7 @@ msgstr ""
 msgctxt "#40828"
 msgid "Shared service options"
 msgstr ""
+
+msgctxt "#40829"
+msgid "Search Movies & TV Shows"
+msgstr ""
