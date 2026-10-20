@@ -1,4 +1,4 @@
-<addon id="plugin.video.umbrella" name="Umbrella" provider-name="Umbrella" version="6.7.724">
+<addon id="plugin.video.umbrella" name="Umbrella" provider-name="Umbrella" version="6.7.725">
 	<requires>
 		<import addon="xbmc.python" version="3.0.0" />
 		<import addon="script.module.requests" />
@@ -270,9 +270,8 @@
 			<screenshot>resources/screenshots/screenshot003.jpg</screenshot>
 		</assets>
 		<news>
-[B]Update - v6.7.724 - Oct 19th, 2026 [/B]
---[Fix] Changes to introdb api to version 4.
---[Enhancement] Added option to export and import Umbrella settings due to the number of settings. location: Settings > Umbrella Settings > Export/Import Settings.
+[B]Update - v6.7.725 - Oct 20th, 2026 [/B]
+--[Change] Changed import export to allow account information to be exported also.
 		</news>
 	</extension>
 

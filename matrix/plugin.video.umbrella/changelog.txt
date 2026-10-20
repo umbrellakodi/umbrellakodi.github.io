@@ -1,9 +1,11 @@
+[B]Update - v6.7.725 - Oct 20th, 2026 [/B]
+--[Change] Changed import export to allow account information to be exported also.
+
 [B]Update - v6.7.724 - Oct 18th, 2026 [/B]
 --[Fix] Changes to introdb api to version 4.
 --[Enhancement] Added option to export and import Umbrella settings due to the number of settings. location: Settings > Umbrella Settings > Export/Import Settings.
 
-[B]Update - v6.7.724 - Oct 18th, 2026 [/B]
---[Fix] Changes to introdb api to version 4.[B]Update - v6.7.723 - Oct 16th, 2026 [/B]
+[B]Update - v6.7.723 - Oct 16th, 2026 [/B]
 --[Fix] Fix for mdblist in progress shows duplicating.
 
 [B]Update - v6.7.722 - Oct 15th, 2026 [/B]
