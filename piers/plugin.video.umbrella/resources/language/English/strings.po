@@ -6219,3 +6219,27 @@ msgstr ""
 msgctxt "#40829"
 msgid "Search Movies & TV Shows"
 msgstr ""
+
+msgctxt "#40830"
+msgid "Export Preferences (No Accounts)"
+msgstr ""
+
+msgctxt "#40831"
+msgid "Import Preferences (No Accounts)"
+msgstr ""
+
+msgctxt "#40832"
+msgid "Preferences exported. Account information, private service URLs and local paths are excluded."
+msgstr ""
+
+msgctxt "#40833"
+msgid "Apply the preferences in this backup? Your existing accounts will be kept. A preference-only rollback copy will be saved before importing."
+msgstr ""
+
+msgctxt "#40834"
+msgid "Preferences imported. Existing accounts were kept. On a new installation, authorize your services separately. Restart Kodi to apply all preferences."
+msgstr ""
+
+msgctxt "#40835"
+msgid "Could not complete the preference backup or import. Check the file and destination permissions."
+msgstr ""
