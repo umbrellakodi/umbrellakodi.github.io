@@ -203,7 +203,7 @@ class Premiumize:
 			except: return None
 		except: log_utils.error()
 
-	def resolve_magnet(self, magnet_url, info_hash, season, episode, ep_title):
+	def resolve_magnet(self, magnet_url, info_hash, season, episode, ep_title, premiered=None):
 		from resources.lib.modules.source_utils import seas_ep_filter, extras_filter
 		try:
 			failed_reason, file_url, correct_files = 'Unknown', None, []
@@ -223,13 +223,13 @@ class Premiumize:
 					if '.m2ts' in str(item.get('path')):
 						failed_reason = 'Can not resolve .m2ts season disk episode'
 						continue
-					if seas_ep_filter(season, episode, item['path'].split('/')[-1]):
+					if seas_ep_filter(season, episode, item['path'].split('/')[-1], premiered=premiered):
 						# log_utils.log('item[path].split(/)[-1]=%s' %  item['path'].split('/')[-1])
 						append(item)
 					else: failed_reason = 'no matching season/episode found'
 					if len(correct_files) == 0: continue
 					for i in correct_files:
-						compare_link = seas_ep_filter(season, episode, i['path'], split=True)
+						compare_link = seas_ep_filter(season, episode, i['path'], split=True, premiered=premiered)
 						compare_link = re.sub(episode_title, '', compare_link)
 						if not any(x in compare_link for x in extras_filtering_list):
 							file_url = i['link']

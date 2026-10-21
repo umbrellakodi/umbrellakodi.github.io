@@ -1,0 +1,572 @@
+--- a/resources/lib/cloud_scrapers/ad_cloud.py
++++ b/resources/lib/cloud_scrapers/ad_cloud.py
+@@ -10,6 +10,7 @@
+ from resources.lib.debrid.alldebrid import AllDebrid
+ from resources.lib.modules.control import setting as getSetting
+ # from resources.lib.modules.source_utils import supported_video_extensions
++from resources.lib.modules.source_utils import episode_airdate_pattern
+ from resources.lib.modules import scrape_utils as sc_utils
+ 
+ invalid_extensions = ('.bmp', '.gif', '.jpg', '.nfo', '.part', '.png', '.rar', '.sample.', '.srt', '.txt', '.zip')
+@@ -35,6 +36,8 @@
+ 			self.season = str(data['season']) if 'tvshowtitle' in data else None
+ 			self.episode = str(data['episode']) if 'tvshowtitle' in data else None
+ 			query_list = self.episode_query_list() if 'tvshowtitle' in data else self.year_query_list()
++			date_pattern = episode_airdate_pattern(data.get('premiered')) if 'tvshowtitle' in data else None
++			if date_pattern: query_list.append(date_pattern)
+ 
+ 			ad = AllDebrid()  # reuse one instance
+ 
+@@ -117,6 +120,7 @@
+ 						continue
+ 
+ 					rt = cloud_utils.release_title_format(name)
++					if date_pattern and re.search(r'(?<!\d)\d{4}[.-]\d{2}[.-]\d{2}(?!\d)', rt) and not re.search(date_pattern, rt): continue
+ 					if any(value in rt for value in extras_filter):
+ 						continue
+ 
+--- a/resources/lib/cloud_scrapers/oc_cloud.py
++++ b/resources/lib/cloud_scrapers/oc_cloud.py
+@@ -7,7 +7,7 @@
+ from resources.lib.cloud_scrapers import cloud_utils
+ from resources.lib.debrid.offcloud import Offcloud
+ from resources.lib.modules.control import setting as getSetting
+-from resources.lib.modules.source_utils import supported_video_extensions
++from resources.lib.modules.source_utils import supported_video_extensions, episode_airdate_pattern
+ from resources.lib.modules import scrape_utils as sc_utils
+ 
+ 
+@@ -32,6 +32,8 @@
+ 			self.season = str(data['season']) if 'tvshowtitle' in data else None
+ 			self.episode = str(data['episode']) if 'tvshowtitle' in data else None
+ 			query_list = self.episode_query_list() if 'tvshowtitle' in data else self.year_query_list()
++			date_pattern = episode_airdate_pattern(data.get('premiered')) if 'tvshowtitle' in data else None
++			if date_pattern: query_list.append(date_pattern)
+ 			# log_utils.log('query_list = %s' % query_list)
+ 			cloud_folders = Offcloud().user_cloud()
+ 			if not cloud_folders: return sources
+@@ -59,6 +61,7 @@
+ 				try:
+ 					name = file.split('/')[-1]
+ 					rt = cloud_utils.release_title_format(name)
++					if date_pattern and re.search(r'(?<!\d)\d{4}[.-]\d{2}[.-]\d{2}(?!\d)', rt) and not re.search(date_pattern, rt): continue
+ 					if not name.lower().endswith(tuple(supported_video_extensions())): continue
+ 					if any(value in rt for value in extras_filter): continue
+ 					if name.endswith('m2ts'):
+--- a/resources/lib/cloud_scrapers/pm_cloud.py
++++ b/resources/lib/cloud_scrapers/pm_cloud.py
+@@ -8,7 +8,7 @@
+ from resources.lib.cloud_scrapers import cloud_utils
+ from resources.lib.debrid.premiumize import Premiumize
+ from resources.lib.modules.control import setting as getSetting
+-from resources.lib.modules.source_utils import supported_video_extensions
++from resources.lib.modules.source_utils import supported_video_extensions, episode_airdate_pattern
+ from resources.lib.modules import scrape_utils as sc_utils
+ 
+ 
+@@ -33,6 +33,8 @@
+ 			self.season = str(data['season']) if 'tvshowtitle' in data else None
+ 			self.episode = str(data['episode']) if 'tvshowtitle' in data else None
+ 			query_list = self.episode_query_list() if 'tvshowtitle' in data else self.year_query_list()
++			date_pattern = episode_airdate_pattern(data.get('premiered')) if 'tvshowtitle' in data else None
++			if date_pattern: query_list.append(date_pattern)
+ 			# log_utils.log('query_list = %s' % query_list)
+ 			cloud_files = Premiumize().my_files_all()
+ 			if not cloud_files: return sources
+@@ -54,6 +56,7 @@
+ 				path = item.get('path', '').lower()
+ 				if not cloud_utils.cloud_check_title(title, aliases, path): continue
+ 				rt = cloud_utils.release_title_format(name)
++				if date_pattern and re.search(r'(?<!\d)\d{4}[.-]\d{2}[.-]\d{2}(?!\d)', rt) and not re.search(date_pattern, rt): continue
+ 				if any(value in rt for value in extras_filter): continue
+ 
+ 				if name.endswith('m2ts'):
+--- a/resources/lib/cloud_scrapers/rd_cloud.py
++++ b/resources/lib/cloud_scrapers/rd_cloud.py
+@@ -9,7 +9,7 @@
+ from resources.lib.database import cache
+ from resources.lib.debrid.realdebrid import RealDebrid
+ from resources.lib.modules.control import setting as getSetting
+-from resources.lib.modules.source_utils import supported_video_extensions
++from resources.lib.modules.source_utils import supported_video_extensions, episode_airdate_pattern
+ from resources.lib.modules import scrape_utils as sc_utils
+ 
+ 
+@@ -34,6 +34,8 @@
+ 			self.season = str(data['season']) if 'tvshowtitle' in data else None
+ 			self.episode = str(data['episode']) if 'tvshowtitle' in data else None
+ 			query_list = self.episode_query_list() if 'tvshowtitle' in data else self.year_query_list()
++			date_pattern = episode_airdate_pattern(data.get('premiered')) if 'tvshowtitle' in data else None
++			if date_pattern: query_list.append(date_pattern)
+ 			# log_utils.log('query_list = %s' % query_list)
+ 			
+ 			cloud_folders = RealDebrid().user_torrents()
+@@ -70,12 +72,14 @@
+ 				try:
+ 					name = file.get('path').lstrip('/')
+ 					rt = cloud_utils.release_title_format(name)
++					if date_pattern and re.search(r'(?<!\d)\d{4}[.-]\d{2}[.-]\d{2}(?!\d)', rt) and not re.search(date_pattern, rt): continue
+ 					if not name.lower().endswith(tuple(supported_video_extensions())): continue
+ 					if any(value in rt for value in extras_filter): continue
+ 					if name.endswith('m2ts'):
+ 						if ignoreM2ts: continue
+ 						name = folder_name
+ 						rt = cloud_utils.release_title_format(name)
++						if date_pattern and re.search(r'(?<!\d)\d{4}[.-]\d{2}[.-]\d{2}(?!\d)', rt) and not re.search(date_pattern, rt): continue
+ 						if name in str(sources): continue
+ 						if all(not bool(re.search(i, rt)) for i in query_list): continue  # check if this newly added causes any movie titles that do not have the year to get dropped
+ 						is_m2ts = True
+--- a/resources/lib/cloud_scrapers/tb_cloud.py
++++ b/resources/lib/cloud_scrapers/tb_cloud.py
+@@ -10,7 +10,7 @@
+ from resources.lib.database import cache
+ from resources.lib.debrid.torbox import TorBox
+ from resources.lib.modules.control import setting as getSetting
+-from resources.lib.modules.source_utils import supported_video_extensions
++from resources.lib.modules.source_utils import supported_video_extensions, episode_airdate_pattern
+ from resources.lib.modules import scrape_utils as sc_utils
+ 
+ 
+@@ -83,6 +83,8 @@
+ 			self.season = str(data['season']) if 'tvshowtitle' in data else None
+ 			self.episode = str(data['episode']) if 'tvshowtitle' in data else None
+ 			query_list = self.episode_query_list() if 'tvshowtitle' in data else self.year_query_list()
++			date_pattern = episode_airdate_pattern(data.get('premiered')) if 'tvshowtitle' in data else None
++			if date_pattern: query_list.append(date_pattern)
+ 			# log_utils.log('query_list = %s' % query_list)
+ 			folders = []
+ 			deadline = gettime() + 30
+@@ -147,6 +149,7 @@
+ 				try:
+ 					name = file['short_name']
+ 					rt = cloud_utils.release_title_format(name)
++					if date_pattern and re.search(r'(?<!\d)\d{4}[.-]\d{2}[.-]\d{2}(?!\d)', rt) and not re.search(date_pattern, rt): continue
+ 					if any(value in rt for value in extras_filter): continue
+ 					if name.endswith('m2ts'):
+ 						continue
+--- a/resources/lib/debrid/alldebrid.py
++++ b/resources/lib/debrid/alldebrid.py
+@@ -422,7 +422,7 @@
+ 
+ 
+ 
+-	def resolve_magnet(self, magnet_url, info_hash, season, episode, ep_title):
++	def resolve_magnet(self, magnet_url, info_hash, season, episode, ep_title, premiered=None):
+ 		from resources.lib.modules.source_utils import seas_ep_filter, extras_filter
+ 		try:
+ 			failed_reason, media_id, file_url = 'Unknown', None, None
+@@ -469,7 +469,7 @@
+ 						failed_reason = 'Can not resolve .m2ts season disk episode'
+ 						continue
+ 
+-					if seas_ep_filter(season, episode, name):
++					if seas_ep_filter(season, episode, name, premiered=premiered):
+ 						norm = {'filename': name, 'link': link, 'size': item.get('s', 0)}
+ 						append(norm)
+ 						continue
+@@ -477,7 +477,7 @@
+ 						link_info = cache.get(self.unrestrict_link, 168, link, True)  # returnAll=True path
+ 						if not link_info: continue
+ 						resolved_name = link_info.get('filename', name)
+-						if seas_ep_filter(season, episode, resolved_name):
++						if seas_ep_filter(season, episode, resolved_name, premiered=premiered):
+ 							norm = {'filename': resolved_name, 'link': link, 'size': item.get('s', 0)}
+ 							append(norm)
+ 					except:
+@@ -489,7 +489,7 @@
+ 					episode_title = re.sub(r'[^A-Za-z0-9-]+', '.', ep_title.replace("'", '')).lower()
+ 					for i in correct_files:
+ 						try:
+-							compare_link = seas_ep_filter(season, episode, i['filename'], split=True)
++							compare_link = seas_ep_filter(season, episode, i['filename'], split=True, premiered=premiered)
+ 							compare_link = re.sub(episode_title, '', compare_link)
+ 							if not any(x in compare_link for x in extras_filtering_list):
+ 								media_id = i['link']
+--- a/resources/lib/debrid/easydebrid.py
++++ b/resources/lib/debrid/easydebrid.py
+@@ -59,7 +59,7 @@
+ 		if not 'files' in result: return ''
+ 		return result.get('files', '')
+ 
+-	def resolve_magnet(self, magnet_url, info_hash, season, episode, title):
++	def resolve_magnet(self, magnet_url, info_hash, season, episode, title, premiered=None):
+ 		from resources.lib.modules.source_utils import seas_ep_filter, extras_filter
+ 		try:
+ 			file_url, match = None, False
+@@ -73,7 +73,7 @@
+ 			selected_files = [i for i in torrent_files if i['filename'].lower().endswith(tuple(extensions))]
+ 			if not selected_files: return None
+ 			if season:
+-				selected_files = [i for i in selected_files if seas_ep_filter(season, episode, i['filename'])]
++				selected_files = [i for i in selected_files if seas_ep_filter(season, episode, i['filename'], premiered=premiered) and not any(x in i['filename'].lower() for x in extras_filtering_list)]
+ 			else:
+ 				if self._m2ts_check(selected_files): raise Exception('_m2ts_check failed')
+ 				selected_files = [i for i in selected_files if not any(x in i['filename'] for x in extras_filtering_list)]
+--- a/resources/lib/debrid/offcloud.py
++++ b/resources/lib/debrid/offcloud.py
+@@ -77,7 +77,7 @@
+ 		if result.get('status') not in ('created', 'downloaded'): return None
+ 		return result
+ 
+-	def resolve_magnet(self, magnet_url, info_hash, season, episode, title):
++	def resolve_magnet(self, magnet_url, info_hash, season, episode, title, premiered=None):
+ 		from resources.lib.modules.source_utils import seas_ep_filter, extras_filter
+ 		try:
+ 			extensions = supported_video_extensions()
+@@ -89,7 +89,7 @@
+ 			selected = [f for f in files if f.get('filename', '').lower().endswith(tuple(extensions))]
+ 			if not selected: return None
+ 			if season:
+-				selected = [f for f in selected if seas_ep_filter(season, episode, f['filename'])]
++				selected = [f for f in selected if seas_ep_filter(season, episode, f['filename'], premiered=premiered) and not any(x in f['filename'].lower() for x in extras_filtering_list)]
+ 			else:
+ 				if self._m2ts_check(selected): raise Exception('_m2ts_check failed')
+ 				selected = [f for f in selected if not any(x in f['filename'] for x in extras_filtering_list)]
+--- a/resources/lib/debrid/premiumize.py
++++ b/resources/lib/debrid/premiumize.py
+@@ -203,7 +203,7 @@
+ 			except: return None
+ 		except: log_utils.error()
+ 
+-	def resolve_magnet(self, magnet_url, info_hash, season, episode, ep_title):
++	def resolve_magnet(self, magnet_url, info_hash, season, episode, ep_title, premiered=None):
+ 		from resources.lib.modules.source_utils import seas_ep_filter, extras_filter
+ 		try:
+ 			failed_reason, file_url, correct_files = 'Unknown', None, []
+@@ -223,13 +223,13 @@
+ 					if '.m2ts' in str(item.get('path')):
+ 						failed_reason = 'Can not resolve .m2ts season disk episode'
+ 						continue
+-					if seas_ep_filter(season, episode, item['path'].split('/')[-1]):
++					if seas_ep_filter(season, episode, item['path'].split('/')[-1], premiered=premiered):
+ 						# log_utils.log('item[path].split(/)[-1]=%s' %  item['path'].split('/')[-1])
+ 						append(item)
+ 					else: failed_reason = 'no matching season/episode found'
+ 					if len(correct_files) == 0: continue
+ 					for i in correct_files:
+-						compare_link = seas_ep_filter(season, episode, i['path'], split=True)
++						compare_link = seas_ep_filter(season, episode, i['path'], split=True, premiered=premiered)
+ 						compare_link = re.sub(episode_title, '', compare_link)
+ 						if not any(x in compare_link for x in extras_filtering_list):
+ 							file_url = i['link']
+--- a/resources/lib/debrid/realdebrid.py
++++ b/resources/lib/debrid/realdebrid.py
+@@ -394,7 +394,7 @@
+ 		response = self._get("torrents/instantAvailability" + hashString)
+ 		return response
+ 
+-	def resolve_magnet(self, magnet_url, info_hash, season, episode, title):
++	def resolve_magnet(self, magnet_url, info_hash, season, episode, title, premiered=None):
+ 		from resources.lib.modules.source_utils import seas_ep_filter, extras_filter
+ 		# from resources.lib.cloud_scrapers.cloud_utils import cloud_check_title # alias and title checking no longer used
+ 		with _rd_magnet_semaphore:
+@@ -431,12 +431,12 @@
+ 					correct_files = []
+ 					correct_file_check = False
+ 					for value in selected_files:
+-						correct_file_check = seas_ep_filter(season, episode, value[1]['path'])
++						correct_file_check = seas_ep_filter(season, episode, value[1]['path'], premiered=premiered)
+ 						if correct_file_check: correct_files.append(value[1]); break
+ 					if len(correct_files) == 0: match = False
+ 					else:
+ 						for i in correct_files:
+-							compare_link = seas_ep_filter(season, episode, i['path'], split=True)
++							compare_link = seas_ep_filter(season, episode, i['path'], split=True, premiered=premiered)
+ 							compare_link = re.sub(compare_title, '', compare_link)
+ 							if any(x in compare_link for x in extras_filtering_list): continue
+ 							else: match = True; break
+@@ -709,8 +709,8 @@
+ 	def video_only(self, storage_variant, extensions):
+ 		return False if len([i for i in storage_variant.values() if not i['filename'].lower().endswith(tuple(extensions))]) > 0 else True
+ 
+-	def name_check(self, storage_variant, season, episode, seas_ep_filter):
+-		return len([i for i in storage_variant.values() if seas_ep_filter(season, episode, i['filename'].lower())]) > 0
++	def name_check(self, storage_variant, season, episode, seas_ep_filter, premiered=None):
++		return len([i for i in storage_variant.values() if seas_ep_filter(season, episode, i['filename'].lower(), premiered=premiered)]) > 0
+ 
+ 	def m2ts_check(self, folder_details):
+ 		for item in folder_details:
+--- a/resources/lib/debrid/torbox.py
++++ b/resources/lib/debrid/torbox.py
+@@ -161,7 +161,7 @@
+ 		if not result['success']: return ''
+ 		return result['data'].get('torrent_id', '')
+ 
+-	def resolve_magnet(self, magnet_url, info_hash, season, episode, title):
++	def resolve_magnet(self, magnet_url, info_hash, season, episode, title, premiered=None):
+ 		from resources.lib.modules.source_utils import seas_ep_filter, extras_filter
+ 		try:
+ 			file_url, match = None, False
+@@ -180,7 +180,7 @@
+ 			]
+ 			if not selected_files: return None
+ 			if season:
+-				selected_files = [i for i in selected_files if seas_ep_filter(season, episode, i['filename'])]
++				selected_files = [i for i in selected_files if seas_ep_filter(season, episode, i['filename'], premiered=premiered) and not any(x in i['filename'].lower() for x in extras_filtering_list)]
+ 			else:
+ 				if self._m2ts_check(selected_files): raise Exception('_m2ts_check failed')
+ 				selected_files = [i for i in selected_files if not any(x in i['filename'] for x in extras_filtering_list)]
+--- a/resources/lib/modules/player.py
++++ b/resources/lib/modules/player.py
+@@ -666,7 +666,7 @@
+ 										self.play_next_triggered = True
+ 								elif self.playnext_method== '2':
+ 									if self.subtitletime is None:
+-										self.subtitletime = Subtitles().downloadForPlayNext(self.title, self.year, self.imdb, self.season, self.episode, self.media_length)
++										self.subtitletime = Subtitles().downloadForPlayNext(self.title, self.year, self.imdb, self.season, self.episode, self.media_length, premiered=self.meta.get('premiered') or self.meta.get('firstaired'))
+ 									if str(self.subtitletime) == 'default':
+ 										if getSetting('playnext.sub.backupmethod')== '0': #subtitle failed use seconds as backup
+ 											subtitletimeumb = int(getSetting('playnext.sub.seconds'))
+@@ -933,7 +933,7 @@
+ 			except:
+ 				log_utils.log('Exception trying to seekTime() offset: %s'% self.offset, level=log_utils.LOGDEBUG)
+ 			self.playback_resumed = True
+-		if getSetting('subtitles') == 'true': Subtitles().get(self.title, self.year, self.imdb, self.season, self.episode)
++		if getSetting('subtitles') == 'true': Subtitles().get(self.title, self.year, self.imdb, self.season, self.episode, premiered=self.meta.get('premiered') or self.meta.get('firstaired'))
+ 		if self.onPlayBackStopped_ran or self.scrobble_sent or not self.isPlayingVideo(): return
+ 		try:
+ 			self.current_time = self.getTime()
+@@ -1477,7 +1477,7 @@
+ 		score += 30 if bool(item.get('foreign_parts_only')) == prefer_forced else -30
+ 		return score
+ 
+-	def get(self, title, year, imdb, season, episode):
++	def get(self, title, year, imdb, season, episode, premiered=None):
+ 		try:
+ 			quality = ['bluray', 'hdrip', 'brrip', 'bdrip', 'dvdrip', 'webrip', 'hdtv']
+ 			langs = []
+@@ -1528,7 +1528,7 @@
+ 			if result:
+ 				for j in result:
+ 					if season:
+-							if seas_ep_filter(season, episode, j['fileName']):
++							if seas_ep_filter(season, episode, j['fileName'], premiered=premiered):
+ 								j['score'] = self._subtitle_score(j, pFileName)
+ 								matches.append(j)
+ 					else:
+@@ -1586,7 +1586,7 @@
+ 					for count, i in enumerate(subtitles):
+ 						sFileName = unquote(os.path.basename(i))
+ 						sFileName = os.path.splitext(sFileName)[0]
+-						if seas_ep_filter(season, episode, sFileName.lower()):
++						if seas_ep_filter(season, episode, sFileName.lower(), premiered=premiered):
+ 							seq = SequenceMatcher(None, pFileName.lower(), sFileName.lower())
+ 							subtitle_matches.append({'fullPath': subtitles[count], 'matchRatio': seq.ratio()})
+ 				else:
+@@ -1616,7 +1616,7 @@
+ 					control.notification(title=filename, message=getLS(40506) % lang.upper())
+ 		except: log_utils.error()
+ 
+-	def downloadForPlayNext(self,  title, year, imdb, season, episode, media_length):
++	def downloadForPlayNext(self,  title, year, imdb, season, episode, media_length, premiered=None):
+ 		try:
+ 			try:
+ 				import re
+@@ -1691,7 +1691,7 @@
+ 				if result:
+ 					for j in result:
+ 						if season:
+-								if seas_ep_filter(season, episode, j['fileName']):
++								if seas_ep_filter(season, episode, j['fileName'], premiered=premiered):
+ 									j['score'] = self._subtitle_score(j, pFileName)
+ 									matches.append(j)
+ 						else:
+@@ -1741,7 +1741,7 @@
+ 						for count, i in enumerate(subtitles):
+ 							sFileName = unquote(os.path.basename(i))
+ 							sFileName = os.path.splitext(sFileName)[0]
+-							if seas_ep_filter(season, episode, sFileName.lower()):
++							if seas_ep_filter(season, episode, sFileName.lower(), premiered=premiered):
+ 								seq = SequenceMatcher(None, pFileName.lower(), sFileName.lower())
+ 								subtitle_matches.append({'fullPath': subtitles[count], 'matchRatio': seq.ratio()})
+ 					else:
+--- a/resources/lib/modules/sources.py
++++ b/resources/lib/modules/sources.py
+@@ -1528,7 +1528,8 @@
+ 						from resources.lib.debrid.torbox import TorBox as debrid_function
+ 					else: return
+ 					
+-					url = debrid_function().resolve_magnet(url, item['hash'], season, episode, title)
++					premiered = meta.get('premiered') or meta.get('firstaired') if isinstance(meta, dict) else None
++					url = debrid_function().resolve_magnet(url, item['hash'], season, episode, title, premiered=premiered)
+ 					self.url = url
+ 					return url
+ 				except:
+@@ -1639,7 +1640,7 @@
+ 			release_title = chosen_result['filename']
+ 			control.hide()
+ 			from resources.lib.modules import source_utils
+-			if source_utils.seas_ep_filter(season, episode, release_title):
++			if source_utils.seas_ep_filter(season, episode, release_title, premiered=meta.get('premiered') or meta.get('firstaired')):
+ 				return player.Player().play_source(title, year, season, episode, imdb, tmdb, tvdb, self.url, meta, debridPackCall=True) # hack fix for setResolvedUrl issue
+ 			else:
+ 				return player.Player().play(self.url)
+--- a/resources/lib/modules/source_utils.py
++++ b/resources/lib/modules/source_utils.py
+@@ -63,9 +63,33 @@
+ 
+ APPLE_TV = ('atvp',)
+ 
+-def seas_ep_filter(season, episode, release_title, split=False):
+-	try:
++def episode_airdate_pattern(premiered):
++	"""Validate the selected episode's date and match common release separators."""
++	from datetime import datetime
++	if not isinstance(premiered, str) or not re.fullmatch(r'\d{4}[-.]\d{2}[-.]\d{2}', premiered): return None
++	try:
++		date = datetime.strptime(premiered.replace('.', '-'), '%Y-%m-%d')
++	except ValueError:
++		return None
++	return r'(?<!\d)' + r'[. -]'.join(date.strftime('%Y.%m.%d').split('.')) + r'(?!\d)'
++
++
++def seas_ep_filter(season, episode, release_title, split=False, premiered=None):
++	try:
++		filename = unquote(release_title).replace('\\', '/').rsplit('/', 1)[-1]
++		filename = re.sub(r'[^A-Za-z0-9-]+', '.', filename.replace("'", '')).lower()
+ 		release_title = re.sub(r'[^A-Za-z0-9-]+', '.', unquote(release_title).replace('\'', '')).replace('&', 'and').replace('%', '.percent').lower()
++		# Inspect only the filename: a dated parent folder must not select another file.
++		date_in_name = re.search(r'(?<!\d)\d{4}[.-]\d{2}[.-]\d{2}(?!\d)', filename)
++		explicit_episode = re.search(r'(?:s\d+[.-]?e|\d+x\d+|episode[.-]?\d+)', filename)
++		if date_in_name and not explicit_episode:
++			date_pattern = episode_airdate_pattern(premiered)
++			date_match = re.search(date_pattern, filename) if date_pattern else None
++			if date_match:
++				return filename[date_match.end():] if split else True
++			return None if split else False
++		# Parent-folder dates must not satisfy the legacy loose episode patterns.
++		release_title = re.sub(r'(?<!\d)\d{4}[.-]\d{2}[.-]\d{2}(?!\d)', '', release_title)
+ 		season = str(season)
+ 		season_fill = season.zfill(2)
+ 		episode = str(episode)
+--- a/tests/test_airdate_playback.py
++++ b/tests/test_airdate_playback.py
+@@ -0,0 +1,128 @@
++"""Offline checks for air-date playback, cloud, and resolver integration."""
++import ast
++import importlib.util
++from pathlib import Path
++import re
++import sys
++from types import SimpleNamespace, ModuleType
++import unittest
++from unittest.mock import patch
++
++ROOT = Path(__file__).resolve().parents[1]
++LIB = ROOT / 'resources/lib'
++spec = importlib.util.spec_from_file_location('airdate_source_utils', LIB / 'modules/source_utils.py')
++utils = importlib.util.module_from_spec(spec)
++spec.loader.exec_module(utils)
++
++
++def method(path, name):
++    tree = ast.parse(path.read_text(encoding='utf-8-sig'))
++    return next(n for c in tree.body if isinstance(c, ast.ClassDef)
++                for n in c.body if isinstance(n, ast.FunctionDef) and n.name == name)
++
++
++class AirdatePlaybackTests(unittest.TestCase):
++    def match(self, filename, date='2026-10-20', split=False):
++        return utils.seas_ep_filter('31', '123', filename, split=split, premiered=date)
++
++    def test_date_variants_and_boundaries(self):
++        for separator in ('.', '-', ' '):
++            filename = 'The.Daily.Show.2026%s10%s20.1080p.mkv' % (separator, separator)
++            self.assertTrue(self.match(filename))
++            self.assertEqual(self.match(filename, split=True), '.1080p.mkv')
++        self.assertFalse(self.match('The.Daily.Show.2026.10.21.mkv'))
++        self.assertFalse(self.match('The.Daily.Show.2026.10.200.mkv'))
++        self.assertFalse(self.match('The.Daily.Show.2026.10.20.mkv', None))
++        self.assertFalse(self.match('The.Daily.Show.2026.10.20.mkv', 'bad'))
++        self.assertTrue(self.match('The.Daily.Show.2026.10.20.mkv', '2026.10.20'))
++        self.assertIsNone(utils.episode_airdate_pattern('2026-02-30'))
++
++    def test_numbered_compatibility(self):
++        for filename in ('The.Daily.Show.S31E123.1080p.mkv', 'The.Daily.Show.31x123.1080p.mkv'):
++            self.assertTrue(self.match(filename))
++            self.assertTrue(self.match(filename, None))
++        self.assertFalse(self.match('The.Daily.Show.S31E124.1080p.mkv'))
++        self.assertFalse(self.match('Show.S31E124.2026.10.20.mkv'))
++        self.assertTrue(self.match('Show.S31E123.2026.10.21.mkv'))
++        self.assertEqual(utils.seas_ep_filter('31', '123', 'Show.S31E123.extra.mkv', True), 'extra.mkv')
++
++    def test_parent_folder_date_cannot_select_wrong_file(self):
++        for prefix in ('/Show.2026.10.20/', 'C:\\Show.2026.10.20\\'):
++            self.assertFalse(self.match(prefix + 'Wrong.Episode.mkv'))
++            self.assertFalse(self.match(prefix + 'Show.2026.10.21.mkv'))
++            self.assertTrue(self.match(prefix + 'Show.2026.10.20.mkv'))
++        self.assertFalse(utils.seas_ep_filter('31', '20', '/Show.2026.10.20/Wrong.mkv', premiered='2026-10-20'))
++        # Day numbers must not accidentally satisfy legacy episode-only patterns.
++        self.assertFalse(utils.seas_ep_filter('31', '20', 'Show.2026.10.20.mkv', premiered='2026-10-21'))
++
++    def test_all_resolvers_forward_date(self):
++        for provider in ('realdebrid', 'premiumize', 'alldebrid', 'offcloud', 'torbox', 'easydebrid'):
++            with self.subTest(provider=provider):
++                node = method(LIB / ('debrid/%s.py' % provider), 'resolve_magnet')
++                self.assertEqual(node.args.args[-1].arg, 'premiered')
++                self.assertIsNone(node.args.defaults[-1].value)
++                calls = [n for n in ast.walk(node) if isinstance(n, ast.Call)
++                         and isinstance(n.func, ast.Name) and n.func.id == 'seas_ep_filter']
++                self.assertTrue(calls)
++                for call in calls:
++                    self.assertTrue(any(k.arg == 'premiered' and isinstance(k.value, ast.Name)
++                                        and k.value.id == 'premiered' for k in call.keywords))
++
++    def test_cloud_query_dates(self):
++        for provider in ('rd', 'pm', 'ad', 'oc', 'tb'):
++            with self.subTest(provider=provider):
++                path = LIB / ('cloud_scrapers/%s_cloud.py' % provider)
++                tree = ast.parse(path.read_text(encoding='utf-8-sig'))
++                self.assertTrue(any(isinstance(n, ast.ImportFrom) and any(a.name == 'episode_airdate_pattern' for a in n.names) for n in tree.body))
++                node = method(path, 'sources')
++                # Execute setup up to query construction, before any cloud API calls.
++                setup = []
++                block = next(n for n in node.body if isinstance(n, ast.Try))
++                for n in block.body:
++                    setup.append(n)
++                    if isinstance(n, ast.If) and isinstance(n.test, ast.Name) and n.test.id == 'date_pattern': break
++                env = dict(data=dict(tvshowtitle='Show', title='Guest', year='1996', season='31', episode='123', aliases=[], premiered='2026-10-20'),
++                           self=SimpleNamespace(episode_query_list=lambda: ['s31e123']),
++                           episode_airdate_pattern=utils.episode_airdate_pattern)
++                exec(compile(ast.Module(body=setup, type_ignores=[]), str(path), 'exec'), env)
++                self.assertTrue(any(re.search(p, '.show.2026.10.20.mkv.') for p in env['query_list']))
++                self.assertFalse(any(re.search(p, '.show.2026.10.21.mkv.') for p in env['query_list']))
++
++    def test_sources_and_subtitles_forward_episode_metadata(self):
++        node = method(LIB / 'modules/sources.py', 'sourcesResolve')
++        calls = [n for n in ast.walk(node) if isinstance(n, ast.Call)
++                 and isinstance(n.func, ast.Attribute) and n.func.attr == 'resolve_magnet']
++        self.assertEqual(len(calls), 1)
++        self.assertTrue(any(k.arg == 'premiered' for k in calls[0].keywords))
++        player = ast.parse((LIB / 'modules/player.py').read_text(encoding='utf-8-sig'))
++        calls = [n for n in ast.walk(player) if isinstance(n, ast.Call)
++                 and isinstance(n.func, ast.Name) and n.func.id == 'seas_ep_filter']
++        self.assertEqual(len(calls), 4)
++        for call in calls:
++            self.assertTrue(any(k.arg == 'premiered' for k in call.keywords))
++        for name in ('get', 'downloadForPlayNext'):
++            subtitles = next(n for n in player.body if isinstance(n, ast.ClassDef) and n.name == 'Subtitles')
++            func = next(n for n in subtitles.body if isinstance(n, ast.FunctionDef) and n.name == name)
++            self.assertEqual(func.args.args[-1].arg, 'premiered')
++
++    def test_offcloud_selects_correct_date_and_excludes_samples(self):
++        path = LIB / 'debrid/offcloud.py'
++        node = method(path, 'resolve_magnet')
++        # Imports are supplied by a stub package, while the real matcher is used.
++        mod = ModuleType('resources.lib.modules.source_utils')
++        mod.seas_ep_filter = utils.seas_ep_filter
++        mod.extras_filter = lambda: ('sample', 'extra')
++        env = dict(supported_video_extensions=lambda: ('.mkv',), log_utils=SimpleNamespace(error=lambda *a: None))
++        exec(compile(ast.Module(body=[node], type_ignores=[]), str(path), 'exec'), env)
++        rows = [dict(filename='Show.2026.10.21.mkv', url='wrong'),
++                dict(filename='Show.2026.10.20.sample.mkv', url='sample'),
++                dict(filename='Show.2026.10.20.mkv', url='correct')]
++        obj = SimpleNamespace(check_cache=lambda hashes: {'cachedItems': ['abc']},
++                              _POST=lambda *args, **kwargs: rows, cache_download='test')
++        with patch.dict(sys.modules, {'resources.lib.modules.source_utils': mod}):
++            self.assertEqual(env['resolve_magnet'](obj, 'magnet:test', 'abc', '31', '123', 'Show', premiered='2026-10-20'), 'correct')
++            self.assertIsNone(env['resolve_magnet'](obj, 'magnet:test', 'abc', '31', '123', 'Show', premiered='2026-10-22'))
++
++
++if __name__ == '__main__':
++    unittest.main()

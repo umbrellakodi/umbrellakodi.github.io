@@ -1,3 +1,6 @@
+[B]Update - v6.7.728 - Oct 21st, 2026 [/B]
+--[Change] Changes made to allow for results scraped by date.
+
 [B]Update - v6.7.727 - Oct 21st, 2026 [/B]
 --[Fix] Restructure of language folders for Kodi 22 support.
 

@@ -270,8 +270,9 @@
 			<screenshot>resources/screenshots/screenshot003.jpg</screenshot>
 		</assets>
 		<news>
-[B]Update - v6.7.727 - Oct 21st, 2026 [/B]
+[B]Update - v6.7.728 - Oct 21st, 2026 [/B]
 --[Fix] Restructure of language folders for Kodi 22 support.
+--[Change] Changes made to allow for results scraped by date.
 		</news>
 	</extension>
 

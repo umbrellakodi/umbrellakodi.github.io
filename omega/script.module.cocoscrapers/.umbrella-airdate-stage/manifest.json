@@ -1,0 +1,80 @@
+{
+  "target": "D:\\kodi212\\portable_data\\addons\\plugin.video.umbrella",
+  "files": [
+    {
+      "path": "resources/lib/cloud_scrapers/ad_cloud.py",
+      "before": "eae238255edc13ff3adcbe87137237b5e794f8a85b74b4d68a5a12d4bf5c0149",
+      "after": "42664dcb1c356b998944ecbb07bcd6e6aa466af723949e7d4fd07b0713027b11"
+    },
+    {
+      "path": "resources/lib/cloud_scrapers/oc_cloud.py",
+      "before": "455c07157d4cdde3800ecf2713474c3019c1a8aeda376208ae22ad7149786f8c",
+      "after": "152a86d730fc586f72bfa317cf7b293a2b101be3a0a9af6fa83c0f820fc3f371"
+    },
+    {
+      "path": "resources/lib/cloud_scrapers/pm_cloud.py",
+      "before": "92d396e874ce081306f1e910116784a195b3a750bcabbeb22ab1ee87b44425e1",
+      "after": "e9e117e4a852ae3c7ca43226e376a062aba142c92dff07aba8002a5aaef647e6"
+    },
+    {
+      "path": "resources/lib/cloud_scrapers/rd_cloud.py",
+      "before": "cc7c3dd6dacf1a7f62de298aa70b6911ad1c7d5e38a32ab532d553a4b2c6ef4a",
+      "after": "e33d913499dc283dfc940c328c5b0b3b5d85d76b006368a65bfb37b9f1864356"
+    },
+    {
+      "path": "resources/lib/cloud_scrapers/tb_cloud.py",
+      "before": "3d9608ee876632654bb15690e5df61e32ff07dfd7e1d56bcbbdaaf4de7ea4cdc",
+      "after": "e1cf7c1cd55255e4920775f335c1a977a5bed465f2cec0899d5f547e77f4fe6b"
+    },
+    {
+      "path": "resources/lib/debrid/alldebrid.py",
+      "before": "8e2cfad96ee11e2504522f66853e8830cde4c44040a976eb93d497870f7ddec1",
+      "after": "b8656d96f736111a4bf9d0c216a11ae1445c9704ffe8b2cc721fd4e8d53f4788"
+    },
+    {
+      "path": "resources/lib/debrid/easydebrid.py",
+      "before": "d5b7acef2cd7fea6b80995bc9b7a79cb25d2e6274627fb0a70cab62e0e369e69",
+      "after": "a5fa7e2754704a9397bf3f31d3acbeef6a738d5c80fe308da60596c5ab6b299a"
+    },
+    {
+      "path": "resources/lib/debrid/offcloud.py",
+      "before": "6af3b8beb1691d80b75983a56fd4f83656fc9bbdb00102d277b0e9d7f3d80129",
+      "after": "e89da0d107eef18d7ec2e63a053842e8ba3efac3f0fb8746c52e87478e145005"
+    },
+    {
+      "path": "resources/lib/debrid/premiumize.py",
+      "before": "1f54a51601015538a05fbacdf6c4704359845f4615e305c30d8b67b2b0781c44",
+      "after": "ef36a6b2419dc2750ae58fecc773d3eceee031ed0db73abe8d49303f7e3ba8f5"
+    },
+    {
+      "path": "resources/lib/debrid/realdebrid.py",
+      "before": "9a4f254c0d215378df928dcb94e2b77a478a931b0e1ff40b9c395ef249ec37df",
+      "after": "570a07a183b19364bf65bc63ae74acaa16e41f7b453a14585cced8b848f71856"
+    },
+    {
+      "path": "resources/lib/debrid/torbox.py",
+      "before": "e51db5d9f45960588a8a2734412cca60cc98b96ee88af905b98e1ce5dc3faf22",
+      "after": "aa40c2ea1155dba8b20650279b012be745f653495cca5ad3c838624864bb53b5"
+    },
+    {
+      "path": "resources/lib/modules/player.py",
+      "before": "169d853ed8823b4542bcad463d85d868835862ee9317d35cf7526e35f86e8cef",
+      "after": "45561d773dba1c2f570091242bb9975cb5967df0d807620068d24ca5f4541a84"
+    },
+    {
+      "path": "resources/lib/modules/sources.py",
+      "before": "a9594c0bcff75e2d19129be1cf18d56135a30a713ae786951e2550451675dc70",
+      "after": "287a6c7e90fac6a58f98d580814ce6715093038c86ce3dc2b932e1660cd4b01a"
+    },
+    {
+      "path": "resources/lib/modules/source_utils.py",
+      "before": "1dd2455bfee924c809874bc46e3d534c20bc5654d9582e4479c0b3b4802a5b66",
+      "after": "375f2fa5a689d2dd09970a321b52dab58f054868e76bb4bae7ed86b6a9a3ebe0"
+    },
+    {
+      "path": "tests/test_airdate_playback.py",
+      "before": null,
+      "after": "8ed78f5df0e96ef5ab64ff1395bcf05e2ff81a17e0e1b0cbcb6ee1810713420f"
+    }
+  ]
+}

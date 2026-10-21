@@ -666,7 +666,7 @@ class Player(xbmc.Player):
 										self.play_next_triggered = True
 								elif self.playnext_method== '2':
 									if self.subtitletime is None:
-										self.subtitletime = Subtitles().downloadForPlayNext(self.title, self.year, self.imdb, self.season, self.episode, self.media_length)
+										self.subtitletime = Subtitles().downloadForPlayNext(self.title, self.year, self.imdb, self.season, self.episode, self.media_length, premiered=self.meta.get('premiered') or self.meta.get('firstaired'))
 									if str(self.subtitletime) == 'default':
 										if getSetting('playnext.sub.backupmethod')== '0': #subtitle failed use seconds as backup
 											subtitletimeumb = int(getSetting('playnext.sub.seconds'))
@@ -933,7 +933,7 @@ class Player(xbmc.Player):
 			except:
 				log_utils.log('Exception trying to seekTime() offset: %s'% self.offset, level=log_utils.LOGDEBUG)
 			self.playback_resumed = True
-		if getSetting('subtitles') == 'true': Subtitles().get(self.title, self.year, self.imdb, self.season, self.episode)
+		if getSetting('subtitles') == 'true': Subtitles().get(self.title, self.year, self.imdb, self.season, self.episode, premiered=self.meta.get('premiered') or self.meta.get('firstaired'))
 		if self.onPlayBackStopped_ran or self.scrobble_sent or not self.isPlayingVideo(): return
 		try:
 			self.current_time = self.getTime()
@@ -1477,7 +1477,7 @@ class Subtitles:
 		score += 30 if bool(item.get('foreign_parts_only')) == prefer_forced else -30
 		return score
 
-	def get(self, title, year, imdb, season, episode):
+	def get(self, title, year, imdb, season, episode, premiered=None):
 		try:
 			quality = ['bluray', 'hdrip', 'brrip', 'bdrip', 'dvdrip', 'webrip', 'hdtv']
 			langs = []
@@ -1528,7 +1528,7 @@ class Subtitles:
 			if result:
 				for j in result:
 					if season:
-							if seas_ep_filter(season, episode, j['fileName']):
+							if seas_ep_filter(season, episode, j['fileName'], premiered=premiered):
 								j['score'] = self._subtitle_score(j, pFileName)
 								matches.append(j)
 					else:
@@ -1586,7 +1586,7 @@ class Subtitles:
 					for count, i in enumerate(subtitles):
 						sFileName = unquote(os.path.basename(i))
 						sFileName = os.path.splitext(sFileName)[0]
-						if seas_ep_filter(season, episode, sFileName.lower()):
+						if seas_ep_filter(season, episode, sFileName.lower(), premiered=premiered):
 							seq = SequenceMatcher(None, pFileName.lower(), sFileName.lower())
 							subtitle_matches.append({'fullPath': subtitles[count], 'matchRatio': seq.ratio()})
 				else:
@@ -1616,7 +1616,7 @@ class Subtitles:
 					control.notification(title=filename, message=getLS(40506) % lang.upper())
 		except: log_utils.error()
 
-	def downloadForPlayNext(self,  title, year, imdb, season, episode, media_length):
+	def downloadForPlayNext(self,  title, year, imdb, season, episode, media_length, premiered=None):
 		try:
 			try:
 				import re
@@ -1691,7 +1691,7 @@ class Subtitles:
 				if result:
 					for j in result:
 						if season:
-								if seas_ep_filter(season, episode, j['fileName']):
+								if seas_ep_filter(season, episode, j['fileName'], premiered=premiered):
 									j['score'] = self._subtitle_score(j, pFileName)
 									matches.append(j)
 						else:
@@ -1741,7 +1741,7 @@ class Subtitles:
 						for count, i in enumerate(subtitles):
 							sFileName = unquote(os.path.basename(i))
 							sFileName = os.path.splitext(sFileName)[0]
-							if seas_ep_filter(season, episode, sFileName.lower()):
+							if seas_ep_filter(season, episode, sFileName.lower(), premiered=premiered):
 								seq = SequenceMatcher(None, pFileName.lower(), sFileName.lower())
 								subtitle_matches.append({'fullPath': subtitles[count], 'matchRatio': seq.ratio()})
 					else:
