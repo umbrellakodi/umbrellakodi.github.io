@@ -1,4 +1,7 @@
-[B]Update - v6.7.726 - Oct 21st, 2026 [/B]
+[B]Update - v6.7.727 - Oct 21st, 2026 [/B]
+--[Fix] Restructure of language folders for Kodi 22 support.
+
+[B]Update - v6.7.94 - Oct 21st, 2026 [/B]
 --[Fix] Fix for playlist creation clearing playback.
 
 [B]Update - v6.7.93 - Oct 20th, 2026 [/B]
