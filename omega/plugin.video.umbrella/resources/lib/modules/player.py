@@ -114,6 +114,15 @@ def _refresh_after_player_closes(request_id, watched_update_thread=None):
 			homeWindow.clearProperty('umbrella.playback_cleanup')
 
 
+def _playlist_position():
+	position = control.playlist.getposition()
+	if position == -1 and control.playlist.size() > 1:
+		# Only treat our own detached queue as current + next.
+		next_url = playerWindow.getProperty('umbrella.standalone.next')
+		if next_url and control.playlist[1].getPath() == next_url: return 0
+	return position
+
+
 class Player(xbmc.Player):
 	def __init__(self):
 		xbmc.Player.__init__(self)
@@ -356,6 +365,8 @@ class Player(xbmc.Player):
 			for url, li, folder in playlist_items:
 				if url and li:
 					control.playlist.add(url=url, listitem=li)
+					if getattr(self, '_standalone_playlist', False):
+						playerWindow.setProperty('umbrella.standalone.next', url)
 					added = True
 					if self.debuglog: log_utils.log('addEpisodetoPlaylist: successfully added S%sE%s to playlist (playlist size now: %s)' % (item.get('season'), item.get('episode'), control.playlist.size()), level=log_utils.LOGDEBUG)
 			if not added:
@@ -499,7 +510,8 @@ class Player(xbmc.Player):
 				# Kodi's playlist (notably when launched from a skin widget).
 				# Seed it without launching a second player or cancelling the handle.
 				if self.media_type == 'episode' and self.enable_playnext and control.playlist.size() == 0:
-					self.singleItemPlaylist(item)
+					playerWindow.clearProperty('umbrella.standalone.next')
+					self._standalone_playlist = self.singleItemPlaylist(item)
 				return False
 			#check if no playlist is currently added.
 			# Kodi can report position 0 for an empty video playlist after source
@@ -656,7 +668,7 @@ class Player(xbmc.Player):
 							self.watched_during_playback = True
 						if self.enable_playnext and not self.play_next_triggered:
 							playlist_size = int(control.playlist.size())
-							if 0 <= control.playlist.getposition() < playlist_size - 1:
+							if 0 <= _playlist_position() < playlist_size - 1:
 								if self.preScrape_triggered == False:
 									xbmc.executebuiltin('RunPlugin(plugin://plugin.video.umbrella/?action=play_preScrapeNext)')
 									self.preScrape_triggered = True
@@ -1047,6 +1059,7 @@ class Player(xbmc.Player):
 
 	def onPlayBackStopped(self):
 		try:
+			playerWindow.clearProperty('umbrella.standalone.next')
 			playnext_transition = playerWindow.getProperty('umbrella.playnext.transition') == 'true'
 			if not playnext_transition:
 				playerWindow.clearProperty('umbrella.preResolved_nextUrl')
@@ -1150,6 +1163,15 @@ class Player(xbmc.Player):
 				playingfile = False
 			playlist_position = control.playlist.getposition()
 			playlist_size = control.playlist.size()
+			if (not playingfile and playlist_position == -1 and self.enable_playnext
+					and getattr(self, '_standalone_playlist', False) and _playlist_position() == 0):
+				# The stream has ended. Start the queued episode now, without ever
+				# stopping/restarting the current stream during initial resolution.
+				playerWindow.clearProperty('umbrella.standalone.next')
+				self._standalone_playlist = False
+				homeWindow.clearProperty('umbrella.playback_cleanup')
+				control.player.play(control.playlist, startpos=1)
+				return
 			has_next_queued = playlist_position >= 0 and playlist_position + 1 < playlist_size
 			log_utils.log('onPlayBackEnded Playlist Position: %s Playlist Count: %s Has Next: %s isPlaying: %s' % (playlist_position, playlist_size, has_next_queued, playingfile), level=log_utils.LOGDEBUG)
 			# Kodi can briefly report position 0 with no active file between plugin
@@ -1171,6 +1193,7 @@ class Player(xbmc.Player):
 		except: log_utils.error()
 
 	def onPlayBackError(self):
+		playerWindow.clearProperty('umbrella.standalone.next')
 		playerWindow.clearProperty('umbrella.playnext.transition')
 		playerWindow.clearProperty('umbrella.preResolved_nextUrl')
 		playerWindow.clearProperty('umbrella.playlistStart_position')
@@ -1273,7 +1296,7 @@ class PlayNext(xbmc.Player):
 			log_utils.error("Kodi did not return a playing file, killing playnext xml's")
 			return
 		# Only show playnext if next episode meta is valid
-		next_meta = self.getNext_meta() if 0 <= control.playlist.getposition() < control.playlist.size() - 1 else None
+		next_meta = self.getNext_meta() if 0 <= _playlist_position() < control.playlist.size() - 1 else None
 		if next_meta:
 			if self.isStill_watching(): target = self.show_stillwatching_xml
 			elif self.enable_playnext: target = self.show_playnext_xml
@@ -1295,7 +1318,7 @@ class PlayNext(xbmc.Player):
 		try:
 			
 			from urllib.parse import parse_qsl
-			current_position = control.playlist.getposition()
+			current_position = _playlist_position()
 			if not 0 <= current_position < control.playlist.size() - 1: return None
 			next_url = control.playlist[current_position + 1].getPath()
 			# next_url=videodb://tvshows/titles/16/2/571?season=2&tvshowid=16 # library playback returns this
@@ -1397,7 +1420,7 @@ class PlayNext(xbmc.Player):
 			if getSetting('play.mode.tv') == '0':
 				from resources.lib.modules import source_preferences
 				if not source_preferences.get(self.getNext_meta()): return
-			playlist_pos = control.playlist.getposition()
+			playlist_pos = _playlist_position()
 			playlist_size = control.playlist.size()
 			if 0 <= playlist_pos < playlist_size - 1:
 				from resources.lib.modules import sources
