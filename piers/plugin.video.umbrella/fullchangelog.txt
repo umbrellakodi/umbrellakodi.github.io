@@ -1,3 +1,9 @@
+[B]Update - v6.7.729 - Oct 22nd, 2026 [/B]
+--[Change] Removed reuselanguageinvoker popup on update.
+--[Fix] Fix for instances where playnext window was not popping up as expected.
+--[Fix] Fix for error when deleting a file from cloud.
+--[Fix] More adjustments for Kodi 22.
+
 [B]Update - v6.7.728 - Oct 21st, 2026 [/B]
 --[Change] Changes made to allow for results scraped by date.
 

@@ -418,14 +418,17 @@ class Premiumize:
 			sysaddon, syshandle = 'plugin://plugin.video.umbrella/', int(argv[1])
 			extensions = supported_video_extensions()
 			cloud_files = self.my_files(folder_id)
-			if not cloud_files:
-				if self.server_notifications: control.notification(message='Request Failure-Empty Content', icon=pm_icon)
-				log_utils.log('Premiumize.me: Request Failure-Empty Content', __name__, log_utils.LOGDEBUG)
+			if cloud_files is None:
+				# Complete failed requests too, so Kodi does not wait for a timeout.
+				control.directory(syshandle, succeeded=False, cacheToDisc=False)
 				return
 			cloud_files = [i for i in cloud_files if ('link' in i and i['link'].lower().endswith(tuple(extensions))) or i['type'] == 'folder']
 			cloud_files = sorted(cloud_files, key=lambda k: k['name'])
 			cloud_files = sorted(cloud_files, key=lambda k: k['type'], reverse=True)
-		except: return log_utils.error()
+		except:
+			log_utils.error()
+			control.directory(syshandle, succeeded=False, cacheToDisc=False)
+			return
 		folder_str, file_str, downloadMenu, renameMenu, deleteMenu = getLS(40046).upper(), getLS(40047).upper(), getLS(40048), getLS(40049), getLS(40050)
 		for count, item in enumerate(cloud_files, 1):
 			try:
@@ -460,7 +463,8 @@ class Premiumize:
 				control.addItem(handle=syshandle, url=url, listitem=item, isFolder=isFolder)
 			except: log_utils.error()
 		control.content(syshandle, 'files')
-		control.directory(syshandle, cacheToDisc=True)
+		# A successful empty folder is normal after deleting its last item.
+		control.directory(syshandle, cacheToDisc=False)
 
 	def user_transfers(self):
 		try:

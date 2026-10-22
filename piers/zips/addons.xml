@@ -1,5 +1,5 @@
 <?xml version='1.0' encoding='utf-8'?>
-<addons><addon id="plugin.video.umbrella" name="Umbrella" provider-name="Umbrella" version="6.7.728">
+<addons><addon id="plugin.video.umbrella" name="Umbrella" provider-name="Umbrella" version="6.7.729">
 	<requires>
 		<import addon="xbmc.python" version="3.0.0" />
 		<import addon="script.module.requests" />
@@ -271,9 +271,11 @@
 			<screenshot>resources/screenshots/screenshot003.jpg</screenshot>
 		</assets>
 		<news>
-[B]Update - v6.7.728 - Oct 21st, 2026 [/B]
---[Fix] Restructure of language folders for Kodi 22 support.
---[Change] Changes made to allow for results scraped by date.
+[B]Update - v6.7.729 - Oct 22nd, 2026 [/B]
+--[Change] Removed reuselanguageinvoker popup on update.
+--[Fix] Fix for instances where playnext window was not popping up as expected.
+--[Fix] Fix for error when deleting a file from cloud.
+--[Fix] More adjustments for Kodi 22.
 		</news>
 	</extension>
 
