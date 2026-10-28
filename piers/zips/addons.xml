@@ -1,5 +1,5 @@
 <?xml version='1.0' encoding='utf-8'?>
-<addons><addon id="plugin.video.umbrella" name="Umbrella" provider-name="Umbrella" version="6.7.734">
+<addons><addon id="plugin.video.umbrella" name="Umbrella" provider-name="Umbrella" version="6.7.735">
 	<requires>
 		<import addon="xbmc.python" version="3.0.0" />
 		<import addon="script.module.requests" />
@@ -271,17 +271,10 @@
 			<screenshot>resources/screenshots/screenshot003.jpg</screenshot>
 		</assets>
 		<news>
-[B]Update - v6.7.734 - Oct 28th, 2026 [/B]
---[Fix] Pressing OK to stop scraping early now preserves collected sources and completes provider checks before displaying results instead of incorrectly reporting No Sources Found.
---[Enhancement] Added optional Prefer Dolby audio setting under source sorting. Prioritizes Atmos, TrueHD, Dolby Digital Plus and Dolby Digital within quality and provider groups, ahead of file size, while retaining other audio formats as fallback. Disabled by default and included in settings backups.
---[Fix] Normalize missing VideoInfoTag metadata to typed empty values to reduce Kodi 22 deprecation warnings while preserving titles and resume points.
---[Fix] Preserve the last complete Floppy watched cache when requests fail or syncing is interrupted, and batch watched-history writes in one transaction.
---[Fix] Sync Floppy's stored season history without depending on show metadata, with a fallback for older servers.
---[Fix] Use Floppy's supplied external IDs when available, queue initial sync in the background service after authorization, and wait the full sync interval after completion.
---[Fix] Validate Floppy authorization responses, retain credentials on failure, and reopen settings after authorization dialogs finish.
---[Fix] Allow more time for slow Floppy read requests and prevent unbounded rate-limit retries.
---[Fix] Preserve Floppy list and resume caches when fetching fails, prevent overlapping watched-history rebuilds, and report incomplete forced syncs correctly.
-
+[B]Update - v6.7.735 - Oct 28th, 2026 [/B]
+--[Enhancement] Added Year (IMDb) TV browsing and improved TMDb TV years. Both use the new TV year sort order setting under TV Shows, defaulting to Popular, with Most voted and Highest rated options and separate minimum vote counts. TV years refer to the series premiere year.
+--[Feature] Added Year (IMDb) movie browsing using GraphQL, with paginated results.
+--[Enhancement] IMDb and TMDb movie years now open directly, sorted by Popular by default. Added a shared Movie year sort order setting under General with Popular, Most voted and Highest rated options, plus adjustable minimum vote counts. Existing original-language and origin-country filters apply to both sources.
 		</news>
 	</extension>
 

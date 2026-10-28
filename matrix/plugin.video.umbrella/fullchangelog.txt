@@ -1,3 +1,8 @@
+[B]Update - v6.7.735 - Oct 28th, 2026 [/B]
+--[Enhancement] Added Year (IMDb) TV browsing and improved TMDb TV years. Both use the new TV year sort order setting under TV Shows, defaulting to Popular, with Most voted and Highest rated options and separate minimum vote counts. TV years refer to the series premiere year.
+--[Feature] Added Year (IMDb) movie browsing using GraphQL, with paginated results.
+--[Enhancement] IMDb and TMDb movie years now open directly, sorted by Popular by default. Added a shared Movie year sort order setting under General with Popular, Most voted and Highest rated options, plus adjustable minimum vote counts. Existing original-language and origin-country filters apply to both sources.
+
 [B]Update - v6.7.734 - Oct 28th, 2026 [/B]
 --[Fix] Pressing OK to stop scraping early now preserves collected sources and completes provider checks before displaying results instead of incorrectly reporting No Sources Found.
 --[Enhancement] Added optional Prefer Dolby audio setting under source sorting. Prioritizes Atmos, TrueHD, Dolby Digital Plus and Dolby Digital within quality and provider groups, ahead of file size, while retaining other audio formats as fallback. Disabled by default and included in settings backups.

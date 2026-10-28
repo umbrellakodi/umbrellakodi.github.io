@@ -211,6 +211,9 @@ def router(argv2):
 	elif action == 'movieCertificates':
 		from resources.lib.menus import movies
 		movies.Movies().certifications(url, folderName=folderName)
+	elif action == 'movieYearBrowser':
+		from resources.lib.menus import movies
+		movies.Movies().yearBrowser(source=source or 'tmdb', url=url, folderName=folderName)
 	elif action == 'movieYears':
 		from resources.lib.menus import movies
 		movies.Movies().years(url, folderName=folderName)
@@ -697,6 +700,9 @@ def router(argv2):
 	elif action == 'tvCertificates':
 		from resources.lib.menus import tvshows
 		tvshows.TVshows().certifications(folderName=folderName)
+	elif action == 'tvYearBrowser':
+		from resources.lib.menus import tvshows
+		tvshows.TVshows().yearBrowser(source=source or 'tmdb', url=url, folderName=folderName)
 	elif action == 'tvYears':
 		from resources.lib.menus import tvshows
 		tvshows.TVshows().years(url, folderName=folderName)

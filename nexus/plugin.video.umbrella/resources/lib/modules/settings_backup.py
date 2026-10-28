@@ -20,6 +20,12 @@ mpa.prefix
 useLanguageforOriginal
 useOriginCountries
 originCountry
+year.tmdb.minimumVotes
+year.imdb.minimumVotes
+year.movies.sort
+year.tv.sort
+year.tv.tmdb.minimumVotes
+year.tv.imdb.minimumVotes
 searchmovie.indexer
 searchtv.indexer
 page.item.limit
