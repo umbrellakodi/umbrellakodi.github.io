@@ -89,7 +89,7 @@ def getFloppy(url, post=None, method=None, silent=False):
 				elif method == 'DELETE':
 					response = session.delete(url, headers=req_headers, timeout=20)
 				else:
-					response = session.get(url, headers=req_headers, timeout=20)
+					response = session.get(url, headers=req_headers, timeout=(10, 60))
 				_last_request_time = time.time()
 				break
 			except requests.exceptions.ConnectionError:
@@ -99,11 +99,6 @@ def getFloppy(url, post=None, method=None, silent=False):
 				else:
 					raise
 		status_code = response.status_code
-		if status_code == 429:
-			if 'Retry-After' in response.headers:
-				throttleTime = response.headers['Retry-After']
-				control.sleep((int(throttleTime) + 1) * 1000)
-				return getFloppy(url, post=post, method=method, silent=silent)
 		if status_code == 401 and not silent:
 			log_utils.log_force('FLOPPY: request unauthorized (invalid/expired token) url=%s' % url, level=log_utils.LOGWARNING)
 		elif status_code >= 500 and not silent:
@@ -125,40 +120,33 @@ def getFloppyAsJson(url, post=None, method=None, silent=False):
 
 
 def get_all_pages(url, silent=False):
-	# Confirmed pagination shape: {'pagination': {'total','limit','offset','next','previous'}, 'results': [...]}
+	"""Return a complete collection, or None; never publish a partial page set."""
 	try:
 		sep = '&' if '?' in url else '?'
-		limit = 250
-		offset = 0
+		limit, offset = 50, 0
 		results = []
 		while True:
-			page_url = url + sep + 'limit=%d&offset=%d' % (limit, offset)
-			data = getFloppyAsJson(page_url, silent=silent)
-			if not data: break
-			page_results = data.get('results', []) if isinstance(data, dict) else data
-			if not page_results: break
+			if control.monitor.abortRequested(): return None
+			data = getFloppyAsJson(url + sep + 'limit=%d&offset=%d' % (limit, offset), silent=silent)
+			if data is None: return None
+			if isinstance(data, list):
+				page_results, pagination = data, None
+			elif isinstance(data, dict) and isinstance(data.get('results'), list):
+				page_results, pagination = data['results'], data.get('pagination')
+			else: return None
+			if pagination is not None and not isinstance(pagination, dict): return None
 			results.extend(page_results)
-			# The server silently clamps the requested limit (confirmed: requesting
-			# limit=250 comes back with 200 results per page) — comparing the returned
-			# count against the *requested* limit then reads as "last page" after every
-			# single page for any collection over 200 items, silently truncating history/
-			# status-bucket syncs there. pagination.next is the real "more pages exist"
-			# signal; only fall back to the requested-limit comparison if a response is
-			# ever missing the pagination block. offset advances by the actual page size
-			# returned, not the requested one, so the next request picks up where the
-			# server actually left off either way.
-			pagination = data.get('pagination') if isinstance(data, dict) else None
 			if pagination is not None:
-				if not pagination.get('next'): break
+				if not pagination.get('next'):
+					if pagination.get('total') is not None and len(results) != int(pagination['total']): return None
+					return results
 			elif len(page_results) < limit:
-				break
+				return results
+			if not page_results: return None
 			offset += len(page_results)
-			if offset > 100000:
-				log_utils.log('FLOPPY: get_all_pages reached safety limit for URL: %s' % url, level=log_utils.LOGWARNING)
-				break
-		return results
-	except Exception as e:
-		log_utils.log('FLOPPY: Error in get_all_pages: %s' % str(e), level=log_utils.LOGWARNING)
+			if offset > 100000: return None
+	except Exception:
+		log_utils.error()
 		return None
 
 
@@ -166,34 +154,38 @@ def get_all_pages(url, silent=False):
 
 def floppyAuth(fromSettings=0):
 	try:
-		base = floppyBaseUrl()
-		token = getSetting('floppy.token')
-		if not base or not token:
-			if fromSettings == 1: control.openSettings('5.6', 'plugin.video.umbrella')
+		if fromSettings == 1: control.make_settings_dict()
+		if not getFloppyCredentialsInfo():
 			control.notification(message='Enter a Floppy server URL and token first', icon=floppy_icon)
 			return False
 		response = getFloppy('/media/movie/?limit=1', method='GET', silent=True)
-		if not response or response.status_code != 200:
+		if response is None or response.status_code != 200:
 			control.notification(message='Floppy Authorization Error - Check URL/Token', icon=floppy_icon)
-			if fromSettings == 1: control.openSettings('5.6', 'plugin.video.umbrella')
+			return False
+		payload = response.json()
+		if not isinstance(payload, dict) or not isinstance(payload.get('results'), list):
+			control.notification(message='Floppy Authorization Error - Invalid API response', icon=floppy_icon)
 			return False
 		setSetting('floppy.isauthed', 'true')
 		control.notification(message='Floppy Authorized Successfully', icon=floppy_icon)
-		if fromSettings == 1: control.openSettings('5.6', 'plugin.video.umbrella')
-		if not control.yesnoDialog('Do you want to set Floppy as your service for your watched and unwatched indicators?', '', '', 'Indicators', 'No', 'Yes'): return True
-		control.homeWindow.setProperty('umbrella.updateSettings', 'false')
-		setSetting('indicators.alt', '5')
-		setSetting('scrobble.source', '5')
-		control.homeWindow.setProperty('umbrella.updateSettings', 'true')
-		setSetting('scrobble', 'Floppy')
-		setSetting('indicators', 'Floppy')
-		control.notification(message='Floppy Indicators Enabled - Syncing Watched Data...')
-		from threading import Thread
-		Thread(target=sync_watched, kwargs={'forced': True}).start()
+		if control.yesnoDialog('Do you want to set Floppy as your service for your watched and unwatched indicators?', '', '', 'Indicators', 'No', 'Yes'):
+			control.homeWindow.setProperty('umbrella.updateSettings', 'false')
+			try:
+				setSetting('indicators.alt', '5')
+				setSetting('scrobble.source', '5')
+				setSetting('scrobble', 'Floppy')
+				setSetting('indicators', 'Floppy')
+			finally:
+				control.homeWindow.setProperty('umbrella.updateSettings', 'true')
+		# The long-lived service owns this work; a settings plugin must not spawn it.
+		control.make_settings_dict()
+		control.homeWindow.setProperty('umbrella.floppy.syncRequested', 'true')
 		return True
 	except:
 		log_utils.error()
 		return False
+	finally:
+		if fromSettings == 1: control.openSettings('5.6', 'plugin.video.umbrella')
 
 
 def floppyRevoke(fromSettings=0):
@@ -201,6 +193,7 @@ def floppyRevoke(fromSettings=0):
 	setSetting('floppy.user.name', '')
 	setSetting('floppy.token', '')
 	setSetting('floppy.isauthed', '')
+	control.homeWindow.clearProperty('umbrella.floppy.syncRequested')
 	control.homeWindow.setProperty('umbrella.updateSettings', 'true')
 	try:
 		clr_tables = ('bookmarks', 'floppy_watched_movies', 'floppy_watched_episodes',
@@ -724,87 +717,115 @@ def _watch_all_episodes_remote(tmdb, season=None):
 	except: log_utils.error()
 
 def _sync_episode_tracking_for_show(imdb, tmdb):
-	try:
-		detail = getFloppyAsJson(_tv_url(tmdb), silent=True)
-		if detail is None: return None
-		seasons = (detail.get('related') or {}).get('seasons') or []
-		now = _now_iso()
-		tracked_count = 0
-		for s in seasons:
-			try:
-				s_item = s.get('item') or {}
-				s_num = s_item.get('season_number')
-				if s_num is None: continue
-				history = get_all_pages('/media/tv/tmdb/%s/%s/history/' % (tmdb, s_num), silent=True) or []
-				if not history: continue
-				progress = max((int(h.get('progress') or 0) for h in history), default=0)
-				if progress <= 0: continue
-				last = max((h.get('progressed_at') or h.get('created') or '' for h in history), default=now) or now
-				for en in range(1, progress + 1):
-					tracked_count += 1
-					floppysync.upsert_watched_episode(show_imdb=imdb, show_tmdb=tmdb, show_tvdb='', season=int(s_num), episode=en, last_watched_at=last)
-			except:
-				log_utils.log('FLOPPY: episode sync failed for TMDB=%s season=%s' % (tmdb, s.get('item', {}).get('season_number')), level=log_utils.LOGWARNING)
-				log_utils.error()
-		return tracked_count
-	except:
-		log_utils.error()
-		return None
+	"""Stage rows without changing the last complete local history."""
+	detail = getFloppyAsJson(_tv_url(tmdb), silent=True)
+	if not isinstance(detail, dict) or not isinstance(detail.get('related'), dict): return None
+	seasons = detail['related'].get('seasons')
+	if not isinstance(seasons, list): return None
+	rows = []
+	for s in seasons:
+		if control.monitor.abortRequested(): return None
+		s_num = (s.get('item') or {}).get('season_number')
+		if s_num is None: return None
+		history = get_all_pages('/media/tv/tmdb/%s/%s/history/' % (tmdb, s_num), silent=True)
+		if history is None: return None
+		progress = max((int(h.get('progress') or 0) for h in history), default=0)
+		last = max((h.get('progressed_at') or h.get('created') or '' for h in history), default='') or _now_iso()
+		rows.extend((imdb, tmdb, '', int(s_num), en, last) for en in range(1, progress + 1))
+	return rows
+
 
 def _sync_watched_episodes_from_shows(progress_callback=None):
-	try:
-		floppysync.delete_floppy_tables(('floppy_watched_episodes',))
-		shows = (_fetch_status_bucket('tv', STATUS_COMPLETED) + _fetch_status_bucket('tv', STATUS_WATCHING)
-			+ _fetch_status_bucket('tv', STATUS_ONHOLD) + _fetch_status_bucket('tv', STATUS_DROPPED))
-		total = len(shows)
-		total_tracked, failed_shows = 0, 0
-		for idx, i in enumerate(shows):
-			item = i.get('item') or {}
-			tmdb = str(item.get('media_id') or '')
-			if tmdb:
-				imdb = _resolve_tv_imdb(tmdb)
-				result = _sync_episode_tracking_for_show(imdb, tmdb)
-				if result is None:
-					failed_shows += 1
-					if i.get('status') == STATUS_COMPLETED:
-						_mark_all_episodes_watched_locally(imdb, tmdb, season=None)
-				else:
-					total_tracked += result
-			if progress_callback:
-				try: progress_callback('Syncing watched shows', idx + 1, total)
-				except: pass
-		log_utils.log('FLOPPY: episode sync — %s shows checked, %s tracked episodes found, %s shows failed to query' % (len(shows), total_tracked, failed_shows), level=log_utils.LOGINFO)
-	except: log_utils.error()
+	# The library serializers read stored tracking data. Show details can depend on
+	# provider metadata and return 404 even for a show with valid stored history.
+	entries = get_all_pages('/media/tv/', silent=True)
+	if entries is None: return None
+	shows = {}
+	for entry in entries:
+		item = entry.get('item') or {}
+		if item.get('source') not in (None, '', 'tmdb'): continue
+		tmdb = str(item.get('media_id') or '')
+		if not tmdb: return None
+		shows[tmdb] = item
+	probe = getFloppy('/media/season/?limit=1', silent=True)
+	if probe is None: return None
+	rows = []
+	if probe.status_code == 404:
+		# Older servers may only expose seasons through show details.
+		for idx, (tmdb, item) in enumerate(shows.items()):
+			if control.monitor.abortRequested(): return None
+			imdb = str((item.get('ids') or {}).get('imdb') or '') or _resolve_tv_imdb(tmdb)
+			show_rows = _sync_episode_tracking_for_show(imdb, tmdb)
+			if show_rows is None: return None
+			tvdb = str((item.get('ids') or {}).get('tvdb') or '')
+			rows.extend((r[0], r[1], tvdb, r[3], r[4], r[5]) for r in show_rows)
+			if progress_callback: progress_callback('Syncing watched shows', idx + 1, len(shows))
+		return rows
+	if probe.status_code != 200: return None
+	seasons = get_all_pages('/media/season/', silent=True)
+	if seasons is None: return None
+	ids_by_show = {}
+	for idx, entry in enumerate(seasons):
+		if control.monitor.abortRequested(): return None
+		item = entry.get('item') or {}
+		if item.get('source') not in (None, '', 'tmdb'): continue
+		tmdb, sn = str(item.get('media_id') or ''), item.get('season_number')
+		if not tmdb or sn is None: return None
+		if tmdb not in ids_by_show:
+			ids = shows.get(tmdb, {}).get('ids') or {}
+			ids_by_show[tmdb] = (str(ids.get('imdb') or '') or _resolve_tv_imdb(tmdb), str(ids.get('tvdb') or ''))
+		imdb, tvdb = ids_by_show[tmdb]
+		history = get_all_pages('/media/tv/tmdb/%s/%s/history/' % (tmdb, sn), silent=True)
+		if history is None: return None
+		# Keep earlier completed watches when the current consumption is a rewatch.
+		progress = max((int(h.get('progress') or 0) for h in history), default=0)
+		last = max((h.get('progressed_at') or h.get('created') or '' for h in history), default='') or _now_iso()
+		rows.extend((imdb, tmdb, tvdb, int(sn), en, last) for en in range(1, progress + 1))
+		if progress_callback: progress_callback('Syncing watched seasons', idx + 1, len(seasons))
+	return rows
+
 
 def sync_watchedProgress(activities=None, forced=False, progress_callback=None):
+	lock = None
 	try:
-		if not getFloppyCredentialsInfo(): return
+		if not getFloppyCredentialsInfo(): return False
+		lock = floppysync.acquire_sync_lock()
+		if lock is None: return False
+		credentials = (floppyBaseUrl(), getSetting('floppy.token'))
 		items = _fetch_status_bucket('movie', STATUS_COMPLETED)
-		floppysync.delete_floppy_tables(('floppy_watched_movies',))
-		total = len(items)
-		resolved, unresolved = 0, 0
-		for idx, i in enumerate(items):
-			item = i.get('item') or {}
+		if items is None:
+			log_utils.log('FLOPPY: movie fetch incomplete; keeping previous watched history', level=log_utils.LOGWARNING)
+			return False
+		movies = []
+		for idx, entry in enumerate(items):
+			if control.monitor.abortRequested(): return False
+			item = entry.get('item') or {}
 			tmdb = str(item.get('media_id') or '')
-			if tmdb:
-				imdb = _resolve_movie_imdb(tmdb)
-				if imdb: resolved += 1
-				else: unresolved += 1
-				year = (item.get('release_datetime') or '')[:4]
-				last_watched_at = i.get('end_date') or i.get('progressed_at') or i.get('created_at') or _now_iso()
-				floppysync.upsert_watched_movie(imdb=imdb, tmdb=tmdb, title=item.get('title', ''), year=year, last_watched_at=last_watched_at)
-			if progress_callback:
-				try: progress_callback('Syncing watched movies', idx + 1, total)
-				except: pass
-		log_utils.log('FLOPPY: movie sync — %s completed movies, %s resolved to imdb, %s could not be resolved' % (len(items), resolved, unresolved), level=log_utils.LOGINFO)
-		_sync_watched_episodes_from_shows(progress_callback=progress_callback)
-		floppysync.update_last_watched_at('last_history_at')
+			if not tmdb: return False
+			imdb = str((item.get('ids') or {}).get('imdb') or '') or _resolve_movie_imdb(tmdb)
+			last = entry.get('end_date') or entry.get('progressed_at') or entry.get('created_at') or _now_iso()
+			movies.append((imdb, tmdb, item.get('title', ''), (item.get('release_datetime') or '')[:4], last))
+			if progress_callback: progress_callback('Syncing watched movies', idx + 1, len(items))
+		episodes = _sync_watched_episodes_from_shows(progress_callback=progress_callback)
+		if episodes is None or control.monitor.abortRequested():
+			log_utils.log('FLOPPY: episode fetch incomplete or cancelled; keeping previous watched history', level=log_utils.LOGWARNING)
+			return False
+		if credentials != (floppyBaseUrl(), getSetting('floppy.token')): return False
+		if not floppysync.store_watched_history(movies, episodes): return False
 		floppysync.clear_cache()
+		log_utils.log('FLOPPY: watched sync complete (%s movies, %s episodes)' % (len(movies), len(episodes)), level=log_utils.LOGINFO)
 		control.trigger_widget_refresh()
-	except: log_utils.error()
+		return True
+	except:
+		log_utils.error()
+		return False
+	finally:
+		if lock is not None: lock.close()
+
 
 def sync_watched(activities=None, forced=False, progress_callback=None):
-	sync_watchedProgress(activities=activities, forced=forced, progress_callback=progress_callback)
+	return sync_watchedProgress(activities=activities, forced=forced, progress_callback=progress_callback)
+
 
 def sync_watch_list(activities=None, forced=False):
 	# Pulls all 5 status buckets (not just Planning) so every My Movies/My TV Shows
@@ -812,17 +833,23 @@ def sync_watch_list(activities=None, forced=False):
 	try:
 		if not getFloppyCredentialsInfo(): return
 		for status, (mv_table, tv_table) in _STATUS_TABLES.items():
-			floppysync.insert_status_list(_fetch_status_bucket('movie', status), mv_table)
-			floppysync.insert_status_list(_fetch_status_bucket('tv', status), tv_table)
+			for media, table in (('movie', mv_table), ('tv', tv_table)):
+				items = _fetch_status_bucket(media, status)
+				if items is None: return False
+				if not floppysync.insert_status_list(items, table): return False
+		return True
 	except: log_utils.error()
 
 def sync_collection(activities=None, forced=False):
 	try:
 		if not getFloppyCredentialsInfo(): return
-		items = get_all_pages('/collection/?item_media_type=movie', silent=True) or []
-		floppysync.insert_status_list([{'id': i.get('item', {}).get('id'), 'item': i.get('item'), 'score': None, 'created_at': i.get('collected_at')} for i in items], 'movies_collection')
-		items = get_all_pages('/collection/?item_media_type=tv', silent=True) or []
-		floppysync.insert_status_list([{'id': i.get('item', {}).get('id'), 'item': i.get('item'), 'score': None, 'created_at': i.get('collected_at')} for i in items], 'shows_collection')
+		items = get_all_pages('/collection/?item_media_type=movie', silent=True)
+		if items is None: return False
+		if not floppysync.insert_status_list([{'id': i.get('item', {}).get('id'), 'item': i.get('item'), 'score': None, 'created_at': i.get('collected_at')} for i in items], 'movies_collection'): return False
+		items = get_all_pages('/collection/?item_media_type=tv', silent=True)
+		if items is None: return False
+		if not floppysync.insert_status_list([{'id': i.get('item', {}).get('id'), 'item': i.get('item'), 'score': None, 'created_at': i.get('collected_at')} for i in items], 'shows_collection'): return False
+		return True
 	except: log_utils.error()
 
 def get_collection_entries(media_type='movie'):
@@ -850,7 +877,8 @@ def get_collection_entries(media_type='movie'):
 def sync_playbackProgress(activities=None, forced=False):
 	try:
 		if not getFloppyCredentialsInfo(): return
-		items = get_all_pages('/playback/progress/', silent=True) or []
+		items = get_all_pages('/playback/progress/', silent=True)
+		if items is None: return False
 		floppysync.clear_bookmarks()
 		for item in items:
 			try:
@@ -889,20 +917,19 @@ def force_floppySync():
 			else:
 				dialog.update(0, '%s...' % phase)
 		except: pass
+	success = False
 	try:
-		clr_tables = ('floppy_watched_movies', 'floppy_watched_episodes',
-			'movies_plantowatch', 'shows_plantowatch', 'movies_watching', 'shows_watching',
-			'movies_hold', 'shows_hold', 'movies_completed', 'shows_completed',
-			'movies_dropped', 'shows_dropped', 'movies_collection', 'shows_collection')
-		floppysync.delete_floppy_tables(clr_tables)
 		_progress('Syncing watchlist/watching/on-hold/etc')
-		sync_watch_list(forced=True)
+		lists_ok = sync_watch_list(forced=True)
 		_progress('Syncing collection')
-		sync_collection(forced=True)
-		sync_watchedProgress(forced=True, progress_callback=_progress)
+		collection_ok = sync_collection(forced=True)
+		history_ok = sync_watchedProgress(forced=True, progress_callback=_progress)
+		success = lists_ok and collection_ok and history_ok
+	except:
+		log_utils.error()
 	finally:
 		dialog.close()
-	control.notification(title='Floppy', message='Forced Floppy Sync Complete')
+	control.notification(title='Floppy', message='Forced Floppy Sync Complete' if success else 'Floppy sync incomplete - previous data retained for failed requests')
 
 
 #### Indicators (movies/shows watched state, seasons/episodes progress) ####

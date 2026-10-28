@@ -100,17 +100,20 @@ search_history_xml = '''<?xml version="1.0" encoding="UTF-8"?>
 default_widget = '''<?xml version="1.0" encoding="UTF-8"?>
 <includes>
   <include name="{includes_type}">
+    <!-- Intentionally empty until configured by Nimbus helper. -->
   </include>
 </includes>'''
 
 default_main_menu = '''<?xml version="1.0" encoding="UTF-8"?>
 <includes>
   <include name="{includes_type}">
+    <!-- Intentionally empty until configured by Nimbus helper. -->
   </include>
 </includes>'''
 
 default_history = '''<?xml version="1.0" encoding="UTF-8"?>
 <includes>
   <include name="{includes_type}">
+    <!-- Intentionally empty until configured by Nimbus helper. -->
   </include>
 </includes>'''

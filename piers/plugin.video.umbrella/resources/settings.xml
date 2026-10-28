@@ -2719,6 +2719,11 @@
 						<heading>40672</heading>
 					</control>
 				</setting>
+				<setting id="source.prefer.dolby.audio" type="boolean" label="40844" help="40845">
+					<level>0</level>
+					<default>false</default>
+					<control type="toggle"/>
+				</setting>
 				<setting id="source.prefer.smaller" type="boolean" label="40704" help="">
 					<level>0</level>
 					<default>false</default>

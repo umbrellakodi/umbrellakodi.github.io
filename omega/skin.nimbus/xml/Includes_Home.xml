@@ -75,6 +75,11 @@
 				<param name="posy" value="240"/>
 			</include>
 			<control type="fixedlist" id="$PARAM[list_id]">
+				<!-- Focus actions belong to the container, not its item layout. -->
+				<onfocus condition="!Player.HasMedia + String.IsEqual(Skin.String(trailerSetting),2) + String.IsEmpty(Skin.String(TrailerPlaying))">Skin.TimerStart(autoplay_trailer_timer)</onfocus>
+				<onunfocus condition="Player.HasMedia + !String.IsEmpty(Skin.String(TrailerPlaying))">Stop</onunfocus>
+				<onunfocus condition="!String.IsEmpty(Skin.String(TrailerPlaying))">Skin.Reset(TrailerPlaying)</onunfocus>
+				<onfocus>ClearProperty(LandscapeWidgetFocused,Home)</onfocus>
 				<top>102</top>
 				<onright>$PARAM[list_id]</onright>
 				<orientation>horizontal</orientation>
@@ -111,8 +116,8 @@
 							<param name="focused" value="true" />
 							<param name="list_id" value="$PARAM[list_id]" />
 						</include>
-						<include>HomeTrailerControl</include>
-						<include>ClearLandscapeProperties</include>
+						
+						
 					</control>
 				</focusedlayout>
 				<content sortby="$PARAM[sortby]" sortorder="$PARAM[sortorder]" target="$PARAM[widget_target]" limit="$PARAM[limit]">$PARAM[content_path]</content>
@@ -185,6 +190,11 @@
 				<param name="posy" value="240"/>
 			</include>
 			<control type="fixedlist" id="$PARAM[list_id]">
+				<!-- Focus actions belong to the container, not its item layout. -->
+				<onfocus condition="!Player.HasMedia + String.IsEqual(Skin.String(trailerSetting),2) + String.IsEmpty(Skin.String(TrailerPlaying))">Skin.TimerStart(autoplay_trailer_timer)</onfocus>
+				<onunfocus condition="Player.HasMedia + !String.IsEmpty(Skin.String(TrailerPlaying))">Stop</onunfocus>
+				<onunfocus condition="!String.IsEmpty(Skin.String(TrailerPlaying))">Skin.Reset(TrailerPlaying)</onunfocus>
+				<onfocus>SetProperty(LandscapeWidgetFocused,true,Home)</onfocus>
 				<top>102</top>
 				<onright>$PARAM[list_id]</onright>
 				<orientation>horizontal</orientation>
@@ -218,8 +228,8 @@
 							<param name="focused" value="true" />
 							<param name="list_id" value="$PARAM[list_id]" />
 						</include>
-						<include>HomeTrailerControl</include>
-						<include>SetLandscapeArtworkProperties</include>
+						
+						
 					</control>
 				</focusedlayout>
 				<content sortby="$PARAM[sortby]" sortorder="$PARAM[sortorder]" target="$PARAM[widget_target]" limit="$PARAM[limit]">$PARAM[content_path]</content>
@@ -244,6 +254,8 @@
 				<param name="posy" value="140"/>
 			</include>
 			<control type="fixedlist" id="$PARAM[list_id]">
+				<!-- Focus actions belong to the container, not its item layout. -->
+				<onfocus>ClearProperty(LandscapeWidgetFocused,Home)</onfocus>
 				<top>102</top>
 				<right>0</right>
 				<height>346</height>
@@ -288,7 +300,7 @@
 							<param name="focused" value="true" />
 						</include>
 					</control>
-					<include>ClearLandscapeProperties</include>
+					
 				</focusedlayout>
 				<content sortby="$PARAM[sortby]" sortorder="$PARAM[sortorder]" target="$PARAM[widget_target]" limit="$PARAM[item_limit]">$PARAM[content_path]</content>
 				<include condition="!String.IsEmpty($PARAM[content_include])">$PARAM[content_include]</include>
@@ -313,6 +325,11 @@
 				<param name="posy" value="140"/>
 			</include>
 			<control type="fixedlist" id="$PARAM[list_id]">
+				<!-- Focus actions belong to the container, not its item layout. -->
+				<onfocus condition="!Player.HasMedia + String.IsEqual(Skin.String(trailerSetting),2) + String.IsEmpty(Skin.String(TrailerPlaying))">Skin.TimerStart(autoplay_trailer_timer)</onfocus>
+				<onunfocus condition="Player.HasMedia + !String.IsEmpty(Skin.String(TrailerPlaying))">Stop</onunfocus>
+				<onunfocus condition="!String.IsEmpty(Skin.String(TrailerPlaying))">Skin.Reset(TrailerPlaying)</onunfocus>
+				<onfocus>SetProperty(LandscapeWidgetFocused,true,Home)</onfocus>
 				<top>102</top>
 				<right>0</right>
 				<include content="WidgetVisibilityAnimations">
@@ -342,8 +359,8 @@
 							<param name="list_id" value="$PARAM[list_id]" />
 							<param name="focused" value="true" />
 						</include>
-						<include>HomeTrailerControl</include>
-						<include>SetLandscapeArtworkProperties</include>
+						
+						
 					</control>
 				</focusedlayout>
 				<content target="$PARAM[widget_target]">$PARAM[content_path]</content>

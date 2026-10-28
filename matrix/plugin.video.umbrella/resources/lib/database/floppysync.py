@@ -22,8 +22,8 @@ def get_connection(setRowFactory=False):
 	if not existsPath(dataPath): makeFile(dataPath)
 	dbcon = db.connect(floppySyncFile, timeout=60)
 	dbcon.execute('''PRAGMA page_size = 32768''')
-	dbcon.execute('''PRAGMA journal_mode = OFF''')
-	dbcon.execute('''PRAGMA synchronous = OFF''')
+	dbcon.execute('''PRAGMA journal_mode = DELETE''')
+	dbcon.execute('''PRAGMA synchronous = NORMAL''')
 	dbcon.execute('''PRAGMA temp_store = memory''')
 	dbcon.execute('''PRAGMA mmap_size = 30000000000''')
 	if setRowFactory: dbcon.row_factory = _dict_factory
@@ -75,29 +75,27 @@ def insert_status_list(items, table, new_sync=True):
 		dbcur.execute('''CREATE TABLE IF NOT EXISTS service (setting TEXT, value TEXT, UNIQUE(setting));''')
 		if new_sync:
 			dbcur.execute('''DELETE FROM %s''' % table)
-			dbcur.connection.commit()
-			dbcur.execute('''VACUUM''')
 		for i in items:
-			try:
-				if not i: continue
-				item = i.get('item') or {}
-				tmdb = str(item.get('media_id') or '')
-				if not tmdb: continue
-				title = item.get('title', '')
-				image = item.get('image', '') or ''
-				score = str(i.get('score', '') or '')
-				item_id = str(i.get('id', '') or '')
-				listed_at = i.get('created_at', '') or ''
-				dbcur.execute('''INSERT OR REPLACE INTO %s Values (?, ?, ?, ?, ?, ?, ?)''' % table, (title, '', tmdb, item_id, image, score, listed_at))
-			except:
-				from resources.lib.modules import log_utils
-				log_utils.error()
+			if not i: continue
+			item = i.get('item') or {}
+			tmdb = str(item.get('media_id') or '')
+			if not tmdb: continue
+			title = item.get('title', '')
+			image = item.get('image', '') or ''
+			score = str(i.get('score', '') or '')
+			item_id = str(i.get('id', '') or '')
+			listed_at = i.get('created_at', '') or ''
+			dbcur.execute('''INSERT OR REPLACE INTO %s Values (?, ?, ?, ?, ?, ?, ?)''' % table, (title, '', tmdb, item_id, image, score, listed_at))
 		timestamp = datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%S.000Z")
 		dbcur.execute('''INSERT OR REPLACE INTO service Values (?, ?)''', ('last_%s_sync_at' % table, timestamp))
 		dbcur.connection.commit()
+		return True
 	except:
+		try: dbcon.rollback()
+		except: pass
 		from resources.lib.modules import log_utils
 		log_utils.error()
+		return False
 	finally:
 		try: dbcur.close()
 		except: pass
@@ -544,3 +542,44 @@ def clear_bookmarks():
 		except: pass
 		try: dbcon.close()
 		except: pass
+
+
+def store_watched_history(movies, episodes, replace=True):
+	"""Commit a complete history fetch together; roll back failed replacements."""
+	connection = None
+	try:
+		connection = get_connection()
+		connection.execute('PRAGMA journal_mode = DELETE')
+		connection.execute('PRAGMA synchronous = NORMAL')
+		cursor = connection.cursor()
+		_ensure_watched_tables(cursor)
+		connection.execute('BEGIN')
+		if replace:
+			cursor.execute('DELETE FROM floppy_watched_movies')
+			cursor.execute('DELETE FROM floppy_watched_episodes')
+		cursor.executemany('INSERT OR REPLACE INTO floppy_watched_movies VALUES (?, ?, ?, ?, ?)', movies)
+		cursor.executemany('INSERT OR REPLACE INTO floppy_watched_episodes VALUES (?, ?, ?, ?, ?, ?)', episodes)
+		cursor.execute('CREATE TABLE IF NOT EXISTS service (setting TEXT, value TEXT, UNIQUE(setting))')
+		cursor.execute('INSERT OR REPLACE INTO service VALUES (?, ?)',
+			('last_history_at', datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%S.000Z')))
+		connection.commit()
+		return True
+	except:
+		if connection is not None: connection.rollback()
+		from resources.lib.modules import log_utils
+		log_utils.error()
+		return False
+	finally:
+		if connection is not None: connection.close()
+
+
+def acquire_sync_lock():
+	"""Serialize service and plugin history rebuilds across Kodi interpreters."""
+	if not existsPath(dataPath): makeFile(dataPath)
+	connection = db.connect(floppySyncFile + '.sync-lock', timeout=0)
+	try:
+		connection.execute('BEGIN IMMEDIATE')
+		return connection
+	except db.OperationalError:
+		connection.close()
+		return None

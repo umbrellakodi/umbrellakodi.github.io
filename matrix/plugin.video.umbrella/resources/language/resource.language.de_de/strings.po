@@ -7162,3 +7162,11 @@ msgstr ""
 msgctxt "#40843"
 msgid "Date, Day and Time"
 msgstr ""
+
+msgctxt "#40844"
+msgid "Prefer Dolby audio"
+msgstr ""
+
+msgctxt "#40845"
+msgid "Prefer Atmos, TrueHD, Dolby Digital Plus and Dolby Digital within quality and provider groups, ahead of file size. Other audio formats remain available as fallback. Audio formats are identified from release names."
+msgstr ""

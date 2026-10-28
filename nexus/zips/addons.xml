@@ -1,5 +1,5 @@
 <?xml version='1.0' encoding='utf-8'?>
-<addons><addon id="plugin.video.umbrella" name="Umbrella" provider-name="Umbrella" version="6.7.733">
+<addons><addon id="plugin.video.umbrella" name="Umbrella" provider-name="Umbrella" version="6.7.734">
 	<requires>
 		<import addon="xbmc.python" version="3.0.0" />
 		<import addon="script.module.requests" />
@@ -271,11 +271,17 @@
 			<screenshot>resources/screenshots/screenshot003.jpg</screenshot>
 		</assets>
 		<news>
-[B]Update - v6.7.733 - Oct 26th, 2026 [/B]
---[Fix] Add airdate searches to internal Easynews, FilePursuit and GDrive scrapers while retaining season and episode searches and removing duplicate results.
---[Fix] Allow internal Plex scraper results to match the selected episode's airdate.
---[Change] Move Trakt device authentication, token refresh and revocation to auth.trakt.tv ahead of the February 1st, 2027 deadline.
---[Fix] Use Trakt's returned verification link for the authentication QR code.
+[B]Update - v6.7.734 - Oct 28th, 2026 [/B]
+--[Fix] Pressing OK to stop scraping early now preserves collected sources and completes provider checks before displaying results instead of incorrectly reporting No Sources Found.
+--[Enhancement] Added optional Prefer Dolby audio setting under source sorting. Prioritizes Atmos, TrueHD, Dolby Digital Plus and Dolby Digital within quality and provider groups, ahead of file size, while retaining other audio formats as fallback. Disabled by default and included in settings backups.
+--[Fix] Normalize missing VideoInfoTag metadata to typed empty values to reduce Kodi 22 deprecation warnings while preserving titles and resume points.
+--[Fix] Preserve the last complete Floppy watched cache when requests fail or syncing is interrupted, and batch watched-history writes in one transaction.
+--[Fix] Sync Floppy's stored season history without depending on show metadata, with a fallback for older servers.
+--[Fix] Use Floppy's supplied external IDs when available, queue initial sync in the background service after authorization, and wait the full sync interval after completion.
+--[Fix] Validate Floppy authorization responses, retain credentials on failure, and reopen settings after authorization dialogs finish.
+--[Fix] Allow more time for slow Floppy read requests and prevent unbounded rate-limit retries.
+--[Fix] Preserve Floppy list and resume caches when fetching fails, prevent overlapping watched-history rebuilds, and report incomplete forced syncs correctly.
+
 		</news>
 	</extension>
 
@@ -392,6 +398,40 @@
         <disclaimer lang="vi_VN">Plugin này không được xác nhận bởi Google</disclaimer>
         <disclaimer lang="zh_CN">此插件未被谷歌认可</disclaimer>
         <disclaimer lang="zh_TW">此附加元件未由Google支持</disclaimer>
+    </extension>
+</addon><addon id="repository.umbrellakodi" name="Umbrella Testing Repository" version="1.3" provider-name="Umbrella">
+    <extension point="xbmc.addon.repository" name="Umbrella Testing Repository">
+        <dir minversion="19.0.0" maxversion="19.5.0">
+            <info compressed="false">https://raw.githubusercontent.com/umbrellakodi/umbrellakodi.github.io/main/matrix/zips/addons.xml</info>
+            <checksum>https://raw.githubusercontent.com/umbrellakodi/umbrellakodi.github.io/main/matrix/zips/addons.xml.md5</checksum>
+            <datadir zip="true">https://raw.githubusercontent.com/umbrellakodi/umbrellakodi.github.io/main/matrix/zips/</datadir>
+        </dir>
+		<dir minversion="19.8.0" maxversion="20.89.0">
+            <info compressed="false">https://raw.githubusercontent.com/umbrellakodi/umbrellakodi.github.io/main/nexus/zips/addons.xml</info>
+            <checksum>https://raw.githubusercontent.com/umbrellakodi/umbrellakodi.github.io/main/nexus/zips/addons.xml.md5</checksum>
+            <datadir zip="true">https://raw.githubusercontent.com/umbrellakodi/umbrellakodi.github.io/main/nexus/zips/</datadir>
+        </dir>
+		<dir minversion="20.90.0" maxversion="21.89.99">
+            <info compressed="false">https://raw.githubusercontent.com/umbrellakodi/umbrellakodi.github.io/main/omega/zips/addons.xml</info>
+            <checksum>https://raw.githubusercontent.com/umbrellakodi/umbrellakodi.github.io/main/omega/zips/addons.xml.md5</checksum>
+            <datadir zip="true">https://raw.githubusercontent.com/umbrellakodi/umbrellakodi.github.io/main/omega/zips/</datadir>
+        </dir>
+		
+		<dir minversion="21.90.0">
+			<info compressed="false">https://raw.githubusercontent.com/umbrellakodi/umbrellakodi.github.io/main/piers/zips/addons.xml</info>
+            <checksum>https://raw.githubusercontent.com/umbrellakodi/umbrellakodi.github.io/main/piers/zips/addons.xml.md5</checksum>
+            <datadir zip="true">https://raw.githubusercontent.com/umbrellakodi/umbrellakodi.github.io/main/piers/zips/</datadir>
+		</dir>
+    </extension>
+    <extension point="xbmc.addon.metadata">
+        <summary>Umbrella Testing Repository</summary>
+        <description>Testing repository for pre-release Umbrella add-ons. Public releases are available from the Umbrella Repository.</description>
+        <disclaimer />
+        <platform>all</platform>
+        <assets>
+            <icon>icon.png</icon>
+            <fanart>fanart.jpg</fanart>
+        </assets>
     </extension>
 </addon><addon id="script.umbrestuary.helper" name="Umbrestuary Helper" version="0.6.16" provider-name="Tikipeter, Ivar Brandt">
     <requires>

@@ -1,10 +1,20 @@
-[B]Update - v6.7.733 - Oct 26th, 2026 [/B]
+[B]Update - v6.7.734 - Oct 28th, 2026 [/B]
+--[Fix] Pressing OK to stop scraping early now preserves collected sources and completes provider checks before displaying results instead of incorrectly reporting No Sources Found.
+--[Enhancement] Added optional Prefer Dolby audio setting under source sorting. Prioritizes Atmos, TrueHD, Dolby Digital Plus and Dolby Digital within quality and provider groups, ahead of file size, while retaining other audio formats as fallback. Disabled by default and included in settings backups.
+--[Fix] Normalize missing VideoInfoTag metadata to typed empty values to reduce Kodi 22 deprecation warnings while preserving titles and resume points.
+--[Fix] Preserve the last complete Floppy watched cache when requests fail or syncing is interrupted, and batch watched-history writes in one transaction.
+--[Fix] Sync Floppy's stored season history without depending on show metadata, with a fallback for older servers.
+--[Fix] Use Floppy's supplied external IDs when available, queue initial sync in the background service after authorization, and wait the full sync interval after completion.
+--[Fix] Validate Floppy authorization responses, retain credentials on failure, and reopen settings after authorization dialogs finish.
+--[Fix] Allow more time for slow Floppy read requests and prevent unbounded rate-limit retries.
+--[Fix] Preserve Floppy list and resume caches when fetching fails, prevent overlapping watched-history rebuilds, and report incomplete forced syncs correctly.
+
+[B]Update - v6.7.98 - Oct 27th, 2026 [/B]
+--[Fix] Preserve collected sources when stopping a scrape early and complete provider checks before displaying results.
 --[Fix] Add airdate searches to internal Easynews, FilePursuit and GDrive scrapers while retaining season and episode searches and removing duplicate results.
 --[Fix] Allow internal Plex scraper results to match the selected episode's airdate.
 --[Change] Move Trakt device authentication, token refresh and revocation to auth.trakt.tv ahead of the February 1st, 2027 deadline.
 --[Fix] Use Trakt's returned verification link for the authentication QR code.
-
-[B]Update - v6.7.732 - Oct 23rd, 2026 [/B]
 --[Fix] Prevent Premiumize cloud from hanging when refreshing after file deletion with Python invoker reuse enabled.
 
 [B]Update - v6.7.97 - Oct 23rd, 2026 [/B]

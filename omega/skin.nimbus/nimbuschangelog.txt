@@ -1,6 +1,11 @@
-Nimbus Helper: Latest: v0.0.52 [B]|[/B] Installed: v$INFO[System.AddonVersion(script.nimbus.helper)]
+Nimbus Helper: Latest: v0.0.54 [B]|[/B] Installed: v$INFO[System.AddonVersion(script.nimbus.helper)]
 
-[B][COLOR FFFFFFFF]Version $INFO[System.AddonVersion(skin.nimbus)][/COLOR][/B]
+[B]Update - v0.1.44 - Oct 28th, 2026 [/B]
+- Correct clearlogo visibility conditions in the movie information and PosterFlow views.
+- Move focus actions from unsupported item-layout buttons to list containers and reset scroll timers during navigation.
+- Register empty menu/widget includes correctly and require Nimbus Helper 0.0.54 for the matching generated-XML fixes.
+
+[B][COLOR FFFFFFFF]Version 0.1.43[/COLOR][/B]
 - Bug fixes
 
 [B][COLOR FFFFFFFF]Version 0.1.37[/COLOR][/B]

@@ -206,6 +206,7 @@ sources.filepursuit.color
 sources.usecoloricons
 sources.sort.order
 source.prefer.smaller
+source.prefer.dolby.audio
 cloud.sources.first
 uncached.seeder.sort
 autoplay.sd

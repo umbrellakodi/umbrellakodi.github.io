@@ -39,6 +39,10 @@
 					<visible>!Container.Content(movies) + !Container.Content(tvshows) + !Container.Content(seasons) + !Container.Content(episodes)</visible>
 				</control> -->
 				<control type="panel" id="56">
+				<!-- Focus actions belong to the container, not its item layout. -->
+				<onfocus condition="[Container.Content(tvshows) | Container.Content(seasons) | Container.Content(episodes) | Container.Content(movies) | Container.Content(musicvideos) | Container.Content(videos) | Container.Content(games) | Window.IsActive(videoplaylist) | Window.IsActive(musicplaylist)] + [String.IsEqual(Skin.String(trailerSetting),2) + String.IsEmpty(Window(Videos).Property(PlayingBackgroundMedia)) + !VideoPlayer.Content(livetv)]">Skin.TimerStart(autoplay_trailer_timer)</onfocus>
+				<onunfocus condition="[Container.Content(tvshows) | Container.Content(seasons) | Container.Content(episodes) | Container.Content(movies) | Container.Content(musicvideos) | Container.Content(videos) | Container.Content(games) | Window.IsActive(videoplaylist) | Window.IsActive(musicplaylist)] + [Player.HasMedia + !String.IsEmpty(Skin.String(TrailerPlaying))]">Stop</onunfocus>
+				<onunfocus condition="[Container.Content(tvshows) | Container.Content(seasons) | Container.Content(episodes) | Container.Content(movies) | Container.Content(musicvideos) | Container.Content(videos) | Container.Content(games) | Window.IsActive(videoplaylist) | Window.IsActive(musicplaylist)] + [!String.IsEmpty(Skin.String(TrailerPlaying))]">Skin.Reset(TrailerPlaying)</onunfocus>
 					<left>50</left>
 					<top>list_top_offset</top>			
 					<bottom>70</bottom>
@@ -85,7 +89,7 @@
 					</visible>
 					<focusedlayout height="list_item_height" width="608" condition="Container.Content(tvshows) | Container.Content(seasons) | Container.Content(episodes) | Container.Content(movies) | Container.Content(musicvideos) | Container.Content(videos) | Container.Content(games) | Window.IsActive(videoplaylist) | Window.IsActive(musicplaylist)" infoupdate="30">
 						<control type="group">
-							<include>VideoTrailerControl</include>
+							
 						</control>
 						<control type="image">
 							<left>0</left>

@@ -150,7 +150,7 @@
               <align>center</align>
               <aligny>center</aligny>
               <label>[B]$VAR[DialogInfoTitle][/B]</label>
-              <visible>[String.IsEmpty(ListItem.Art(clearlogo)) | !Skin.HasSetting(Enable.Clearlogo)] + [$EXP[isMovie] | $EXP[isTVShow] | $EXP[isSeason] | $EXP[isEpisode]</visible>
+              <visible>[String.IsEmpty(ListItem.Art(clearlogo)) | !Skin.HasSetting(Enable.Clearlogo)] + [$EXP[isMovie] | $EXP[isTVShow] | $EXP[isSeason] | $EXP[isEpisode]]</visible>
             </control>
             <control type="textbox">
               <visible>!String.IsEmpty(ListItem.TagLine)</visible>

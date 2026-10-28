@@ -1,6 +1,9 @@
 # -*- coding: utf-8 -*-
 import xbmc, xbmcgui, xbmcvfs
 import json
+import os
+import tempfile
+import xml.etree.ElementTree as ET
 import sqlite3 as database
 from threading import Thread
 from modules import xmls
@@ -316,8 +319,7 @@ class CPaths:
         self.write_xml(xml_file, final_format)
 
     def write_xml(self, xml_file, final_format):
-        with xbmcvfs.File(xml_file, "w") as f:
-            f.write(final_format)
+        write_skin_xml(xml_file, final_format)
         Thread(target=self.reload_skin).start()
 
     def handle_path_browser_results(self, cpath_setting, context):
@@ -652,8 +654,7 @@ class CPaths:
         item = default_xmls[self.cpath_setting]
         final_format = item[1].format(includes_type=item[2])
         xml_file = "special://skin/xml/%s.xml" % item[0]
-        with xbmcvfs.File(xml_file, "w") as f:
-            f.write(final_format)
+        write_skin_xml(xml_file, final_format)
         self.update_skin_strings()
         Thread(target=self.reload_skin).start()
 
@@ -710,3 +711,20 @@ def show_busy_dialog():
 def hide_busy_dialog():
     xbmc.executebuiltin("Dialog.Close(busydialognocancel)")
     xbmc.executebuiltin("Dialog.Close(busydialog)")
+
+
+def write_skin_xml(xml_file, contents):
+    """Publish complete XML atomically so skin reloads cannot read a half-written file."""
+    ET.fromstring(contents)
+    destination = xbmcvfs.translatePath(xml_file)
+    temporary = None
+    try:
+        with tempfile.NamedTemporaryFile(mode='w', encoding='utf-8',
+                dir=os.path.dirname(destination), prefix='.nimbus-', suffix='.tmp', delete=False) as stream:
+            temporary = stream.name
+            stream.write(contents)
+        os.replace(temporary, destination)
+        temporary = None
+    finally:
+        if temporary is not None:
+            os.remove(temporary)

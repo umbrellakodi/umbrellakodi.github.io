@@ -359,6 +359,10 @@
 				<align>left</align>
 			</control>
 			<control type="fixedlist" id="54">
+				<!-- Focus actions belong to the container, not its item layout. -->
+				<onfocus condition="[Container.Content(movies) | Container.Content(sets) | Container.Content(tvshows) | Container.Content(seasons) | [Container.Content(episodes) + !String.StartsWith(Container.PluginCategory,Season)] | [Container.Content(musicvideos) + Skin.HasSetting(show_musicvideoposter)]] + [String.IsEqual(Skin.String(trailerSetting),2) + String.IsEmpty(Window(Videos).Property(PlayingBackgroundMedia)) + !VideoPlayer.Content(livetv)]">Skin.TimerStart(autoplay_trailer_timer)</onfocus>
+				<onunfocus condition="[Container.Content(movies) | Container.Content(sets) | Container.Content(tvshows) | Container.Content(seasons) | [Container.Content(episodes) + !String.StartsWith(Container.PluginCategory,Season)] | [Container.Content(musicvideos) + Skin.HasSetting(show_musicvideoposter)]] + [Player.HasMedia + !String.IsEmpty(Skin.String(TrailerPlaying))]">Stop</onunfocus>
+				<onunfocus condition="[Container.Content(movies) | Container.Content(sets) | Container.Content(tvshows) | Container.Content(seasons) | [Container.Content(episodes) + !String.StartsWith(Container.PluginCategory,Season)] | [Container.Content(musicvideos) + Skin.HasSetting(show_musicvideoposter)]] + [!String.IsEmpty(Skin.String(TrailerPlaying))]">Skin.Reset(TrailerPlaying)</onunfocus>
 				<left>0</left>
 				<right>0</right>
 				<height>100%</height>
@@ -422,7 +426,7 @@
 						<include content="FlixMovieLayout">
 							<param name="focused" value="true" />
 						</include>
-						<include>VideoTrailerControl</include>
+						
 					</control>
 				</focusedlayout>
 				<!-- <itemlayout height="410" width="310" condition="Container.Content(artists) | Container.Content(albums)">

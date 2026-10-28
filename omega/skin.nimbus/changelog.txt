@@ -1,0 +1,5 @@
+[B]Update - v0.1.44 - Oct 28th, 2026 [/B]
+- Correct clearlogo visibility conditions in the movie information and PosterFlow views.
+- Move focus actions from unsupported item-layout buttons to list containers and reset scroll timers during navigation.
+- Register empty menu/widget includes correctly and require Nimbus Helper 0.0.54 for the matching generated-XML fixes.
+

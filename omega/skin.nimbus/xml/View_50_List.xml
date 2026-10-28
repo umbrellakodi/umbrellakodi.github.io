@@ -596,6 +596,10 @@
 					<align>left</align>
 				</control>
 				<control type="fixedlist" id="$PARAM[list_id]">
+				<!-- Focus actions belong to the container, not its item layout. -->
+				<onfocus condition="[[Container.Content(movies) + !String.StartsWith(Container.PluginName,plugin.video.the-loop)] | Container.Content(sets) | Container.Content(tvshows) | Container.Content(seasons) | Container.Content(episodes) | Container.Content(musicvideos) | Container.Content(games) | Window.IsActive(videoplaylist) | Window.IsActive(musicplaylist)] + [String.IsEqual(Skin.String(trailerSetting),2) + String.IsEmpty(Window(Videos).Property(PlayingBackgroundMedia)) + !VideoPlayer.Content(livetv)]">Skin.TimerStart(autoplay_trailer_timer)</onfocus>
+				<onunfocus condition="[[Container.Content(movies) + !String.StartsWith(Container.PluginName,plugin.video.the-loop)] | Container.Content(sets) | Container.Content(tvshows) | Container.Content(seasons) | Container.Content(episodes) | Container.Content(musicvideos) | Container.Content(games) | Window.IsActive(videoplaylist) | Window.IsActive(musicplaylist)] + [Player.HasMedia + !String.IsEmpty(Skin.String(TrailerPlaying))]">Stop</onunfocus>
+				<onunfocus condition="[[Container.Content(movies) + !String.StartsWith(Container.PluginName,plugin.video.the-loop)] | Container.Content(sets) | Container.Content(tvshows) | Container.Content(seasons) | Container.Content(episodes) | Container.Content(musicvideos) | Container.Content(games) | Window.IsActive(videoplaylist) | Window.IsActive(musicplaylist)] + [!String.IsEmpty(Skin.String(TrailerPlaying))]">Skin.Reset(TrailerPlaying)</onunfocus>
 					<!-- <left>70</left> -->
 					<top>135</top>
 					<bottom>75</bottom>
@@ -808,7 +812,7 @@
 							<visible>Control.HasFocus($PARAM[list_id])</visible>
 						</control>
 						<control type="group">
-							<include>VideoTrailerControl</include>
+							
 						</control>
 					</focusedlayout>
 					<itemlayout condition="[Container.Content(movies) + !String.StartsWith(Container.PluginName,plugin.video.the-loop)] | Container.Content(sets) | Container.Content(tvshows) | Container.Content(seasons) | Container.Content(episodes) | Container.Content(musicvideos) | Container.Content(games) | Window.IsActive(videoplaylist) | Window.IsActive(musicplaylist)" height="67" width="610">

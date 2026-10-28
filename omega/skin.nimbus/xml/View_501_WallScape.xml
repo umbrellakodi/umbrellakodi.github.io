@@ -12,6 +12,8 @@
 				<effect type="slide" start="0,937" end="0,0" time="500" tween="cubic" easing="out" />
 			</animation>
 			<control type="panel" id="501">
+				<!-- Focus actions belong to the container, not its item layout. -->
+				<onfocus condition="Container.Content(movies) | Container.Content(sets) | Container.Content(tvshows) | Container.Content(seasons) | [Container.Content(musicvideos) + Skin.HasSetting(show_musicvideoposter)]">Skin.TimerStart(wall_scroll_timer)</onfocus>
 				<height>100%</height>
 				<onleft>532</onleft>
 				<onright>532</onright>
@@ -63,7 +65,7 @@
 						<include content="FlixScapeMovieLayout">
 							<param name="focused" value="true" />
 						</include>
-						<include>WallTimer</include>
+						
 					</control>
 				</focusedlayout>
 				<!-- <itemlayout height="301" width="300" condition="Container.Content(episodes) | Container.Content(videos) | [Container.Content(musicvideos) + !Skin.HasSetting(show_musicvideoposter)]">

@@ -1,0 +1,4 @@
+[B]Update - v0.0.54 - Oct 28th, 2026 [/B]
+- Preserve named include definitions in empty generated menus, widgets and search history.
+- Validate generated XML and replace files atomically so skin reloads cannot read partially written content.
+- Keep the previous generated XML when validation or replacement fails.

@@ -266,6 +266,11 @@
         </control> -->
       </control>
 			<control type="wraplist" id="51">
+				<!-- Focus actions belong to the container, not its item layout. -->
+				<onfocus condition="[Container.Content(movies) | Container.Content(sets) | Container.Content(tvshows) | Container.Content(seasons) | [Container.Content(episodes) + !String.StartsWith(Container.PluginCategory,Season)] | [Container.Content(musicvideos) + Skin.HasSetting(show_musicvideoposter)]] + [String.IsEqual(Skin.String(trailerSetting),2) + String.IsEmpty(Window(Videos).Property(PlayingBackgroundMedia)) + !VideoPlayer.Content(livetv)]">Skin.TimerStart(autoplay_trailer_timer)</onfocus>
+				<onunfocus condition="[Container.Content(movies) | Container.Content(sets) | Container.Content(tvshows) | Container.Content(seasons) | [Container.Content(episodes) + !String.StartsWith(Container.PluginCategory,Season)] | [Container.Content(musicvideos) + Skin.HasSetting(show_musicvideoposter)]] + [Player.HasMedia + !String.IsEmpty(Skin.String(TrailerPlaying))]">Stop</onunfocus>
+				<onunfocus condition="[Container.Content(movies) | Container.Content(sets) | Container.Content(tvshows) | Container.Content(seasons) | [Container.Content(episodes) + !String.StartsWith(Container.PluginCategory,Season)] | [Container.Content(musicvideos) + Skin.HasSetting(show_musicvideoposter)]] + [!String.IsEmpty(Skin.String(TrailerPlaying))]">Skin.Reset(TrailerPlaying)</onunfocus>
+				<onfocus condition="Container.Content(movies) | Container.Content(sets) | Container.Content(tvshows) | Container.Content(seasons) | [Container.Content(episodes) + !String.StartsWith(Container.PluginCategory,Season)] | [Container.Content(musicvideos) + Skin.HasSetting(show_musicvideoposter)]">Skin.TimerStart(posterflow_scroll_timer)</onfocus>
         <!-- -171 -->
         <top>0</top>
 				<left>0</left>
@@ -334,8 +339,8 @@
 						<include content="PosterFlowLayout">
 							<param name="focused" value="true" />
 						</include>
-						<include>VideoTrailerControl</include>
-            <include>PosterFlowScrollTimer</include>
+						
+            
 					</control>
 				</focusedlayout>
 				<!-- <itemlayout height="410" width="310" condition="Container.Content(artists) | Container.Content(albums)">
@@ -448,7 +453,7 @@
             <align>center</align>
             <aligny>center</aligny>
             <label></label>
-            <!-- <visible>[String.IsEmpty(ListItem.Art(clearlogo)) | !Skin.HasSetting(Enable.Clearlogo)] + [$EXP[isMovie] | $EXP[isTVShow] | $EXP[isSeason] | $EXP[isEpisode]</visible> -->
+            <!-- <visible>[String.IsEmpty(ListItem.Art(clearlogo)) | !Skin.HasSetting(Enable.Clearlogo)] + [$EXP[isMovie] | $EXP[isTVShow] | $EXP[isSeason] | $EXP[isEpisode]]</visible> -->
           </control>
           <control type="textbox">
             <top>0</top>
@@ -460,7 +465,7 @@
             <align>center</align>
             <aligny>center</aligny>
             <label>[B]$VAR[DialogInfoTitle][/B]</label>
-            <visible>[String.IsEmpty(ListItem.Art(clearlogo)) | !Skin.HasSetting(Enable.Clearlogo)] + [$EXP[isMovie] | $EXP[isTVShow] | $EXP[isSeason] | $EXP[isEpisode]</visible>
+            <visible>[String.IsEmpty(ListItem.Art(clearlogo)) | !Skin.HasSetting(Enable.Clearlogo)] + [$EXP[isMovie] | $EXP[isTVShow] | $EXP[isSeason] | $EXP[isEpisode]]</visible>
           </control>
           <!-- <control type="textbox">
             <visible>!String.IsEmpty(ListItem.TagLine)</visible>
