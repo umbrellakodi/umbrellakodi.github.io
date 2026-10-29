@@ -5,7 +5,7 @@
 # Floppy (self-hosted media tracker). Built against the dannyvfilms/Floppy
 # fork's /api/v1/ 
 # Auth is a single static bearer token pasted from the
-# Floppy web UI (Integrations settings) — there is no device-code flow uses API
+# Floppy web UI (Integrations settings) â€” there is no device-code flow uses API
 
 from datetime import datetime
 import time
@@ -123,7 +123,7 @@ def get_all_pages(url, silent=False):
 	"""Return a complete collection, or None; never publish a partial page set."""
 	try:
 		sep = '&' if '?' in url else '?'
-		limit, offset = 50, 0
+		limit, offset = 200, 0
 		results = []
 		while True:
 			if control.monitor.abortRequested(): return None
@@ -251,6 +251,7 @@ def _patch_or_create(detail_url, media_type, tmdb, body, season_number=None):
 	# fall back to POST to create it. Returns True on success.
 	response = getFloppy(detail_url, post=body, method='PATCH', silent=True)
 	if response is not None and response.status_code == 200: return True
+	if response is None or response.status_code != 404: return False
 	create_body = dict(body)
 	create_body['source'] = 'tmdb'
 	create_body['media_id'] = str(tmdb)
@@ -265,7 +266,7 @@ def markMovieAsWatched(imdb, tmdb=''):
 	try:
 		if not tmdb: tmdb = _resolve_tmdb('movie', imdb=imdb)
 		if not tmdb:
-			log_utils.log('FLOPPY: markMovieAsWatched IMDB=%s aborted — could not resolve a tmdb id' % imdb, level=log_utils.LOGWARNING)
+			log_utils.log('FLOPPY: markMovieAsWatched IMDB=%s aborted â€” could not resolve a tmdb id' % imdb, level=log_utils.LOGWARNING)
 			return False
 		success = _patch_or_create(_movie_url(tmdb), 'movie', tmdb, {'status': STATUS_COMPLETED})
 		if success:
@@ -282,7 +283,7 @@ def markMovieAsNotWatched(imdb, tmdb=''):
 	try:
 		if not tmdb: tmdb = _resolve_tmdb('movie', imdb=imdb)
 		if not tmdb:
-			log_utils.log('FLOPPY: markMovieAsNotWatched IMDB=%s aborted — could not resolve a tmdb id' % imdb, level=log_utils.LOGWARNING)
+			log_utils.log('FLOPPY: markMovieAsNotWatched IMDB=%s aborted â€” could not resolve a tmdb id' % imdb, level=log_utils.LOGWARNING)
 			return False
 		# PATCH back to Planning rather than DELETE, so score/notes/dates the user
 		# set aren't destroyed by an unwatch action.
@@ -304,9 +305,9 @@ def markTVShowAsWatched(imdb, tvdb):
 		if not tmdb: return False
 		success = _patch_or_create(_tv_url(tmdb), 'tv', tmdb, {'status': STATUS_COMPLETED})
 		if success:
-			_watch_all_episodes_remote(tmdb, season=None)
-			if _sync_episode_tracking_for_show(imdb, tmdb) is None:
-				_mark_all_episodes_watched_locally(imdb, tmdb, season=None) # hard API failure fallback
+			rows = _sync_episode_tracking_for_show(imdb, tmdb)
+			if rows is None: return False
+			if not floppysync.store_watched_history([], rows, replace=False): return False
 			floppysync.cache_delete(floppysync._hash_function(syncTVShows, ()))
 			floppysync.cache_delete(floppysync._hash_function(_fetchShowProgress, (tmdb,)))
 		return success
@@ -321,13 +322,14 @@ def markTVShowAsNotWatched(imdb, tvdb):
 		response = getFloppy(_tv_url(tmdb), post={'status': STATUS_PLANNING}, method='PATCH', silent=True)
 		success = bool(response is not None and response.status_code == 200)
 		if success:
-			# PATCHing status doesn't itself untrack episodes server-side (mirrors why
-			# markTVShowAsWatched has to explicitly (un)watch every episode) — without
-			# this, the next full sync would just re-discover them as still tracked and
-			# silently undo the unwatch.
+			# Planning does not remove stored episode watches. Retain local
+			# watched flags when the corresponding remote delete fails.
 			for (si, st, sv, s, e) in floppysync.get_watched_episodes():
 				if st == tmdb:
-					getFloppy(_episode_url(tmdb, int(s), int(e)), method='DELETE', silent=True)
+					response = getFloppy(_episode_url(tmdb, int(s), int(e)), method='DELETE', silent=True)
+					if response is None or response.status_code not in (200, 204, 404):
+						success = False
+						continue
 					floppysync.delete_watched_episode(st, s, e)
 			floppysync.cache_delete(floppysync._hash_function(syncTVShows, ()))
 			floppysync.cache_delete(floppysync._hash_function(_fetchShowProgress, (tmdb,)))
@@ -343,9 +345,9 @@ def markSeasonAsWatched(imdb, tvdb, season, tmdb=''):
 		season = int('%01d' % int(season))
 		success = _patch_or_create(_season_url(tmdb, season), 'season', tmdb, {'status': STATUS_COMPLETED}, season_number=season)
 		if success:
-			_watch_all_episodes_remote(tmdb, season=season)
-			if _sync_episode_tracking_for_show(imdb, tmdb) is None:
-				_mark_all_episodes_watched_locally(imdb, tmdb, season=season) # hard API failure fallback
+			rows = _sync_episode_tracking_for_show(imdb, tmdb)
+			if rows is None: return False
+			if not floppysync.store_watched_history([], rows, replace=False): return False
 			floppysync.cache_delete(floppysync._hash_function(syncTVShows, ()))
 			floppysync.cache_delete(floppysync._hash_function(_fetchShowProgress, (tmdb,)))
 		return success
@@ -363,7 +365,10 @@ def markSeasonAsNotWatched(imdb, tvdb, season, tmdb=''):
 		if success:
 			for (si, st, sv, s, e) in floppysync.get_watched_episodes():
 				if st == tmdb and int(s) == season:
-					getFloppy(_episode_url(tmdb, int(s), int(e)), method='DELETE', silent=True)
+					response = getFloppy(_episode_url(tmdb, int(s), int(e)), method='DELETE', silent=True)
+					if response is None or response.status_code not in (200, 204, 404):
+						success = False
+						continue
 					floppysync.delete_watched_episode(st, s, e)
 			floppysync.cache_delete(floppysync._hash_function(syncTVShows, ()))
 			floppysync.cache_delete(floppysync._hash_function(_fetchShowProgress, (tmdb,)))
@@ -416,10 +421,10 @@ def watch(content_type, name, imdb=None, tvdb=None, season=None, episode=None, r
 			return anthology_tracking.manager_write('floppy', tmdb, season, episode, False, refresh)
 	control.busy()
 	success = False
-	if content_type == 'movie': success = markMovieAsWatched(imdb)
+	if content_type == 'movie': success = markMovieAsWatched(imdb, tmdb=tmdb)
 	elif content_type == 'tvshow': success = markTVShowAsWatched(imdb, tvdb)
-	elif content_type == 'season': success = markSeasonAsWatched(imdb, tvdb, season)
-	elif content_type == 'episode': success = markEpisodeAsWatched(imdb, tvdb, season, episode)
+	elif content_type == 'season': success = markSeasonAsWatched(imdb, tvdb, season, tmdb=tmdb)
+	elif content_type == 'episode': success = markEpisodeAsWatched(imdb, tvdb, season, episode, tmdb=tmdb)
 	control.hide()
 	if refresh: control.refresh()
 	control.trigger_widget_refresh()
@@ -436,10 +441,10 @@ def unwatch(content_type, name, imdb=None, tvdb=None, season=None, episode=None,
 			return anthology_tracking.manager_write('floppy', tmdb, season, episode, True, refresh)
 	control.busy()
 	success = False
-	if content_type == 'movie': success = markMovieAsNotWatched(imdb)
+	if content_type == 'movie': success = markMovieAsNotWatched(imdb, tmdb=tmdb)
 	elif content_type == 'tvshow': success = markTVShowAsNotWatched(imdb, tvdb)
-	elif content_type == 'season': success = markSeasonAsNotWatched(imdb, tvdb, season)
-	elif content_type == 'episode': success = markEpisodeAsNotWatched(imdb, tvdb, season, episode)
+	elif content_type == 'season': success = markSeasonAsNotWatched(imdb, tvdb, season, tmdb=tmdb)
+	elif content_type == 'episode': success = markEpisodeAsNotWatched(imdb, tvdb, season, episode, tmdb=tmdb)
 	control.hide()
 	if refresh: control.refresh()
 	control.trigger_widget_refresh()
@@ -450,16 +455,15 @@ def unwatch(content_type, name, imdb=None, tvdb=None, season=None, episode=None,
 		else: control.notification(title='Floppy', message='%s Failed to Mark as Unwatched on Floppy' % name)
 
 
-#### Scrobble (real POST /scrobble/ endpoint — start/pause update the server's live
-#### Now Playing card only; local resume/bookmark state is tracked client-side since
-#### Floppy has no queryable "in progress playback" list to pull from). ####
+#### Scrobble: live playback reports; saved resume points sync via /playback/progress/. ####
+
 
 def _scrobble_seconds(watched_percent, current_time, total_time):
 	# position_seconds/duration_seconds are meant to be real elapsed/total playback
-	# seconds — every call site now has Kodi's actual getTime()/getTotalTime() available
+	# seconds â€” every call site now has Kodi's actual getTime()/getTotalTime() available
 	# and passes them through. Without them (current_time/total_time not provided), this
 	# used to send the 0-100 percent value itself as "seconds" with a hardcoded 100-second
-	# "duration" — Floppy's own Now Playing card then displayed e.g. 38 seconds of a
+	# "duration" â€” Floppy's own Now Playing card then displayed e.g. 38 seconds of a
 	# 1:40 (100s) runtime for what was really 38% into a much longer episode. The percent
 	# fallback below only exists for any caller that still can't supply real seconds.
 	if total_time:
@@ -637,10 +641,10 @@ _STATUS_TABLES = {
 
 def _fetch_status_bucket(media_type, status):
 	items = get_all_pages('/media/%s/?status=%s' % (media_type, status), silent=True)
-	return items or []
+	return items
 
 def _resolve_movie_imdb(tmdb):
-	# Floppy is TMDB-native and never hands back an imdb id directly — reverse-resolve
+	# Resolve missing IMDb IDs on older servers â€” reverse-resolve
 	# it via TMDb so getMovieOverlay()'s imdb-keyed matching (shared with every other
 	# provider) actually finds these rows.
 	try:
@@ -660,84 +664,44 @@ def _resolve_tv_imdb(tmdb):
 	except:
 		return ''
 
-def _mark_all_episodes_watched_locally(imdb, tmdb, season=None):
-	try:
-		from resources.lib.database import cache as _cache
-		from resources.lib.indexers import tmdb as _tmdb
-		now = _now_iso()
-		today = datetime.utcnow().strftime('%Y-%m-%d')
-		if season is not None:
-			raw = _cache.get(_tmdb.TVshows().get_season_request, 96, tmdb, int(season))
-			for ep in (raw or {}).get('episodes', []):
-				en = int(ep.get('episode_number', 0))
-				air_date = ep.get('air_date')
-				if en > 0 and air_date and air_date <= today:
-					floppysync.upsert_watched_episode(show_imdb=imdb, show_tmdb=tmdb, show_tvdb='', season=int(season), episode=en, last_watched_at=now)
-		else:
-			meta = _cache.get(_tmdb.TVshows().get_showSeasons_meta, 96, tmdb)
-			status = (meta.get('status') or '').lower() if meta else ''
-			ended = status in ('ended', 'canceled', 'cancelled')
-			last_ep = (meta.get('last_episode_to_air') or {}) if meta else {}
-			last_aired_sn = int(last_ep.get('season_number', 0)) if last_ep else 0
-			last_aired_ep = int(last_ep.get('episode_number', 0)) if last_ep else 0
-			for s_item in (meta or {}).get('seasons', []):
-				sn = int(s_item.get('season_number', 0))
-				ec = int(s_item.get('episode_count', 0))
-				if sn <= 0 or ec <= 0: continue
-				# Same last-aired-boundary capping _fetchShowProgress() uses — episode_count
-				# is the season's full *planned* count, not what's actually aired yet.
-				if ended or not last_aired_sn or sn < last_aired_sn:
-					cap = ec
-				elif sn == last_aired_sn:
-					cap = last_aired_ep if last_aired_ep > 0 else ec
-				else:
-					continue  # future/unaired season
-				for en in range(1, cap + 1):
-					floppysync.upsert_watched_episode(show_imdb=imdb, show_tmdb=tmdb, show_tvdb='', season=sn, episode=en, last_watched_at=now)
-	except: log_utils.error()
+def _episode_last_watch(entry, tmdb, season, episode):
+	if entry.get('status') == STATUS_COMPLETED:
+		return True, entry.get('end_date') or entry.get('progressed_at') or entry.get('created_at') or ''
+	# A new unfinished rewatch must not erase an earlier completed viewing.
+	history = get_all_pages('/media/tv/tmdb/%s/%s/%s/history/' % (tmdb, season, episode), silent=True)
+	if history is None: return None
+	completed = [h for h in history if h.get('status') == STATUS_COMPLETED]
+	return bool(completed), max((h.get('end_date') or h.get('progressed_at') or h.get('created') or '' for h in completed), default='')
 
-def _watch_all_episodes_remote(tmdb, season=None):
-	try:
-		from resources.lib.database import cache as _cache
-		from resources.lib.indexers import tmdb as _tmdb
-		if season is not None:
-			season_numbers = [int(season)]
-		else:
-			meta = _cache.get(_tmdb.TVshows().get_showSeasons_meta, 96, tmdb)
-			season_numbers = [int(s.get('season_number', 0)) for s in (meta or {}).get('seasons', []) if s.get('season_number', 0) > 0]
-		today = datetime.utcnow().strftime('%Y-%m-%d')
-		for sn in season_numbers:
-			raw = _cache.get(_tmdb.TVshows().get_season_request, 96, tmdb, sn)
-			for ep in (raw or {}).get('episodes', []):
-				en = ep.get('episode_number')
-				if en is None: continue
-				air_date = ep.get('air_date')
-				if not air_date or air_date > today: continue
-				getFloppy(_episode_watch_url(tmdb, sn, int(en)), post={}, method='POST', silent=True)
-	except: log_utils.error()
 
 def _sync_episode_tracking_for_show(imdb, tmdb):
-	"""Stage rows without changing the last complete local history."""
+	"""Read individual tracked episodes; season progress cannot describe gaps."""
 	detail = getFloppyAsJson(_tv_url(tmdb), silent=True)
 	if not isinstance(detail, dict) or not isinstance(detail.get('related'), dict): return None
 	seasons = detail['related'].get('seasons')
 	if not isinstance(seasons, list): return None
 	rows = []
-	for s in seasons:
+	for season in seasons:
 		if control.monitor.abortRequested(): return None
-		s_num = (s.get('item') or {}).get('season_number')
-		if s_num is None: return None
-		history = get_all_pages('/media/tv/tmdb/%s/%s/history/' % (tmdb, s_num), silent=True)
-		if history is None: return None
-		progress = max((int(h.get('progress') or 0) for h in history), default=0)
-		last = max((h.get('progressed_at') or h.get('created') or '' for h in history), default='') or _now_iso()
-		rows.extend((imdb, tmdb, '', int(s_num), en, last) for en in range(1, progress + 1))
+		sn = (season.get('item') or {}).get('season_number')
+		if sn is None: return None
+		data = getFloppyAsJson(_season_url(tmdb, sn), silent=True)
+		if not isinstance(data, dict): return None
+		episodes = (data.get('related') or {}).get('episodes')
+		if not isinstance(episodes, list): return None
+		for entry in episodes:
+			if not entry.get('tracked'): continue
+			en = (entry.get('item') or {}).get('episode_number')
+			if en is None: return None
+			state = _episode_last_watch(entry, tmdb, sn, en)
+			if state is None: return None
+			watched, last = state
+			if not watched: continue
+			rows.append((imdb, str(tmdb), '', int(sn), int(en), last))
 	return rows
 
 
 def _sync_watched_episodes_from_shows(progress_callback=None):
-	# The library serializers read stored tracking data. Show details can depend on
-	# provider metadata and return 404 even for a show with valid stored history.
 	entries = get_all_pages('/media/tv/', silent=True)
 	if entries is None: return None
 	shows = {}
@@ -747,42 +711,48 @@ def _sync_watched_episodes_from_shows(progress_callback=None):
 		tmdb = str(item.get('media_id') or '')
 		if not tmdb: return None
 		shows[tmdb] = item
-	probe = getFloppy('/media/season/?limit=1', silent=True)
+	probe = getFloppy('/media/episode/?limit=1', silent=True)
 	if probe is None: return None
-	rows = []
-	if probe.status_code == 404:
-		# Older servers may only expose seasons through show details.
+	rows = {}
+	if probe.status_code in (404, 405):
 		for idx, (tmdb, item) in enumerate(shows.items()):
 			if control.monitor.abortRequested(): return None
-			imdb = str((item.get('ids') or {}).get('imdb') or '') or _resolve_tv_imdb(tmdb)
+			ids = item.get('ids') or {}
+			imdb = str(ids.get('imdb') or '') or _resolve_tv_imdb(tmdb)
 			show_rows = _sync_episode_tracking_for_show(imdb, tmdb)
 			if show_rows is None: return None
-			tvdb = str((item.get('ids') or {}).get('tvdb') or '')
-			rows.extend((r[0], r[1], tvdb, r[3], r[4], r[5]) for r in show_rows)
+			for r in show_rows:
+				rows[(r[1], r[3], r[4])] = (r[0], r[1], str(ids.get('tvdb') or ''), r[3], r[4], r[5])
 			if progress_callback: progress_callback('Syncing watched shows', idx + 1, len(shows))
-		return rows
+		return list(rows.values())
 	if probe.status_code != 200: return None
-	seasons = get_all_pages('/media/season/', silent=True)
-	if seasons is None: return None
+	# Do not filter status on the server: some versions filter episodes by the
+	# parent season's status. The episode's own returned status is authoritative.
+	episodes = get_all_pages('/media/episode/', silent=True)
+	if episodes is None: return None
 	ids_by_show = {}
-	for idx, entry in enumerate(seasons):
+	for idx, entry in enumerate(episodes):
 		if control.monitor.abortRequested(): return None
 		item = entry.get('item') or {}
 		if item.get('source') not in (None, '', 'tmdb'): continue
-		tmdb, sn = str(item.get('media_id') or ''), item.get('season_number')
-		if not tmdb or sn is None: return None
+		if entry.get('tracked') is False: continue
+		tmdb = str(item.get('media_id') or '')
+		sn, en = item.get('season_number'), item.get('episode_number')
+		if not tmdb or sn is None or en is None: return None
+		if int(sn) < 0 or int(en) < 1: return None
+		state = _episode_last_watch(entry, tmdb, sn, en)
+		if state is None: return None
+		watched, last = state
+		if not watched: continue
 		if tmdb not in ids_by_show:
 			ids = shows.get(tmdb, {}).get('ids') or {}
 			ids_by_show[tmdb] = (str(ids.get('imdb') or '') or _resolve_tv_imdb(tmdb), str(ids.get('tvdb') or ''))
 		imdb, tvdb = ids_by_show[tmdb]
-		history = get_all_pages('/media/tv/tmdb/%s/%s/history/' % (tmdb, sn), silent=True)
-		if history is None: return None
-		# Keep earlier completed watches when the current consumption is a rewatch.
-		progress = max((int(h.get('progress') or 0) for h in history), default=0)
-		last = max((h.get('progressed_at') or h.get('created') or '' for h in history), default='') or _now_iso()
-		rows.extend((imdb, tmdb, tvdb, int(sn), en, last) for en in range(1, progress + 1))
-		if progress_callback: progress_callback('Syncing watched seasons', idx + 1, len(seasons))
-	return rows
+		key = (tmdb, int(sn), int(en))
+		if key not in rows or last > rows[key][5]:
+			rows[key] = (imdb, tmdb, tvdb, int(sn), int(en), last)
+		if progress_callback: progress_callback('Syncing watched episodes', idx + 1, len(episodes))
+	return list(rows.values())
 
 
 def sync_watchedProgress(activities=None, forced=False, progress_callback=None):
@@ -792,6 +762,7 @@ def sync_watchedProgress(activities=None, forced=False, progress_callback=None):
 		lock = floppysync.acquire_sync_lock()
 		if lock is None: return False
 		credentials = (floppyBaseUrl(), getSetting('floppy.token'))
+		revision = floppysync.get_revision('history')
 		items = _fetch_status_bucket('movie', STATUS_COMPLETED)
 		if items is None:
 			log_utils.log('FLOPPY: movie fetch incomplete; keeping previous watched history', level=log_utils.LOGWARNING)
@@ -801,9 +772,10 @@ def sync_watchedProgress(activities=None, forced=False, progress_callback=None):
 			if control.monitor.abortRequested(): return False
 			item = entry.get('item') or {}
 			tmdb = str(item.get('media_id') or '')
+			if item.get('source') not in (None, '', 'tmdb'): continue
 			if not tmdb: return False
 			imdb = str((item.get('ids') or {}).get('imdb') or '') or _resolve_movie_imdb(tmdb)
-			last = entry.get('end_date') or entry.get('progressed_at') or entry.get('created_at') or _now_iso()
+			last = entry.get('end_date') or entry.get('progressed_at') or entry.get('created_at') or ''
 			movies.append((imdb, tmdb, item.get('title', ''), (item.get('release_datetime') or '')[:4], last))
 			if progress_callback: progress_callback('Syncing watched movies', idx + 1, len(items))
 		episodes = _sync_watched_episodes_from_shows(progress_callback=progress_callback)
@@ -811,7 +783,7 @@ def sync_watchedProgress(activities=None, forced=False, progress_callback=None):
 			log_utils.log('FLOPPY: episode fetch incomplete or cancelled; keeping previous watched history', level=log_utils.LOGWARNING)
 			return False
 		if credentials != (floppyBaseUrl(), getSetting('floppy.token')): return False
-		if not floppysync.store_watched_history(movies, episodes): return False
+		if not floppysync.store_watched_history(movies, episodes, expected_revision=revision): return False
 		floppysync.clear_cache()
 		log_utils.log('FLOPPY: watched sync complete (%s movies, %s episodes)' % (len(movies), len(episodes)), level=log_utils.LOGINFO)
 		control.trigger_widget_refresh()
@@ -828,29 +800,38 @@ def sync_watched(activities=None, forced=False, progress_callback=None):
 
 
 def sync_watch_list(activities=None, forced=False):
-	# Pulls all 5 status buckets (not just Planning) so every My Movies/My TV Shows
-	# Floppy submenu list (Watchlist/Watching/On Hold/Completed/Dropped) is populated.
 	try:
-		if not getFloppyCredentialsInfo(): return
+		if not getFloppyCredentialsInfo(): return False
+		credentials = (floppyBaseUrl(), getSetting('floppy.token'))
+		snapshots = {}
 		for status, (mv_table, tv_table) in _STATUS_TABLES.items():
 			for media, table in (('movie', mv_table), ('tv', tv_table)):
 				items = _fetch_status_bucket(media, status)
-				if items is None: return False
-				if not floppysync.insert_status_list(items, table): return False
-		return True
-	except: log_utils.error()
+				if items is None or control.monitor.abortRequested(): return False
+				snapshots[table] = items
+		if credentials != (floppyBaseUrl(), getSetting('floppy.token')): return False
+		return floppysync.store_status_lists(snapshots)
+	except:
+		log_utils.error()
+		return False
+
 
 def sync_collection(activities=None, forced=False):
 	try:
-		if not getFloppyCredentialsInfo(): return
-		items = get_all_pages('/collection/?item_media_type=movie', silent=True)
-		if items is None: return False
-		if not floppysync.insert_status_list([{'id': i.get('item', {}).get('id'), 'item': i.get('item'), 'score': None, 'created_at': i.get('collected_at')} for i in items], 'movies_collection'): return False
-		items = get_all_pages('/collection/?item_media_type=tv', silent=True)
-		if items is None: return False
-		if not floppysync.insert_status_list([{'id': i.get('item', {}).get('id'), 'item': i.get('item'), 'score': None, 'created_at': i.get('collected_at')} for i in items], 'shows_collection'): return False
-		return True
-	except: log_utils.error()
+		if not getFloppyCredentialsInfo(): return False
+		credentials = (floppyBaseUrl(), getSetting('floppy.token'))
+		snapshots = {}
+		for media, table in (('movie', 'movies_collection'), ('tv', 'shows_collection')):
+			items = get_all_pages('/collection/?item_media_type=' + media, silent=True)
+			if items is None or control.monitor.abortRequested(): return False
+			snapshots[table] = [{'id': (i.get('item') or {}).get('id'), 'item': i.get('item'),
+				'score': None, 'created_at': i.get('collected_at')} for i in items]
+		if credentials != (floppyBaseUrl(), getSetting('floppy.token')): return False
+		return floppysync.store_status_lists(snapshots)
+	except:
+		log_utils.error()
+		return False
+
 
 def get_collection_entries(media_type='movie'):
 	results = []
@@ -875,34 +856,42 @@ def get_collection_entries(media_type='movie'):
 	return results
 
 def sync_playbackProgress(activities=None, forced=False):
+	lock = None
 	try:
-		if not getFloppyCredentialsInfo(): return
+		if not getFloppyCredentialsInfo(): return False
+		lock = floppysync.acquire_sync_lock()
+		if lock is None: return False
+		credentials = (floppyBaseUrl(), getSetting('floppy.token'))
+		revision = floppysync.get_revision('bookmarks')
 		items = get_all_pages('/playback/progress/', silent=True)
 		if items is None: return False
-		floppysync.clear_bookmarks()
+		rows = []
 		for item in items:
-			try:
-				if item.get('completed'): continue
-				ids = item.get('ids') or {}
-				duration = item.get('duration_seconds') or 0
-				position = item.get('position_seconds') or 0
-				if not duration: continue
-				percent_played = str(round((position / duration) * 100, 2))
-				paused_at = item.get('updated_at') or _now_iso()
-				tmdb = str(ids.get('tmdb') or item.get('media_id') or '')
-				imdb = str(ids.get('imdb') or '')
-				if item.get('media_type') == 'movie':
-					floppysync.upsert_bookmark(title=item.get('title', ''), imdb=imdb, tmdb=tmdb,
-						percent_played=percent_played, paused_at=paused_at)
-				elif item.get('media_type') == 'episode':
-					season, episode = item.get('season_number'), item.get('episode_number')
-					if season is None or episode is None: continue
-					tvdb = str(ids.get('tvdb') or '')
-					floppysync.upsert_bookmark(tvshowtitle=item.get('series_title', ''), title=item.get('title', ''), imdb=imdb,
-						tmdb=tmdb, tvdb=tvdb, season=str(season), episode=str(episode),
-						percent_played=percent_played, paused_at=paused_at)
-			except: log_utils.error()
-	except: log_utils.error()
+			if control.monitor.abortRequested(): return False
+			if item.get('completed') or item.get('media_type') not in ('movie', 'episode'): continue
+			if item.get('source') not in (None, '', 'tmdb'): continue
+			ids = item.get('ids') or {}
+			tmdb, imdb, tvdb = str(ids.get('tmdb') or item.get('media_id') or ''), str(ids.get('imdb') or ''), str(ids.get('tvdb') or '')
+			if not tmdb: return False
+			duration, position = float(item.get('duration_seconds') or 0), float(item.get('position_seconds') or 0)
+			if duration <= 0 or position <= 0: continue
+			season, episode = '', ''
+			if item.get('media_type') == 'episode':
+				if item.get('season_number') is None or item.get('episode_number') is None: return False
+				season, episode = str(int(item['season_number'])), str(int(item['episode_number']))
+			percent = str(round(min(position / duration, 1) * 100, 2))
+			from hashlib import md5
+			resume_id = md5(repr((imdb, tmdb, tvdb, season, episode)).encode('utf-8')).hexdigest()
+			rows.append((item.get('series_title') or '', item.get('title') or '', resume_id, imdb, tmdb, tvdb,
+				season, episode, '', '', '', str(duration), percent, item.get('updated_at') or ''))
+		if credentials != (floppyBaseUrl(), getSetting('floppy.token')): return False
+		return floppysync.store_bookmarks(rows, expected_revision=revision)
+	except:
+		log_utils.error()
+		return False
+	finally:
+		if lock is not None: lock.close()
+
 
 def force_floppySync():
 	if not control.yesnoDialog(control.lang(32056), '', ''): return
@@ -924,7 +913,11 @@ def force_floppySync():
 		_progress('Syncing collection')
 		collection_ok = sync_collection(forced=True)
 		history_ok = sync_watchedProgress(forced=True, progress_callback=_progress)
-		success = lists_ok and collection_ok and history_ok
+		resume_ok = True
+		if getSetting('bookmarks') == 'true' and getSetting('scrobble.source') == '5':
+			_progress('Syncing resume points')
+			resume_ok = sync_playbackProgress(forced=True)
+		success = lists_ok and collection_ok and history_ok and resume_ok
 	except:
 		log_utils.error()
 	finally:
@@ -1014,7 +1007,7 @@ def _fetchShowProgress(tmdb):
 						season_counts[sn] = ep_count
 					elif sn == last_aired_sn:
 						season_counts[sn] = last_aired_ep if last_aired_ep > 0 else ep_count
-					# sn > last_aired_sn: future/unaired season — omit
+					# sn > last_aired_sn: future/unaired season â€” omit
 		except: pass
 		if not season_counts and not by_season: return [[], {}]
 		result_counts = {}
@@ -1095,7 +1088,7 @@ def seasonCount(imdb, tvdb):
 	except: log_utils.error()
 
 
-#### Custom lists (GET /lists/, GET /lists/{id}/items/ — confirmed via live Postman
+#### Custom lists (GET /lists/, GET /lists/{id}/items/ â€” confirmed via live Postman
 #### testing against a real instance 2026-08-16) ####
 
 def get_user_lists():

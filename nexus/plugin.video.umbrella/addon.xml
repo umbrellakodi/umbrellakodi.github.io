@@ -1,4 +1,4 @@
-<addon id="plugin.video.umbrella" name="Umbrella" provider-name="Umbrella" version="6.7.735">
+<addon id="plugin.video.umbrella" name="Umbrella" provider-name="Umbrella" version="6.7.736">
 	<requires>
 		<import addon="xbmc.python" version="3.0.0" />
 		<import addon="script.module.requests" />
@@ -270,10 +270,10 @@
 			<screenshot>resources/screenshots/screenshot003.jpg</screenshot>
 		</assets>
 		<news>
-[B]Update - v6.7.735 - Oct 28th, 2026 [/B]
---[Enhancement] Added Year (IMDb) TV browsing and improved TMDb TV years. Both use the new TV year sort order setting under TV Shows, defaulting to Popular, with Most voted and Highest rated options and separate minimum vote counts. TV years refer to the series premiere year.
---[Feature] Added Year (IMDb) movie browsing using GraphQL, with paginated results.
---[Enhancement] IMDb and TMDb movie years now open directly, sorted by Popular by default. Added a shared Movie year sort order setting under General with Popular, Most voted and Highest rated options, plus adjustable minimum vote counts. Existing original-language and origin-country filters apply to both sources.
+[B]Update - v6.7.736 - Oct 29th, 2026 [/B]
+--[Fix] Sync Floppy watched episodes from individual episode records, preserving skipped episodes, specials and earlier completed viewings during a rewatch.
+--[Enhancement] Speed up Floppy synchronization with bulk episode requests and larger pages, and update only changed database rows instead of rebuilding unchanged watched history.
+--[Fix] A lot more changes for Floppy.
 		</news>
 	</extension>
 

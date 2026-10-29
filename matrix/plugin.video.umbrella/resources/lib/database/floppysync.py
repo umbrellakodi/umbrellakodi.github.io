@@ -184,6 +184,7 @@ def upsert_watched_movie(imdb='', tmdb='', title='', year='', last_watched_at=''
 		dbcur = get_connection_cursor(dbcon)
 		_ensure_watched_tables(dbcur)
 		dbcur.execute('''INSERT OR REPLACE INTO floppy_watched_movies Values (?, ?, ?, ?, ?)''', (imdb, str(tmdb), title, str(year), last_watched_at))
+		_bump_revision(dbcur, 'history')
 		dbcur.connection.commit()
 	except:
 		from resources.lib.modules import log_utils
@@ -200,6 +201,7 @@ def upsert_watched_episode(show_imdb='', show_tmdb='', show_tvdb='', season=0, e
 		dbcur = get_connection_cursor(dbcon)
 		_ensure_watched_tables(dbcur)
 		dbcur.execute('''INSERT OR REPLACE INTO floppy_watched_episodes Values (?, ?, ?, ?, ?, ?)''', (show_imdb, str(show_tmdb), str(show_tvdb), int(season), int(episode), last_watched_at))
+		_bump_revision(dbcur, 'history')
 		dbcur.connection.commit()
 	except:
 		from resources.lib.modules import log_utils
@@ -216,6 +218,7 @@ def delete_watched_movie(tmdb):
 		dbcur = get_connection_cursor(dbcon)
 		_ensure_watched_tables(dbcur)
 		dbcur.execute('''DELETE FROM floppy_watched_movies WHERE tmdb=?''', (str(tmdb),))
+		_bump_revision(dbcur, 'history')
 		dbcur.connection.commit()
 	except:
 		from resources.lib.modules import log_utils
@@ -232,6 +235,7 @@ def delete_watched_episode(show_tmdb, season, episode):
 		dbcur = get_connection_cursor(dbcon)
 		_ensure_watched_tables(dbcur)
 		dbcur.execute('''DELETE FROM floppy_watched_episodes WHERE show_tmdb=? AND season=? AND episode=?''', (str(show_tmdb), int(season), int(episode)))
+		_bump_revision(dbcur, 'history')
 		dbcur.connection.commit()
 	except:
 		from resources.lib.modules import log_utils
@@ -453,11 +457,12 @@ def upsert_bookmark(tvshowtitle='', title='', resume_id='', imdb='', tmdb='', tv
 		_ensure_bookmarks_table(dbcur)
 		if not resume_id:
 			import hashlib as _hl
-			resume_id = _hl.md5(('%s%s%s%s' % (imdb, tvdb, season, episode)).encode('utf-8')).hexdigest()
+			resume_id = _hl.md5(repr((imdb, tmdb, tvdb, season, episode)).encode('utf-8')).hexdigest()
 		dbcur.execute('''INSERT OR REPLACE INTO bookmarks Values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''',
 			(tvshowtitle, title, resume_id, imdb, tmdb, tvdb, season, episode, genre, mpaa, studio, duration, percent_played, paused_at))
 		timestamp = datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%S.000Z")
 		dbcur.execute('''INSERT OR REPLACE INTO service Values (?, ?)''', ('last_paused_at', timestamp))
+		_bump_revision(dbcur, 'bookmarks')
 		dbcur.connection.commit()
 	except:
 		from resources.lib.modules import log_utils
@@ -514,6 +519,7 @@ def delete_bookmark(imdb, tvdb='', tmdb='', season='', episode=''):
 		dbcur.execute('''DELETE FROM bookmarks WHERE (tmdb=? AND season=? AND episode=?)''', (tmdb, str(season) if season else '', str(episode) if episode else ''))
 		timestamp = datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%S.000Z")
 		dbcur.execute('''INSERT OR REPLACE INTO service Values (?, ?)''', ('last_paused_at', timestamp))
+		_bump_revision(dbcur, 'bookmarks')
 		dbcur.connection.commit()
 	except:
 		from resources.lib.modules import log_utils
@@ -533,6 +539,7 @@ def clear_bookmarks():
 		dbcur = get_connection_cursor(dbcon)
 		_ensure_bookmarks_table(dbcur)
 		dbcur.execute('''DELETE FROM bookmarks''')
+		_bump_revision(dbcur, 'bookmarks')
 		dbcur.connection.commit()
 	except:
 		from resources.lib.modules import log_utils
@@ -544,7 +551,7 @@ def clear_bookmarks():
 		except: pass
 
 
-def store_watched_history(movies, episodes, replace=True):
+def store_watched_history(movies, episodes, replace=True, expected_revision=None):
 	"""Commit a complete history fetch together; roll back failed replacements."""
 	connection = None
 	try:
@@ -553,12 +560,13 @@ def store_watched_history(movies, episodes, replace=True):
 		connection.execute('PRAGMA synchronous = NORMAL')
 		cursor = connection.cursor()
 		_ensure_watched_tables(cursor)
-		connection.execute('BEGIN')
-		if replace:
-			cursor.execute('DELETE FROM floppy_watched_movies')
-			cursor.execute('DELETE FROM floppy_watched_episodes')
-		cursor.executemany('INSERT OR REPLACE INTO floppy_watched_movies VALUES (?, ?, ?, ?, ?)', movies)
-		cursor.executemany('INSERT OR REPLACE INTO floppy_watched_episodes VALUES (?, ?, ?, ?, ?, ?)', episodes)
+		connection.execute('BEGIN IMMEDIATE')
+		if expected_revision is not None and _read_revision(cursor, 'history') != expected_revision:
+			connection.rollback()
+			return False
+		_reconcile_rows(cursor, 'floppy_watched_movies', movies, (1,), replace)
+		_reconcile_rows(cursor, 'floppy_watched_episodes', episodes, (1, 3, 4), replace)
+		_bump_revision(cursor, 'history')
 		cursor.execute('CREATE TABLE IF NOT EXISTS service (setting TEXT, value TEXT, UNIQUE(setting))')
 		cursor.execute('INSERT OR REPLACE INTO service VALUES (?, ?)',
 			('last_history_at', datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%S.000Z')))
@@ -583,3 +591,89 @@ def acquire_sync_lock():
 	except db.OperationalError:
 		connection.close()
 		return None
+
+
+def _read_revision(cursor, resource):
+	cursor.execute('CREATE TABLE IF NOT EXISTS service (setting TEXT, value TEXT, UNIQUE(setting))')
+	row = cursor.execute('SELECT value FROM service WHERE setting=?', ('revision_' + resource,)).fetchone()
+	return int(row[0]) if row else 0
+
+
+def _bump_revision(cursor, resource):
+	value = _read_revision(cursor, resource) + 1
+	cursor.execute('INSERT OR REPLACE INTO service VALUES (?, ?)', ('revision_' + resource, str(value)))
+
+
+def get_revision(resource):
+	connection = get_connection()
+	try:
+		return _read_revision(connection.cursor(), resource)
+	finally:
+		connection.close()
+
+
+def _reconcile_rows(cursor, table, rows, key_columns, replace=True):
+	"""Apply a snapshot's differences without clearing or rewriting unchanged rows."""
+	old = {tuple(row[i] for i in key_columns): row for row in cursor.execute('SELECT * FROM ' + table)}
+	new = {tuple(row[i] for i in key_columns): tuple(row) for row in rows}
+	columns = [row[1] for row in cursor.execute('PRAGMA table_info(' + table + ')')]
+	if replace:
+		removed = [key for key in old if key not in new]
+		where = ' AND '.join(columns[i] + '=?' for i in key_columns)
+		cursor.executemany('DELETE FROM ' + table + ' WHERE ' + where, removed)
+	changed = [row for key, row in new.items() if old.get(key) != row]
+	if changed:
+		cursor.executemany('INSERT OR REPLACE INTO ' + table + ' VALUES (' + ','.join('?' for _ in columns) + ')', changed)
+
+
+def store_status_lists(snapshots):
+	connection = get_connection()
+	try:
+		cursor = connection.cursor()
+		connection.execute('BEGIN IMMEDIATE')
+		for table, items in snapshots.items():
+			if table not in ('movies_plantowatch', 'shows_plantowatch', 'movies_watching', 'shows_watching',
+				'movies_hold', 'shows_hold', 'movies_completed', 'shows_completed', 'movies_dropped',
+				'shows_dropped', 'movies_collection', 'shows_collection'): raise ValueError('Invalid status table')
+			cursor.execute('CREATE TABLE IF NOT EXISTS ' + table + ' (title TEXT, year TEXT, tmdb TEXT, item_id TEXT, image TEXT, score TEXT, listed_at TEXT, UNIQUE(tmdb))')
+			rows = []
+			for entry in items:
+				item = entry.get('item') or {}
+				if item.get('source') not in (None, '', 'tmdb'): continue
+				tmdb = str(item.get('media_id') or '')
+				if not tmdb: raise ValueError('Missing TMDB identity')
+				rows.append((item.get('title') or '', '', tmdb, str(entry.get('id') or ''),
+					item.get('image') or '', str(entry.get('score') if entry.get('score') is not None else ''), entry.get('created_at') or ''))
+			_reconcile_rows(cursor, table, rows, (2,))
+		connection.commit()
+		return True
+	except Exception:
+		connection.rollback()
+		from resources.lib.modules import log_utils
+		log_utils.error()
+		return False
+	finally:
+		connection.close()
+
+
+def store_bookmarks(rows, expected_revision):
+	connection = get_connection()
+	try:
+		cursor = connection.cursor()
+		_ensure_bookmarks_table(cursor)
+		connection.execute('BEGIN IMMEDIATE')
+		if _read_revision(cursor, 'bookmarks') != expected_revision:
+			connection.rollback()
+			return False
+		_reconcile_rows(cursor, 'bookmarks', rows, (3, 4, 5, 6, 7))
+		_bump_revision(cursor, 'bookmarks')
+		cursor.execute('INSERT OR REPLACE INTO service VALUES (?, ?)', ('last_paused_at', datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%S.000Z')))
+		connection.commit()
+		return True
+	except Exception:
+		connection.rollback()
+		from resources.lib.modules import log_utils
+		log_utils.error()
+		return False
+	finally:
+		connection.close()
