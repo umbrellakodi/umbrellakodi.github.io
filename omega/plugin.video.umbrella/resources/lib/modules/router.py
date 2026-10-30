@@ -280,6 +280,9 @@ def router(argv2):
 	elif action == 'floppyAuth':
 		from resources.lib.modules import floppy
 		floppy.floppyAuth(fromSettings=1)
+	elif action == 'floppyApiKeyAuth':
+		from resources.lib.modules import floppy
+		floppy.floppyAuth(fromSettings=1, useOAuth=False)
 	elif action == 'floppyRevoke':
 		from resources.lib.modules import floppy
 		floppy.floppyRevoke(fromSettings=1)

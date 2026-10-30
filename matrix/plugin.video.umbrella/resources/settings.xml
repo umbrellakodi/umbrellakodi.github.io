@@ -3510,6 +3510,9 @@
 				<setting id="floppy.token" type="string" label="40756" help="">
 					<level>0</level>
 					<default/>
+					<dependencies>
+						<dependency type="visible"><condition operator="is" setting="floppy.oauth"/></dependency>
+					</dependencies>
 					<constraints>
 						<allowempty>true</allowempty>
 					</constraints>
@@ -3528,20 +3531,26 @@
 						<heading>40757</heading>
 					</control>
 				</setting>
-				<setting id="showFloppyAuth" type="action" label="40758" help="">
+				<setting id="showFloppyAuth" type="action" label="40862" help="40863">
 					<level>0</level>
 					<data>RunPlugin(plugin://plugin.video.umbrella/?action=floppyAuth)</data>
 					<constraints>
 						<allowempty>true</allowempty>
 					</constraints>
-					<dependencies>
-						<dependency type="visible">
-							<condition operator="is" setting="floppy.isauthed"/>
-						</dependency>
-					</dependencies>
 					<control type="button" format="action">
 						<close>true</close>
 					</control>
+				</setting>
+				<setting id="showFloppyApiKeyAuth" type="action" label="40864" help="">
+					<level>0</level>
+					<data>RunPlugin(plugin://plugin.video.umbrella/?action=floppyApiKeyAuth)</data>
+					<dependencies>
+						<dependency type="visible"><and>
+							<condition operator="is" setting="floppy.oauth"/>
+							<condition operator="!is" setting="floppy.token"/>
+						</and></dependency>
+					</dependencies>
+					<control type="button" format="action"><close>true</close></control>
 				</setting>
 				<setting id="showFloppyRevoke" type="action" label="40759" help="">
 					<level>0</level>
@@ -3551,7 +3560,7 @@
 					</constraints>
 					<dependencies>
 						<dependency type="visible">
-							<condition operator="!is" setting="floppy.isauthed"/>
+							<condition operator="!is" setting="floppy.token"/>
 						</dependency>
 					</dependencies>
 					<control type="button" format="action">
@@ -6117,6 +6126,20 @@
 					<default>true</default>
 					<visible>false</visible>
 					<control type="toggle"/>
+				</setting>
+				<setting id="floppy.oauth" type="string" label="" help="">
+					<level>0</level>
+					<default/>
+					<visible>false</visible>
+					<constraints><allowempty>true</allowempty></constraints>
+					<control type="edit" format="string"><hidden>true</hidden></control>
+				</setting>
+				<setting id="floppy.oauth.client" type="string" label="" help="">
+					<level>0</level>
+					<default/>
+					<visible>false</visible>
+					<constraints><allowempty>true</allowempty></constraints>
+					<control type="edit" format="string"><hidden>true</hidden></control>
 				</setting>
 				<setting id="floppy.isauthed" type="string" label="" help="">
 					<level>0</level>

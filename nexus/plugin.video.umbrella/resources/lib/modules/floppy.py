@@ -4,8 +4,7 @@
 """
 # Floppy (self-hosted media tracker). Built against the dannyvfilms/Floppy
 # fork's /api/v1/ 
-# Auth is a single static bearer token pasted from the
-# Floppy web UI (Integrations settings) â€” there is no device-code flow uses API
+# OAuth device authorization with API-key compatibility.
 
 from datetime import datetime
 import time
@@ -73,8 +72,12 @@ def getFloppy(url, post=None, method=None, silent=False):
 		if time.time() - _last_request_time > 300:
 			session.close()
 		if not url.startswith(base): url = urljoin(base + '/', url.lstrip('/'))
+		from resources.lib.modules import floppyauth
+		identity = floppyauth.identity()
+		token = floppyauth.access_token(base, session, expected_identity=identity)
+		if not token: return None
 		req_headers = dict(headers)
-		req_headers['Authorization'] = 'Bearer %s' % getSetting('floppy.token')
+		req_headers['Authorization'] = 'Bearer %s' % token
 		body = jsdumps(post) if post is not None else None
 		if not method: method = 'POST' if post is not None else 'GET'
 		method = method.upper()
@@ -98,6 +101,11 @@ def getFloppy(url, post=None, method=None, silent=False):
 					session.close()
 				else:
 					raise
+		if response.status_code == 401:
+			new_token = floppyauth.access_token(base, session, failed_token=token, expected_identity=identity)
+			if new_token and new_token != token:
+				req_headers['Authorization'] = 'Bearer %s' % new_token
+				response = session.request(method, url, data=body, headers=req_headers, timeout=(10, 60))
 		status_code = response.status_code
 		if status_code == 401 and not silent:
 			log_utils.log_force('FLOPPY: request unauthorized (invalid/expired token) url=%s' % url, level=log_utils.LOGWARNING)
@@ -119,7 +127,17 @@ def getFloppyAsJson(url, post=None, method=None, silent=False):
 		return None
 
 
-def get_all_pages(url, silent=False):
+def _compact_tracking_entry(entry):
+	"""Retain sync fields, without accumulating catalog metadata across pages."""
+	fields = ('id', 'tracked', 'status', 'end_date', 'progressed_at', 'created_at', 'created', 'score', 'collected_at')
+	item_fields = ('id', 'media_id', 'source', 'ids', 'title', 'release_datetime', 'season_number', 'episode_number', 'image')
+	result = {key: entry[key] for key in fields if key in entry}
+	item = entry.get('item')
+	if isinstance(item, dict): result['item'] = {key: item[key] for key in item_fields if key in item}
+	return result
+
+
+def get_all_pages(url, silent=False, compact=False):
 	"""Return a complete collection, or None; never publish a partial page set."""
 	try:
 		sep = '&' if '?' in url else '?'
@@ -135,37 +153,47 @@ def get_all_pages(url, silent=False):
 				page_results, pagination = data['results'], data.get('pagination')
 			else: return None
 			if pagination is not None and not isinstance(pagination, dict): return None
-			results.extend(page_results)
+			page_count = len(page_results)
+			results.extend((_compact_tracking_entry(entry) for entry in page_results) if compact else page_results)
+			# Release the raw page before requesting/decoding the next one.
+			data = page_results = None
 			if pagination is not None:
 				if not pagination.get('next'):
 					if pagination.get('total') is not None and len(results) != int(pagination['total']): return None
 					return results
-			elif len(page_results) < limit:
+			elif page_count < limit:
 				return results
-			if not page_results: return None
-			offset += len(page_results)
+			if not page_count: return None
+			offset += page_count
 			if offset > 100000: return None
 	except Exception:
 		log_utils.error()
 		return None
 
 
-#### Auth: static bearer token pasted from the Floppy web UI ####
+#### OAuth device authorization and legacy API-key validation ####
 
-def floppyAuth(fromSettings=0):
+def floppyAuth(fromSettings=0, useOAuth=True):
 	try:
 		if fromSettings == 1: control.make_settings_dict()
-		if not getFloppyCredentialsInfo():
-			control.notification(message='Enter a Floppy server URL and token first', icon=floppy_icon)
-			return False
-		response = getFloppy('/media/movie/?limit=1', method='GET', silent=True)
-		if response is None or response.status_code != 200:
-			control.notification(message='Floppy Authorization Error - Check URL/Token', icon=floppy_icon)
-			return False
-		payload = response.json()
-		if not isinstance(payload, dict) or not isinstance(payload.get('results'), list):
-			control.notification(message='Floppy Authorization Error - Invalid API response', icon=floppy_icon)
-			return False
+		if useOAuth:
+			from resources.lib.modules import floppyauth
+			if not floppyBaseUrl():
+				control.notification(message='Enter a Floppy server URL first', icon=floppy_icon)
+				return False
+			if not floppyauth.authorize(floppyBaseUrl(), session): return False
+		else:
+			if not getFloppyCredentialsInfo():
+				control.notification(message='Enter a Floppy server URL and token first', icon=floppy_icon)
+				return False
+			response = getFloppy('/media/movie/?limit=1', method='GET', silent=True)
+			if response is None or response.status_code != 200:
+				control.notification(message='Floppy Authorization Error - Check URL/Token', icon=floppy_icon)
+				return False
+			payload = response.json()
+			if not isinstance(payload, dict) or not isinstance(payload.get('results'), list):
+				control.notification(message='Floppy Authorization Error - Invalid API response', icon=floppy_icon)
+				return False
 		setSetting('floppy.isauthed', 'true')
 		control.notification(message='Floppy Authorized Successfully', icon=floppy_icon)
 		if control.yesnoDialog('Do you want to set Floppy as your service for your watched and unwatched indicators?', '', '', 'Indicators', 'No', 'Yes'):
@@ -181,18 +209,31 @@ def floppyAuth(fromSettings=0):
 		control.make_settings_dict()
 		control.homeWindow.setProperty('umbrella.floppy.syncRequested', 'true')
 		return True
-	except:
-		log_utils.error()
+	except Exception as error:
+		from resources.lib.modules.floppyauth import AuthError
+		if isinstance(error, AuthError):
+			control.notification(title='Floppy', message=str(error), icon=floppy_icon)
+		else:
+			log_utils.log('FLOPPY: authorization failed (%s)' % type(error).__name__, level=log_utils.LOGWARNING)
+			control.notification(title='Floppy', message='Unable to authorize Floppy. Please check the server connection.', icon=floppy_icon)
 		return False
 	finally:
 		if fromSettings == 1: control.openSettings('5.6', 'plugin.video.umbrella')
 
 
 def floppyRevoke(fromSettings=0):
+	try:
+		from resources.lib.modules import floppyauth
+		floppyauth.disconnect(session)
+	except Exception:
+		control.notification(title='Floppy', message='Could not revoke the Floppy connection. Please check the server and try again.', icon=floppy_icon)
+		if fromSettings == 1: control.openSettings('5.6', 'plugin.video.umbrella')
+		return False
 	control.homeWindow.setProperty('umbrella.updateSettings', 'false')
 	setSetting('floppy.user.name', '')
 	setSetting('floppy.token', '')
 	setSetting('floppy.isauthed', '')
+	control.make_settings_dict()
 	control.homeWindow.clearProperty('umbrella.floppy.syncRequested')
 	control.homeWindow.setProperty('umbrella.updateSettings', 'true')
 	try:
@@ -640,7 +681,7 @@ _STATUS_TABLES = {
 }
 
 def _fetch_status_bucket(media_type, status):
-	items = get_all_pages('/media/%s/?status=%s' % (media_type, status), silent=True)
+	items = get_all_pages('/media/%s/?status=%s' % (media_type, status), silent=True, compact=True)
 	return items
 
 def _resolve_movie_imdb(tmdb):
@@ -702,7 +743,7 @@ def _sync_episode_tracking_for_show(imdb, tmdb):
 
 
 def _sync_watched_episodes_from_shows(progress_callback=None):
-	entries = get_all_pages('/media/tv/', silent=True)
+	entries = get_all_pages('/media/tv/', silent=True, compact=True)
 	if entries is None: return None
 	shows = {}
 	for entry in entries:
@@ -728,7 +769,7 @@ def _sync_watched_episodes_from_shows(progress_callback=None):
 	if probe.status_code != 200: return None
 	# Do not filter status on the server: some versions filter episodes by the
 	# parent season's status. The episode's own returned status is authoritative.
-	episodes = get_all_pages('/media/episode/', silent=True)
+	episodes = get_all_pages('/media/episode/', silent=True, compact=True)
 	if episodes is None: return None
 	ids_by_show = {}
 	for idx, entry in enumerate(episodes):
@@ -822,7 +863,7 @@ def sync_collection(activities=None, forced=False):
 		credentials = (floppyBaseUrl(), getSetting('floppy.token'))
 		snapshots = {}
 		for media, table in (('movie', 'movies_collection'), ('tv', 'shows_collection')):
-			items = get_all_pages('/collection/?item_media_type=' + media, silent=True)
+			items = get_all_pages('/collection/?item_media_type=' + media, silent=True, compact=True)
 			if items is None or control.monitor.abortRequested(): return False
 			snapshots[table] = [{'id': (i.get('item') or {}).get('id'), 'item': i.get('item'),
 				'score': None, 'created_at': i.get('collected_at')} for i in items]

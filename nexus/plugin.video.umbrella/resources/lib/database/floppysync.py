@@ -119,6 +119,8 @@ def delete_floppy_tables(tables):
 		epoch = '1970-01-01T00:00:00.000Z'
 		for key in ('last_history_at', 'last_watched_movies_at', 'last_watched_episodes_at'):
 			dbcur.execute('''INSERT OR REPLACE INTO service Values (?, ?)''', (key, epoch))
+		_bump_revision(dbcur, 'history')
+		_bump_revision(dbcur, 'bookmarks')
 		dbcur.connection.commit()
 		dbcur.execute('''VACUUM''')
 	except:
@@ -668,6 +670,32 @@ def store_bookmarks(rows, expected_revision):
 		_reconcile_rows(cursor, 'bookmarks', rows, (3, 4, 5, 6, 7))
 		_bump_revision(cursor, 'bookmarks')
 		cursor.execute('INSERT OR REPLACE INTO service VALUES (?, ?)', ('last_paused_at', datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%S.000Z')))
+		connection.commit()
+		return True
+	except Exception:
+		connection.rollback()
+		from resources.lib.modules import log_utils
+		log_utils.error()
+		return False
+	finally:
+		connection.close()
+
+
+def reset_for_authorization():
+	"""Clear previous-account caches and invalidate in-flight snapshots."""
+	connection = get_connection()
+	try:
+		cursor = connection.cursor()
+		connection.execute('BEGIN IMMEDIATE')
+		for table in ('bookmarks', 'floppy_watched_movies', 'floppy_watched_episodes', 'watched',
+			'movies_plantowatch', 'shows_plantowatch', 'movies_watching', 'shows_watching',
+			'movies_hold', 'shows_hold', 'movies_completed', 'shows_completed',
+			'movies_dropped', 'shows_dropped', 'movies_collection', 'shows_collection'):
+			if cursor.execute("SELECT 1 FROM sqlite_master WHERE type='table' AND name=?", (table,)).fetchone():
+				cursor.execute('DELETE FROM ' + table)
+		_bump_revision(cursor, 'history')
+		_bump_revision(cursor, 'bookmarks')
+		cursor.execute('INSERT OR REPLACE INTO service VALUES (?, ?)', ('last_history_at', '1970-01-01T00:00:00.000Z'))
 		connection.commit()
 		return True
 	except Exception:

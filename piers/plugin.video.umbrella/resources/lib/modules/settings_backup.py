@@ -524,7 +524,7 @@ ACCOUNT_FIELDS = {
     'simkl': 'simkltoken simklusername simkljoindate',
     'mdblist': 'mdblist.token mdblist.refresh.token',
     'custom': 'dev.enable.custom custom.servicename custom.baseurl custom.clientid custom.clientsecret custom.user.name custom.user.token custom.refreshtoken custom.token.expires custom.isauthed',
-    'floppy': 'floppy.baseurl floppy.token floppy.user.name floppy.readonly floppy.isauthed',
+    'floppy': 'floppy.baseurl floppy.token floppy.user.name floppy.readonly floppy.isauthed floppy.oauth floppy.oauth.client',
     'scrob': 'scrob.baseurl scrob.apikey scrob.accesstoken scrob.refreshtoken scrob.tokenexpiry scrob.isauthed',
     'punchplay': 'punchplay.username punchplay.accesstoken punchplay.refreshtoken punchplay.tokenexpiry punchplay.isauthed punchplay.deviceid',
     'realdebrid': 'realdebridtoken realdebridusername realdebrid.clientid realdebridsecret realdebridrefresh',

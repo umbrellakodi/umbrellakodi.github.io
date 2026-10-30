@@ -6336,3 +6336,15 @@ msgstr ""
 msgctxt "#40861"
 msgid "Higher values favor established TV shows. Lower values include more recent and less widely rated shows. Original-language and origin-country filters also apply."
 msgstr ""
+
+msgctxt "#40862"
+msgid "Authorize Floppy with OAuth"
+msgstr ""
+
+msgctxt "#40863"
+msgid "Register Umbrella with your Floppy server and approve the displayed code in a browser. Existing API-key credentials remain until authorization succeeds."
+msgstr ""
+
+msgctxt "#40864"
+msgid "Check Floppy API key (legacy)"
+msgstr ""

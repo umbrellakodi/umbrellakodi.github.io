@@ -1,4 +1,8 @@
+[B]Update - v6.7.737 - Oct 29th, 2026 [/B]
+--[Fix] Prevent intermittent "NoneType object is not callable" episode scraping failures by validating episode air dates without datetime.strptime.
+
 [B]Update - v6.7.736 - Oct 29th, 2026 [/B]
+--[Enhancement] Added Floppy OAuth device authorization with scannable QR approval, automatic token refresh and server-side revocation. Existing API-key connections remain supported.
 --[Fix] Sync Floppy watched episodes from individual episode records, preserving skipped episodes, specials and earlier completed viewings during a rewatch.
 --[Enhancement] Speed up Floppy synchronization with bulk episode requests and larger pages, and update only changed database rows instead of rebuilding unchanged watched history.
 --[Fix] A lot more changes for Floppy.

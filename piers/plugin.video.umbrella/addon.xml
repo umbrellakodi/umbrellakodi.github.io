@@ -1,4 +1,4 @@
-<addon id="plugin.video.umbrella" name="Umbrella" provider-name="Umbrella" version="6.7.736">
+<addon id="plugin.video.umbrella" name="Umbrella" provider-name="Umbrella" version="6.7.737">
 	<requires>
 		<import addon="xbmc.python" version="3.0.0" />
 		<import addon="script.module.requests" />
@@ -270,10 +270,8 @@
 			<screenshot>resources/screenshots/screenshot003.jpg</screenshot>
 		</assets>
 		<news>
-[B]Update - v6.7.736 - Oct 29th, 2026 [/B]
---[Fix] Sync Floppy watched episodes from individual episode records, preserving skipped episodes, specials and earlier completed viewings during a rewatch.
---[Enhancement] Speed up Floppy synchronization with bulk episode requests and larger pages, and update only changed database rows instead of rebuilding unchanged watched history.
---[Fix] A lot more changes for Floppy.
+[B]Update - v6.7.737 - Oct 29th, 2026 [/B]
+--[Fix] Prevent intermittent "NoneType object is not callable" episode scraping failures by validating episode air dates without datetime.strptime.
 		</news>
 	</extension>
 
