@@ -459,6 +459,19 @@ def folderPath():
 def queueItem():
 	return execute('Action(Queue)') # seems broken in 19 for show and season level, works fine in 18
 
+def clear_idle_playlist():
+	"""Directory reloads must not discard a playing or resolving episode chain."""
+	if player.isPlaying() or playerWindow.getProperty('umbrella.playnext.transition') == 'true':
+		log_refresh_diagnostic('browse-playlist-preserved', 'reason=playing-or-resolving')
+		return False
+	next_url = playerWindow.getProperty('umbrella.standalone.next')
+	if next_url and any(playlist[index].getPath() == next_url for index in range(playlist.size())):
+		log_refresh_diagnostic('browse-playlist-preserved', 'reason=queued-next')
+		return False
+	playlist.clear()
+	return True
+
+
 def refreshRepos():
 	return execute('UpdateAddonRepos')
 ########################

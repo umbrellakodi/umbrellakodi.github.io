@@ -42,6 +42,18 @@ class AirdateTests(unittest.TestCase):
             self.assertIsNone(utils.episode_airdate({'premiered': value}))
         self.assertIsNone(utils.episode_airdate({}))
 
+    def test_dates_without_strptime(self):
+        import datetime
+        class KodiDatetime(datetime.datetime):
+            @classmethod
+            def strptime(cls, *args, **kwargs):
+                raise TypeError("'NoneType' object is not callable")
+        with patch.object(datetime, 'datetime', KodiDatetime):
+            self.assertEqual(utils.episode_airdate({'premiered': '2024-02-29'}), '2024.02.29')
+            for value in ('2026-02-29', '0000-01-01', '2026-00-01', '2026-13-01'):
+                self.assertIsNone(utils.episode_airdate({'premiered': value}))
+            self.test_providers()
+
     def test_matching(self):
         def match(name, date='2026.10.20', aliases=[]):
             return utils.check_episode_title('The Daily Show', aliases, name, 'S31E123', '1996', date)

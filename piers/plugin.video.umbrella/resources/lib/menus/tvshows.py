@@ -3712,7 +3712,7 @@ class TVshows:
 		if getSetting('services.directProgress.scrape') == 'true' and getSetting('enable.playnext') == 'true':
 			pass
 		else:
-			control.playlist.clear()
+			control.clear_idle_playlist()
 		if not items: # with reuselanguageinvoker on an empty directory must be loaded, do not use sys.exit()
 			control.hide()
 			if self.is_widget != True:
@@ -4048,7 +4048,7 @@ class TVshows:
 
 	def addDirectory(self, items, queue=False, folderName='Umbrella'):
 		from sys import argv # some functions like ActivateWindow() throw invalid handle less this is imported here.
-		control.playlist.clear()
+		control.clear_idle_playlist()
 		if not items: # with reuselanguageinvoker on an empty directory must be loaded, do not use sys.exit()
 			content = ''
 			control.hide()

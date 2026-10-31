@@ -1,3 +1,10 @@
+[B]Update - v6.7.738 - Oct 30th, 2026 [/B]
+--[Fix] Fix continuous playback stopping after multiple episodes, including short episodes.
+--[Fix] Prevent duplicate automatic Play Next and end-of-episode transitions from interrupting the next episode. Play Now still advances immediately.
+--[Fix] Preserve current and next episode selection when Kodi temporarily loses the playlist position, including queues containing only the next episode.
+--[Fix] Protect episode queues during menu refreshes and delayed playback callbacks, preserve manually queued next episodes and prevent duplicate playlist entries during resolution.
+--[Fix] Prevent item artwork and the Umbrella spinner from appearing together in foreground and fullscreen resolving dialogs. The spinner remains available when the item image or clearlogo is missing.
+
 [B]Update - v6.7.737 - Oct 29th, 2026 [/B]
 --[Fix] Prevent intermittent "NoneType object is not callable" episode scraping failures by validating episode air dates without datetime.strptime.
 

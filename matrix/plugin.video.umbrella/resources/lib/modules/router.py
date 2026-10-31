@@ -1646,6 +1646,13 @@ def router(argv2):
 	elif action and action.startswith('play_'):
 		#control.checkPlayNextEpisodes()
 		if action == 'play_Item':
+			from sys import argv
+			request_url = argv[0] + argv[2]
+			if any(control.playlist[index].getPath() == request_url for index in range(control.playlist.size())):
+				# Claim the incoming entry before scraping so the outgoing Player
+				# cannot launch a second copy while this request is resolving.
+				control.playerWindow.setProperty('umbrella.queue.current', request_url)
+				control.playerWindow.setProperty('umbrella.playnext.transition', 'true')
 			from resources.lib.modules import sources
 			sources.Sources(params.get('all_providers')).play(title, year, imdb, tmdb, tvdb, season, episode, tvshowtitle, params.get('premiered'), params.get('meta'), params.get('select'), params.get('rescrape'))
 		elif action == 'play_info':
