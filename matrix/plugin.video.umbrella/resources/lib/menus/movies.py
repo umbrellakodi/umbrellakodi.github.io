@@ -904,7 +904,9 @@ class Movies:
 			selected_items = window.run()
 			del window
 			if selected_items:
-				for imdb in selected_items: mdblist.scrobbleReset(imdb=imdb, refresh=False)
+				succeeded = 0
+				for imdb in selected_items: succeeded += bool(mdblist.scrobbleReset(imdb=imdb, refresh=False))
+				mdblist.finishProgressRemoval(succeeded, len(selected_items))
 				control.trigger_widget_refresh()
 				if 'plugin.video.umbrella' in control.infoLabel('Container.PluginName'): control.refresh()
 		except:
@@ -2166,7 +2168,9 @@ class Movies:
 			selected_items = window.run()
 			del window
 			if selected_items:
-				for imdb in selected_items: customtrakt.scrobbleReset(imdb=imdb, refresh=False)
+				succeeded = 0
+				for imdb in selected_items: succeeded += bool(customtrakt.scrobbleReset(imdb=imdb, refresh=False))
+				customtrakt.finishProgressRemoval(succeeded, len(selected_items))
 				control.trigger_widget_refresh()
 				if 'plugin.video.umbrella' in control.infoLabel('Container.PluginName'): control.refresh()
 		except:
@@ -2372,7 +2376,7 @@ class Movies:
 		# this response's {'pagination':..., 'results':[...]} shape unmodified.
 		self.list = []
 		try:
-			items = floppy.get_all_pages('/playback/progress/', silent=True) or []
+			items = floppy.get_continue_watching('movie') or []
 			for item in items:
 				try:
 					if item.get('media_type') != 'movie': continue

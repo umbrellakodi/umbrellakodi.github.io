@@ -327,8 +327,10 @@ class Episodes:
 			selected_items = window.run()
 			del window
 			if selected_items:
+				succeeded = 0
 				for i in selected_items:
-					mdblist.scrobbleReset(imdb=i.get('imdb', ''), tvdb=i.get('tvdb', ''), season=i.get('season'), episode=i.get('episode'), refresh=False)
+					succeeded += bool(mdblist.scrobbleReset(imdb=i.get('imdb', ''), tvdb=i.get('tvdb', ''), season=i.get('season'), episode=i.get('episode'), tmdb=i.get('tmdb', ''), refresh=False))
+				mdblist.finishProgressRemoval(succeeded, len(selected_items))
 				control.trigger_widget_refresh()
 				if 'plugin.video.umbrella' in control.infoLabel('Container.PluginName'): control.refresh()
 		except:
@@ -343,7 +345,7 @@ class Episodes:
 		# needed unless the ids block is missing it.
 		self.list = []
 		try:
-			raw_items = floppy.get_all_pages('/playback/progress/', silent=True) or []
+			raw_items = floppy.get_continue_watching('episode') or []
 			items = []
 			for item in raw_items:
 				try:
@@ -435,8 +437,10 @@ class Episodes:
 			selected_items = window.run()
 			del window
 			if selected_items:
+				succeeded = 0
 				for i in selected_items:
-					customtrakt.scrobbleReset(imdb=i.get('imdb', ''), tvdb=i.get('tvdb', ''), season=i.get('season'), episode=i.get('episode'), refresh=False)
+					succeeded += bool(customtrakt.scrobbleReset(imdb=i.get('imdb', ''), tvdb=i.get('tvdb', ''), season=i.get('season'), episode=i.get('episode'), tmdb=i.get('tmdb', ''), refresh=False))
+				customtrakt.finishProgressRemoval(succeeded, len(selected_items))
 				control.trigger_widget_refresh()
 				if 'plugin.video.umbrella' in control.infoLabel('Container.PluginName'): control.refresh()
 		except:

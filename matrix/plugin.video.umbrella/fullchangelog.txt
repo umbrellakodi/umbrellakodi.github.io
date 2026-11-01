@@ -1,34 +1,28 @@
-[B]Update - v6.7.738 - Oct 30th, 2026 [/B]
---[Fix] Fix continuous playback stopping after multiple episodes, including short episodes.
---[Fix] Prevent duplicate automatic Play Next and end-of-episode transitions from interrupting the next episode. Play Now still advances immediately.
---[Fix] Preserve current and next episode selection when Kodi temporarily loses the playlist position, including queues containing only the next episode.
---[Fix] Protect episode queues during menu refreshes and delayed playback callbacks, preserve manually queued next episodes and prevent duplicate playlist entries during resolution.
---[Fix] Prevent item artwork and the Umbrella spinner from appearing together in foreground and fullscreen resolving dialogs. The spinner remains available when the item image or clearlogo is missing.
+[B]Update - v6.7.739 - Oct 31st, 2026[/B]
+--[Fix] Marking items as watched or unwatched now works correctly across all services (Trakt, Simkl, MDBList, Scrob, Floppy, and custom servers).
+--[Fix] Watch history now stays in sync. Items removed online are removed locally, and failed syncs no longer wipe your saved history.
+--[Fix] Show Progress counts are accurate again, and partly watched shows no longer vanish from the list.
+--[Fix] Clearing resume points now works properly on all services, including specials, seasons, and whole shows.
+--[Fix] Fixed Trakt login and token renewal issues, plus actions from widgets that weren't working.
+--[Fix] Floppy: marking a show or season watched now marks all its episodes, and finishing an episode (at 90%, credits, or the end) counts it as watched without duplicates.
+--[Fix] Floppy: Continue Watching no longer shows finished or already-watched items.
+--[Enhancement] Floppy now syncs only what changed instead of re-downloading your full history every time. Older Floppy servers still work.
+--[Fix] General improvements to sync reliability, widget refreshes, and error reporting.
 
-[B]Update - v6.7.737 - Oct 29th, 2026 [/B]
---[Fix] Prevent intermittent "NoneType object is not callable" episode scraping failures by validating episode air dates without datetime.strptime.
-
-[B]Update - v6.7.736 - Oct 29th, 2026 [/B]
---[Enhancement] Added Floppy OAuth device authorization with scannable QR approval, automatic token refresh and server-side revocation. Existing API-key connections remain supported.
---[Fix] Sync Floppy watched episodes from individual episode records, preserving skipped episodes, specials and earlier completed viewings during a rewatch.
---[Enhancement] Speed up Floppy synchronization with bulk episode requests and larger pages, and update only changed database rows instead of rebuilding unchanged watched history.
---[Fix] A lot more changes for Floppy.
-
-[B]Update - v6.7.735 - Oct 28th, 2026 [/B]
---[Enhancement] Added Year (IMDb) TV browsing and improved TMDb TV years. Both use the new TV year sort order setting under TV Shows, defaulting to Popular, with Most voted and Highest rated options and separate minimum vote counts. TV years refer to the series premiere year.
---[Feature] Added Year (IMDb) movie browsing using GraphQL, with paginated results.
---[Enhancement] IMDb and TMDb movie years now open directly, sorted by Popular by default. Added a shared Movie year sort order setting under General with Popular, Most voted and Highest rated options, plus adjustable minimum vote counts. Existing original-language and origin-country filters apply to both sources.
-
-[B]Update - v6.7.734 - Oct 28th, 2026 [/B]
---[Fix] Pressing OK to stop scraping early now preserves collected sources and completes provider checks before displaying results instead of incorrectly reporting No Sources Found.
---[Enhancement] Added optional Prefer Dolby audio setting under source sorting. Prioritizes Atmos, TrueHD, Dolby Digital Plus and Dolby Digital within quality and provider groups, ahead of file size, while retaining other audio formats as fallback. Disabled by default and included in settings backups.
---[Fix] Normalize missing VideoInfoTag metadata to typed empty values to reduce Kodi 22 deprecation warnings while preserving titles and resume points.
---[Fix] Preserve the last complete Floppy watched cache when requests fail or syncing is interrupted, and batch watched-history writes in one transaction.
---[Fix] Sync Floppy's stored season history without depending on show metadata, with a fallback for older servers.
---[Fix] Use Floppy's supplied external IDs when available, queue initial sync in the background service after authorization, and wait the full sync interval after completion.
---[Fix] Validate Floppy authorization responses, retain credentials on failure, and reopen settings after authorization dialogs finish.
---[Fix] Allow more time for slow Floppy read requests and prevent unbounded rate-limit retries.
---[Fix] Preserve Floppy list and resume caches when fetching fails, prevent overlapping watched-history rebuilds, and report incomplete forced syncs correctly.
+[B]Update - v6.7.99 - Oct 30th, 2026[/B]
+--[Fix] Fixed continuous playback stopping after multiple episodes and improved automatic Play Next reliability.
+--[Fix] Fixed episode queue issues, including duplicate episodes, interrupted playback, and manually queued episodes being lost.
+--[Fix] Fixed artwork and loading spinner overlapping during source resolution.
+--[Fix] Fixed occasional episode scraping errors.
+--[Feature] Added Floppy OAuth login with QR code authorization and automatic token renewal. API keys are still supported.
+--[Fix] Improved Floppy watched history syncing, including skipped episodes, specials, and rewatched shows.
+--[Enhancement] Improved Floppy syncing speed, reliability, and handling of connection failures.
+--[Feature] Added IMDb TV show browsing by year and improved TMDb year browsing, with new sorting and rating options.
+--[Feature] Added IMDb movie browsing by year and improved movie year sorting for IMDb and TMDb.
+--[Fix] Fixed stopping a scrape early incorrectly showing "No Sources Found" when sources were already available.
+--[Enhancement] Added optional Prefer Dolby Audio setting to prioritize Atmos, TrueHD, Dolby Digital Plus, and Dolby Digital sources.
+--[Fix] Improved Kodi 22 compatibility and reduced metadata warnings.
+--[Fix] Additional Floppy authorization, caching, synchronization, and error-handling improvements.
 
 [B]Update - v6.7.98 - Oct 27th, 2026 [/B]
 --[Fix] Preserve collected sources when stopping a scrape early and complete provider checks before displaying results.

@@ -42,7 +42,7 @@ def getScrobCredentialsInfo():
 
 
 def getScrobWriteCredentialsInfo():
-	return bool(scrobBaseUrl() and (getSetting('scrob.refreshtoken') or getSetting('scrob.accesstoken') or (getSetting('scrob.apikey') and getSetting('scrob.username') and getSetting('scrob.password'))))
+	return bool(scrobBaseUrl() and (getSetting('scrob.refreshtoken') or getSetting('scrob.accesstoken') or getSetting('scrob.apikey')))
 
 
 def getScrobIndicatorsInfo():
@@ -57,8 +57,11 @@ def getScrob(url, post=None, method=None, auth='api_key', silent=False, _retried
 		global _last_request_time
 		base = scrobBaseUrl()
 		if not base: return None
+		api_key = getSetting('scrob.apikey')
 		token = _getScrobJWT() if (auth == 'jwt' or getSetting('scrob.refreshtoken') or getSetting('scrob.accesstoken')) else None
-		if auth == 'jwt' and not token: return None
+		# Current Scrob history/list routes also accept an API key. An expired
+		# optional login must not disable an otherwise authorized device connection.
+		if auth == 'jwt' and not token and not api_key: return None
 		if time.time() - _last_request_time > 300:
 			session.close()
 		full_url = url if url.startswith(base) else urljoin(base + '/', url.lstrip('/'))
@@ -628,7 +631,13 @@ def markEpisodeAsNotWatched(imdb, tvdb, season, episode, tmdb=''):
 		tmdb = str(tmdb) if tmdb else _resolve_tmdb('tv', imdb=imdb, tvdb=tvdb)
 		if not tmdb: return False
 		season, episode = int('%01d' % int(season)), int('%01d' % int(episode))
-		response = getScrob('/history/item?tmdb_id=%s&media_type=episode' % tmdb, method='DELETE', auth='jwt', silent=True)
+		from resources.lib.database import cache as _cache
+		from resources.lib.indexers import tmdb as _tmdb
+		metadata = _cache.get(_tmdb.TVshows().get_episodes_request, 96, tmdb, season, episode)
+		episode_tmdb = (metadata or {}).get('id')
+		if not episode_tmdb: return False
+		# /history/item expects the episode's TMDb ID, not its series ID.
+		response = getScrob('/history/item?tmdb_id=%s&media_type=episode' % int(episode_tmdb), method='DELETE', auth='jwt', silent=True)
 		success = bool(response is not None and response.status_code in (200, 204))
 		if success:
 			scrobsync.delete_watched_episode(tmdb, season, episode)
