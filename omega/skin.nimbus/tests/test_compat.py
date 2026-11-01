@@ -20,6 +20,41 @@ def source(path):
 
 
 class NimbusXMLTests(unittest.TestCase):
+    def test_chapter_png_is_complete_and_has_valid_chunk_checksums(self):
+        import struct
+        import zlib
+        data = (SKIN / 'media/osd/Chapter.png').read_bytes()
+        self.assertEqual(data[:8], b'\x89PNG\r\n\x1a\n')
+        offset, ended = 8, False
+        while offset + 12 <= len(data):
+            size = struct.unpack_from('>I', data, offset)[0]
+            self.assertLessEqual(offset + 12 + size, len(data))
+            chunk = data[offset + 4:offset + 8 + size]
+            self.assertEqual(zlib.crc32(chunk) & 0xffffffff, struct.unpack_from('>I', data, offset + 8 + size)[0])
+            offset += 12 + size
+            if chunk[:4] == b'IEND':
+                ended = True
+                break
+        self.assertTrue(ended)
+        self.assertEqual(offset, len(data))
+
+    def test_chapter_is_not_shadowed_by_an_empty_packed_texture(self):
+        import struct
+        data = (SKIN / 'media/Textures.xbt').read_bytes()
+        self.assertEqual(data[:5], b'XBTF2')
+        count = struct.unpack_from('<I', data, 5)[0]
+        offset = 9
+        for _ in range(count):
+            name = data[offset:offset + 256].split(b'\0')[0].decode()
+            frames = struct.unpack_from('<I', data, offset + 260)[0]
+            if name.lower() == 'osd/chapter.png':
+                self.assertGreater(frames, 0)
+            offset += 264
+            for _ in range(frames):
+                width, height, fmt, packed, unpacked, duration, start = struct.unpack_from('<IIIQQIQ', data, offset)
+                self.assertLessEqual(start + packed, len(data))
+                offset += 40
+
     def test_all_xml_parses_and_condition_brackets_balance(self):
         for path in SKIN.rglob('*.xml'):
             with self.subTest(path=path.name):

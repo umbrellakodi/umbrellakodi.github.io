@@ -340,7 +340,7 @@ class Episodes:
 
 	def floppy_unfinished(self, url=None, create_directory=True, folderName=''):
 		# Confirmed via GET /api/v1/playback/progress/ (not previously known when
-		# Floppy was first integrated) — same idea as scrob_unfinished() below, but
+		# Floppy was first integrated) â€” same idea as scrob_unfinished() below, but
 		# season/episode/ids all come straight off the live item, no imdb resolution
 		# needed unless the ids block is missing it.
 		self.list = []
@@ -450,7 +450,7 @@ class Episodes:
 
 	def scrob_unfinished(self, url=None, create_directory=True, folderName=''):
 		# Unlike the other providers' "Unfinished" (which read local client-tracked
-		# bookmarks), Scrob has a real server-side "in progress playback" endpoint —
+		# bookmarks), Scrob has a real server-side "in progress playback" endpoint â€”
 		# reading it directly here means this reflects a pause point set from ANY
 		# client reporting to the same Scrob account, not just what Umbrella itself
 		# has seen. Season/episode numbers come straight from the live item, so unlike
@@ -732,7 +732,7 @@ class Episodes:
 		if url == 'floppyprogress':
 			# custom_calendar() uses the bare url as its cache key, but floppy_calendar()/
 			# scrob_calendar() rewrite it to include limit/page before ever calling
-			# cache.get() (see floppy_calendar() above) — the cache key has to be
+			# cache.get() (see floppy_calendar() above) â€” the cache key has to be
 			# reconstructed identically here or this would silently clear nothing.
 			cache.remove(self.floppy_progress_list, 'floppyepisodesprogress?limit=%s&page=1' % (self.count or 20), self.floppy_directProgressScrape)
 			control.sleep(200)
@@ -1028,7 +1028,7 @@ class Episodes:
 
 	def mdblist_progress_list(self, url='/upnext', direct=False):
 		# MDBList's own /upnext endpoint (get_up_next()) was returning S1E1 for shows
-		# watched out of order — it depends on MDBList's server-side watched-history
+		# watched out of order â€” it depends on MDBList's server-side watched-history
 		# tracking for the show, which doesn't reliably reflect out-of-order watching.
 		# Reconstructed locally instead, from mdbsync's watched-episode table, the same
 		# "furthest watched episode + 1" approach floppy_progress_list() uses (matches
@@ -1063,7 +1063,7 @@ class Episodes:
 				if not showSeasons: return
 				seasons_meta = {s.get('season_number'): s for s in showSeasons.get('seasons', [])}
 				season_meta = seasons_meta.get(furthest_season)
-				# Not capped to TMDb's last-aired boundary (last_episode_to_air) — that
+				# Not capped to TMDb's last-aired boundary (last_episode_to_air) â€” that
 				# show-level field lags behind reality right around an episode's actual air
 				# date/time, which caused this to silently drop shows whose next episode had
 				# genuinely already released but TMDb hadn't flipped last_episode_to_air to
@@ -1077,7 +1077,7 @@ class Episodes:
 					next_season_num, next_episode_num = furthest_season, furthest_episode + 1
 				else:
 					next_season_num, next_episode_num = furthest_season + 1, 1
-				if next_season_num not in seasons_meta: return  # no further known season — fully caught up
+				if next_season_num not in seasons_meta: return  # no further known season â€” fully caught up
 				values = {}
 				values['imdb'] = imdb_id
 				values['tmdb'] = tmdb
@@ -1142,19 +1142,19 @@ class Episodes:
 		return self.list
 
 	def mdblist_calendar_items(self, days=33, start_date=None):
-		# Flat episode-reference items from MDBList's own /calendar/events — personalized
+		# Flat episode-reference items from MDBList's own /calendar/events â€” personalized
 		# to the user's watchlist/tracked shows, confirmed live against a real account.
 		# Mapped into the same shape trakt_list() produces so trakt_episodes_list can
 		# enrich them with TMDb data unmodified, mirroring custom_calendar_items() exactly.
 		# Confirmed schema: {type: 'episode'|'movie', title: <show title>, episode_title,
-		# show_tmdb, season_number, episode_number, start: 'YYYY-MM-DD'} — MDBList's
+		# show_tmdb, season_number, episode_number, start: 'YYYY-MM-DD'} â€” MDBList's
 		# calendar has no imdb/tvdb on the event itself, only show_tmdb.
 		items = []
 		try:
 			start = start_date or self.date_time.strftime('%Y-%m-%d')
 			# datetime.strptime() is unreliable on some embedded Python builds (confirmed:
-			# broke on a Firecube Android TV device with 'NoneType' object is not callable —
-			# strptime's lazy _strptime import isn't thread-safe there) — every other date
+			# broke on a Firecube Android TV device with 'NoneType' object is not callable â€”
+			# strptime's lazy _strptime import isn't thread-safe there) â€” every other date
 			# computation in this file already avoids it, this was the one new usage.
 			# datetime(y, m, d) needs no lazy import, so build the date manually instead.
 			y, m, d = (int(x) for x in start.split('-')[:3])
@@ -1193,7 +1193,7 @@ class Episodes:
 		return items
 
 	def mdblist_calendar_recent(self, url, folderName=''):
-		# "Recent" needs a window that actually reaches into the past — mirrors
+		# "Recent" needs a window that actually reaches into the past â€” mirrors
 		# custom_calendar_recent()'s date-window override for the same reason.
 		self.list = []
 		try:
@@ -1442,7 +1442,7 @@ class Episodes:
 				watched_set = i.get('watched_set', set())
 				try:
 					# "Next episode" = the episode after the highest-numbered watched
-					# episode in the highest-numbered season with any watched episode —
+					# episode in the highest-numbered season with any watched episode â€”
 					# matches real Trakt's own progress semantics (resume from your
 					# furthest point), not the first unwatched episode in chronological
 					# order. A show watched out of order (e.g. S2E5 watched, S2E1-4
@@ -1463,7 +1463,7 @@ class Episodes:
 						next_season, next_episode = furthest_season, furthest_episode + 1
 					else:
 						next_season, next_episode = furthest_season + 1, 1
-					if next_season not in seasons_meta: return  # no further known season — fully caught up
+					if next_season not in seasons_meta: return  # no further known season â€” fully caught up
 					seasonEpisodes = tmdb_indexer().get_seasonEpisodes_meta_checked(tmdb_id, next_season)
 					if not seasonEpisodes: return
 					episode_list = seasonEpisodes.get('episodes', [])
@@ -1528,7 +1528,7 @@ class Episodes:
 			threads = []
 			for i in items:
 				threads.append(Thread(target=items_list, args=(i,)))
-			# Batched: each thread may need a TMDb lookup/season-meta fetch — throttled
+			# Batched: each thread may need a TMDb lookup/season-meta fetch â€” throttled
 			# to avoid hammering the TMDb cache layer with too many threads at once.
 			_unlimited = getSetting('dev.batch.unlimited') == 'true'
 			_bs = max(int(getSetting('dev.batch.size') or '10'), 1)
@@ -1554,7 +1554,7 @@ class Episodes:
 		return self.list
 
 	def floppy_calendar(self, url, folderName=''):
-		# Paginated the same way Trakt's own Progress list is (calendar(), above) — this
+		# Paginated the same way Trakt's own Progress list is (calendar(), above) â€” this
 		# was unconditionally rendering every in-progress show's next episode on one
 		# screen (next=False), unlike every other provider's episode progress list.
 		self.list = []
@@ -1623,7 +1623,7 @@ class Episodes:
 	def floppy_progress_list(self, url='', direct=False, upcoming=False):
 		# Floppy has no aggregated per-show "next episode" endpoint (unlike Custom's
 		# /shows/{imdb}/progress/watched), so this is built entirely from the locally
-		# synced watched-episode set (floppysync) — the season-level /history/ progress
+		# synced watched-episode set (floppysync) â€” the season-level /history/ progress
 		# counts are already expanded into individual (season, episode) rows during sync
 		# (_sync_episode_tracking_for_show), so the exact same "furthest watched episode"
 		# resume logic as Custom's progress list applies unmodified.
@@ -1648,7 +1648,7 @@ class Episodes:
 				watched_set = i.get('watched_set', set())
 				try:
 					# "Next episode" = the episode after the highest-numbered watched
-					# episode in the highest-numbered season with any watched episode —
+					# episode in the highest-numbered season with any watched episode â€”
 					# matches real Trakt's own progress semantics (resume from your
 					# furthest point), not the first unwatched episode in chronological
 					# order. A show watched out of order (e.g. S2E5 watched, S2E1-4
@@ -1669,7 +1669,7 @@ class Episodes:
 						next_season, next_episode = furthest_season, furthest_episode + 1
 					else:
 						next_season, next_episode = furthest_season + 1, 1
-					if next_season not in seasons_meta: return  # no further known season — fully caught up
+					if next_season not in seasons_meta: return  # no further known season â€” fully caught up
 					seasonEpisodes = tmdb_indexer().get_seasonEpisodes_meta_checked(tmdb_id, next_season)
 					if not seasonEpisodes: return
 					episode_list = seasonEpisodes.get('episodes', [])
@@ -1754,7 +1754,7 @@ class Episodes:
 		return self.list
 
 	def scrob_calendar(self, url, folderName=''):
-		# Same paginated shape as floppy_calendar() — ported verbatim, sourced from
+		# Same paginated shape as floppy_calendar() â€” ported verbatim, sourced from
 		# scrobsync instead of floppysync.
 		self.list = []
 		try:
@@ -2306,10 +2306,10 @@ class Episodes:
 				return log_utils.log('tvshowtitle: (%s) missing tmdb_id: ids={imdb: %s, tmdb: %s, tvdb: %s}' % (tvshowtitle, imdb, tmdb, tvdb), __name__, log_utils.LOGDEBUG) # log TMDb shows that they do not have
 		seasonEpisodes = tmdb_indexer().get_seasonEpisodes_meta(tmdb, season)
 
-		if not seasonEpisodes: return
+		if not isinstance(seasonEpisodes, dict) or not isinstance(seasonEpisodes.get('episodes'), list): return
 		if not isinstance(meta, dict): showSeasons = jsloads(meta)
 		else: showSeasons = meta
-		list = []
+		episodes_list = []
 		unaired_count = 0
 		for item in seasonEpisodes['episodes']:
 			try:
@@ -2338,7 +2338,9 @@ class Episodes:
 				try:
 					if values['status'].lower() == 'ended': pass
 					elif not values['premiered']:
-						values['unaired'] = 'true'
+						# Undated specials are often released extras. Keep them visible
+						# when opening Specials; retain the normal future-date filter.
+						if int(values.get('season', -1)) != 0: values['unaired'] = 'true'
 						unaired_count += 1
 						pass
 					elif int(re.sub(r'[^0-9]', '', str(values['premiered']))) > int(re.sub(r'[^0-9]', '', str(self.today_date))):
@@ -2358,14 +2360,14 @@ class Episodes:
 				values['landscape'] = showSeasons.get('landscape')
 				values['extended'] = True # used to bypass calling "super_info()", super_info() no longer used as of 4-12-21 so this could be removed.
 				for k in ('episodes',): values.pop(k, None) # pop() keys from seasonEpisodes that are not needed anymore
-				list.append(values)
+				episodes_list.append(values)
 			except:
 				from resources.lib.modules import log_utils
 				log_utils.error()
-		for i in range(0, len(list)): list[i].update({'season_isAiring': 'true' if unaired_count >0 else 'false'}) # update for if "season_isAiring", needed for season pack scraping
+		for i in range(0, len(episodes_list)): episodes_list[i].update({'season_isAiring': 'true' if unaired_count >0 else 'false'}) # update for if "season_isAiring", needed for season pack scraping
 		if unaired_count >0:
-			for i in range(0, len(list)): list[i].update({'next_episode_to_air': {'air_date': '2022-02-10', 'episode_number': 7}})
-		return list
+			for i in range(0, len(episodes_list)): episodes_list[i].update({'next_episode_to_air': {'air_date': '2022-02-10', 'episode_number': 7}})
+		return episodes_list
 
 	def trakt_progress_list(self, url, user, lang, direct=False, upcoming=False):
 		#https://api.trakt.tv/users/me/watched/shows?extended=full
@@ -2785,7 +2787,7 @@ class Episodes:
 
 	def simkl_progress_list(self, url, direct=False, upcoming=False):
 		#https://api.simkl.com/sync/all-items/shows/watching?extended=full
-		# Simkl treats anime as a separate content bucket from "shows" — querying only
+		# Simkl treats anime as a separate content bucket from "shows" â€” querying only
 		# the shows endpoint silently excluded every in-progress anime title.
 		try:
 			shows_result = simkl.getSimklAsJson('/sync/all-items/shows/watching?extended=full') or []

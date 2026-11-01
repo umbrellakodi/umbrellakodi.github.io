@@ -948,6 +948,38 @@ class TVshows(TMDb):
 			log_utils.error()
 		return result
 
+	def _mapped_special_episode(self, tmdb, number):
+		from resources.lib.modules.episode_mapping import SPECIAL_MOVIES
+		movie_id = SPECIAL_MOVIES.get((str(tmdb), 0, number))
+		if not movie_id: return None
+		movie = self.get_request(base_link + 'movie/%s?api_key=%s&language=%s' % (movie_id, self.API_key, self.lang))
+		if not isinstance(movie, dict) or str(movie.get('id')) != movie_id or not movie.get('title'): return None
+		# This is a catalog alias for a real standalone special. A movie ID must
+		# never be published as a TMDB episode ID to tracking providers.
+		return {'id': None, 'season_number': 0, 'episode_number': number,
+			'name': movie['title'], 'air_date': movie.get('release_date') or None,
+			'overview': movie.get('overview') or '', 'runtime': movie.get('runtime'),
+			'crew': [], 'production_code': '', 'still_path': None,
+			'vote_average': movie.get('vote_average') or 0, 'vote_count': movie.get('vote_count') or 0}
+
+
+	def _missing_specials_season(self, tmdb, show):
+		# A newly added special can exist at the episode endpoint before its
+		# season endpoint is available. Follow the catalog's advertised count.
+		specials = next((s for s in show.get('seasons', []) if s.get('season_number') == 0), None)
+		if not specials: return None
+		count = int(specials.get('episode_count') or 0)
+		if not 0 < count <= 100: return None
+		episodes = []
+		for number in range(1, count + 1):
+			episode = self.get_episodes_request(tmdb, 0, number)
+			if episode == '404:NOT FOUND': episode = self._mapped_special_episode(tmdb, number)
+			if not isinstance(episode, dict): return None
+			if episode.get('season_number') != 0 or episode.get('episode_number') != number: return None
+			episodes.append(episode)
+		return dict(specials, season_number=0, episodes=episodes, credits={'cast': []})
+
+
 	def get_seasonEpisodes_meta(self, tmdb, season): # builds episodes meta from "/season/?" request
 		if not tmdb and not season: return None
 		seasonMeta = cache.get(self.get_showSeasons_meta, 96, tmdb)
@@ -956,8 +988,10 @@ class TVshows(TMDb):
 		try:
 			if not tmdb: return None
 			result = self.get_season_request(tmdb, season)
+			if result == '404:NOT FOUND' and int(season) == 0:
+				result = self._missing_specials_season(tmdb, seasonMeta)
 			if result is None: return
-			if '404:NOT FOUND' in result: return result
+			if not isinstance(result, dict) or not isinstance(result.get('episodes'), list): return None
 			meta = {}
 		except:
 			from resources.lib.modules import log_utils

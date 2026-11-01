@@ -1003,6 +1003,7 @@ class Sources:
 		variants = [data] if self.custom_query == 'true' else scrape_variants(getattr(self, 'scrape_tmdb', ''), data)
 		for variant in variants:
 			if control.monitor.abortRequested(): return
+			if variant.get('_scrape_convention') == 'movie' and pack: continue
 			cache_id = ('anthology-v1:%s:%s' % (variant['_scrape_tmdb'], variant['_scrape_convention'])) if variant.get('_scrape_tmdb') else imdb
 			self._getEpisodeSource(cache_id, variant['season'], variant['episode'], variant, source, call, pack)
 
@@ -1089,6 +1090,9 @@ class Sources:
 
 	def sourcesFilter(self, progressDialog=None):
 		if not self.isPrescrape: control.busy()
+		from resources.lib.modules.episode_mapping import filter_special_sources
+		self.sources = filter_special_sources(self.sources, getattr(self, 'scrape_tmdb', ''),
+			(getattr(self, 'meta', None) or {}).get('season'), (getattr(self, 'meta', None) or {}).get('episode'))
 		if getSetting('remove.duplicates') == 'true': self.sources = self.filter_dupes()
 		if self.mediatype == 'movie':
 			if getSetting('source.filtermbysize') == '1':
@@ -1930,6 +1934,7 @@ class Sources:
 		self.hostprDict = providerscache.get(cache_prDict, 168)
 		self.sourcecfDict = premium_hosters.sourcecfDict
 	def calc_pack_size(self):
+		if not any(item.get('package') for item in self.sources): return self.sources
 		seasoncount, counts = None, None
 		try:
 			if self.meta: seasoncount, counts = self.meta.get('seasoncount', None), self.meta.get('counts', None)
@@ -1953,7 +1958,8 @@ class Sources:
 				else: season = homeWindow.getProperty(self.seasonProperty)
 				from resources.lib.indexers import tmdb as tmdb_indexer
 				counts = tmdb_indexer.TVshows().get_counts(tmdb)
-				seasoncount = counts[str(season)]
+				seasoncount = (counts or {}).get(str(season))
+				if not seasoncount: return self.sources
 			except:
 				log_utils.error()
 				return self.sources

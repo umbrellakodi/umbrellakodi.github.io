@@ -1,3 +1,11 @@
+[B]Update - v6.7.740 - Nov 1st, 2026[/B]
+--[Fix] Fixed Custom show and season watched actions reporting success while missing episodes remained unwatched, including Bluey season 1.
+--[Fix] Corrected Custom progress counts for currently airing shows when the server has outdated release totals, including VisionQuest.
+--[Fix] Fixed empty Specials folders when TMDb season or episode metadata is unavailable, including A Story of Derry. Undated specials remain visible while future release dates are respected.
+--[Fix] Added searches for A Story of Derry (2026), S00E01, and S01E09, filtering unrelated episodes and season packs while preserving watched and resume tracking.
+--[Fix] Fixed AllDebrid magnet playback failing to read nested file lists and incorrectly reporting unsupported RAR files.
+--[Fix] Prevented missing Specials episode counts from causing pack-size errors for single-file results.
+
 [B]Update - v6.7.739 - Oct 31st, 2026[/B]
 --[Fix] Marking items as watched or unwatched now works correctly across all services (Trakt, Simkl, MDBList, Scrob, Floppy, and custom servers).
 --[Fix] Watch history now stays in sync. Items removed online are removed locally, and failed syncs no longer wipe your saved history.

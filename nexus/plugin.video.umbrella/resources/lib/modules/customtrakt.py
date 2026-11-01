@@ -170,7 +170,7 @@ def get_all_pages(url, silent=False):
 				break
 			response_data = page_results
 			if isinstance(page_results, dict):
-				# Some endpoints likely wrap results (e.g. {"items": [...], "pagination": {...}}) —
+				# Some endpoints likely wrap results (e.g. {"items": [...], "pagination": {...}}) â€”
 				# unwrap the first list-valued field found, matching the confirmed pagination shape.
 				unwrapped = next((v for v in page_results.values() if isinstance(v, list)), None)
 				if unwrapped is None:
@@ -446,7 +446,7 @@ def getActivity(activities=None):
 
 
 #### Calendar (GET /calendars/my/{movies|shows}/{start_date}/{days}) ####
-# Response schema isn't typed in the confirmed OpenAPI spec — assumed to mirror
+# Response schema isn't typed in the confirmed OpenAPI spec â€” assumed to mirror
 # Trakt's own calendar shape ([{'show'/'movie': {...}, 'episode': {...}}, ...]),
 # consistent with every other assumption made throughout this integration.
 
@@ -463,7 +463,7 @@ def get_calendar(media_type, days=33, start_date=None):
 
 #### Watch/unwatch + mark watched (via POST /sync/history, /sync/history/remove) ####
 # Unlike Trakt, there's no aggregated "watched" endpoint to re-query for fresh state
-# (see Design notes), so — mirroring mdblist.py's markMovieAsWatched/etc. exactly —
+# (see Design notes), so â€” mirroring mdblist.py's markMovieAsWatched/etc. exactly â€”
 # each of these also upserts/deletes the local customtraktsync cache directly and
 # invalidates the syncMovies/syncTVShows cache key, so indicators update immediately
 # instead of waiting on the next background /sync/history pull.
@@ -495,46 +495,65 @@ def markMovieAsNotWatched(imdb):
 		return success
 	except: log_utils.error()
 
-def _upsert_watched_show_episodes(imdb, tvdb, tmdb, season=None):
-	# Best-effort: populate every episode of the show (or just one season) into the
-	# local cache from TMDb season metadata, mirroring mdblist.py's equivalent helper.
-	try:
-		from resources.lib.database import cache as _cache
-		from resources.lib.indexers import tmdb as _tmdb
-		tmdb_id = str(tmdb) if tmdb else ''
-		if not tmdb_id:
-			res = _cache.get(_tmdb.TVshows().IdLookup, 96, imdb, tvdb)
-			tmdb_id = str(res.get('id', '')) if res else ''
-		if not tmdb_id: return
-		now = _now_iso()
-		if season is not None:
-			raw = _cache.get(_tmdb.TVshows().get_season_request, 96, tmdb_id, int(season))
-			for ep in (raw or {}).get('episodes', []):
-				en = int(ep.get('episode_number', 0))
-				if en > 0:
-					customtraktsync.upsert_watched_episode(show_imdb=imdb, show_tmdb=tmdb_id, show_tvdb=str(tvdb), season=int(season), episode=en, last_watched_at=now)
-		else:
-			meta = _cache.get(_tmdb.TVshows().get_showSeasons_meta, 96, tmdb_id)
-			for s_item in (meta or {}).get('seasons', []):
-				sn = int(s_item.get('season_number', 0))
-				ec = int(s_item.get('episode_count', 0))
-				if sn > 0 and ec > 0:
-					for en in range(1, ec + 1):
-						customtraktsync.upsert_watched_episode(show_imdb=imdb, show_tmdb=tmdb_id, show_tvdb=str(tvdb), season=sn, episode=en, last_watched_at=now)
-	except: log_utils.error()
+def _watched_show_payload(imdb, tvdb, season=None):
+	"""Name every aired episode: some Custom servers expand only stored rows."""
+	from resources.lib.indexers import tmdb as _tmdb
+	api = _tmdb.TVshows()
+	lookup = cache.get(api.IdLookup, 96, imdb, tvdb)
+	tmdb = str((lookup or {}).get('id') or '')
+	if not tmdb: raise ValueError('Cannot resolve show for watched action')
+	today = datetime.utcnow().strftime('%Y-%m-%d')
+	if season is not None:
+		seasons = [int(season)]
+	else:
+		meta = cache.get(api.get_showSeasons_meta, 96, tmdb)
+		if not isinstance(meta, dict) or not isinstance(meta.get('seasons'), list):
+			raise ValueError('Cannot read show seasons for watched action')
+		seasons = [int(item['season_number']) for item in meta['seasons']
+			if (int(item['season_number']) > 0 or getSetting('tv.specials') == 'true')
+			and item.get('air_date') and item['air_date'] <= today]
+	rows = []
+	for sn in seasons:
+		raw = cache.get(api.get_season_request, 96, tmdb, sn)
+		if not isinstance(raw, dict) or not isinstance(raw.get('episodes'), list):
+			raise ValueError('Cannot read episodes for watched action')
+		episodes = [{'number': int(ep['episode_number'])} for ep in raw['episodes']
+			if int(ep.get('episode_number') or 0) > 0 and ep.get('air_date') and ep['air_date'] <= today]
+		if episodes: rows.append({'number': sn, 'episodes': episodes})
+	if not rows: raise ValueError('No aired episodes found for watched action')
+	ids = {key: value for key, value in (('imdb', imdb), ('tvdb', tvdb), ('tmdb', tmdb)) if value not in (None, '')}
+	return {'shows': [{'ids': ids, 'seasons': rows}]}
+
+
+def _confirm_watched_show_payload(payload):
+	show = payload['shows'][0]
+	ids = show['ids']
+	progress = getCustomAsJson('shows/%s/progress/watched' % ids['imdb'], silent=True)
+	if not isinstance(progress, dict): return False
+	watched = {(int(s['number']), int(e['number'])) for s in progress.get('seasons', [])
+		for e in s.get('episodes', []) if e.get('completed')}
+	targets = {(int(s['number']), int(e['number'])) for s in show['seasons'] for e in s['episodes']}
+	if not targets.issubset(watched): return False
+	customtraktsync.bump_history_revision()
+	for sn, en in targets:
+		customtraktsync.upsert_watched_episode(show_imdb=ids['imdb'], show_tmdb=ids['tmdb'],
+			show_tvdb=str(ids.get('tvdb') or ''), season=sn, episode=en, last_watched_at=_now_iso())
+	customtraktsync.cache_delete(customtraktsync._hash_function(syncTVShows, ()))
+	customtraktsync.cache_delete(customtraktsync._hash_function(_fetchShowProgress, (ids['imdb'],)))
+	for args in ((ids['imdb'], ids.get('tvdb') or ''), (ids['imdb'], ids.get('tvdb') or '', ids['tmdb'])):
+		customtraktsync.cache_delete(customtraktsync._hash_function(syncSeasons, args))
+	return True
+
 
 def markTVShowAsWatched(imdb, tvdb):
 	try:
-		result = getCustomAsJson('/sync/history', {'shows': [{'ids': {'imdb': imdb, 'tvdb': tvdb}}]})
-		if not result: return False
-		success = _history_write_succeeded(result, 'added', 'episodes')
-		if success:
-			customtraktsync.bump_history_revision()
-			_upsert_watched_show_episodes(imdb, tvdb, '')
-			customtraktsync.cache_delete(customtraktsync._hash_function(syncTVShows, ()))
-			customtraktsync.cache_delete(customtraktsync._hash_function(_fetchShowProgress, (imdb,)))
-		return success
-	except: log_utils.error()
+		payload = _watched_show_payload(imdb, tvdb)
+		result = getCustomAsJson('/sync/history', payload)
+		return _history_write_succeeded(result, 'added', 'episodes') and _confirm_watched_show_payload(payload)
+	except:
+		log_utils.error()
+		return False
+
 
 def markTVShowAsNotWatched(imdb, tvdb):
 	try:
@@ -552,17 +571,13 @@ def markTVShowAsNotWatched(imdb, tvdb):
 
 def markSeasonAsWatched(imdb, tvdb, season):
 	try:
-		season = int('%01d' % int(season))
-		result = getCustomAsJson('/sync/history', {'shows': [{'seasons': [{'number': season}], 'ids': {'imdb': imdb, 'tvdb': tvdb}}]})
-		if not result: return False
-		success = _history_write_succeeded(result, 'added', 'episodes')
-		if success:
-			customtraktsync.bump_history_revision()
-			_upsert_watched_show_episodes(imdb, tvdb, '', season=season)
-			customtraktsync.cache_delete(customtraktsync._hash_function(syncTVShows, ()))
-			customtraktsync.cache_delete(customtraktsync._hash_function(_fetchShowProgress, (imdb,)))
-		return success
-	except: log_utils.error()
+		payload = _watched_show_payload(imdb, tvdb, season=int(season))
+		result = getCustomAsJson('/sync/history', payload)
+		return _history_write_succeeded(result, 'added', 'episodes') and _confirm_watched_show_payload(payload)
+	except:
+		log_utils.error()
+		return False
+
 
 def markSeasonAsNotWatched(imdb, tvdb, season):
 	try:
@@ -841,8 +856,7 @@ def getShowProgress(imdb):
 	except: log_utils.error()
 
 def _complete_progress_totals(progress, imdb):
-	# Some Custom servers count only episodes stored in their own database as
-	# aired. Establish full season totals from metadata, including absent seasons.
+	"""Use catalog air dates, not the server's possibly stale aired boundary."""
 	try:
 		from resources.lib.database import cache as _cache
 		from resources.lib.indexers import tmdb as _tmdb
@@ -851,31 +865,44 @@ def _complete_progress_totals(progress, imdb):
 		tmdb_id = str(lookup.get('id') or '') if lookup else ''
 		if not tmdb_id: return progress
 		meta = _cache.get(api.get_showSeasons_meta, 96, tmdb_id)
+		if not isinstance(meta, dict): return progress
 		seasons = {int(s['number']): s for s in progress.get('seasons', [])}
 		today = datetime.utcnow().strftime('%Y-%m-%d')
-		for s in (meta or {}).get('seasons', []):
-			number = int(s.get('season_number', 0))
-			if not s.get('air_date') or s['air_date'] > today: continue
-			# A current season may contain future episodes; only correct completed
-			# seasons using episode_count without fetching individual air dates.
-			last = (meta or {}).get('last_episode_to_air') or {}
-			if (meta or {}).get('status') == 'Returning Series' and number >= int(last.get('season_number', number)): continue
+		last = meta.get('last_episode_to_air') or {}
+		for item in meta.get('seasons', []):
+			number = int(item.get('season_number', 0))
+			if not item.get('air_date') or item['air_date'] > today: continue
+			if meta.get('status') == 'Returning Series' and number >= int(last.get('season_number', number)):
+				raw = _cache.get(api.get_season_request, 96, tmdb_id, number)
+				if not isinstance(raw, dict) or not isinstance(raw.get('episodes'), list): continue
+				eligible = {int(ep['episode_number']) for ep in raw['episodes']
+					if ep.get('air_date') and ep['air_date'] <= today and int(ep.get('episode_number') or 0) > 0}
+			else:
+				eligible = set(range(1, int(item.get('episode_count') or 0) + 1))
 			season = seasons.get(number)
 			if season is None:
-				season = {'number': number, 'aired': 0, 'completed': 0, 'episodes': []}
+				season = {'number': number, 'completed': 0, 'episodes': []}
 				progress.setdefault('seasons', []).append(season)
 				seasons[number] = season
-			season['aired'] = max(int(season.get('aired', 0)), int(s.get('episode_count', 0)))
+			season['_aired_episode_numbers'] = sorted(eligible)
+			season['aired'] = len(eligible)
+			flags = season.get('episodes') or []
+			season['completed'] = (sum(bool(ep.get('completed')) for ep in flags if int(ep.get('number', 0)) in eligible)
+				if flags else min(int(season.get('completed', 0)), len(eligible)))
+		included = [season for number, season in seasons.items() if number > 0 or getSetting('tv.specials') == 'true']
+		progress['aired'] = sum(int(season.get('aired', 0)) for season in included)
+		progress['completed'] = sum(int(season.get('completed', 0)) for season in included)
 		return progress
 	except:
 		log_utils.error()
 		return progress
 
+
 def _fetchShowProgress(imdb):
 	try:
 		results = getCustomAsJson('shows/%s/progress/watched' % imdb, silent=True)
 		if not results or not results.get('seasons'): return None
-		# Mirrors trakt.py's syncSeasons reset_at handling — episodes watched before
+		# Mirrors trakt.py's syncSeasons reset_at handling â€” episodes watched before
 		# a reset_at timestamp don't count as completed for the current watch-through.
 		reset_at = results.get('reset_at') or ''
 		if reset_at:
@@ -915,7 +942,9 @@ def _seasons_from_progress(progress):
 		# must never increase the provider's aired count.
 		last = progress.get('last_episode') or {}
 		eligible = episodes
-		if last.get('season') is not None and int(last['season']) == int(snum) and last.get('number') is not None:
+		if '_aired_episode_numbers' in s:
+			eligible = [e for e in episodes if int(e.get('number', 0)) in s['_aired_episode_numbers']]
+		elif last.get('season') is not None and int(last['season']) == int(snum) and last.get('number') is not None:
 			eligible = [e for e in episodes if int(e.get('number', 0)) <= int(last['number'])]
 		completed = sum(bool(e.get('completed')) for e in eligible) if episodes else int(s.get('completed', 0))
 		if completed > aired:
@@ -1056,7 +1085,7 @@ def sync_collection(activities=None, forced=False):
 	except: log_utils.error()
 
 def sync_dropped(activities=None, forced=False):
-	# Same shape as sync_watch_list()/sync_collection() above — Custom's confirmed
+	# Same shape as sync_watch_list()/sync_collection() above â€” Custom's confirmed
 	# /sync/last_activities payload has no per-section "hidden_at"/"dropped_at" field to
 	# gate an incremental resync against (see getActivity()'s comment), so this only acts
 	# on the periodic forced=True pass tools.py already uses for watchlist/collection.
@@ -1138,7 +1167,7 @@ def remove_from_collection(imdb='', tmdb='', tvdb='', media_type='movie'):
 
 #### Dropped / Hidden Progress (GET/POST /users/hidden/dropped[/remove]) ####
 # Mirrors real Trakt's /users/hidden/{section} "Drop Show" feature (see trakt.py's own
-# sync_hidden_progress()) — hides a show from progress/calendar without touching watch
+# sync_hidden_progress()) â€” hides a show from progress/calendar without touching watch
 # history. Uses the same ids-based SyncRequest body as watchlist/collection above rather
 # than the server's item_id-based /media/show/{item_id}/drop/{action} toggle, since every
 # other write call in this module operates on imdb/tmdb/tvdb and never learns a server-side
@@ -1170,7 +1199,7 @@ def remove_from_dropped(imdb='', tmdb='', tvdb='', media_type='movie'):
 
 
 #### User Lists (GET/POST /users/me/lists[/{slug}/items[/remove]]) ####
-# Endpoint shapes aren't in the confirmed OpenAPI spec — assumed to mirror Trakt's own
+# Endpoint shapes aren't in the confirmed OpenAPI spec â€” assumed to mirror Trakt's own
 # user-list contract exactly, consistent with every other assumption in this module.
 
 def get_user_lists():
@@ -1190,7 +1219,7 @@ def get_user_lists():
 
 def get_list_items(list_id):
 	# Not paginated via get_all_pages(): same non-paginating behavior confirmed on
-	# /users/me/lists (see get_user_lists() above) — this endpoint also ignores
+	# /users/me/lists (see get_user_lists() above) â€” this endpoint also ignores
 	# page/limit and returns the full item set every call, so a single plain fetch
 	# is both correct and avoids repeating the same items until the safety cap.
 	try:
@@ -1221,7 +1250,7 @@ def create_list(name):
 
 def list_numeric_id(lst):
 	# The items/add/remove endpoints require the list's numeric id (path parsing fails
-	# with 422 "unable to parse string as an integer" if given the slug) — unlike real
+	# with 422 "unable to parse string as an integer" if given the slug) â€” unlike real
 	# Trakt, which accepts either. ids.trakt mirrors Trakt's own {trakt, slug} shape;
 	# ids.id is a fallback in case this clone names the numeric field differently.
 	try:

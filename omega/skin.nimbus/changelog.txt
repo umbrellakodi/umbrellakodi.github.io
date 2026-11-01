@@ -1,5 +1,3 @@
-[B]Update - v0.1.44 - Oct 28th, 2026 [/B]
-- Correct clearlogo visibility conditions in the movie information and PosterFlow views.
-- Move focus actions from unsupported item-layout buttons to list containers and reset scroll timers during navigation.
-- Register empty menu/widget includes correctly and require Nimbus Helper 0.0.54 for the matching generated-XML fixes.
-
+[B]Update - v0.1.45 - Nov 1st, 2026 [/B]
+- Restore the original chapter-marker texture to fix playback seekbar texture-loading errors.
+- Remove the broken chapter entry from the packed textures so Kodi can load the restored image.

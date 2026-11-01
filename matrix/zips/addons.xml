@@ -1,5 +1,5 @@
 <?xml version='1.0' encoding='utf-8'?>
-<addons><addon id="plugin.video.umbrella" name="Umbrella" provider-name="Umbrella" version="6.7.739">
+<addons><addon id="plugin.video.umbrella" name="Umbrella" provider-name="Umbrella" version="6.7.740">
 	<requires>
 		<import addon="xbmc.python" version="3.0.0" />
 		<import addon="script.module.requests" />
@@ -271,16 +271,13 @@
 			<screenshot>resources/screenshots/screenshot003.jpg</screenshot>
 		</assets>
 		<news>
-[B]Update - v6.7.739 - Oct 31st, 2026[/B]
---[Fix] Marking items as watched or unwatched now works correctly across all services (Trakt, Simkl, MDBList, Scrob, Floppy, and custom servers).
---[Fix] Watch history now stays in sync. Items removed online are removed locally, and failed syncs no longer wipe your saved history.
---[Fix] Show Progress counts are accurate again, and partly watched shows no longer vanish from the list.
---[Fix] Clearing resume points now works properly on all services, including specials, seasons, and whole shows.
---[Fix] Fixed Trakt login and token renewal issues, plus actions from widgets that weren't working.
---[Fix] Floppy: marking a show or season watched now marks all its episodes, and finishing an episode (at 90%, credits, or the end) counts it as watched without duplicates.
---[Fix] Floppy: Continue Watching no longer shows finished or already-watched items.
---[Enhancement] Floppy now syncs only what changed instead of re-downloading your full history every time. Older Floppy servers still work.
---[Fix] General improvements to sync reliability, widget refreshes, and error reporting.
+[B]Update - v6.7.740 - Nov 1st, 2026[/B]
+--[Fix] Fixed Custom show and season watched actions reporting success while missing episodes remained unwatched, including Bluey season 1.
+--[Fix] Corrected Custom progress counts for currently airing shows when the server has outdated release totals, including VisionQuest.
+--[Fix] Fixed empty Specials folders when TMDb season or episode metadata is unavailable, including A Story of Derry. Undated specials remain visible while future release dates are respected.
+--[Fix] Added searches for A Story of Derry (2026), S00E01, and S01E09, filtering unrelated episodes and season packs while preserving watched and resume tracking.
+--[Fix] Fixed AllDebrid magnet playback failing to read nested file lists and incorrectly reporting unsupported RAR files.
+--[Fix] Prevented missing Specials episode counts from causing pack-size errors for single-file results.
 		</news>
 	</extension>
 
