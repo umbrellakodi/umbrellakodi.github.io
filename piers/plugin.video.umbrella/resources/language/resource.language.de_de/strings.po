@@ -7246,3 +7246,11 @@ msgstr ""
 msgctxt "#40864"
 msgid "Check Floppy API key (legacy)"
 msgstr ""
+
+msgctxt "#40865"
+msgid "Movie"
+msgstr ""
+
+msgctxt "#40866"
+msgid "TV Show"
+msgstr ""

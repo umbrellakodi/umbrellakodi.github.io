@@ -35,6 +35,28 @@ getSetting = control.setting
 KODI_VERSION = control.getKodiVersion()
 
 
+def _mdblist_episode_unaired(item, now):
+	"""Evaluate release time on each view, including rows read from cache."""
+	air_date = str(item.get('premiered') or '').split('T')[0]
+	try:
+		date = datetime.strptime(air_date, '%Y-%m-%d')
+	except (TypeError, ValueError):
+		return 'true'
+	airtime, airzone = item.get('airtime'), item.get('airzone')
+	if airtime and airzone:
+		try:
+			from resources.lib.externals import pytz
+			try: scheduled = datetime.strptime('%sT%s' % (air_date, airtime), '%Y-%m-%dT%H:%M:%S')
+			except ValueError: scheduled = datetime.strptime('%sT%s' % (air_date, airtime), '%Y-%m-%dT%H:%M')
+			local_zone = pytz.timezone(tools.localZone())
+			local_air = pytz.timezone(airzone).localize(scheduled).astimezone(local_zone)
+			local_now = local_zone.localize(now)
+			return 'true' if local_air > local_now else ''
+		except (TypeError, ValueError, KeyError): pass
+	# Without a usable schedule, retain the existing date-only behavior.
+	return 'true' if date.date() > now.date() else ''
+
+
 def _mdblist_progress_shows(episodes, watched_shows):
 	"""Combine provider IDs before calculating each show's furthest episode."""
 	def clean(value):
@@ -965,6 +987,8 @@ class Episodes:
 			from sys import argv
 			raw_count = len(self.list or [])
 			self.list = _unique_mdblist_progress(self.list)
+			for item in self.list:
+				item['unaired'] = _mdblist_episode_unaired(item, self.date_time)
 			log_utils.log('MDBList progress directory handle=%s: %s rows, %s unique episodes' %
 				(argv[1], raw_count, len(self.list)), level=log_utils.LOGDEBUG)
 			control.log_refresh_diagnostic('mdb-build-data', 'build=%s raw=%s unique=%s' %
@@ -1108,14 +1132,7 @@ class Episodes:
 				if duration:
 					try: values['duration'] = int(duration) * 60
 					except: pass
-				air_date = values.get('premiered', '')
-				values['unaired'] = ''
-				try:
-					if values.get('status', '').lower() == 'ended': pass
-					elif not air_date: values['unaired'] = 'true'
-					elif int(re.sub(r'[^0-9]', '', air_date)) > int(re.sub(r'[^0-9]', '', str(self.today_date))):
-						values['unaired'] = 'true'
-				except: pass
+				values['unaired'] = _mdblist_episode_unaired(values, self.date_time)
 				if self.enable_fanarttv:
 					tvdb = values.get('tvdb', '')
 					extended_art = fanarttv_cache.get(FanartTv().get_tvshow_art, 336, tvdb)

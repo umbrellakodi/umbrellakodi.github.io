@@ -3854,7 +3854,7 @@ class Movies:
 ####################################
 				if trailer: meta.update({'trailer': trailer}) # removed temp so it's not passed to CM items, only infoLabels for skin
 				else: meta.update({'trailer': '%s?action=play_Trailer&type=%s&name=%s&year=%s&imdb=%s' % (sysaddon, 'movie', sysname, year, imdb)})
-				if label_media: labelProgress += ' [I](%s)[/I]' % getLS(32001)
+				if label_media: labelProgress += ' [I](%s)[/I]' % (getLS(40865) or 'Movie')
 				item = control.item(label=labelProgress, offscreen=True)
 				#if 'castandart' in i: item.setCast(i['castandart'])#changed for kodi20 setinfo method
 				if 'castandart' in i: meta.update({'castandart':i['castandart']})

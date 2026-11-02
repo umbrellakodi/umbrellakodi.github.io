@@ -1,4 +1,8 @@
+[B]Update - v6.7.741 - Nov 2nd, 2026[/B]
+--[Fix] Restored artwork views for combined movie and TV search in skins such as Nimbus and corrected result labels to Movie and TV Show.
+
 [B]Update - v6.7.740 - Nov 1st, 2026[/B]
+--[Fix] MDBList Progress Episodes now respects broadcast times and timezones when hiding unaired episodes, including cached progress lists.
 --[Fix] Fixed Custom show and season watched actions reporting success while missing episodes remained unwatched, including Bluey season 1.
 --[Fix] Corrected Custom progress counts for currently airing shows when the server has outdated release totals, including VisionQuest.
 --[Fix] Fixed empty Specials folders when TMDb season or episode metadata is unavailable, including A Story of Derry. Undated specials remain visible while future release dates are respected.

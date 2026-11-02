@@ -3911,7 +3911,7 @@ class TVshows:
 ####################################
 				if trailer: meta.update({'trailer': trailer}) # removed temp so it's not passed to CM items, only skin
 				else: meta.update({'trailer': '%s?action=play_Trailer&type=%s&name=%s&year=%s&imdb=%s' % (sysaddon, 'show', systitle, year, imdb)})
-				if label_media: label += ' [I](%s)[/I]' % getLS(32002)
+				if label_media: label += ' [I](%s)[/I]' % (getLS(40866) or 'TV Show')
 				item = control.item(label=label, offscreen=True)
 				#if 'castandart' in i: item.setCast(i['castandart'])
 				if 'castandart' in i: meta.update({"cast": ['castandart']}) #changed for kodi20 setinfo method
