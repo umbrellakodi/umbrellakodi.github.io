@@ -1,4 +1,4 @@
-﻿﻿# Addon Name: Umbrella
+﻿# Addon Name: Umbrella
 # Addon id: plugin.video.umbrella
 # Addon Provider: Umbrella
 # Daniel Szurgot, 2015
@@ -7472,5 +7472,5 @@ msgid "Download Manager"
 msgstr ""
 
 msgctxt "#40868"
-msgid "View active downloads, progress, speed and recent results. Select an active download to cancel it. Incomplete files are kept with a .part extension."
+msgid "View download progress and recent results. Select a download to cancel, remove or resume it when supported. Resume requires a local partial file and a valid server link, and remains available after Kodi restarts."
 msgstr ""

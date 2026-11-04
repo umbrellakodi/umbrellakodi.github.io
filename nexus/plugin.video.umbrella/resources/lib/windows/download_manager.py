@@ -62,7 +62,7 @@ class DownloadManager(xbmcgui.WindowXMLDialog):
                 listing.getListItem(index).setLabel2(status_text(row))
             self.rows = rows
             active = sum(row['status'] in ACTIVE for row in rows)
-            self.setProperty('download.message', '%s active | Select a download for details, cancellation or removal from the list.' % active
+            self.setProperty('download.message', '%s active | Select a download for details, resume, cancellation or removal.' % active
                              if rows else 'No downloads yet. Downloads you start will appear here.')
 
     def onClick(self, control_id):
@@ -80,7 +80,10 @@ class DownloadManager(xbmcgui.WindowXMLDialog):
                                     nolabel='Keep downloading', yeslabel='Cancel download'):
                 self.store.cancel(row['id'])
         else:
-            choice = control.dialog.select(row['title'], ['View details', 'Remove from list'])
+            options = ['View details', 'Remove from list']
+            if row.get('can_resume') and row['status'] in ('Failed', 'Interrupted', 'Cancelled'):
+                options.append('Resume download')
+            choice = control.dialog.select(row['title'], options)
             if choice == 0:
                 control.dialog.textviewer(row['title'], details)
             elif choice == 1:
@@ -90,6 +93,9 @@ class DownloadManager(xbmcgui.WindowXMLDialog):
                         self.render()
                 except Exception:
                     control.notification(title='Downloads', message='Unable to remove this history entry.', icon='ERROR')
+            elif choice == 2 and len(options) > 2:
+                from urllib.parse import quote_plus
+                control.execute('RunPlugin(plugin://plugin.video.umbrella/?action=downloadResume&id=%s)' % quote_plus(row['id']))
 
     def onAction(self, action):
         if action.getId() in (9, 10, 92):

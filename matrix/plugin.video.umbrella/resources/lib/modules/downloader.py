@@ -290,7 +290,16 @@ def _download_error(exc, phase):
 	return 'Download failed. The connection was interrupted.'
 
 
-def doDownload(url, dest, title, image, headers, no_confirm=False):
+def _check_resume_response(resp, offset, content, validator_name='', validator=''):
+	match = re.fullmatch(r'bytes (\d+)-(\d+)/(\d+)', resp.headers.get('Content-Range', ''))
+	if (resp.getcode() != 206 or not match or int(match[1]) != offset
+		or int(match[2]) != content - 1 or int(match[3]) != content):
+		raise ValueError('The server did not honor the resume request or the file changed. Partial file retained.')
+	if validator and resp.headers.get(validator_name) != validator:
+		raise ValueError('The remote file changed. Resume stopped to protect the partial file.')
+
+
+def doDownload(url, dest, title, image, headers, no_confirm=False, resume_job=None):
 	from time import monotonic
 	import xbmcvfs
 	from resources.lib.modules.download_manager import DownloadStore
@@ -298,30 +307,69 @@ def doDownload(url, dest, title, image, headers, no_confirm=False):
 	total, content, speed = 0, 0, 0
 	phase = 'network'
 	partial = dest + '.part'
+	validator_name, validator = '', ''
 	status, message = 'Failed', 'Download did not finish.'
 	try:
 		store = DownloadStore()
-		job = store.create(title, dest)
+		if resume_job:
+			saved = store.claim_resume(resume_job)
+			job = resume_job
+			url, dest, title, headers = saved['url'], saved['destination'], saved['title'], saved['headers']
+			partial = dest + '.part'
+			content = saved['expected_total']
+			validator_name, validator = saved['validator_name'], saved['validator']
+		else:
+			job = store.create(title, dest)
 		control.hide()
 		control.notification(title='Downloads', message='Connecting: ' + title, icon=image)
 		if not url: raise ValueError('No downloadable link was returned by the provider.')
 		if control.existsPath(dest): raise ValueError('The destination file already exists. Choose another name or remove it first.')
-		if control.existsPath(partial): raise ValueError('A partial download already exists at this destination. Move or remove the .part file before trying again.')
+		if not resume_job and control.existsPath(partial):
+			raise ValueError('A partial download already exists. Resume the original entry in Download Manager, or move/remove its .part file.')
 		headers = dict(headers or {})
 		headers.setdefault('User-Agent', 'Mozilla/5.0')
 		# Byte counts and Range offsets must refer to the actual file bytes.
 		headers['Accept-Encoding'] = 'identity'
 		headers.pop('Range', None)
-		resp = getResponse(url, headers, 0)
+		if resume_job:
+			phase = 'file'
+			# Native update mode preserves existing bytes. Kodi VFS "w" truncates
+			# files, so remote VFS-only destinations cannot safely resume here.
+			local_partial = control.transPath(partial)
+			if not os.path.isfile(local_partial):
+				raise ValueError('The partial file is missing or this destination does not support local file resume.')
+			output = open(local_partial, 'r+b')
+			total = os.fstat(output.fileno()).st_size
+			if not validator or not content or not 0 < total <= content:
+				raise ValueError('The partial file size or saved resume information is invalid. File retained.')
+			headers['If-Range'] = validator
+			phase = 'network'
+			offset = min(total, content - 1)
+			headers['Range'] = 'bytes=%d-' % offset
+			resp = getResponse(url, headers, offset)
+			if resp is None: raise ValueError('No response from the download server.')
+			_check_resume_response(resp, offset, content, validator_name, validator)
+			output.seek(total)
+		else:
+			resp = getResponse(url, headers, 0)
 		if resp is None: raise ValueError('No response from the download server.')
-		if resp.getcode() != 200: raise ValueError('The server did not return a complete file response.')
-		try: content = max(0, int(resp.headers.get('Content-Length', 0)))
-		except (TypeError, ValueError): content = 0
+		if not resume_job:
+			if resp.getcode() != 200: raise ValueError('The server did not return a complete file response.')
+			try: content = max(0, int(resp.headers.get('Content-Length', 0)))
+			except (TypeError, ValueError): content = 0
 		mime = resp.headers.get('Content-Type', '').lower()
 		if 'text/html' in mime or 'application/json' in mime:
 			raise ValueError('The server returned an error page instead of a video file.')
-		resumable = 'bytes' in resp.headers.get('Accept-Ranges', '').lower()
-		store.update(job, 'Awaiting confirmation', total=content)
+		resumable = bool(resume_job) or 'bytes' in resp.headers.get('Accept-Ranges', '').lower()
+		if not resume_job:
+			etag = resp.headers.get('ETag', '')
+			if etag and not etag.startswith('W/'):
+				validator_name, validator = 'ETag', etag
+			elif resp.headers.get('Last-Modified'):
+				validator_name, validator = 'Last-Modified', resp.headers['Last-Modified']
+			if resumable and content and validator:
+				store.save_request(job, url, headers, validator_name, validator, content)
+		store.update(job, 'Awaiting confirmation', total, content)
 		if not no_confirm:
 			size = '%.2f GB' % (content / 1073741824.0) if content else 'Unknown (progress will show downloaded bytes)'
 			if control.yesnoDialog('File size: ' + size, 'Path: ' + dest,
@@ -332,15 +380,17 @@ def doDownload(url, dest, title, image, headers, no_confirm=False):
 			status, message = 'Cancelled', 'Download cancelled.'
 			return False
 		phase = 'file'
-		output = control.openFile(partial, 'w')
-		store.update(job, 'Downloading', total=content)
-		control.notification(title='Downloads', message='Started: ' + title, icon=image)
+		if output is None: output = control.openFile(partial, 'w')
+		store.update(job, 'Downloading', total, content)
+		control.notification(title='Downloads', message=('Resumed: ' if resume_job else 'Started: ') + title, icon=image)
 		started = last_update = monotonic()
+		initial_bytes = total
 		retries = 0
 		while True:
 			if store.cancelled(job) or control.monitor.abortRequested():
 				status, message = 'Cancelled', 'Download cancelled. Partial file retained: ' + partial
 				return False
+			if content and total == content: break
 			phase = 'network'
 			try:
 				chunk = resp.read(256 * 1024)
@@ -352,12 +402,10 @@ def doDownload(url, dest, title, image, headers, no_confirm=False):
 				retries += 1
 				store.update(job, 'Retrying', total, content, message='Reconnecting (%s/3)' % retries)
 				resp.close()
+				if validator: headers['If-Range'] = validator
 				resp = getResponse(url, headers, total)
 				if resp is None: raise ValueError('Unable to reconnect to the download server.')
-				match = re.fullmatch(r'bytes (\d+)-(\d+)/(\d+)', resp.headers.get('Content-Range', ''))
-				if (resp.getcode() != 206 or not match or int(match[1]) != total
-					or int(match[2]) != content - 1 or int(match[3]) != content):
-					raise ValueError('The server did not honor the resume request. Partial file retained: ' + partial)
+				_check_resume_response(resp, total, content, validator_name, validator)
 				continue
 			if not chunk:
 				if total == 0: raise ValueError('The server returned an empty file.')
@@ -370,7 +418,7 @@ def doDownload(url, dest, title, image, headers, no_confirm=False):
 				raise IOError('Short write')
 			total += len(chunk)
 			now = monotonic()
-			speed = total / max(now - started, 0.001)
+			speed = (total - initial_bytes) / max(now - started, 0.001)
 			if now - last_update >= 1:
 				store.update(job, 'Downloading', total, content, speed)
 				last_update = now

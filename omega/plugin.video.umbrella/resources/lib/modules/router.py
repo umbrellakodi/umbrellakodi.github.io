@@ -1233,6 +1233,9 @@ def router(argv2):
 		if action == 'downloadManager':
 			from resources.lib.modules.download_manager import open_manager
 			open_manager()
+		elif action == 'downloadResume':
+			from resources.lib.modules.downloader import doDownload
+			doDownload('', '', 'Download', '', {}, no_confirm=True, resume_job=params.get('id'))
 		elif action == 'downloadNavigator':
 			from resources.lib.menus import navigator
 			navigator.Navigator().downloads(folderName=folderName)

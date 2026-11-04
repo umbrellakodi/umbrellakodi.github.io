@@ -1,4 +1,5 @@
-[B]Update - v6.7.743 - Nov 3rd, 2026[/B]
+[B]Update - v6.7.744 - Nov 3rd, 2026[/B]
+--[Feature] Added Resume download in Download Manager for supported interrupted transfers, including after Kodi restarts. Remote file checks protect existing partial data.
 --[Fix] Added Remove from list for finished Download Manager entries, including failed downloads, while preserving downloaded and partial files.
 --[Enhancement] Bundled network logos with the add-on so network menus no longer need Imgur to load their artwork.
 --[Feature] Added Download Manager in Downloads settings with live progress, transfer speeds, recent results and cancellation.

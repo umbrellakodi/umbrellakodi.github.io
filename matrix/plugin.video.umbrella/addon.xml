@@ -1,4 +1,4 @@
-<addon id="plugin.video.umbrella" name="Umbrella" provider-name="Umbrella" version="6.7.743">
+<addon id="plugin.video.umbrella" name="Umbrella" provider-name="Umbrella" version="6.7.744">
 	<requires>
 		<import addon="xbmc.python" version="3.0.0" />
 		<import addon="script.module.requests" />
@@ -270,9 +270,8 @@
 			<screenshot>resources/screenshots/screenshot003.jpg</screenshot>
 		</assets>
 		<news>
-[B]Update - v6.7.743 - Nov 3rd, 2026[/B]
---[Fix] Added Remove from list for finished Download Manager entries, including failed downloads, while preserving downloaded and partial files.
---[Enhancement] Bundled network logos with the add-on so network menus no longer need Imgur to load their artwork.
+[B]Update - v6.7.744 - Nov 3rd, 2026[/B]
+--[Feature] Added Resume download in Download Manager for supported interrupted transfers, including after Kodi restarts. Remote file checks protect existing partial data.
 		</news>
 	</extension>
 
