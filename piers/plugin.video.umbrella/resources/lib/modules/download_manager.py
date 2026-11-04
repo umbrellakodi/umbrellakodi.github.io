@@ -77,6 +77,13 @@ class DownloadStore:
                 ORDER BY CASE WHEN status IN ('Connecting','Awaiting confirmation','Downloading','Retrying','Cancelling')
                 THEN 0 ELSE 1 END, created DESC LIMIT 200''')]
 
+    def remove(self, job):
+        """Remove a finished history entry without touching its files."""
+        with closing(self.connect()) as con, con:
+            result = con.execute('''DELETE FROM downloads WHERE id=?
+                AND status IN ('Failed', 'Cancelled', 'Interrupted', 'Completed')''', (job,))
+            return result.rowcount > 0
+
 
 def open_manager():
     from resources.lib.modules import control

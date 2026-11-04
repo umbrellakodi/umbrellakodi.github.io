@@ -45,8 +45,8 @@ class DownloadManager(xbmcgui.WindowXMLDialog):
                 self.setProperty('download.message', 'Unable to refresh download history.')
 
     def render(self):
-        rows = self.store.rows()
         with self.lock:
+            rows = self.store.rows()
             listing = self.getControl(100)
             old_ids = [row['id'] for row in self.rows]
             new_ids = [row['id'] for row in rows]
@@ -56,11 +56,13 @@ class DownloadManager(xbmcgui.WindowXMLDialog):
                 listing.reset()
                 listing.addItems([control.item(label=row['title'], offscreen=True) for row in rows])
                 if selected_id in new_ids: listing.selectItem(new_ids.index(selected_id))
+                elif rows: listing.selectItem(min(max(selected, 0), len(rows) - 1))
+                elif old_ids: self.setFocusId(101)
             for index, row in enumerate(rows):
                 listing.getListItem(index).setLabel2(status_text(row))
             self.rows = rows
             active = sum(row['status'] in ACTIVE for row in rows)
-            self.setProperty('download.message', '%s active | Select a download for details or cancellation.' % active
+            self.setProperty('download.message', '%s active | Select a download for details, cancellation or removal from the list.' % active
                              if rows else 'No downloads yet. Downloads you start will appear here.')
 
     def onClick(self, control_id):
@@ -78,7 +80,16 @@ class DownloadManager(xbmcgui.WindowXMLDialog):
                                     nolabel='Keep downloading', yeslabel='Cancel download'):
                 self.store.cancel(row['id'])
         else:
-            control.dialog.textviewer(row['title'], details)
+            choice = control.dialog.select(row['title'], ['View details', 'Remove from list'])
+            if choice == 0:
+                control.dialog.textviewer(row['title'], details)
+            elif choice == 1:
+                try:
+                    with self.lock:
+                        self.store.remove(row['id'])
+                        self.render()
+                except Exception:
+                    control.notification(title='Downloads', message='Unable to remove this history entry.', icon='ERROR')
 
     def onAction(self, action):
         if action.getId() in (9, 10, 92):
