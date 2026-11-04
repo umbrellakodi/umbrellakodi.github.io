@@ -7254,3 +7254,11 @@ msgstr ""
 msgctxt "#40866"
 msgid "TV Show"
 msgstr ""
+
+msgctxt "#40867"
+msgid "Download Manager"
+msgstr ""
+
+msgctxt "#40868"
+msgid "View active downloads, progress, speed and recent results. Select an active download to cancel it. Incomplete files are kept with a .part extension."
+msgstr ""

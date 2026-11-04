@@ -56,17 +56,29 @@ def get(function, duration, *args):
 	:param duration: Duration of validity of cache in hours
 	:param args: Optional arguments for the provided function
 	"""
+	from time import monotonic
+	from resources.lib.modules import performance
+	started = monotonic()
+	outcome = 'error'
 	try:
 		key = _hash_function(function, args)
+		lookup_started = monotonic()
 		cache_result = cache_get(key)
+		performance.record('cache-lookup', lookup_started, getattr(function, '__name__', 'callable'))
 		if cache_result:
 			from resources.lib.modules import log_utils
 			try: result = literal_eval(cache_result['value'])
 			except: result = None
 			if _is_cache_valid(cache_result['date'], duration):
+				outcome = 'hit'
 				return result
 
-		fresh_result = repr(function(*args)) # may need a try-except block for server timeouts
+		outcome = 'expired' if cache_result else 'miss'
+		fetch_started = monotonic()
+		try:
+			fresh_result = repr(function(*args)) # may need a try-except block for server timeouts
+		finally:
+			performance.record('cache-fetch', fetch_started, getattr(function, '__name__', 'callable'))
 
 		if cache_result and (result and len(result) == 1) and fresh_result == '[]': # fix for syncSeason mark unwatched season when it's the last item remaining
 			if isinstance(result[0], str) and result[0].isdigit():
@@ -81,6 +93,7 @@ def get(function, duration, *args):
 		except: pass
 
 		if invalid: # If the cache is old, but we didn't get "fresh_result", return the old cache
+			outcome = 'stale-fallback' if cache_result else 'empty-or-failed'
 			if cache_result: return result
 			else: return None # do not cache_insert() None type, sometimes servers just down momentarily
 		else:
@@ -90,9 +103,12 @@ def get(function, duration, *args):
 			else: cache_insert(key, fresh_result)
 			return literal_eval(fresh_result)
 	except:
+		outcome = 'error'
 		from resources.lib.modules import log_utils
 		log_utils.error()
 		return None
+	finally:
+		performance.record('cache', started, getattr(function, '__name__', 'callable'), outcome)
 
 def _is_cache_valid(cached_time, cache_timeout):
 	now = int(time())
@@ -189,6 +205,10 @@ def _generate_md5(*args):
 	return str(md5_hash.hexdigest())
 
 def cache_clear(flush_only=False):
+	try:
+		from resources.lib.modules import trakt_activities
+		trakt_activities.invalidate()
+	except Exception: pass
 	cleared = False
 	dbcon = None
 	dbcur = None

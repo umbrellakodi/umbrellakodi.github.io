@@ -62,6 +62,14 @@ def traktVerificationURL(device_code):
 
 
 def getTrakt(url, post=None, extended=False, silent=False, reauth_attempts=0, method=None):
+	from time import monotonic
+	request_started = monotonic()
+	activity_write = post is not None or method == 'DELETE'
+	if activity_write:
+		try:
+			from resources.lib.modules import trakt_activities
+			trakt_activities.invalidate()
+		except Exception: pass
 	try:
 		global _last_request_time
 		if time.time() - _last_request_time > 300:  # flush stale pooled connections after 5 min idle
@@ -134,6 +142,17 @@ def getTrakt(url, post=None, extended=False, silent=False, reauth_attempts=0, me
 		log_utils.log_force('TRAKT: getTrakt exception url=%s error=%s' % (url, e), level=log_utils.LOGWARNING)
 		try: log_utils.error('getTrakt Error: ')
 		except: pass
+	finally:
+		try:
+			from resources.lib.modules import performance
+			performance.record('trakt-request', request_started, 'write' if activity_write else 'read',
+				'http-%s' % locals().get('status_code', 'failed'))
+		except Exception: pass
+		if activity_write:
+			try:
+				from resources.lib.modules import trakt_activities
+				trakt_activities.invalidate()
+			except Exception: pass
 	return None
 
 def error_handler(url, response, status_code, silent=False):
@@ -149,6 +168,10 @@ def error_handler(url, response, status_code, silent=False):
 		log_utils.log('getTrakt() (404:NOT FOUND): URL=(%s): %s' % (url, response_text), level=log_utils.LOGWARNING)
 
 def getTraktAsJson(url, post=None, silent=False):
+	from resources.lib.modules import performance
+	started = time.monotonic()
+	is_activity = url in ('/sync/last_activities', 'sync/last_activities', BASE_URL + '/sync/last_activities') and post is None
+	outcome = 'failed'
 	try:
 		res_headers = {}
 		r = getTrakt(url=url, post=post, extended=True, silent=silent)
@@ -158,13 +181,18 @@ def getTraktAsJson(url, post=None, silent=False):
 		r = r.json()
 		if 'X-Sort-By' in res_headers and 'X-Sort-How' in res_headers:
 			r = sort_list(res_headers['X-Sort-By'], res_headers['X-Sort-How'], r)
+		outcome = 'success'
 		return r
 	except Exception as e:
 		log_utils.log('TRAKT: Error in getTraktAsJson: %s' % str(e), level=log_utils.LOGWARNING)
 		return None
+	finally:
+		if is_activity: performance.record('trakt-activities', started, outcome=outcome)
 
 def get_all_pages(url, silent=False):
 	"""Fetch all pages from a paginated Trakt endpoint and return combined results."""
+	from time import monotonic
+	from resources.lib.modules import performance
 	try:
 		# Strip page= and limit= params while preserving all other query params (e.g. extended=full)
 		try:
@@ -182,7 +210,9 @@ def get_all_pages(url, silent=False):
 
 		while True:
 			page_url = url + sep + 'page=%d&limit=%d' % (page, limit)
+			page_started = monotonic()
 			response = getTrakt(page_url, silent=silent)
+			performance.record('trakt-page', page_started, 'page_%s' % page, 'success' if response else 'failed')
 			if not response:
 				log_utils.log('TRAKT: get_all_pages - Incomplete response on page %s for URL: %s' % (page, url), level=log_utils.LOGWARNING)
 				return None
@@ -669,6 +699,8 @@ def unwatch(content_type, name, imdb=None, tvdb=None, season=None, episode=None,
 
 def like_list(list_owner, list_name, list_id):
 	try:
+		from resources.lib.modules import trakt_activities
+		trakt_activities.invalidate()
 		headers['Authorization'] = 'Bearer %s' % trakt_token
 		# resp_code = client._basic_request('https://api.trakt.tv/users/%s/lists/%s/like' % (list_owner, list_id), headers=headers, method='POST', ret_code=True)
 		resp_code = session.post('https://api.trakt.tv/users/%s/lists/%s/like' % (list_owner, list_id), headers=headers).status_code
@@ -678,9 +710,14 @@ def like_list(list_owner, list_name, list_id):
 		else: control.notification(title=32315, message='Failed to Like list %s' % list_name)
 		control.refresh()
 	except: log_utils.error()
+	finally:
+		from resources.lib.modules import trakt_activities
+		trakt_activities.invalidate()
 
 def unlike_list(list_owner, list_name, list_id):
 	try:
+		from resources.lib.modules import trakt_activities
+		trakt_activities.invalidate()
 		headers['Authorization'] = 'Bearer %s' % trakt_token
 		# resp_code = client._basic_request('https://api.trakt.tv/users/%s/lists/%s/like' % (list_owner, list_id), headers=headers, method='DELETE', ret_code=True)
 		resp_code = session.delete('https://api.trakt.tv/users/%s/lists/%s/like' % (list_owner, list_id), headers=headers).status_code
@@ -690,11 +727,16 @@ def unlike_list(list_owner, list_name, list_id):
 		else: control.notification(title=32315, message='Failed to UnLike list %s' % list_name)
 		control.refresh()
 	except: log_utils.error()
+	finally:
+		from resources.lib.modules import trakt_activities
+		trakt_activities.invalidate()
 
 def remove_liked_lists(trakt_ids):
 	if not trakt_ids: return
 	success = None
 	try:
+		from resources.lib.modules import trakt_activities
+		trakt_activities.invalidate()
 		headers['Authorization'] = 'Bearer %s' % trakt_token
 		for id in trakt_ids:
 			list_owner = id.get('list_owner')
@@ -709,6 +751,9 @@ def remove_liked_lists(trakt_ids):
 			control.sleep(1000)
 		control.refresh()
 	except: log_utils.error()
+	finally:
+		from resources.lib.modules import trakt_activities
+		trakt_activities.invalidate()
 
 def rate(imdb=None, tvdb=None, season=None, episode=None):
 	return _rating(action='rate', imdb=imdb, tvdb=tvdb, season=season, episode=episode)
@@ -986,9 +1031,58 @@ def slug(name):
 	name = re.sub(r'--+', '-', name)
 	return name
 
-def getActivity():
+def _get_browse_activities(token, client_id, account):
+	"""One short foreground probe; never use the sync transport's retry loop."""
+	from resources.lib.modules import performance, trakt_activities
+	started = time.monotonic()
+	outcome = 'failed'
 	try:
-		i = getTraktAsJson('/sync/last_activities')
+		request_headers = {'Content-Type': 'application/json', 'trakt-api-key': client_id,
+			'trakt-api-version': '2', 'Authorization': 'Bearer %s' % token}
+		with requests.Session() as probe:
+			probe.mount(BASE_URL, HTTPAdapter(max_retries=0))
+			response = probe.get(BASE_URL + '/sync/last_activities', headers=request_headers,
+				timeout=(2, 3), allow_redirects=False)
+			if response.status_code == 429:
+				try: delay = max(0, int(response.headers.get('Retry-After', '15')))
+				except (ValueError, TypeError):
+					try:
+						from email.utils import parsedate_to_datetime
+						from math import ceil
+						delay = max(0, ceil(parsedate_to_datetime(response.headers['Retry-After']).timestamp() - time.time()))
+					except (ValueError, TypeError, KeyError, AttributeError, OverflowError): delay = 15
+				trakt_activities.defer(account, delay)
+				outcome = 'throttled'
+				return None
+			if response.status_code != 200:
+				# In particular, do not enter a potentially long OAuth refresh here.
+				# Authenticated sync and explicit authorization retain that behavior.
+				outcome = 'http-%s' % response.status_code
+				return None
+			result = response.json()
+			outcome = 'success'
+			return result
+	except (requests.exceptions.RequestException, ValueError):
+		return None
+	finally:
+		performance.record('trakt-browse-probe', started, outcome=outcome)
+
+
+def getBrowseActivity(fresh=False):
+	"""Menu-only reuse; sync helpers and direct API calls remain authoritative."""
+	from resources.lib.modules import trakt_activities
+	if not getTraktCredentialsInfo(): return 0
+	token = control.homeWindow.getProperty(_TRAKT_TOKEN_PROP) or getSetting('trakt.user.token')
+	client_id = traktClientID()
+	account = jsdumps([getSetting('trakt.user.name').strip(), token, client_id])
+	fresh = fresh or trakt_activities.is_visible_reload()
+	activities = trakt_activities.get(lambda: _get_browse_activities(token, client_id, account), account, fresh=fresh)
+	return getActivity(activities) if activities else 0
+
+
+def getActivity(activities=None):
+	try:
+		i = activities if activities is not None else getTraktAsJson('/sync/last_activities')
 		if not i: return 0
 		activity = []
 		activity.append(i['movies']['watched_at']) # added 8/30/20

@@ -1,5 +1,5 @@
 <?xml version='1.0' encoding='utf-8'?>
-<addons><addon id="plugin.video.umbrella" name="Umbrella" provider-name="Umbrella" version="6.7.741">
+<addons><addon id="plugin.video.umbrella" name="Umbrella" provider-name="Umbrella" version="6.7.742">
 	<requires>
 		<import addon="xbmc.python" version="3.0.0" />
 		<import addon="script.module.requests" />
@@ -271,8 +271,17 @@
 			<screenshot>resources/screenshots/screenshot003.jpg</screenshot>
 		</assets>
 		<news>
-[B]Update - v6.7.741 - Nov 2nd, 2026[/B]
---[Fix] Restored artwork views for combined movie and TV search in skins such as Nimbus and corrected result labels to Movie and TV Show.
+[B]Update - v6.7.742 - Nov 3rd, 2026[/B]
+--[Feature] Added Download Manager in Downloads settings with live progress, transfer speeds, recent results and cancellation.
+--[Fix] Improved download handling.
+--[Enhancement] Improved menu loading by checking provider accounts and library availability only when needed.
+--[Enhancement] Reduced repeated metadata work and unnecessary delays when opening movie and TV results.
+--[Fix] Prevented foreground Trakt activity checks from entering long retry or rate-limit waits when the service is unavailable.
+--[Fix] Improved saved-view restoration, avoiding long waits and preventing background or widget requests.
+--[Fix] Prevented an Umbrella startup error when Kodi's video library returns an error.
+--[Enhancement] Reused available TMDb IDs when building Scrob TV watched counts to avoid unnecessary lookups.
+--[Fix] Removed account credentials from RD token-refresh debug messages.
+--[Enhancement] Added debug timings to help diagnose slow menus, list requests and metadata loading.
 		</news>
 	</extension>
 

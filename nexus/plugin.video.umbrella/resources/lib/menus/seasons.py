@@ -3,6 +3,9 @@
 	Umbrella Add-on
 """
 
+from time import monotonic as _import_clock
+_module_import_started = _import_clock()
+
 from datetime import datetime
 from json import dumps as jsdumps, loads as jsloads
 import re
@@ -142,183 +145,192 @@ class Seasons:
 		return list
 
 	def seasonDirectory(self, items):
-		from sys import argv # some functions like ActivateWindow() throw invalid handle less this is imported here.
-		if not items: # with reuselanguageinvoker on an empty directory must be loaded, do not use sys.exit()
-			control.hide() ; control.notification(title=32054, message=33049)
-		sysaddon, syshandle = 'plugin://plugin.video.umbrella/', int(argv[1])
-		is_widget = 'plugin' not in control.infoLabel('Container.PluginName')
-		settingFanart = getSetting('fanart') == 'true'
-		addonPoster, addonFanart, addonBanner = control.addonPoster(), control.addonFanart(), control.addonBanner()
-		_indicators_alt = getSetting('indicators.alt')
-		_trakt_marks = self.traktCredentials and (_indicators_alt == '1' or getSetting('trakt.markwatched') == 'true')
-		_simkl_marks = self.simklCredentials and (_indicators_alt == '2' or getSetting('simkl.markwatched') == 'true')
-		_mdblist_marks = self.mdblist_authed and (_indicators_alt == '3' or getSetting('mdblist.markwatched') == 'true')
-		if _indicators_alt == '0':
-			watchedMenu, unwatchedMenu = getLS(32066), getLS(32067)
-		elif sum([bool(_trakt_marks), bool(_simkl_marks), bool(_mdblist_marks)]) > 1:
-			watchedMenu, unwatchedMenu = getLS(40564), getLS(40565)
-		elif _trakt_marks:
-			watchedMenu, unwatchedMenu = getLS(32068), getLS(32069)
-		elif _simkl_marks:
-			watchedMenu, unwatchedMenu = getLS(40554), getLS(40555)
-		elif _mdblist_marks:
-			watchedMenu, unwatchedMenu = getLS(40631), getLS(40632)
-		else:
-			watchedMenu, unwatchedMenu = getLS(32066), getLS(32067)
-		traktManagerMenu, queueMenu = '[COLOR %s]Trakt Manager[/COLOR]' % self.highlight_color, getLS(32065)
-		simklManagerMenu = '[COLOR %s]Simkl Manager[/COLOR]' % self.highlight_color
-		mdblistManagerMenu = '[COLOR %s]MDBList Manager[/COLOR]' % self.highlight_color
-		customManagerMenu = '[COLOR %s]%s Manager[/COLOR]' % (self.highlight_color, customtrakt.getCustomServiceName())
-		floppyManagerMenu = '[COLOR %s]Floppy Manager[/COLOR]' % self.highlight_color
-		scrobManagerMenu = '[COLOR %s]Scrob Manager[/COLOR]' % self.highlight_color
-		punchplayManagerMenu = '[COLOR %s]PunchPlay Manager[/COLOR]' % self.highlight_color
-		showPlaylistMenu, clearPlaylistMenu = getLS(35517), getLS(35516)
-		labelMenu, playRandom = getLS(32055), getLS(32535)
-		addToLibrary = getLS(32551)
-		try: multi = [i['tvshowtitle'] for i in items]
-		except: multi = []
-		multi = True if len([x for y,x in enumerate(multi) if x not in multi[:y]]) > 1 else False
-		if items:
-			imdb, tmdb, tvdb = items[0]['imdb'], items[0]['tmdb'], items[0]['tvdb']
-			try: indicators = getSeasonIndicators(imdb, tvdb, tmdb=tmdb, tmdb_total_aired=items[0].get('total_aired_episodes'))
-			except: indicators = None
-		for i in items:
-			try:
-				if not self.showunaired and i.get('unaired', '') == 'true': continue
-				title, year, season = i.get('tvshowtitle'), i.get('year', ''), i.get('season')
-				label = '%s %s' % (labelMenu, season)
+		from time import monotonic
+		from resources.lib.modules import performance
+		stage_started = monotonic()
+		try:
+			from sys import argv # some functions like ActivateWindow() throw invalid handle less this is imported here.
+			if not items: # with reuselanguageinvoker on an empty directory must be loaded, do not use sys.exit()
+				control.hide() ; control.notification(title=32054, message=33049)
+			sysaddon, syshandle = 'plugin://plugin.video.umbrella/', int(argv[1])
+			is_widget = 'plugin' not in control.infoLabel('Container.PluginName')
+			settingFanart = getSetting('fanart') == 'true'
+			addonPoster, addonFanart, addonBanner = control.addonPoster(), control.addonFanart(), control.addonBanner()
+			_indicators_alt = getSetting('indicators.alt')
+			_trakt_marks = self.traktCredentials and (_indicators_alt == '1' or getSetting('trakt.markwatched') == 'true')
+			_simkl_marks = self.simklCredentials and (_indicators_alt == '2' or getSetting('simkl.markwatched') == 'true')
+			_mdblist_marks = self.mdblist_authed and (_indicators_alt == '3' or getSetting('mdblist.markwatched') == 'true')
+			if _indicators_alt == '0':
+				watchedMenu, unwatchedMenu = getLS(32066), getLS(32067)
+			elif sum([bool(_trakt_marks), bool(_simkl_marks), bool(_mdblist_marks)]) > 1:
+				watchedMenu, unwatchedMenu = getLS(40564), getLS(40565)
+			elif _trakt_marks:
+				watchedMenu, unwatchedMenu = getLS(32068), getLS(32069)
+			elif _simkl_marks:
+				watchedMenu, unwatchedMenu = getLS(40554), getLS(40555)
+			elif _mdblist_marks:
+				watchedMenu, unwatchedMenu = getLS(40631), getLS(40632)
+			else:
+				watchedMenu, unwatchedMenu = getLS(32066), getLS(32067)
+			traktManagerMenu, queueMenu = '[COLOR %s]Trakt Manager[/COLOR]' % self.highlight_color, getLS(32065)
+			simklManagerMenu = '[COLOR %s]Simkl Manager[/COLOR]' % self.highlight_color
+			mdblistManagerMenu = '[COLOR %s]MDBList Manager[/COLOR]' % self.highlight_color
+			customManagerMenu = '[COLOR %s]%s Manager[/COLOR]' % (self.highlight_color, customtrakt.getCustomServiceName())
+			floppyManagerMenu = '[COLOR %s]Floppy Manager[/COLOR]' % self.highlight_color
+			scrobManagerMenu = '[COLOR %s]Scrob Manager[/COLOR]' % self.highlight_color
+			punchplayManagerMenu = '[COLOR %s]PunchPlay Manager[/COLOR]' % self.highlight_color
+			showPlaylistMenu, clearPlaylistMenu = getLS(35517), getLS(35516)
+			labelMenu, playRandom = getLS(32055), getLS(32535)
+			addToLibrary = getLS(32551)
+			try: multi = [i['tvshowtitle'] for i in items]
+			except: multi = []
+			multi = True if len([x for y,x in enumerate(multi) if x not in multi[:y]]) > 1 else False
+			if items:
+				imdb, tmdb, tvdb = items[0]['imdb'], items[0]['tmdb'], items[0]['tvdb']
+				try: indicators = getSeasonIndicators(imdb, tvdb, tmdb=tmdb, tmdb_total_aired=items[0].get('total_aired_episodes'))
+				except: indicators = None
+			for i in items:
 				try:
-					if i['unaired'] == 'true': label = '[COLOR %s][I]%s[/I][/COLOR]' % (self.unairedcolor, label)
-				except: pass
-				systitle = quote_plus(title)
-				meta = dict((k, v) for k, v in iter(i.items()) if v is not None and v != '')
-				# setting mediatype to "season" causes CM "Infomation" and "play trailer" to not be available in some skins
-				meta.update({'code': imdb, 'imdbnumber': imdb, 'mediatype': 'season', 'tag': [imdb, tmdb]}) # "tag" and "tagline" for movies only, but works in my skin mod so leave
-				try: meta.update({'genre': cleangenre.lang(meta['genre'], self.lang)})
-				except: pass
-				poster = meta.get('tvshow.poster') or addonPoster # tvshow.poster
-				if self.prefer_tmdbArt: 
-					season_poster = meta.get('season_poster') or meta.get('season_poster2') or poster
-				else: 
-					season_poster = meta.get('season_poster2') or meta.get('season_poster') or poster
-				fanart = ''
-				if settingFanart: fanart = meta.get('fanart') or addonFanart
-				if settingFanart: landscape = meta.get('landscape2')
-				else: landscape = meta.get('landscape')
-				if self.prefer_fanArt:
-					if fanart: thumb = fanart or season_poster
-					else:
-						thumb = meta.get('fanart') or season_poster
-				else:
-					thumb = season_poster
-				thumb = season_poster
-				icon = meta.get('icon') or poster
-				banner = meta.get('banner') or addonBanner
-				art = {}
-				useCustomArtwork = customArtwork.fetch_season(imdb, tmdb, tvdb, season) #new custom artwork database check
-				clearart = meta.get('clearart', '')
-				clearlogo = meta.get('clearlogo','')
-				if useCustomArtwork:
-					allowed_keys = {"poster", "fanart", "landscape", "banner", "clearart", "clearlogo"}
-					for key in allowed_keys:
-						value = useCustomArtwork[0].get(key)
-						if value not in (None, "", " "):  # Ignore empty values. ugly but local() will not change values
-							if key == 'poster': poster = value
-							if key == 'fanart': fanart = value
-							if key == 'landscape': landscape = value
-							if key == 'banner': banner = value
-							if key == 'clearart': clearart = value
-							if key == 'clearlogo': clearlogo = value
-					if "poster" in useCustomArtwork[0] and useCustomArtwork[0].get("poster") not in (None, "", " "):
-						thumb = useCustomArtwork[0].get("poster")
-						season_poster = useCustomArtwork[0].get("poster")
-				art.update({'poster': season_poster, 'tvshow.poster': poster, 'season.poster': season_poster, 'fanart': fanart, 'icon': icon, 'thumb': thumb, 'banner': banner,
-						'tvshow.clearlogo': clearlogo, 'clearart': clearart, 'tvshow.clearart': clearart, 'landscape': landscape})
-				# for k in ('poster2', 'poster3', 'fanart2', 'fanart3', 'banner2', 'banner3'): meta.pop(k, None)
-				meta.update({'poster': poster, 'fanart': fanart, 'banner': banner, 'thumb': thumb, 'season_poster': season_poster, 'icon': icon, 'title': label})
-				sysmeta = quote_plus(jsdumps(meta))
-				url = '%s?action=episodes&tvshowtitle=%s&year=%s&imdb=%s&tmdb=%s&tvdb=%s&meta=%s&season=%s' % (sysaddon, systitle, year, imdb, tmdb, tvdb, sysmeta, season)
-####-Context Menu and Overlays-####
-				cm = []
-				try:
-					watched = getSeasonOverlay(indicators[0], imdb, tvdb, season) == '5' if indicators else False
-					if self.traktCredentials:
-						cm.append((traktManagerMenu, 'RunPlugin(%s?action=tools_traktManager&name=%s&imdb=%s&tmdb=%s&tvdb=%s&season=%s&watched=%s)' % (sysaddon, systitle, imdb, tmdb, tvdb, season, watched)))
-					if self.simklCredentials:
-						cm.append((simklManagerMenu, 'RunPlugin(%s?action=tools_simklManager&name=%s&imdb=%s&tmdb=%s&tvdb=%s&season=%s&watched=%s)' % (sysaddon, systitle, imdb, tmdb, tvdb, season, watched)))
-					if self.mdblist_authed:
-						cm.append((mdblistManagerMenu, 'RunPlugin(%s?action=tools_mdbWatchlist&name=%s&imdb=%s&tvdb=%s&tmdb=%s&season=%s&watched=%s)' % (sysaddon, systitle, imdb, tvdb, tmdb, season, watched)))
-					if self.customCredentials:
-						cm.append((customManagerMenu, 'RunPlugin(%s?action=tools_customManager&name=%s&imdb=%s&tvdb=%s&season=%s&watched=%s)' % (sysaddon, systitle, imdb, tvdb, season, watched)))
-					if self.floppyCredentials:
-						cm.append((floppyManagerMenu, 'RunPlugin(%s?action=tools_floppyManager&name=%s&imdb=%s&tvdb=%s&season=%s&watched=%s)' % (sysaddon, systitle, imdb, tvdb, season, watched)))
-					if self.scrobCredentials:
-						cm.append((scrobManagerMenu, 'RunPlugin(%s?action=tools_scrobManager&name=%s&imdb=%s&tvdb=%s&season=%s&watched=%s)' % (sysaddon, systitle, imdb, tvdb, season, watched)))
-					if self.punchplayCredentials:
-						cm.append((punchplayManagerMenu, 'RunPlugin(%s?action=tools_punchplayManager&name=%s&imdb=%s&tvdb=%s&season=%s&watched=%s)' % (sysaddon, systitle, imdb, tvdb, season, watched)))
-					if watched:
-						meta.update({'playcount': 1, 'overlay': 5})
-						cm.append((unwatchedMenu, 'RunPlugin(%s?action=playcount_TVShow&name=%s&imdb=%s&tmdb=%s&tvdb=%s&season=%s&query=4)' % (sysaddon, systitle, imdb, tmdb, tvdb, season)))
+					if not self.showunaired and i.get('unaired', '') == 'true': continue
+					title, year, season = i.get('tvshowtitle'), i.get('year', ''), i.get('season')
+					label = '%s %s' % (labelMenu, season)
+					try:
+						if i['unaired'] == 'true': label = '[COLOR %s][I]%s[/I][/COLOR]' % (self.unairedcolor, label)
+					except: pass
+					systitle = quote_plus(title)
+					meta = dict((k, v) for k, v in iter(i.items()) if v is not None and v != '')
+					# setting mediatype to "season" causes CM "Infomation" and "play trailer" to not be available in some skins
+					meta.update({'code': imdb, 'imdbnumber': imdb, 'mediatype': 'season', 'tag': [imdb, tmdb]}) # "tag" and "tagline" for movies only, but works in my skin mod so leave
+					try: meta.update({'genre': cleangenre.lang(meta['genre'], self.lang)})
+					except: pass
+					poster = meta.get('tvshow.poster') or addonPoster # tvshow.poster
+					if self.prefer_tmdbArt: 
+						season_poster = meta.get('season_poster') or meta.get('season_poster2') or poster
 					else: 
-						meta.update({'playcount': 0, 'overlay': 4})
-						cm.append((watchedMenu, 'RunPlugin(%s?action=playcount_TVShow&name=%s&imdb=%s&tmdb=%s&tvdb=%s&season=%s&query=5)' % (sysaddon, systitle, imdb, tmdb, tvdb, season)))
-				except: pass
-				cm.append(('Customize Artwork', 'RunPlugin(%s?action=customizeArt&mediatype=%s&imdb=%s&tmdb=%s&tvdb=%s&poster=%s&fanart=%s&landscape=%s&banner=%s&clearart=%s&clearlogo=%s&season=%s)' % (sysaddon, 'season', imdb, tmdb, tvdb, poster, fanart, landscape, banner, clearart, clearlogo, season)))
-				cm.append((playRandom, 'RunPlugin(%s?action=play_Random&rtype=episode&tvshowtitle=%s&year=%s&imdb=%s&tmdb=%s&tvdb=%s&meta=%s&season=%s)' % (sysaddon, systitle, year, imdb, tmdb, tvdb, sysmeta, season)))
-				# cm.append((queueMenu, 'RunPlugin(%s?action=playlist_QueueItem&name=%s)' % (sysaddon, systitle)))
-				# cm.append((showPlaylistMenu, 'RunPlugin(%s?action=playlist_Show)' % sysaddon))
-				# cm.append((clearPlaylistMenu, 'RunPlugin(%s?action=playlist_Clear)' % sysaddon))
-				cm.append((addToLibrary, 'RunPlugin(%s?action=library_tvshowToLibrary&tvshowtitle=%s&year=%s&imdb=%s&tmdb=%s&tvdb=%s)' % (sysaddon, systitle, year, imdb, tmdb, tvdb)))
-				cm.append(('[COLOR %s]Umbrella Settings[/COLOR]' % self.highlight_color, 'RunPlugin(%s?action=tools_openSettings)' % sysaddon))
-####################################
-				item = control.item(label=label, offscreen=True)
-				#if 'castandart' in i: item.setCast(i['castandart'])
-				if 'castandart' in i: meta.update({"cast": ['castandart']}) #changed for kodi20 setinfo method
-				item.setArt(art)
-				try:
-					count = getSeasonCount(imdb, tvdb, season, tmdb=tmdb)
-					if count:
-						item.setProperties({'WatchedEpisodes': str(count['watched']), 'UnWatchedEpisodes': str(count['unwatched'])})
-						item.setProperties({'TotalSeasons': str(meta.get('total_seasons', '')), 'TotalEpisodes': str(count['total'])})
-						item.setProperty('WatchedProgress', str(int(float(count['watched']) / float(count['total']) * 100)))
-					else:
-						if meta.get('status') != 'Returning Series' or (meta.get('status') == 'Returning Series' and meta.get('last_episode_to_air', {}).get('season_number') > int(season)):
-							if control.getKodiVersion() >= 20:
-								item.setProperties({'UnWatchedEpisodes': str(meta.get('counts', {}).get(str(season), ''))})
-							else:
-								item.setProperties({'WatchedEpisodes': '0', 'UnWatchedEpisodes': str(meta.get('counts', {}).get(str(season), ''))})
-							item.setProperties({'TotalSeasons': str(meta.get('total_seasons', '')), 'TotalEpisodes': str(meta.get('total_episodes', ''))})
+						season_poster = meta.get('season_poster2') or meta.get('season_poster') or poster
+					fanart = ''
+					if settingFanart: fanart = meta.get('fanart') or addonFanart
+					if settingFanart: landscape = meta.get('landscape2')
+					else: landscape = meta.get('landscape')
+					if self.prefer_fanArt:
+						if fanart: thumb = fanart or season_poster
 						else:
-							if meta.get('last_episode_to_air', {}).get('season_number') == int(season):
-								item.setProperties({'WatchedEpisodes': '0', 'UnWatchedEpisodes': str(meta.get('last_episode_to_air', {}).get('episode_number'))})
-								item.setProperties({'TotalSeasons': str(meta.get('total_seasons', '')), 'TotalEpisodes': str(meta.get('last_episode_to_air', {}).get('episode_number'))})
+							thumb = meta.get('fanart') or season_poster
+					else:
+						thumb = season_poster
+					thumb = season_poster
+					icon = meta.get('icon') or poster
+					banner = meta.get('banner') or addonBanner
+					art = {}
+					useCustomArtwork = customArtwork.fetch_season(imdb, tmdb, tvdb, season) #new custom artwork database check
+					clearart = meta.get('clearart', '')
+					clearlogo = meta.get('clearlogo','')
+					if useCustomArtwork:
+						allowed_keys = {"poster", "fanart", "landscape", "banner", "clearart", "clearlogo"}
+						for key in allowed_keys:
+							value = useCustomArtwork[0].get(key)
+							if value not in (None, "", " "):  # Ignore empty values. ugly but local() will not change values
+								if key == 'poster': poster = value
+								if key == 'fanart': fanart = value
+								if key == 'landscape': landscape = value
+								if key == 'banner': banner = value
+								if key == 'clearart': clearart = value
+								if key == 'clearlogo': clearlogo = value
+						if "poster" in useCustomArtwork[0] and useCustomArtwork[0].get("poster") not in (None, "", " "):
+							thumb = useCustomArtwork[0].get("poster")
+							season_poster = useCustomArtwork[0].get("poster")
+					art.update({'poster': season_poster, 'tvshow.poster': poster, 'season.poster': season_poster, 'fanart': fanart, 'icon': icon, 'thumb': thumb, 'banner': banner,
+							'tvshow.clearlogo': clearlogo, 'clearart': clearart, 'tvshow.clearart': clearart, 'landscape': landscape})
+					# for k in ('poster2', 'poster3', 'fanart2', 'fanart3', 'banner2', 'banner3'): meta.pop(k, None)
+					meta.update({'poster': poster, 'fanart': fanart, 'banner': banner, 'thumb': thumb, 'season_poster': season_poster, 'icon': icon, 'title': label})
+					sysmeta = quote_plus(jsdumps(meta))
+					url = '%s?action=episodes&tvshowtitle=%s&year=%s&imdb=%s&tmdb=%s&tvdb=%s&meta=%s&season=%s' % (sysaddon, systitle, year, imdb, tmdb, tvdb, sysmeta, season)
+	####-Context Menu and Overlays-####
+					cm = []
+					try:
+						watched = getSeasonOverlay(indicators[0], imdb, tvdb, season) == '5' if indicators else False
+						if self.traktCredentials:
+							cm.append((traktManagerMenu, 'RunPlugin(%s?action=tools_traktManager&name=%s&imdb=%s&tmdb=%s&tvdb=%s&season=%s&watched=%s)' % (sysaddon, systitle, imdb, tmdb, tvdb, season, watched)))
+						if self.simklCredentials:
+							cm.append((simklManagerMenu, 'RunPlugin(%s?action=tools_simklManager&name=%s&imdb=%s&tmdb=%s&tvdb=%s&season=%s&watched=%s)' % (sysaddon, systitle, imdb, tmdb, tvdb, season, watched)))
+						if self.mdblist_authed:
+							cm.append((mdblistManagerMenu, 'RunPlugin(%s?action=tools_mdbWatchlist&name=%s&imdb=%s&tvdb=%s&tmdb=%s&season=%s&watched=%s)' % (sysaddon, systitle, imdb, tvdb, tmdb, season, watched)))
+						if self.customCredentials:
+							cm.append((customManagerMenu, 'RunPlugin(%s?action=tools_customManager&name=%s&imdb=%s&tvdb=%s&season=%s&watched=%s)' % (sysaddon, systitle, imdb, tvdb, season, watched)))
+						if self.floppyCredentials:
+							cm.append((floppyManagerMenu, 'RunPlugin(%s?action=tools_floppyManager&name=%s&imdb=%s&tvdb=%s&season=%s&watched=%s)' % (sysaddon, systitle, imdb, tvdb, season, watched)))
+						if self.scrobCredentials:
+							cm.append((scrobManagerMenu, 'RunPlugin(%s?action=tools_scrobManager&name=%s&imdb=%s&tvdb=%s&season=%s&watched=%s)' % (sysaddon, systitle, imdb, tvdb, season, watched)))
+						if self.punchplayCredentials:
+							cm.append((punchplayManagerMenu, 'RunPlugin(%s?action=tools_punchplayManager&name=%s&imdb=%s&tvdb=%s&season=%s&watched=%s)' % (sysaddon, systitle, imdb, tvdb, season, watched)))
+						if watched:
+							meta.update({'playcount': 1, 'overlay': 5})
+							cm.append((unwatchedMenu, 'RunPlugin(%s?action=playcount_TVShow&name=%s&imdb=%s&tmdb=%s&tvdb=%s&season=%s&query=4)' % (sysaddon, systitle, imdb, tmdb, tvdb, season)))
+						else: 
+							meta.update({'playcount': 0, 'overlay': 4})
+							cm.append((watchedMenu, 'RunPlugin(%s?action=playcount_TVShow&name=%s&imdb=%s&tmdb=%s&tvdb=%s&season=%s&query=5)' % (sysaddon, systitle, imdb, tmdb, tvdb, season)))
+					except: pass
+					cm.append(('Customize Artwork', 'RunPlugin(%s?action=customizeArt&mediatype=%s&imdb=%s&tmdb=%s&tvdb=%s&poster=%s&fanart=%s&landscape=%s&banner=%s&clearart=%s&clearlogo=%s&season=%s)' % (sysaddon, 'season', imdb, tmdb, tvdb, poster, fanart, landscape, banner, clearart, clearlogo, season)))
+					cm.append((playRandom, 'RunPlugin(%s?action=play_Random&rtype=episode&tvshowtitle=%s&year=%s&imdb=%s&tmdb=%s&tvdb=%s&meta=%s&season=%s)' % (sysaddon, systitle, year, imdb, tmdb, tvdb, sysmeta, season)))
+					# cm.append((queueMenu, 'RunPlugin(%s?action=playlist_QueueItem&name=%s)' % (sysaddon, systitle)))
+					# cm.append((showPlaylistMenu, 'RunPlugin(%s?action=playlist_Show)' % sysaddon))
+					# cm.append((clearPlaylistMenu, 'RunPlugin(%s?action=playlist_Clear)' % sysaddon))
+					cm.append((addToLibrary, 'RunPlugin(%s?action=library_tvshowToLibrary&tvshowtitle=%s&year=%s&imdb=%s&tmdb=%s&tvdb=%s)' % (sysaddon, systitle, year, imdb, tmdb, tvdb)))
+					cm.append(('[COLOR %s]Umbrella Settings[/COLOR]' % self.highlight_color, 'RunPlugin(%s?action=tools_openSettings)' % sysaddon))
+	####################################
+					item = control.item(label=label, offscreen=True)
+					#if 'castandart' in i: item.setCast(i['castandart'])
+					if 'castandart' in i: meta.update({"cast": ['castandart']}) #changed for kodi20 setinfo method
+					item.setArt(art)
+					try:
+						count = getSeasonCount(imdb, tvdb, season, tmdb=tmdb)
+						if count:
+							item.setProperties({'WatchedEpisodes': str(count['watched']), 'UnWatchedEpisodes': str(count['unwatched'])})
+							item.setProperties({'TotalSeasons': str(meta.get('total_seasons', '')), 'TotalEpisodes': str(count['total'])})
+							item.setProperty('WatchedProgress', str(int(float(count['watched']) / float(count['total']) * 100)))
+						else:
+							if meta.get('status') != 'Returning Series' or (meta.get('status') == 'Returning Series' and meta.get('last_episode_to_air', {}).get('season_number') > int(season)):
+								if control.getKodiVersion() >= 20:
+									item.setProperties({'UnWatchedEpisodes': str(meta.get('counts', {}).get(str(season), ''))})
+								else:
+									item.setProperties({'WatchedEpisodes': '0', 'UnWatchedEpisodes': str(meta.get('counts', {}).get(str(season), ''))})
+								item.setProperties({'TotalSeasons': str(meta.get('total_seasons', '')), 'TotalEpisodes': str(meta.get('total_episodes', ''))})
 							else:
-								item.setProperties({'WatchedEpisodes': '0', 'UnWatchedEpisodes': '0'})
-								item.setProperties({'TotalSeasons': str(meta.get('total_seasons', '')), 'TotalEpisodes': '0'})
-				except: pass
+								if meta.get('last_episode_to_air', {}).get('season_number') == int(season):
+									item.setProperties({'WatchedEpisodes': '0', 'UnWatchedEpisodes': str(meta.get('last_episode_to_air', {}).get('episode_number'))})
+									item.setProperties({'TotalSeasons': str(meta.get('total_seasons', '')), 'TotalEpisodes': str(meta.get('last_episode_to_air', {}).get('episode_number'))})
+								else:
+									item.setProperties({'WatchedEpisodes': '0', 'UnWatchedEpisodes': '0'})
+									item.setProperties({'TotalSeasons': str(meta.get('total_seasons', '')), 'TotalEpisodes': '0'})
+					except: pass
 
-				if is_widget: 
-					item.setProperty('isUmbrella_widget', 'true')
-					if self.hide_watched_in_widget:
-						if str(meta.get('playcount', 0)) == '1':
-							continue
-				try: # Year is the shows year, not the seasons year. Extract year from premier date for InfoLabels to have "season_year".
-					season_year = re.findall(r'(\d{4})', i.get('premiered', ''))[0]
-					meta.update({'year': season_year})
-				except: pass
-				setUniqueIDs = {'imdb': imdb, 'tmdb': tmdb, 'tvdb': tvdb}
-				control.set_info(item, meta, setUniqueIDs=setUniqueIDs)
-				#item.setInfo(type='video', infoLabels=control.metadataClean(meta))
-				if is_widget and control.getKodiVersion() > 19.5 and self.useFullContext != True:
-					pass
-				else:
-					item.addContextMenuItems(cm)
-				control.addItem(handle=syshandle, url=url, listitem=item, isFolder=True)
-			except:
-				from resources.lib.modules import log_utils
-				log_utils.error()
-		try: control.property(syshandle, 'showplot', items[0]['plot'])
-		except: pass
-		control.content(syshandle, 'seasons')
-		control.directory(syshandle, cacheToDisc=False) # disable cacheToDisc so unwatched counts loads fresh data counts if changes made
-		views.setView('seasons', {'skin.estuary': 55, 'skin.confluence': 500})
+					if is_widget: 
+						item.setProperty('isUmbrella_widget', 'true')
+						if self.hide_watched_in_widget:
+							if str(meta.get('playcount', 0)) == '1':
+								continue
+					try: # Year is the shows year, not the seasons year. Extract year from premier date for InfoLabels to have "season_year".
+						season_year = re.findall(r'(\d{4})', i.get('premiered', ''))[0]
+						meta.update({'year': season_year})
+					except: pass
+					setUniqueIDs = {'imdb': imdb, 'tmdb': tmdb, 'tvdb': tvdb}
+					control.set_info(item, meta, setUniqueIDs=setUniqueIDs)
+					#item.setInfo(type='video', infoLabels=control.metadataClean(meta))
+					if is_widget and control.getKodiVersion() > 19.5 and self.useFullContext != True:
+						pass
+					else:
+						item.addContextMenuItems(cm)
+					control.addItem(handle=syshandle, url=url, listitem=item, isFolder=True)
+				except:
+					from resources.lib.modules import log_utils
+					log_utils.error()
+			try: control.property(syshandle, 'showplot', items[0]['plot'])
+			except: pass
+			control.content(syshandle, 'seasons')
+			control.directory(syshandle, cacheToDisc=False) # disable cacheToDisc so unwatched counts loads fresh data counts if changes made
+			views.setView('seasons', {'skin.estuary': 55, 'skin.confluence': 500})
+		finally:
+			performance.record('stage', stage_started, 'seasons-directory')
+
+from resources.lib.modules import performance as _performance
+_performance.record('module-import', _module_import_started, 'seasons')

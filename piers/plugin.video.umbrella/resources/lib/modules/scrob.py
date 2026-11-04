@@ -1166,11 +1166,11 @@ def _fetchShowProgress(tmdb):
 		log_utils.error()
 		return None
 
-def syncSeasons(imdb, tvdb):
+def syncSeasons(imdb, tvdb, tmdb=''):
 	try:
 		if not getScrobCredentialsInfo(): return None
-		if not imdb and not tvdb: return None
-		tmdb = _resolve_tmdb('tv', imdb=imdb, tvdb=tvdb)
+		if not imdb and not tvdb and not tmdb: return None
+		tmdb = str(tmdb) if tmdb else _resolve_tmdb('tv', imdb=imdb, tvdb=tvdb)
 		if not tmdb: return [[], {}]
 		progress = getShowProgress(tmdb)
 		return progress if progress else [[], {}]
@@ -1214,10 +1214,11 @@ def cachesyncTV(imdb, tvdb):
 		[i.join() for i in threads]
 	except: log_utils.error()
 
-def cachesyncSeasons(imdb, tvdb='', timeout=720):
+def cachesyncSeasons(imdb, tvdb='', timeout=720, tmdb=''):
 	try:
 		imdb = imdb or ''
 		tvdb = tvdb or ''
+		if tmdb: return scrobsync.get(syncSeasons, timeout, imdb, tvdb, str(tmdb))
 		return scrobsync.get(syncSeasons, timeout, imdb, tvdb)
 	except: log_utils.error()
 

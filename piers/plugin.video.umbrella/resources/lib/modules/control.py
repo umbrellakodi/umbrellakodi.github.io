@@ -103,8 +103,14 @@ subtitlesPath = joinPath(dataPath, 'subtitles')
 watchedcacheFile = joinPath(dataPath, 'watched.db')
 
 def getKodiVersion(full=False):
-	if full: return xbmc.getInfoLabel("System.BuildVersion")
-	else: return int(xbmc.getInfoLabel("System.BuildVersion")[:2])
+	# The build cannot change during a Kodi process. Avoid a GUI info-label query
+	# for every ListItem and metadata worker in the same Python invocation.
+	version = getattr(getKodiVersion, '_build_version', None)
+	if version is None:
+		version = xbmc.getInfoLabel("System.BuildVersion")
+		if version[:2].isdigit(): getKodiVersion._build_version = version
+	if full: return version
+	return int(version[:2])
 
 def setContainerName(value):
 	try:
@@ -451,6 +457,10 @@ def refresh():
 			caller.f_globals.get('__name__', ''), caller.f_code.co_name, caller.f_lineno))
 		del caller
 	except: pass
+	try:
+		from resources.lib.modules import trakt_activities
+		trakt_activities.invalidate()
+	except Exception: pass
 	return execute('Container.Refresh')
 
 def folderPath():

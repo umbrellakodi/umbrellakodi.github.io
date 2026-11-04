@@ -3,6 +3,9 @@
 	Umbrella Add-on
 """
 
+from time import monotonic as _import_clock
+_module_import_started = _import_clock()
+
 from datetime import datetime, timedelta
 import time
 from json import dumps as jsdumps, loads as jsloads
@@ -212,7 +215,7 @@ class TVshows:
 					if '/users/me/' not in url: raise Exception()
 					if '/collection/' in url: return self.traktCollection(url, folderName=folderName)
 					if '/watchlist/' in url: return self.traktWatchlist(url, folderName=folderName)
-					if trakt.getActivity() > cache.timeout(self.trakt_list, url, self.trakt_user, folderName):
+					if trakt.getBrowseActivity() > cache.timeout(self.trakt_list, url, self.trakt_user, folderName):
 						self.list = cache.get(self.trakt_list, 0, url, self.trakt_user, folderName)
 					else: self.list = cache.get(self.trakt_list, 720, url, self.trakt_user, folderName)
 				except: self.list = self.trakt_userList(url, create_directory=False)
@@ -690,60 +693,66 @@ class TVshows:
 			control.hide()
 
 	def sort(self, type='shows'):
+		from time import monotonic
+		from resources.lib.modules import performance
+		stage_started = monotonic()
 		try:
-			if not self.list: return
-			attribute = int(getSetting('sort.%s.type' % type) or '0')
-			reverse = int(getSetting('sort.%s.order' % type) or '0') == 1
-			if attribute == 0: 
-				if type == 'progress':
-					reverse = True
-					attribute = 6
-				else:
-					reverse = False # Sorting Order is not enabled when sort method is "Default"
-			if attribute > 0:
-				if attribute == 1:
-					try: self.list = sorted(self.list, key=lambda k: re.sub(r'(^the |^a |^an )', '', k['tvshowtitle'].lower()), reverse=reverse)
-					except: self.list = sorted(self.list, key=lambda k: re.sub(r'(^the |^a |^an )', '', k['title'].lower()), reverse=reverse)
-				elif attribute == 2: self.list = sorted(self.list, key=lambda k: float(k['rating']), reverse=reverse)
-				elif attribute == 3: self.list = sorted(self.list, key=lambda k: int(str(k['votes']).replace(',', '')), reverse=reverse)
-				elif attribute == 4:
-					for i in range(len(self.list)):
-						if 'premiered' not in self.list[i]: self.list[i]['premiered'] = ''
-					self.list = sorted(self.list, key=lambda k: k['premiered'], reverse=reverse)
-				elif attribute == 5:
-					for i in range(len(self.list)):
-						if 'added' not in self.list[i]: self.list[i]['added'] = ''
-					self.list = sorted(self.list, key=lambda k: k['added'], reverse=reverse)
-				elif attribute == 6:
-					nolastPlayed = []
-					for i in range(len(self.list)):
-						if 'lastplayed' not in self.list[i]:
-							self.list[i]['lastplayed'] = ''
-							log_utils.log('TVShow Last Played Blank Title: %s' % self.list[i].get('title', ''), 1)
-					#self.list = sorted(self.list, key=lambda k: k['lastplayed'], reverse=reverse)
-					if self.list:
-						def _parse_lastplayed(k):
-							lp = k.get('lastplayed')
-							if not lp:
+			try:
+				if not self.list: return
+				attribute = int(getSetting('sort.%s.type' % type) or '0')
+				reverse = int(getSetting('sort.%s.order' % type) or '0') == 1
+				if attribute == 0: 
+					if type == 'progress':
+						reverse = True
+						attribute = 6
+					else:
+						reverse = False # Sorting Order is not enabled when sort method is "Default"
+				if attribute > 0:
+					if attribute == 1:
+						try: self.list = sorted(self.list, key=lambda k: re.sub(r'(^the |^a |^an )', '', k['tvshowtitle'].lower()), reverse=reverse)
+						except: self.list = sorted(self.list, key=lambda k: re.sub(r'(^the |^a |^an )', '', k['title'].lower()), reverse=reverse)
+					elif attribute == 2: self.list = sorted(self.list, key=lambda k: float(k['rating']), reverse=reverse)
+					elif attribute == 3: self.list = sorted(self.list, key=lambda k: int(str(k['votes']).replace(',', '')), reverse=reverse)
+					elif attribute == 4:
+						for i in range(len(self.list)):
+							if 'premiered' not in self.list[i]: self.list[i]['premiered'] = ''
+						self.list = sorted(self.list, key=lambda k: k['premiered'], reverse=reverse)
+					elif attribute == 5:
+						for i in range(len(self.list)):
+							if 'added' not in self.list[i]: self.list[i]['added'] = ''
+						self.list = sorted(self.list, key=lambda k: k['added'], reverse=reverse)
+					elif attribute == 6:
+						nolastPlayed = []
+						for i in range(len(self.list)):
+							if 'lastplayed' not in self.list[i]:
+								self.list[i]['lastplayed'] = ''
+								log_utils.log('TVShow Last Played Blank Title: %s' % self.list[i].get('title', ''), 1)
+						#self.list = sorted(self.list, key=lambda k: k['lastplayed'], reverse=reverse)
+						if self.list:
+							def _parse_lastplayed(k):
+								lp = k.get('lastplayed')
+								if not lp:
+									return time.gmtime(0)
+								# Some providers' raw timestamps don't match either expected
+								# format (e.g. an unexpected double-fraction like
+								# "...25.000.000Z") — never let one bad value crash sorting
+								# for the whole list. Scrob's own /history timestamps come
+								# through with no trailing "Z" at all (Python's raw
+								# datetime.isoformat() shape, e.g. "...21:35:47.759746"),
+								# which silently fell back to epoch for every Scrob show and
+								# made its progress list sort in essentially arbitrary order.
+								for fmt in ("%Y-%m-%dT%H:%M:%S.%fZ", "%Y-%m-%dT%H:%M:%SZ", "%Y-%m-%dT%H:%M:%S.%f", "%Y-%m-%dT%H:%M:%S"):
+									try: return time.strptime(lp, fmt)
+									except ValueError: continue
 								return time.gmtime(0)
-							# Some providers' raw timestamps don't match either expected
-							# format (e.g. an unexpected double-fraction like
-							# "...25.000.000Z") — never let one bad value crash sorting
-							# for the whole list. Scrob's own /history timestamps come
-							# through with no trailing "Z" at all (Python's raw
-							# datetime.isoformat() shape, e.g. "...21:35:47.759746"),
-							# which silently fell back to epoch for every Scrob show and
-							# made its progress list sort in essentially arbitrary order.
-							for fmt in ("%Y-%m-%dT%H:%M:%S.%fZ", "%Y-%m-%dT%H:%M:%SZ", "%Y-%m-%dT%H:%M:%S.%f", "%Y-%m-%dT%H:%M:%S"):
-								try: return time.strptime(lp, fmt)
-								except ValueError: continue
-							return time.gmtime(0)
-						self.list = sorted(self.list, key=_parse_lastplayed, reverse=reverse)
-			elif reverse:
-				self.list = list(reversed(self.list))
-		except:
+							self.list = sorted(self.list, key=_parse_lastplayed, reverse=reverse)
+				elif reverse:
+					self.list = list(reversed(self.list))
+			except:
 
-			log_utils.error()
+				log_utils.error()
+		finally:
+			performance.record('stage', stage_started, 'shows-sort')
 
 	def imdb_sort(self, type='shows'):
 		sort = int(getSetting('sort.%s.type' % type) or '0')
@@ -1088,7 +1097,7 @@ class TVshows:
 		userlists = []
 		try:
 			if not self.traktCredentials: raise Exception()
-			activity = trakt.getActivity()
+			activity = trakt.getBrowseActivity()
 			self.list = [] ; lists = []
 			try:
 				if activity > cache.timeout(self.trakt_user_lists, self.traktlists_link, self.trakt_user): raise Exception()
@@ -3612,24 +3621,30 @@ class TVshows:
 				if self.notifications and self.is_widget != True: control.notification(title=32326, message=33049)
 
 	def worker(self):
+		from time import monotonic
+		from resources.lib.modules import performance
+		stage_started = monotonic()
 		try:
-			if not self.list: return
-			self.meta = []
-			total = len(self.list)
-			for i in range(0, total): self.list[i].update({'metacache': False})
-			self.list = metacache.fetch(self.list, self.lang, self.user)
-			for r in range(0, total, 40):
-				threads = []
-				append = threads.append
-				for i in range(r, r + 40):
-					if i < total: append(Thread(target=self.super_info, args=(i,)))
-				[i.start() for i in threads]
-				[i.join() for i in threads]
-			if self.meta: metacache.insert(self.meta)
-			self.list = [i for i in self.list if i.get('tmdb')] # to rid missing tmdb_id's because season list can not load without
-		except:
+			try:
+				if not self.list: return
+				self.meta = []
+				total = len(self.list)
+				for i in range(0, total): self.list[i].update({'metacache': False})
+				self.list = metacache.fetch(self.list, self.lang, self.user)
+				for r in range(0, total, 40):
+					threads = []
+					append = threads.append
+					for i in range(r, r + 40):
+						if i < total and not self.list[i].get('metacache'): append(Thread(target=self.super_info, args=(i,)))
+					[i.start() for i in threads]
+					[i.join() for i in threads]
+				if self.meta: metacache.insert(self.meta)
+				self.list = [i for i in self.list if i.get('tmdb')] # to rid missing tmdb_id's because season list can not load without
+			except:
 			
-			log_utils.error()
+				log_utils.error()
+		finally:
+			performance.record('stage', stage_started, 'shows-metadata')
 
 	def super_info(self, i):
 		try:
@@ -3705,346 +3720,352 @@ class TVshows:
 			log_utils.error()
 
 	def tvshowDirectory(self, items, next=True, isProgress=False, isWatched=False, isCollection=False, folderName='Umbrella', finalize=True, label_media=False):
-		from sys import argv # some functions like ActivateWindow() throw invalid handle less this is imported here.
-		if self.useContainerTitles: control.setContainerName(folderName)
-		returnHome = control.folderPath()
-		control.setHomeWindowProperty('umbrella.returnhome', returnHome)
-		if getSetting('services.directProgress.scrape') == 'true' and getSetting('enable.playnext') == 'true':
-			pass
-		else:
-			control.clear_idle_playlist()
-		if not items: # with reuselanguageinvoker on an empty directory must be loaded, do not use sys.exit()
-			control.hide()
-			if self.is_widget != True:
-				control.notification(title=32002, message=33049)
-		sysaddon, syshandle = 'plugin://plugin.video.umbrella/', int(argv[1])
-		is_widget = 'plugin' not in control.infoLabel('Container.PluginName')
-		settingFanart = getSetting('fanart') == 'true'
-		addonPoster, addonFanart, addonBanner = control.addonPoster(), control.addonFanart(), control.addonBanner()
-		flatten = int(getSetting('flatten.tvshows'))
-		_indicators_alt = getSetting('indicators.alt')
-		_trakt_marks = self.traktCredentials and (_indicators_alt == '1' or getSetting('trakt.markwatched') == 'true')
-		_simkl_marks = self.simklCredentials and (_indicators_alt == '2' or getSetting('simkl.markwatched') == 'true')
-		_mdblist_marks = self.mdblist_authed and (_indicators_alt == '3' or getSetting('mdblist.markwatched') == 'true')
-		if _indicators_alt == '0':
-			watchedMenu, unwatchedMenu = getLS(32066), getLS(32067)
-		elif sum([bool(_trakt_marks), bool(_simkl_marks), bool(_mdblist_marks)]) > 1:
-			watchedMenu, unwatchedMenu = getLS(40564), getLS(40565)
-		elif _trakt_marks:
-			watchedMenu, unwatchedMenu = getLS(32068), getLS(32069)
-		elif _simkl_marks:
-			watchedMenu, unwatchedMenu = getLS(40554), getLS(40555)
-		elif _mdblist_marks:
-			watchedMenu, unwatchedMenu = getLS(40631), getLS(40632)
-		else:
-			watchedMenu, unwatchedMenu = getLS(32066), getLS(32067)
-		traktManagerMenu, queueMenu = '[COLOR %s]Trakt Manager[/COLOR]' % self.highlight_color, getLS(32065)
-		simklManagerMenu = getLS(40577) % self.highlight_color
-		mdblistManagerMenu = '[COLOR %s]MDBList Manager[/COLOR]' % self.highlight_color
-		customManagerMenu = '[COLOR %s]%s Manager[/COLOR]' % (self.highlight_color, customtrakt.getCustomServiceName())
-		floppyManagerMenu = '[COLOR %s]Floppy Manager[/COLOR]' % self.highlight_color
-		scrobManagerMenu = '[COLOR %s]Scrob Manager[/COLOR]' % self.highlight_color
-		punchplayManagerMenu = '[COLOR %s]PunchPlay Manager[/COLOR]' % self.highlight_color
-		showPlaylistMenu, clearPlaylistMenu = getLS(35517), getLS(35516)
-		playRandom, addToLibrary, addToFavourites, removeFromFavourites = getLS(32535), getLS(32551), getLS(40463), getLS(40468)
-		nextMenu, findSimilarMenu, trailerMenu = getLS(32053), getLS(32184), getLS(40431)
-		from resources.lib.modules import favourites
-		favoriteItems = favourites.getFavourites(content='tvshows')
-		favoriteItems = [x[1].get('tmdb') for x in favoriteItems]
+		from time import monotonic
+		from resources.lib.modules import performance
+		stage_started = monotonic()
 		try:
-			nexturl = items[0]['next']
-			url_params = dict(parse_qsl(urlsplit(nexturl).query))
-			if 'imdb.com' in nexturl and 'start' in url_params: page = int(((int(url_params.get('start')) - 1) / int(self.page_limit)) + 1)
-			elif 'www.imdb.com/movies-coming-soon/' in nexturl: page = int(re.search(r'(\d{4}-\d{2})', nexturl).group(1))
-			else: page = int(url_params.get('page'))
-		except:
-			page = 1
-		tmdb_v4_watchlist_ids = set()
-		if self.tmdbv4Credentials:
-			from resources.lib.modules import tmdb4 as _tmdb4
-			tmdb_v4_watchlist_ids = _tmdb4.get_watchlist_ids('tv')
-		for i in items:
+			from sys import argv # some functions like ActivateWindow() throw invalid handle less this is imported here.
+			if self.useContainerTitles: control.setContainerName(folderName)
+			returnHome = control.folderPath()
+			control.setHomeWindowProperty('umbrella.returnhome', returnHome)
+			if getSetting('services.directProgress.scrape') == 'true' and getSetting('enable.playnext') == 'true':
+				pass
+			else:
+				control.clear_idle_playlist()
+			if not items: # with reuselanguageinvoker on an empty directory must be loaded, do not use sys.exit()
+				control.hide()
+				if self.is_widget != True:
+					control.notification(title=32002, message=33049)
+			sysaddon, syshandle = 'plugin://plugin.video.umbrella/', int(argv[1])
+			is_widget = 'plugin' not in control.infoLabel('Container.PluginName')
+			settingFanart = getSetting('fanart') == 'true'
+			addonPoster, addonFanart, addonBanner = control.addonPoster(), control.addonFanart(), control.addonBanner()
+			flatten = int(getSetting('flatten.tvshows'))
+			_indicators_alt = getSetting('indicators.alt')
+			_trakt_marks = self.traktCredentials and (_indicators_alt == '1' or getSetting('trakt.markwatched') == 'true')
+			_simkl_marks = self.simklCredentials and (_indicators_alt == '2' or getSetting('simkl.markwatched') == 'true')
+			_mdblist_marks = self.mdblist_authed and (_indicators_alt == '3' or getSetting('mdblist.markwatched') == 'true')
+			if _indicators_alt == '0':
+				watchedMenu, unwatchedMenu = getLS(32066), getLS(32067)
+			elif sum([bool(_trakt_marks), bool(_simkl_marks), bool(_mdblist_marks)]) > 1:
+				watchedMenu, unwatchedMenu = getLS(40564), getLS(40565)
+			elif _trakt_marks:
+				watchedMenu, unwatchedMenu = getLS(32068), getLS(32069)
+			elif _simkl_marks:
+				watchedMenu, unwatchedMenu = getLS(40554), getLS(40555)
+			elif _mdblist_marks:
+				watchedMenu, unwatchedMenu = getLS(40631), getLS(40632)
+			else:
+				watchedMenu, unwatchedMenu = getLS(32066), getLS(32067)
+			traktManagerMenu, queueMenu = '[COLOR %s]Trakt Manager[/COLOR]' % self.highlight_color, getLS(32065)
+			simklManagerMenu = getLS(40577) % self.highlight_color
+			mdblistManagerMenu = '[COLOR %s]MDBList Manager[/COLOR]' % self.highlight_color
+			customManagerMenu = '[COLOR %s]%s Manager[/COLOR]' % (self.highlight_color, customtrakt.getCustomServiceName())
+			floppyManagerMenu = '[COLOR %s]Floppy Manager[/COLOR]' % self.highlight_color
+			scrobManagerMenu = '[COLOR %s]Scrob Manager[/COLOR]' % self.highlight_color
+			punchplayManagerMenu = '[COLOR %s]PunchPlay Manager[/COLOR]' % self.highlight_color
+			showPlaylistMenu, clearPlaylistMenu = getLS(35517), getLS(35516)
+			playRandom, addToLibrary, addToFavourites, removeFromFavourites = getLS(32535), getLS(32551), getLS(40463), getLS(40468)
+			nextMenu, findSimilarMenu, trailerMenu = getLS(32053), getLS(32184), getLS(40431)
+			from resources.lib.modules import favourites
+			favoriteItems = favourites.getFavourites(content='tvshows')
+			favoriteItems = [x[1].get('tmdb') for x in favoriteItems]
 			try:
-				imdb, tmdb, tvdb, year, trailer = i.get('imdb', ''), i.get('tmdb', ''), i.get('tvdb', ''), i.get('year', ''), i.get('trailer', '')
-				title = label = i.get('tvshowtitle') or i.get('title')
-				if self.tvshows_show_year and year: label = '%s (%s)' % (label, year)
-				systitle = quote_plus(title)
-				if isProgress:
-					pass
-				else:
-					try:
-						premiered = i['premiered']
-						if (not premiered and i['status'] in ('Rumored', 'Planned', 'In Production', 'Post Production', 'Upcoming')) or (int(re.sub('[^0-9]', '', premiered)) > int(re.sub('[^0-9]', '', str(self.today_date)))):
-							if self.showunaired: label = '[COLOR %s]%s [I][Coming Soon][/I][/COLOR]' % (self.unairedcolor, label)
-							else: continue
-					except: pass
-				
-				try: indicators = getSeasonIndicators(imdb, tvdb, tmdb=tmdb, has_next_episode=i.get('has_next_episode', False), tmdb_total_aired=i.get('total_aired_episodes'), force_lookup=(isCollection and self.collection_hideWatched))
-				except: indicators = None
-				meta = dict((k, v) for k, v in iter(i.items()) if v is not None and v != '')
-				meta.update({'code': imdb, 'imdbnumber': imdb, 'mediatype': 'tvshow', 'tag': [imdb, tmdb]}) # "tag" and "tagline" for movies only, but works in my skin mod so leave
-				try: meta.update({'genre': cleangenre.lang(meta['genre'], self.lang)})
-				except: pass
+				nexturl = items[0]['next']
+				url_params = dict(parse_qsl(urlsplit(nexturl).query))
+				if 'imdb.com' in nexturl and 'start' in url_params: page = int(((int(url_params.get('start')) - 1) / int(self.page_limit)) + 1)
+				elif 'www.imdb.com/movies-coming-soon/' in nexturl: page = int(re.search(r'(\d{4}-\d{2})', nexturl).group(1))
+				else: page = int(url_params.get('page'))
+			except:
+				page = 1
+			tmdb_v4_watchlist_ids = set()
+			if self.tmdbv4Credentials:
+				from resources.lib.modules import tmdb4 as _tmdb4
+				tmdb_v4_watchlist_ids = _tmdb4.get_watchlist_ids('tv')
+			for i in items:
 				try:
-					if 'tvshowtitle' not in meta: meta.update({'tvshowtitle': title})
-				except: pass
-				if self.prefer_tmdbArt: 
-					poster = meta.get('poster3') or meta.get('poster') or meta.get('poster2') or addonPoster
-					clearlogo = meta.get('tmdblogo') or meta.get('clearlogo', '')
-					meta.update({'clearlogo': clearlogo})
-				else: 
-					poster = meta.get('poster2') or meta.get('poster3') or meta.get('poster') or addonPoster
-					clearlogo = meta.get('clearlogo') or meta.get('tmdblogo', '')
-					meta.update({'clearlogo': clearlogo})
-				landscape = meta.get('landscape')
-				fanart = ''
-				if settingFanart:
-					if self.prefer_tmdbArt: fanart = meta.get('fanart3') or meta.get('fanart') or meta.get('fanart2') or addonFanart
-					else: fanart = meta.get('fanart2') or meta.get('fanart3') or meta.get('fanart') or addonFanart
-				#thumb = meta.get('thumb') or poster or landscape
-				if self.prefer_fanArt:
-					if fanart: thumb = fanart or meta.get('thumb') or poster or landscape
-					else:
-						thumb = meta.get('fanart') or meta.get('thumb') or poster or landscape
-				else:
-					thumb = meta.get('thumb') or poster or landscape
-				icon = meta.get('icon') or poster
-				banner = meta.get('banner3') or meta.get('banner2') or meta.get('banner') or None #changed due to some skins using banner.
-				art = {}
-				useCustomArtwork = customArtwork.fetch_show(imdb, tmdb, tvdb) #new custom artwork database check
-				clearlogo = meta.get('clearlogo', '')
-				clearart = meta.get('clearart', '')
-				discart = meta.get('discart', '')
-				keyart = meta.get('keyart', '')
-				if useCustomArtwork:
-					allowed_keys = {"poster", "fanart", "landscape", "banner", "clearart", "clearlogo", "discart", "keyart"}
-					for key in allowed_keys:
-						value = useCustomArtwork[0].get(key)
-						if value not in (None, "", " "):  # Ignore empty values. ugly but local() will not change values
-							if key == 'poster': poster = value
-							if key == 'fanart': fanart = value
-							if key == 'landscape': landscape = value
-							if key == 'banner': banner = value
-							if key == 'clearart': clearart = value
-							if key == 'clearlogo': clearlogo = value
-					if "poster" in useCustomArtwork[0] and useCustomArtwork[0].get("poster") not in (None, "", " "):
-						thumb = useCustomArtwork[0].get("poster")
-				art.update({'poster': poster, 'tvshow.poster': poster, 'fanart': fanart, 'icon': icon, 'thumb': thumb, 'banner': banner, 'clearlogo': clearlogo,
-						'tvshow.clearlogo': clearlogo, 'clearart': clearart, 'tvshow.clearart': clearart, 'landscape': landscape})
-				for k in ('metacache', 'poster2', 'poster3', 'fanart2', 'fanart3', 'banner2', 'banner3', 'trailer'): meta.pop(k, None)
-				meta.update({'poster': poster, 'fanart': fanart, 'banner': banner, 'thumb': thumb, 'icon': icon})
-				sysmeta, sysart = quote_plus(jsdumps(meta)), quote_plus(jsdumps(art))
-				if flatten > 0:
-					total_seasons = meta.get('total_seasons') or 2
-					if flatten == 2 and total_seasons < 2: url = '%s?action=episodes&tvshowtitle=%s&year=%s&imdb=%s&tmdb=%s&tvdb=%s&meta=%s' % (sysaddon, systitle, year, imdb, tmdb, tvdb, sysmeta)
-					elif flatten == 1: url = '%s?action=episodes&tvshowtitle=%s&year=%s&imdb=%s&tmdb=%s&tvdb=%s&meta=%s' % (sysaddon, systitle, year, imdb, tmdb, tvdb, sysmeta)
-					else: url = '%s?action=seasons&tvshowtitle=%s&year=%s&imdb=%s&tmdb=%s&tvdb=%s&art=%s' % (sysaddon, systitle, year, imdb, tmdb, tvdb, sysart)
-				else: url = '%s?action=seasons&tvshowtitle=%s&year=%s&imdb=%s&tmdb=%s&tvdb=%s&art=%s' % (sysaddon, systitle, year, imdb, tmdb, tvdb, sysart)
-
-####-Context Menu and Overlays-####
-				cm = []
-				if trailer:
-					cm.append((trailerMenu, 'RunPlugin(%s?action=play_Trailer_Context&type=%s&name=%s&year=%s&imdb=%s&url=%s)' % (sysaddon, 'show', systitle, year, imdb, trailer)))
-				cm.append(('Play Trailer (Select)', 'RunPlugin(%s?action=play_Trailer_Select&type=%s&name=%s&year=%s&windowedtrailer=0)' % (sysaddon, 'show', systitle, year)))
-				try:
-					watched = (getTVShowOverlay(indicators[1], imdb, tvdb) == '5') if indicators else False
-					if watched and meta.get('has_next_episode'):
-						# A still-airing show isn't necessarily "unwatched" just because
-						# has_next_episode is true — it may mean nothing beyond "TMDb
-						# says the series is still in production," not that a specific
-						# next episode is actually out yet. Re-check with a forced-fresh
-						# indicator sync (mirrors the self-healing logic the dedicated
-						# Trakt "Show Progress" list already has) before suppressing the
-						# checkmark for real. getSeasonIndicators() already dispatches to
-						# whichever provider is the active indicators source internally.
-						watched = False
-						try:
-							re_indicators = getSeasonIndicators(imdb, tvdb, tmdb=tmdb, has_next_episode=True, tmdb_total_aired=meta.get('total_aired_episodes'))
-							re_count = getShowCount(re_indicators[1], imdb, tvdb) if re_indicators else None
-							if re_count and int(re_count.get('unwatched', 0)) == 0: watched = True
-						except: pass
-					if self.traktCredentials:
-						cm.append((traktManagerMenu, 'RunPlugin(%s?action=tools_traktManager&name=%s&imdb=%s&tmdb=%s&tvdb=%s&watched=%s&tvshow=tvshow)' % (sysaddon, systitle, imdb, tmdb, tvdb, watched)))
-					if self.simklCredentials:
-						cm.append((simklManagerMenu, 'RunPlugin(%s?action=tools_simklManager&name=%s&imdb=%s&tmdb=%s&tvdb=%s&watched=%s&tvshow=tvshow)' % (sysaddon, systitle, imdb, tmdb, tvdb, watched)))
-					if self.mdblist_authed:
-						cm.append((mdblistManagerMenu, 'RunPlugin(%s?action=tools_mdbWatchlist&name=%s&imdb=%s&tvdb=%s&tmdb=%s&watched=%s&tvshow=tvshow)' % (sysaddon, systitle, imdb, tvdb, tmdb, watched)))
-					if self.customCredentials:
-						cm.append((customManagerMenu, 'RunPlugin(%s?action=tools_customManager&name=%s&imdb=%s&tvdb=%s&watched=%s&tvshow=tvshow)' % (sysaddon, systitle, imdb, tvdb, watched)))
-					if self.floppyCredentials:
-						cm.append((floppyManagerMenu, 'RunPlugin(%s?action=tools_floppyManager&name=%s&imdb=%s&tvdb=%s&watched=%s&tvshow=tvshow)' % (sysaddon, systitle, imdb, tvdb, watched)))
-					if self.scrobCredentials:
-						cm.append((scrobManagerMenu, 'RunPlugin(%s?action=tools_scrobManager&name=%s&imdb=%s&tvdb=%s&tmdb=%s&watched=%s&tvshow=tvshow)' % (sysaddon, systitle, imdb, tvdb, tmdb, watched)))
-					if self.punchplayCredentials:
-						cm.append((punchplayManagerMenu, 'RunPlugin(%s?action=tools_punchplayManager&name=%s&imdb=%s&tvdb=%s&tmdb=%s&watched=%s&tvshow=tvshow)' % (sysaddon, systitle, imdb, tvdb, tmdb, watched)))
-					if watched:
-						meta.update({'playcount': 1, 'overlay': 5})
-						cm.append((unwatchedMenu, 'RunPlugin(%s?action=playcount_TVShow&name=%s&imdb=%s&tmdb=%s&tvdb=%s&query=4)' % (sysaddon, systitle, imdb, tmdb, tvdb)))
-					else:
-						meta.update({'playcount': 0, 'overlay': 4})
-						cm.append((watchedMenu, 'RunPlugin(%s?action=playcount_TVShow&name=%s&imdb=%s&tmdb=%s&tvdb=%s&query=5)' % (sysaddon, systitle, imdb, tmdb, tvdb)))
-				except: pass
-				if self.tmdbv4Credentials:
-					cm.append((getLS(40606) if getLS(40606) else 'TMDB List Manager', 'RunPlugin(%s?action=tools_tmdbListManager&name=%s&tmdb=%s&mediatype=tv)' % (sysaddon, systitle, tmdb)))
-					if tmdb:
-						if str(tmdb) in tmdb_v4_watchlist_ids:
-							cm.append((getLS(40614), 'RunPlugin(%s?action=tmdb_v4_watchlist_remove&tmdb=%s&mediatype=tv)' % (sysaddon, tmdb)))
-						else:
-							cm.append((getLS(40613), 'RunPlugin(%s?action=tmdb_v4_watchlist_add&tmdb=%s&mediatype=tv)' % (sysaddon, tmdb)))
-				cm.append(('Customize Artwork', 'RunPlugin(%s?action=customizeArt&mediatype=%s&imdb=%s&tmdb=%s&tvdb=%s&poster=%s&fanart=%s&landscape=%s&banner=%s&clearart=%s&clearlogo=%s)' % (sysaddon, 'show', imdb, tmdb, tvdb, poster, fanart, landscape, banner, clearart, clearlogo)))
-				cm.append((findSimilarMenu, 'Container.Update(%s?action=tvshows&url=%s)' % (sysaddon, quote_plus('https://api.trakt.tv/shows/%s/related?limit=20&page=1,return' % imdb))))
-				cm.append((playRandom, 'RunPlugin(%s?action=play_Random&rtype=season&tvshowtitle=%s&year=%s&imdb=%s&tmdb=%s&tvdb=%s&art=%s)' % (sysaddon, systitle, year, imdb, tmdb, tvdb, sysart)))
-				# cm.append((queueMenu, 'RunPlugin(%s?action=playlist_QueueItem&name=%s)' % (sysaddon, systitle)))
-				# cm.append((showPlaylistMenu, 'RunPlugin(%s?action=playlist_Show)' % sysaddon))
-				# cm.append((clearPlaylistMenu, 'RunPlugin(%s?action=playlist_Clear)' % sysaddon))
-				cm.append((addToLibrary, 'RunPlugin(%s?action=library_tvshowToLibrary&tvshowtitle=%s&year=%s&imdb=%s&tmdb=%s&tvdb=%s)' % (sysaddon, systitle, year, imdb, tmdb, tvdb)))
-				if favoriteItems:
-					if tmdb in favoriteItems:
-						cm.append((removeFromFavourites, 'RunPlugin(%s?action=remove_favorite&meta=%s&content=%s)' % (sysaddon, sysmeta, 'tvshows')))
-					else:
-						cm.append((addToFavourites, 'RunPlugin(%s?action=add_favorite&meta=%s&content=%s)' % (sysaddon, sysmeta, 'tvshows')))
-				else:
-					cm.append((addToFavourites, 'RunPlugin(%s?action=add_favorite&meta=%s&content=%s)' % (sysaddon, sysmeta, 'tvshows')))
-				if not is_widget and page > 2:
-					cm.append((getLS(40477), 'RunPlugin(%s?action=return_home&folder=%s)' % (sysaddon, 'tvshows')))
-				cm.append(('[COLOR %s]Umbrella Settings[/COLOR]' % self.highlight_color, 'RunPlugin(%s?action=tools_openSettings)' % sysaddon))
-####################################
-				if trailer: meta.update({'trailer': trailer}) # removed temp so it's not passed to CM items, only skin
-				else: meta.update({'trailer': '%s?action=play_Trailer&type=%s&name=%s&year=%s&imdb=%s' % (sysaddon, 'show', systitle, year, imdb)})
-				if label_media: label += ' [I](%s)[/I]' % (getLS(40866) or 'TV Show')
-				item = control.item(label=label, offscreen=True)
-				#if 'castandart' in i: item.setCast(i['castandart'])
-				if 'castandart' in i: meta.update({"cast": ['castandart']}) #changed for kodi20 setinfo method
-				item.setArt(art)
-				try: 
-					count = getShowCount(indicators[1], imdb, tvdb) if indicators else None # if indicators and no matching imdb_id in watched items then it returns None and we use TMDb meta to avoid Trakt request
-					if count and meta.get('has_next_episode') and not customtrakt.getCustomIndicatorsInfo():
-						tmdb_total = int(meta.get('total_aired_episodes') or 0)
-						if tmdb_total > count['total']:
-							count['total'] = tmdb_total
-							count['unwatched'] = max(0, tmdb_total - count['watched'])
-						# Fallback: use Trakt watched/shows endpoint counts (more up-to-date than progress/watched endpoint)
-						trakt_aired = int(meta.get('trakt_aired_episodes') or 0)
-						trakt_watched = int(meta.get('trakt_watched_episodes') or 0)
-						if trakt_aired > count['total']:
-							count['total'] = trakt_aired
-							count['unwatched'] = max(0, trakt_aired - count['watched'])
-						# Safety net: has_next_episode guarantees ≥1 unwatched episode
-						if int(count.get('unwatched', 0)) == 0:
-							count['unwatched'] = max(1, trakt_aired - trakt_watched) if trakt_aired > trakt_watched else 1
-					# Stale Trakt progress data (syncSeasons returned 0 watched/total): fall back to
-					# the more reliable watched/shows endpoint count before display.
-					if count is not None and count['watched'] == 0 and trakt.getTraktIndicatorsInfo():
-						_trakt_watched = int(meta.get('trakt_watched_episodes') or 0)
-						_trakt_aired = int(meta.get('trakt_aired_episodes') or 0)
-						if _trakt_watched > 0:
-							count['watched'] = _trakt_watched
-							count['total'] = max(count['total'], _trakt_aired)
-							count['unwatched'] = max(0, count['total'] - count['watched'])
-					if count:
-						count['unwatched'] = max(0, count['unwatched'])
-					if self.showCounts:
-						if count:
-							if int(count['watched']) > 0 and (str(count['watched']) != str(count['total'])): #watched but not 100%
-								item.setProperties({'WatchedEpisodes': str(count['watched']), 'UnWatchedEpisodes': str(count['unwatched'])})
-								item.setProperty('WatchedProgress', str(int(float(count['watched']) / float(count['total']) * 100)))
-							elif int(count['watched']) > 0 and (str(count['watched']) == str(count['total'])): #watched 100%
-								item.setProperties({'WatchedEpisodes': str(count['watched']), 'UnWatchedEpisodes': ''})
-								item.setProperty('WatchedProgress', '100')
-							else:
-								item.setProperties({'WatchedEpisodes': '0','UnWatchedEpisodes': str(count['unwatched'])})
-								item.setProperty('WatchedProgress', str(0))
-							item.setProperties({'TotalSeasons': str(meta.get('total_seasons', '')), 'TotalEpisodes': str(count['total'])})
-						else:
-							item.setProperties({'WatchedEpisodes': '0', 'UnWatchedEpisodes': str(meta.get('total_aired_episodes', ''))}) # for shows never watched
-							item.setProperties({'TotalSeasons': str(meta.get('total_seasons', '')), 'TotalEpisodes': str(meta.get('total_aired_episodes', ''))})
-					else:
-						if count:
-							if int(count['watched']) > 0:
-								unwatched_str = '' if str(count['watched']) == str(count['total']) else str(count['unwatched'])
-								item.setProperties({'WatchedEpisodes': str(count['watched']), 'UnWatchedEpisodes': unwatched_str})
-							else:
-								item.setProperties({'WatchedEpisodes': '0','UnWatchedEpisodes': str(count['unwatched'])})
-							item.setProperties({'TotalSeasons': str(meta.get('total_seasons', '')), 'TotalEpisodes': str(count['total'])})
-							item.setProperty('WatchedProgress', str(int(float(count['watched']) / float(count['total']) * 100)))
-						else:
-							item.setProperties({'WatchedEpisodes': '0', 'UnWatchedEpisodes': str(meta.get('total_aired_episodes', ''))}) # for shows never watched
-							item.setProperties({'TotalSeasons': str(meta.get('total_seasons', '')), 'TotalEpisodes': str(meta.get('total_aired_episodes', ''))})
-				except: pass
-				item.setProperty('tmdb_id', str(tmdb))
-				if is_widget: 
-					item.setProperty('isUmbrella_widget', 'true')
-					if self.hide_watched_in_widget and str(xbmc.getInfoLabel("Window.Property(xmlfile)")) != 'Custom_1114_Search.xml':
-						if meta.get('has_next_episode'):
-							if count is not None and int(count.get('unwatched', 0)) == 0:
-								continue
-						elif str(meta.get('playcount')) == '1':
-							continue
-				if isProgress:
-					#check for watched removal in progress for shows here.
-					if self.watched_progress:
+					imdb, tmdb, tvdb, year, trailer = i.get('imdb', ''), i.get('tmdb', ''), i.get('tvdb', ''), i.get('year', ''), i.get('trailer', '')
+					title = label = i.get('tvshowtitle') or i.get('title')
+					if self.tvshows_show_year and year: label = '%s (%s)' % (label, year)
+					systitle = quote_plus(title)
+					if isProgress:
 						pass
 					else:
+						try:
+							premiered = i['premiered']
+							if (not premiered and i['status'] in ('Rumored', 'Planned', 'In Production', 'Post Production', 'Upcoming')) or (int(re.sub('[^0-9]', '', premiered)) > int(re.sub('[^0-9]', '', str(self.today_date)))):
+								if self.showunaired: label = '[COLOR %s]%s [I][Coming Soon][/I][/COLOR]' % (self.unairedcolor, label)
+								else: continue
+						except: pass
+				
+					try: indicators = getSeasonIndicators(imdb, tvdb, tmdb=tmdb, has_next_episode=i.get('has_next_episode', False), tmdb_total_aired=i.get('total_aired_episodes'), force_lookup=(isCollection and self.collection_hideWatched))
+					except: indicators = None
+					meta = dict((k, v) for k, v in iter(i.items()) if v is not None and v != '')
+					meta.update({'code': imdb, 'imdbnumber': imdb, 'mediatype': 'tvshow', 'tag': [imdb, tmdb]}) # "tag" and "tagline" for movies only, but works in my skin mod so leave
+					try: meta.update({'genre': cleangenre.lang(meta['genre'], self.lang)})
+					except: pass
+					try:
+						if 'tvshowtitle' not in meta: meta.update({'tvshowtitle': title})
+					except: pass
+					if self.prefer_tmdbArt: 
+						poster = meta.get('poster3') or meta.get('poster') or meta.get('poster2') or addonPoster
+						clearlogo = meta.get('tmdblogo') or meta.get('clearlogo', '')
+						meta.update({'clearlogo': clearlogo})
+					else: 
+						poster = meta.get('poster2') or meta.get('poster3') or meta.get('poster') or addonPoster
+						clearlogo = meta.get('clearlogo') or meta.get('tmdblogo', '')
+						meta.update({'clearlogo': clearlogo})
+					landscape = meta.get('landscape')
+					fanart = ''
+					if settingFanart:
+						if self.prefer_tmdbArt: fanart = meta.get('fanart3') or meta.get('fanart') or meta.get('fanart2') or addonFanart
+						else: fanart = meta.get('fanart2') or meta.get('fanart3') or meta.get('fanart') or addonFanart
+					#thumb = meta.get('thumb') or poster or landscape
+					if self.prefer_fanArt:
+						if fanart: thumb = fanart or meta.get('thumb') or poster or landscape
+						else:
+							thumb = meta.get('fanart') or meta.get('thumb') or poster or landscape
+					else:
+						thumb = meta.get('thumb') or poster or landscape
+					icon = meta.get('icon') or poster
+					banner = meta.get('banner3') or meta.get('banner2') or meta.get('banner') or None #changed due to some skins using banner.
+					art = {}
+					useCustomArtwork = customArtwork.fetch_show(imdb, tmdb, tvdb) #new custom artwork database check
+					clearlogo = meta.get('clearlogo', '')
+					clearart = meta.get('clearart', '')
+					discart = meta.get('discart', '')
+					keyart = meta.get('keyart', '')
+					if useCustomArtwork:
+						allowed_keys = {"poster", "fanart", "landscape", "banner", "clearart", "clearlogo", "discart", "keyart"}
+						for key in allowed_keys:
+							value = useCustomArtwork[0].get(key)
+							if value not in (None, "", " "):  # Ignore empty values. ugly but local() will not change values
+								if key == 'poster': poster = value
+								if key == 'fanart': fanart = value
+								if key == 'landscape': landscape = value
+								if key == 'banner': banner = value
+								if key == 'clearart': clearart = value
+								if key == 'clearlogo': clearlogo = value
+						if "poster" in useCustomArtwork[0] and useCustomArtwork[0].get("poster") not in (None, "", " "):
+							thumb = useCustomArtwork[0].get("poster")
+					art.update({'poster': poster, 'tvshow.poster': poster, 'fanart': fanart, 'icon': icon, 'thumb': thumb, 'banner': banner, 'clearlogo': clearlogo,
+							'tvshow.clearlogo': clearlogo, 'clearart': clearart, 'tvshow.clearart': clearart, 'landscape': landscape})
+					for k in ('metacache', 'poster2', 'poster3', 'fanart2', 'fanart3', 'banner2', 'banner3', 'trailer'): meta.pop(k, None)
+					meta.update({'poster': poster, 'fanart': fanart, 'banner': banner, 'thumb': thumb, 'icon': icon})
+					sysmeta, sysart = quote_plus(jsdumps(meta)), quote_plus(jsdumps(art))
+					if flatten > 0:
+						total_seasons = meta.get('total_seasons') or 2
+						if flatten == 2 and total_seasons < 2: url = '%s?action=episodes&tvshowtitle=%s&year=%s&imdb=%s&tmdb=%s&tvdb=%s&meta=%s' % (sysaddon, systitle, year, imdb, tmdb, tvdb, sysmeta)
+						elif flatten == 1: url = '%s?action=episodes&tvshowtitle=%s&year=%s&imdb=%s&tmdb=%s&tvdb=%s&meta=%s' % (sysaddon, systitle, year, imdb, tmdb, tvdb, sysmeta)
+						else: url = '%s?action=seasons&tvshowtitle=%s&year=%s&imdb=%s&tmdb=%s&tvdb=%s&art=%s' % (sysaddon, systitle, year, imdb, tmdb, tvdb, sysart)
+					else: url = '%s?action=seasons&tvshowtitle=%s&year=%s&imdb=%s&tmdb=%s&tvdb=%s&art=%s' % (sysaddon, systitle, year, imdb, tmdb, tvdb, sysart)
+
+	####-Context Menu and Overlays-####
+					cm = []
+					if trailer:
+						cm.append((trailerMenu, 'RunPlugin(%s?action=play_Trailer_Context&type=%s&name=%s&year=%s&imdb=%s&url=%s)' % (sysaddon, 'show', systitle, year, imdb, trailer)))
+					cm.append(('Play Trailer (Select)', 'RunPlugin(%s?action=play_Trailer_Select&type=%s&name=%s&year=%s&windowedtrailer=0)' % (sysaddon, 'show', systitle, year)))
+					try:
+						watched = (getTVShowOverlay(indicators[1], imdb, tvdb) == '5') if indicators else False
+						if watched and meta.get('has_next_episode'):
+							# A still-airing show isn't necessarily "unwatched" just because
+							# has_next_episode is true — it may mean nothing beyond "TMDb
+							# says the series is still in production," not that a specific
+							# next episode is actually out yet. Re-check with a forced-fresh
+							# indicator sync (mirrors the self-healing logic the dedicated
+							# Trakt "Show Progress" list already has) before suppressing the
+							# checkmark for real. getSeasonIndicators() already dispatches to
+							# whichever provider is the active indicators source internally.
+							watched = False
+							try:
+								re_indicators = getSeasonIndicators(imdb, tvdb, tmdb=tmdb, has_next_episode=True, tmdb_total_aired=meta.get('total_aired_episodes'))
+								re_count = getShowCount(re_indicators[1], imdb, tvdb) if re_indicators else None
+								if re_count and int(re_count.get('unwatched', 0)) == 0: watched = True
+							except: pass
+						if self.traktCredentials:
+							cm.append((traktManagerMenu, 'RunPlugin(%s?action=tools_traktManager&name=%s&imdb=%s&tmdb=%s&tvdb=%s&watched=%s&tvshow=tvshow)' % (sysaddon, systitle, imdb, tmdb, tvdb, watched)))
+						if self.simklCredentials:
+							cm.append((simklManagerMenu, 'RunPlugin(%s?action=tools_simklManager&name=%s&imdb=%s&tmdb=%s&tvdb=%s&watched=%s&tvshow=tvshow)' % (sysaddon, systitle, imdb, tmdb, tvdb, watched)))
+						if self.mdblist_authed:
+							cm.append((mdblistManagerMenu, 'RunPlugin(%s?action=tools_mdbWatchlist&name=%s&imdb=%s&tvdb=%s&tmdb=%s&watched=%s&tvshow=tvshow)' % (sysaddon, systitle, imdb, tvdb, tmdb, watched)))
+						if self.customCredentials:
+							cm.append((customManagerMenu, 'RunPlugin(%s?action=tools_customManager&name=%s&imdb=%s&tvdb=%s&watched=%s&tvshow=tvshow)' % (sysaddon, systitle, imdb, tvdb, watched)))
+						if self.floppyCredentials:
+							cm.append((floppyManagerMenu, 'RunPlugin(%s?action=tools_floppyManager&name=%s&imdb=%s&tvdb=%s&watched=%s&tvshow=tvshow)' % (sysaddon, systitle, imdb, tvdb, watched)))
+						if self.scrobCredentials:
+							cm.append((scrobManagerMenu, 'RunPlugin(%s?action=tools_scrobManager&name=%s&imdb=%s&tvdb=%s&tmdb=%s&watched=%s&tvshow=tvshow)' % (sysaddon, systitle, imdb, tvdb, tmdb, watched)))
+						if self.punchplayCredentials:
+							cm.append((punchplayManagerMenu, 'RunPlugin(%s?action=tools_punchplayManager&name=%s&imdb=%s&tvdb=%s&tmdb=%s&watched=%s&tvshow=tvshow)' % (sysaddon, systitle, imdb, tvdb, tmdb, watched)))
+						if watched:
+							meta.update({'playcount': 1, 'overlay': 5})
+							cm.append((unwatchedMenu, 'RunPlugin(%s?action=playcount_TVShow&name=%s&imdb=%s&tmdb=%s&tvdb=%s&query=4)' % (sysaddon, systitle, imdb, tmdb, tvdb)))
+						else:
+							meta.update({'playcount': 0, 'overlay': 4})
+							cm.append((watchedMenu, 'RunPlugin(%s?action=playcount_TVShow&name=%s&imdb=%s&tmdb=%s&tvdb=%s&query=5)' % (sysaddon, systitle, imdb, tmdb, tvdb)))
+					except: pass
+					if self.tmdbv4Credentials:
+						cm.append((getLS(40606) if getLS(40606) else 'TMDB List Manager', 'RunPlugin(%s?action=tools_tmdbListManager&name=%s&tmdb=%s&mediatype=tv)' % (sysaddon, systitle, tmdb)))
+						if tmdb:
+							if str(tmdb) in tmdb_v4_watchlist_ids:
+								cm.append((getLS(40614), 'RunPlugin(%s?action=tmdb_v4_watchlist_remove&tmdb=%s&mediatype=tv)' % (sysaddon, tmdb)))
+							else:
+								cm.append((getLS(40613), 'RunPlugin(%s?action=tmdb_v4_watchlist_add&tmdb=%s&mediatype=tv)' % (sysaddon, tmdb)))
+					cm.append(('Customize Artwork', 'RunPlugin(%s?action=customizeArt&mediatype=%s&imdb=%s&tmdb=%s&tvdb=%s&poster=%s&fanart=%s&landscape=%s&banner=%s&clearart=%s&clearlogo=%s)' % (sysaddon, 'show', imdb, tmdb, tvdb, poster, fanart, landscape, banner, clearart, clearlogo)))
+					cm.append((findSimilarMenu, 'Container.Update(%s?action=tvshows&url=%s)' % (sysaddon, quote_plus('https://api.trakt.tv/shows/%s/related?limit=20&page=1,return' % imdb))))
+					cm.append((playRandom, 'RunPlugin(%s?action=play_Random&rtype=season&tvshowtitle=%s&year=%s&imdb=%s&tmdb=%s&tvdb=%s&art=%s)' % (sysaddon, systitle, year, imdb, tmdb, tvdb, sysart)))
+					# cm.append((queueMenu, 'RunPlugin(%s?action=playlist_QueueItem&name=%s)' % (sysaddon, systitle)))
+					# cm.append((showPlaylistMenu, 'RunPlugin(%s?action=playlist_Show)' % sysaddon))
+					# cm.append((clearPlaylistMenu, 'RunPlugin(%s?action=playlist_Clear)' % sysaddon))
+					cm.append((addToLibrary, 'RunPlugin(%s?action=library_tvshowToLibrary&tvshowtitle=%s&year=%s&imdb=%s&tmdb=%s&tvdb=%s)' % (sysaddon, systitle, year, imdb, tmdb, tvdb)))
+					if favoriteItems:
+						if tmdb in favoriteItems:
+							cm.append((removeFromFavourites, 'RunPlugin(%s?action=remove_favorite&meta=%s&content=%s)' % (sysaddon, sysmeta, 'tvshows')))
+						else:
+							cm.append((addToFavourites, 'RunPlugin(%s?action=add_favorite&meta=%s&content=%s)' % (sysaddon, sysmeta, 'tvshows')))
+					else:
+						cm.append((addToFavourites, 'RunPlugin(%s?action=add_favorite&meta=%s&content=%s)' % (sysaddon, sysmeta, 'tvshows')))
+					if not is_widget and page > 2:
+						cm.append((getLS(40477), 'RunPlugin(%s?action=return_home&folder=%s)' % (sysaddon, 'tvshows')))
+					cm.append(('[COLOR %s]Umbrella Settings[/COLOR]' % self.highlight_color, 'RunPlugin(%s?action=tools_openSettings)' % sysaddon))
+	####################################
+					if trailer: meta.update({'trailer': trailer}) # removed temp so it's not passed to CM items, only skin
+					else: meta.update({'trailer': '%s?action=play_Trailer&type=%s&name=%s&year=%s&imdb=%s' % (sysaddon, 'show', systitle, year, imdb)})
+					if label_media: label += ' [I](%s)[/I]' % (getLS(40866) or 'TV Show')
+					item = control.item(label=label, offscreen=True)
+					#if 'castandart' in i: item.setCast(i['castandart'])
+					if 'castandart' in i: meta.update({"cast": ['castandart']}) #changed for kodi20 setinfo method
+					item.setArt(art)
+					try: 
+						count = getShowCount(indicators[1], imdb, tvdb) if indicators else None # if indicators and no matching imdb_id in watched items then it returns None and we use TMDb meta to avoid Trakt request
+						if count and meta.get('has_next_episode') and not customtrakt.getCustomIndicatorsInfo():
+							tmdb_total = int(meta.get('total_aired_episodes') or 0)
+							if tmdb_total > count['total']:
+								count['total'] = tmdb_total
+								count['unwatched'] = max(0, tmdb_total - count['watched'])
+							# Fallback: use Trakt watched/shows endpoint counts (more up-to-date than progress/watched endpoint)
+							trakt_aired = int(meta.get('trakt_aired_episodes') or 0)
+							trakt_watched = int(meta.get('trakt_watched_episodes') or 0)
+							if trakt_aired > count['total']:
+								count['total'] = trakt_aired
+								count['unwatched'] = max(0, trakt_aired - count['watched'])
+							# Safety net: has_next_episode guarantees ≥1 unwatched episode
+							if int(count.get('unwatched', 0)) == 0:
+								count['unwatched'] = max(1, trakt_aired - trakt_watched) if trakt_aired > trakt_watched else 1
+						# Stale Trakt progress data (syncSeasons returned 0 watched/total): fall back to
+						# the more reliable watched/shows endpoint count before display.
+						if count is not None and count['watched'] == 0 and trakt.getTraktIndicatorsInfo():
+							_trakt_watched = int(meta.get('trakt_watched_episodes') or 0)
+							_trakt_aired = int(meta.get('trakt_aired_episodes') or 0)
+							if _trakt_watched > 0:
+								count['watched'] = _trakt_watched
+								count['total'] = max(count['total'], _trakt_aired)
+								count['unwatched'] = max(0, count['total'] - count['watched'])
+						if count:
+							count['unwatched'] = max(0, count['unwatched'])
+						if self.showCounts:
+							if count:
+								if int(count['watched']) > 0 and (str(count['watched']) != str(count['total'])): #watched but not 100%
+									item.setProperties({'WatchedEpisodes': str(count['watched']), 'UnWatchedEpisodes': str(count['unwatched'])})
+									item.setProperty('WatchedProgress', str(int(float(count['watched']) / float(count['total']) * 100)))
+								elif int(count['watched']) > 0 and (str(count['watched']) == str(count['total'])): #watched 100%
+									item.setProperties({'WatchedEpisodes': str(count['watched']), 'UnWatchedEpisodes': ''})
+									item.setProperty('WatchedProgress', '100')
+								else:
+									item.setProperties({'WatchedEpisodes': '0','UnWatchedEpisodes': str(count['unwatched'])})
+									item.setProperty('WatchedProgress', str(0))
+								item.setProperties({'TotalSeasons': str(meta.get('total_seasons', '')), 'TotalEpisodes': str(count['total'])})
+							else:
+								item.setProperties({'WatchedEpisodes': '0', 'UnWatchedEpisodes': str(meta.get('total_aired_episodes', ''))}) # for shows never watched
+								item.setProperties({'TotalSeasons': str(meta.get('total_seasons', '')), 'TotalEpisodes': str(meta.get('total_aired_episodes', ''))})
+						else:
+							if count:
+								if int(count['watched']) > 0:
+									unwatched_str = '' if str(count['watched']) == str(count['total']) else str(count['unwatched'])
+									item.setProperties({'WatchedEpisodes': str(count['watched']), 'UnWatchedEpisodes': unwatched_str})
+								else:
+									item.setProperties({'WatchedEpisodes': '0','UnWatchedEpisodes': str(count['unwatched'])})
+								item.setProperties({'TotalSeasons': str(meta.get('total_seasons', '')), 'TotalEpisodes': str(count['total'])})
+								item.setProperty('WatchedProgress', str(int(float(count['watched']) / float(count['total']) * 100)))
+							else:
+								item.setProperties({'WatchedEpisodes': '0', 'UnWatchedEpisodes': str(meta.get('total_aired_episodes', ''))}) # for shows never watched
+								item.setProperties({'TotalSeasons': str(meta.get('total_seasons', '')), 'TotalEpisodes': str(meta.get('total_aired_episodes', ''))})
+					except: pass
+					item.setProperty('tmdb_id', str(tmdb))
+					if is_widget: 
+						item.setProperty('isUmbrella_widget', 'true')
+						if self.hide_watched_in_widget and str(xbmc.getInfoLabel("Window.Property(xmlfile)")) != 'Custom_1114_Search.xml':
+							if meta.get('has_next_episode'):
+								if count is not None and int(count.get('unwatched', 0)) == 0:
+									continue
+							elif str(meta.get('playcount')) == '1':
+								continue
+					if isProgress:
+						#check for watched removal in progress for shows here.
+						if self.watched_progress:
+							pass
+						else:
+							if meta.get('has_next_episode'):
+								if count is not None and int(count.get('unwatched', 0)) == 0:
+									continue
+							elif str(meta.get('playcount')) == '1':
+								continue
+					if isWatched:
+						if str(meta.get('playcount')) != '1':
+							continue
+					if isCollection and self.collection_hideWatched:
 						if meta.get('has_next_episode'):
 							if count is not None and int(count.get('unwatched', 0)) == 0:
 								continue
 						elif str(meta.get('playcount')) == '1':
 							continue
-				if isWatched:
-					if str(meta.get('playcount')) != '1':
-						continue
-				if isCollection and self.collection_hideWatched:
-					if meta.get('has_next_episode'):
-						if count is not None and int(count.get('unwatched', 0)) == 0:
-							continue
-					elif str(meta.get('playcount')) == '1':
-						continue
-				setUniqueIDs = {'imdb': imdb, 'tmdb': tmdb, 'tvdb': tvdb} #k20setinfo
-				#item.setInfo(type='video', infoLabels=control.metadataClean(meta))
-				control.set_info(item, meta, setUniqueIDs)
-				if is_widget and control.getKodiVersion() > 19.5 and self.useFullContext != True:
-					pass
-				else:
-					item.addContextMenuItems(cm)
-				control.addItem(handle=syshandle, url=url, listitem=item, isFolder=True)
-			except:
+					setUniqueIDs = {'imdb': imdb, 'tmdb': tmdb, 'tvdb': tvdb} #k20setinfo
+					#item.setInfo(type='video', infoLabels=control.metadataClean(meta))
+					control.set_info(item, meta, setUniqueIDs)
+					if is_widget and control.getKodiVersion() > 19.5 and self.useFullContext != True:
+						pass
+					else:
+						item.addContextMenuItems(cm)
+					control.addItem(handle=syshandle, url=url, listitem=item, isFolder=True)
+				except:
 				
-				log_utils.error()
-		if next:
-			try:
-				if not items: raise Exception()
-				url = items[0]['next']
-				if not url: raise Exception()
-				url_params = dict(parse_qsl(urlsplit(url).query))
-				if 'imdb.com' in url and 'start' in url_params:
-					page = '  [I](%s)[/I]' % str(int(((int(url_params.get('start')) - 1) / int(self.page_limit)) + 1))
-				else: page = '  [I](%s)[/I]' % url_params.get('page')
-				if 'None' in page: page = page.split('  [I]')[0]
-				nextColor = '[COLOR %s]' % getSetting('highlight.color')
-				nextMenu = nextColor + nextMenu + page + '[/COLOR]'
-				u = urlparse(url).netloc.lower()
-				if url.startswith(sysaddon):
-					pass  # already a plugin action URL, use as-is
-				elif u in self.imdb_link or u in self.trakt_link or u in self.simkl_link:
-					url = '%s?action=tvshowPage&url=%s&folderName=%s' % (sysaddon, quote_plus(url), quote_plus(folderName))
-				elif u in self.tmdb_link:
-					url = '%s?action=tmdbTvshowPage&url=%s&folderName=%s' % (sysaddon, quote_plus(url), quote_plus(folderName))
-				elif u in self.tvmaze_link:
-					url = '%s?action=tvmazeTvshowPage&url=%s&folderName=%s' % (sysaddon, quote_plus(url), quote_plus(folderName))
-				elif u in self.mbdlist_list_items:
-					url = '%s?action=tvshowPage&url=%s&folderName=%s' % (sysaddon, quote_plus(url), quote_plus(folderName))
-				item = control.item(label=nextMenu, offscreen=True)
-				icon = control.addonNext()
-				item.setArt({'icon': icon, 'thumb': icon, 'poster': icon, 'banner': icon})
-				item.setProperty ('SpecialSort', 'bottom')
-				control.addItem(handle=syshandle, url=url, listitem=item, isFolder=True)
-			except:
+					log_utils.error()
+			if next:
+				try:
+					if not items: raise Exception()
+					url = items[0]['next']
+					if not url: raise Exception()
+					url_params = dict(parse_qsl(urlsplit(url).query))
+					if 'imdb.com' in url and 'start' in url_params:
+						page = '  [I](%s)[/I]' % str(int(((int(url_params.get('start')) - 1) / int(self.page_limit)) + 1))
+					else: page = '  [I](%s)[/I]' % url_params.get('page')
+					if 'None' in page: page = page.split('  [I]')[0]
+					nextColor = '[COLOR %s]' % getSetting('highlight.color')
+					nextMenu = nextColor + nextMenu + page + '[/COLOR]'
+					u = urlparse(url).netloc.lower()
+					if url.startswith(sysaddon):
+						pass  # already a plugin action URL, use as-is
+					elif u in self.imdb_link or u in self.trakt_link or u in self.simkl_link:
+						url = '%s?action=tvshowPage&url=%s&folderName=%s' % (sysaddon, quote_plus(url), quote_plus(folderName))
+					elif u in self.tmdb_link:
+						url = '%s?action=tmdbTvshowPage&url=%s&folderName=%s' % (sysaddon, quote_plus(url), quote_plus(folderName))
+					elif u in self.tvmaze_link:
+						url = '%s?action=tvmazeTvshowPage&url=%s&folderName=%s' % (sysaddon, quote_plus(url), quote_plus(folderName))
+					elif u in self.mbdlist_list_items:
+						url = '%s?action=tvshowPage&url=%s&folderName=%s' % (sysaddon, quote_plus(url), quote_plus(folderName))
+					item = control.item(label=nextMenu, offscreen=True)
+					icon = control.addonNext()
+					item.setArt({'icon': icon, 'thumb': icon, 'poster': icon, 'banner': icon})
+					item.setProperty ('SpecialSort', 'bottom')
+					control.addItem(handle=syshandle, url=url, listitem=item, isFolder=True)
+				except:
 				
-				log_utils.error()
-		if not finalize: return
-		control.content(syshandle, 'tvshows')
-		control.directory(syshandle, cacheToDisc=False) # disable cacheToDisc so unwatched counts loads fresh data counts if changes made
-		views.setView('tvshows', {'skin.estuary': 55, 'skin.confluence': 500})
+					log_utils.error()
+			if not finalize: return
+			control.content(syshandle, 'tvshows')
+			control.directory(syshandle, cacheToDisc=False) # disable cacheToDisc so unwatched counts loads fresh data counts if changes made
+			views.setView('tvshows', {'skin.estuary': 55, 'skin.confluence': 500})
+		finally:
+			performance.record('stage', stage_started, 'shows-directory')
 
 	def addDirectory(self, items, queue=False, folderName='Umbrella'):
 		from sys import argv # some functions like ActivateWindow() throw invalid handle less this is imported here.
@@ -4134,3 +4155,6 @@ class TVshows:
 			else: content = ''
 		control.content(syshandle, content) # some skins use their own thumb for things like "genres" when content type is set here
 		control.directory(syshandle, cacheToDisc=True)
+
+from resources.lib.modules import performance as _performance
+_performance.record('module-import', _module_import_started, 'tvshows')
