@@ -1,3 +1,8 @@
+[B]Update - v6.7.745 - Nov 4th, 2026[/B]
+--[Fix] Quietly cancel playback when backing out of source selection, including after choosing Download.
+--[Enhancement] Added safe Floppy sync diagnostics for authorization and connection failures.
+--[Feature] Added Download Manager to the Downloads page and to Tools when downloads are enabled.
+
 [B]Update - v6.7.744 - Nov 3rd, 2026[/B]
 --[Feature] Added Resume download in Download Manager for supported interrupted transfers, including after Kodi restarts. Remote file checks protect existing partial data.
 

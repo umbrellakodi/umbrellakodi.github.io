@@ -444,18 +444,15 @@ class Sources:
 				homeWindow.clearProperty('umbrella.window_keep_alive')
 				try: self.window.close()
 				except: pass
+				# Back/Cancel is an intentional exit, including after a download.
+				# A failed resolver result makes Kodi show Playback Failed.
+				control.playlist.clear()
 				if self.enable_playnext:
-					# During continuous playback Kodi holds a valid plugin handle.
-					# Resolving with False triggers "Playback Failed". Resolve with
-					# True + empty offscreen item instead so no error dialog appears.
-					control.playlist.clear()
 					try: control.player.stop()
 					except: pass
-					from sys import argv
-					control.resolve(int(argv[1]), True, control.item(offscreen=True))
-					control.closeOk()
-				else:
-					control.cancelPlayback()
+				from sys import argv
+				control.resolve(int(argv[1]), True, control.item(offscreen=True))
+				control.closeOk()
 		except:
 			log_utils.error('Error sourceSelect(): ')
 			control.cancelPlayback()

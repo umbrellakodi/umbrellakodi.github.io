@@ -701,6 +701,7 @@ class Navigator:
 		self.addDirectoryItem(32045, 'tools_openSettings&query=2.0', 'tools.png', 'DefaultAddonService.png', isFolder=False)
 		#-- Downloads - 10
 		self.addDirectoryItem(32048, 'tools_openSettings&query=10.0', 'tools.png', 'DefaultAddonService.png', isFolder=False)
+		if getSetting('downloads') == 'true': self.addDirectoryItem(40867, 'downloadManager', 'downloads.png', 'DefaultAddonService.png', isFolder=False)
 		#-- Subtitles - 11
 		self.addDirectoryItem(32046, 'tools_openSettings&query=11.0', 'tools.png', 'DefaultAddonService.png', isFolder=False)
 		self.addDirectoryItem(32556, 'library_Navigator&folderName=%s' % quote_plus(getLS(32541)), 'tools.png', 'DefaultAddonService.png', isFolder=True)
@@ -875,6 +876,7 @@ class Navigator:
 		self.endDirectory()
 
 	def downloads(self, folderName=''):
+		self.addDirectoryItem(40867, 'downloadManager', 'downloads.png', 'DefaultAddonService.png', isFolder=False)
 		movie_downloads = getSetting('movie.download.path')
 		tv_downloads = getSetting('tv.download.path')
 		if len(control.listDir(movie_downloads)[0]) > 0: self.addDirectoryItem(32001, movie_downloads, 'movies.png', 'DefaultMovies.png', isAction=False)

@@ -61,10 +61,11 @@ def isReadOnly():
 
 #### Core request plumbing (mirrors customtrakt.py's getCustom, minus the reauth loop) ####
 
-def getFloppy(url, post=None, method=None, silent=False):
+def getFloppy(url, post=None, method=None, silent=False, raise_errors=False):
 	# Returns the raw requests.Response (even for 404/4xx so callers can branch on
 	# status_code, e.g. PATCH-then-POST-fallback for untracked items), or None on a
 	# hard failure (no base url configured, or an unrecoverable connection error).
+	from resources.lib.modules import floppyauth
 	try:
 		global _last_request_time
 		base = floppyBaseUrl()
@@ -75,7 +76,9 @@ def getFloppy(url, post=None, method=None, silent=False):
 		from resources.lib.modules import floppyauth
 		identity = floppyauth.identity()
 		token = floppyauth.access_token(base, session, expected_identity=identity)
-		if not token: return None
+		if not token:
+			if raise_errors: raise ValueError('Floppy access token unavailable')
+			return None
 		req_headers = dict(headers)
 		req_headers['Authorization'] = 'Bearer %s' % token
 		body = jsdumps(post) if post is not None else None
@@ -113,6 +116,11 @@ def getFloppy(url, post=None, method=None, silent=False):
 			log_utils.log('FLOPPY: temporary server problem: %s url=%s' % (status_code, url), level=log_utils.LOGINFO)
 		return response
 	except Exception as e:
+		if raise_errors:
+			# Exception text may contain a token or a signed cursor URL.
+			if isinstance(e, floppyauth.AuthError):
+				raise RuntimeError('Floppy authorization unavailable; check the connection or authorize again') from None
+			raise RuntimeError('Floppy transport failure (%s)' % type(e).__name__) from None
 		if not silent: log_utils.log_force('FLOPPY: getFloppy exception url=%s error=%s' % (url, e), level=log_utils.LOGWARNING)
 		return None
 
@@ -1074,7 +1082,9 @@ def sync_incremental(forced=False, progress_callback=None):
 		if state and state.get('identity') != account: state = None
 		previous_state, previous_mirror = state, mirror
 		if progress_callback: progress_callback('Syncing Floppy watched status and resume positions')
-		client = floppy_incremental.Client(floppyBaseUrl(), getFloppy, control.monitor.abortRequested)
+		def sync_request(url, **kwargs):
+			return getFloppy(url, raise_errors=True, **kwargs)
+		client = floppy_incremental.Client(floppyBaseUrl(), sync_request, control.monitor.abortRequested)
 		state, mirror = client.sync(state, mirror, forced=forced)
 		if identity() != account or control.monitor.abortRequested(): return False
 		state['identity'] = account

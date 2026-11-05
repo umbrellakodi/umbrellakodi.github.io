@@ -93,12 +93,16 @@ class Client:
 
     def fetch(self, url, method='GET', bootstrap=False):
         if self.cancelled(): raise ValueError('Floppy sync cancelled')
-        response = self.request(self.url(url), method=method, silent=True)
+        try:
+            response = self.request(self.url(url), method=method, silent=True)
+        except RuntimeError as exc:
+            # getFloppy's strict mode supplies sanitized failure details.
+            raise ValueError('%s %s: %s' % (method, urlsplit(url).path, exc)) from None
         if response is None: raise ValueError('Floppy sync request failed')
         # Only the bootstrap's absence proves this is an older server.
         if bootstrap and response.status_code in (404, 405): raise Unavailable()
         try: data = response.json()
-        except Exception: raise ValueError('Invalid Floppy sync response')
+        except Exception: raise ValueError('Invalid Floppy sync response (HTTP %s)' % response.status_code)
         if not isinstance(data, dict): raise ValueError('Invalid Floppy sync response')
         if response.status_code in (400, 409) and data.get('code') in (
                 'sync_not_initialized', 'cursor_expired', 'sync_reset_required',
