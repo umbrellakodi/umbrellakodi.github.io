@@ -1,49 +1,24 @@
-[B]Update - v6.7.745 - Nov 4th, 2026[/B]
---[Fix] Quietly cancel playback when backing out of source selection, including after choosing Download.
---[Enhancement] Added safe Floppy sync diagnostics for authorization and connection failures.
---[Feature] Added Download Manager to the Downloads page and to Tools when downloads are enabled.
+[B]Update - v6.7.746 - Nov 7th, 2026[/B]
+--[Fix] Log uploads now clearly confirm completion and explain how to use the link. Fixed clipboard copying on cancellation and added an upload timeout.
+--[Fix] Restore the saved language invoker preference after updates without forcing a profile reload. The restored preference takes effect on the next normal Kodi restart.
+--[Fix] Prevent artwork and version lookups from failing during add-on reloads and interrupting startup or account sync.
+--[Fix] Floppy sync cancellation during shutdown or profile reload no longer logs an error.
 
-[B]Update - v6.7.744 - Nov 3rd, 2026[/B]
---[Feature] Added Resume download in Download Manager for supported interrupted transfers, including after Kodi restarts. Remote file checks protect existing partial data.
-
-[B]Update - v6.7.743 - Nov 3rd, 2026[/B]
---[Fix] Added Remove from list for finished Download Manager entries, including failed downloads, while preserving downloaded and partial files.
---[Enhancement] Bundled network logos with the add-on so network menus no longer need Imgur to load their artwork.
-
-[B]Update - v6.7.742 - Nov 3rd, 2026[/B]
---[Feature] Added Download Manager in Downloads settings with live progress, transfer speeds, recent results and cancellation.
---[Fix] Improved download handling.
---[Enhancement] Improved menu loading by checking provider accounts and library availability only when needed.
---[Enhancement] Reduced repeated metadata work and unnecessary delays when opening movie and TV results.
---[Fix] Prevented foreground Trakt activity checks from entering long retry or rate-limit waits when the service is unavailable.
---[Fix] Improved saved-view restoration, avoiding long waits and preventing background or widget requests.
---[Fix] Prevented an Umbrella startup error when Kodi's video library returns an error.
---[Enhancement] Reused available TMDb IDs when building Scrob TV watched counts to avoid unnecessary lookups.
---[Fix] Removed account credentials from RD token-refresh debug messages.
---[Enhancement] Added debug timings to help diagnose slow menus, list requests and metadata loading.
-
-[B]Update - v6.7.741 - Nov 2nd, 2026[/B]
---[Fix] Restored artwork views for combined movie and TV search in skins such as Nimbus and corrected result labels to Movie and TV Show.
-
-[B]Update - v6.7.740 - Nov 1st, 2026[/B]
---[Fix] MDBList Progress Episodes now respects broadcast times and timezones when hiding unaired episodes, including cached progress lists.
---[Fix] Fixed Custom show and season watched actions reporting success while missing episodes remained unwatched, including Bluey season 1.
---[Fix] Corrected Custom progress counts for currently airing shows when the server has outdated release totals, including VisionQuest.
---[Fix] Fixed empty Specials folders when TMDb season or episode metadata is unavailable, including A Story of Derry. Undated specials remain visible while future release dates are respected.
---[Fix] Added searches for A Story of Derry (2026), S00E01, and S01E09, filtering unrelated episodes and season packs while preserving watched and resume tracking.
---[Fix] Fixed AllDebrid magnet playback failing to read nested file lists and incorrectly reporting unsupported RAR files.
---[Fix] Prevented missing Specials episode counts from causing pack-size errors for single-file results.
-
-[B]Update - v6.7.739 - Oct 31st, 2026[/B]
---[Fix] Marking items as watched or unwatched now works correctly across all services (Trakt, Simkl, MDBList, Scrob, Floppy, and custom servers).
---[Fix] Watch history now stays in sync. Items removed online are removed locally, and failed syncs no longer wipe your saved history.
---[Fix] Show Progress counts are accurate again, and partly watched shows no longer vanish from the list.
---[Fix] Clearing resume points now works properly on all services, including specials, seasons, and whole shows.
---[Fix] Fixed Trakt login and token renewal issues, plus actions from widgets that weren't working.
---[Fix] Floppy: marking a show or season watched now marks all its episodes, and finishing an episode (at 90%, credits, or the end) counts it as watched without duplicates.
---[Fix] Floppy: Continue Watching no longer shows finished or already-watched items.
---[Enhancement] Floppy now syncs only what changed instead of re-downloading your full history every time. Older Floppy servers still work.
---[Fix] General improvements to sync reliability, widget refreshes, and error reporting.
+[B]Update - v6.8.00 - Nov 6th, 2026[/B]
+--[Enhancement] Faster menus and results through fewer account checks, less repeated metadata work, and reused TMDb IDs.
+--[Feature] Added Download Manager (in Downloads settings, the Downloads page, and Tools) with live progress, transfer speeds, cancellation, resume for interrupted transfers (even after Kodi restarts), and Remove from list for finished entries.
+--[Feature] Floppy now syncs only what changed instead of your full history. Older Floppy servers still work.
+--[Enhancement] Network logos are now bundled with the add-on, so Imgur is no longer needed.
+--[Enhancement] Added Floppy sync diagnostics to help troubleshoot issues.
+--[Fix] Watched/unwatched, resume points, and watch history now sync reliably across Trakt, Simkl, MDBList, Scrob, and Floppy.
+--[Fix] MDBList Progress Episodes now respects broadcast times and timezones for unaired episodes.
+--[Fix] Floppy: marking a show or season watched marks every episode, and Continue Watching no longer shows finished items.
+--[Fix] Fixed Trakt login, token renewal, and widget actions, and stopped long waits when Trakt is unavailable.
+--[Fix] Fixed empty Specials folders and related pack-size errors.
+--[Fix] Fixed AllDebrid magnet playback with nested file lists.
+--[Fix] Restored artwork views and correct labels for combined Movie and TV search in skins like Nimbus.
+--[Fix] Backing out of source selection now quietly cancels playback.
+--[Fix] General fixes to downloads, saved views, and startup errors, and removed account credentials from debug logs.
 
 [B]Update - v6.7.99 - Oct 30th, 2026[/B]
 --[Fix] Fixed continuous playback stopping after multiple episodes and improved automatic Play Next reliability.

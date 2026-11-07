@@ -62,8 +62,6 @@ def traktVerificationURL(device_code):
 
 
 def getTrakt(url, post=None, extended=False, silent=False, reauth_attempts=0, method=None):
-	from time import monotonic
-	request_started = monotonic()
 	activity_write = post is not None or method == 'DELETE'
 	if activity_write:
 		try:
@@ -143,11 +141,6 @@ def getTrakt(url, post=None, extended=False, silent=False, reauth_attempts=0, me
 		try: log_utils.error('getTrakt Error: ')
 		except: pass
 	finally:
-		try:
-			from resources.lib.modules import performance
-			performance.record('trakt-request', request_started, 'write' if activity_write else 'read',
-				'http-%s' % locals().get('status_code', 'failed'))
-		except Exception: pass
 		if activity_write:
 			try:
 				from resources.lib.modules import trakt_activities
@@ -168,10 +161,6 @@ def error_handler(url, response, status_code, silent=False):
 		log_utils.log('getTrakt() (404:NOT FOUND): URL=(%s): %s' % (url, response_text), level=log_utils.LOGWARNING)
 
 def getTraktAsJson(url, post=None, silent=False):
-	from resources.lib.modules import performance
-	started = time.monotonic()
-	is_activity = url in ('/sync/last_activities', 'sync/last_activities', BASE_URL + '/sync/last_activities') and post is None
-	outcome = 'failed'
 	try:
 		res_headers = {}
 		r = getTrakt(url=url, post=post, extended=True, silent=silent)
@@ -181,18 +170,13 @@ def getTraktAsJson(url, post=None, silent=False):
 		r = r.json()
 		if 'X-Sort-By' in res_headers and 'X-Sort-How' in res_headers:
 			r = sort_list(res_headers['X-Sort-By'], res_headers['X-Sort-How'], r)
-		outcome = 'success'
 		return r
 	except Exception as e:
 		log_utils.log('TRAKT: Error in getTraktAsJson: %s' % str(e), level=log_utils.LOGWARNING)
 		return None
-	finally:
-		if is_activity: performance.record('trakt-activities', started, outcome=outcome)
 
 def get_all_pages(url, silent=False):
 	"""Fetch all pages from a paginated Trakt endpoint and return combined results."""
-	from time import monotonic
-	from resources.lib.modules import performance
 	try:
 		# Strip page= and limit= params while preserving all other query params (e.g. extended=full)
 		try:
@@ -206,13 +190,10 @@ def get_all_pages(url, silent=False):
 		limit = 250
 		page = 1
 		results = []
-		_sync_start = time.time()
 
 		while True:
 			page_url = url + sep + 'page=%d&limit=%d' % (page, limit)
-			page_started = monotonic()
 			response = getTrakt(page_url, silent=silent)
-			performance.record('trakt-page', page_started, 'page_%s' % page, 'success' if response else 'failed')
 			if not response:
 				log_utils.log('TRAKT: get_all_pages - Incomplete response on page %s for URL: %s' % (page, url), level=log_utils.LOGWARNING)
 				return None
@@ -281,8 +262,6 @@ def get_all_pages(url, silent=False):
 				log_utils.log('TRAKT: get_all_pages reached safety limit of 400 pages for URL: %s' % url, level=log_utils.LOGWARNING)
 				return None
 
-		if page > 1:
-			log_utils.log('TRAKT: get_all_pages - Fetched %d items across %d pages in %.1fs from %s' % (len(results), page, time.time() - _sync_start, url), level=log_utils.LOGINFO)
 		
 		return results
 	except Exception as e:
@@ -1033,9 +1012,7 @@ def slug(name):
 
 def _get_browse_activities(token, client_id, account):
 	"""One short foreground probe; never use the sync transport's retry loop."""
-	from resources.lib.modules import performance, trakt_activities
-	started = time.monotonic()
-	outcome = 'failed'
+	from resources.lib.modules import trakt_activities
 	try:
 		request_headers = {'Content-Type': 'application/json', 'trakt-api-key': client_id,
 			'trakt-api-version': '2', 'Authorization': 'Bearer %s' % token}
@@ -1052,20 +1029,15 @@ def _get_browse_activities(token, client_id, account):
 						delay = max(0, ceil(parsedate_to_datetime(response.headers['Retry-After']).timestamp() - time.time()))
 					except (ValueError, TypeError, KeyError, AttributeError, OverflowError): delay = 15
 				trakt_activities.defer(account, delay)
-				outcome = 'throttled'
 				return None
 			if response.status_code != 200:
 				# In particular, do not enter a potentially long OAuth refresh here.
 				# Authenticated sync and explicit authorization retain that behavior.
-				outcome = 'http-%s' % response.status_code
 				return None
 			result = response.json()
-			outcome = 'success'
 			return result
 	except (requests.exceptions.RequestException, ValueError):
 		return None
-	finally:
-		performance.record('trakt-browse-probe', started, outcome=outcome)
 
 
 def getBrowseActivity(fresh=False):
@@ -1755,13 +1727,13 @@ def markEpisodeAsWatched(imdb, tvdb, season, episode):
 		if not isinstance(result, dict):
 			log_utils.log('Trakt markEpisodeAsWatched returned unexpected response type: %s' % type(result).__name__, level=log_utils.LOGWARNING)
 			return False
-		added = int((result.get('added') or {}).get('episodes') or 0)
+		int((result.get('added') or {}).get('episodes') or 0)
 		existing = int((result.get('existing') or {}).get('episodes') or 0)
 		if added == 0 and existing == 0 and tvdb:
 			control.sleep(1000)
 			result = getTraktAsJson('/sync/history', {"shows": [{"seasons": [{"episodes": [{"number": episode}], "number": season}], "ids": {"tvdb": tvdb}}]})
 			if not isinstance(result, dict): return False
-			added = int((result.get('added') or {}).get('episodes') or 0)
+			int((result.get('added') or {}).get('episodes') or 0)
 			existing = int((result.get('existing') or {}).get('episodes') or 0)
 		result = added != 0 or existing != 0
 		if getSetting('debug.level') == '1':

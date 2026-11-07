@@ -58,7 +58,6 @@ def _mdblist_restore_started(since):
 		try: started = float(homeWindow.getProperty('umbrella.mdb.build_started') or 0)
 		except (ValueError, TypeError): started = 0
 		if started >= since:
-			control.log_refresh_diagnostic('post-playback-refresh-skipped-mdb-reloading')
 			return True
 		# An existing populated directory still needs the explicit watched refresh.
 		if control.infoLabel('Container.NumItems') not in ('', '0'): return False
@@ -71,7 +70,6 @@ def _refresh_after_player_closes(request_id, watched_update_thread=None):
 	"""Refresh only after Kodi has restored the underlying window."""
 	try:
 		refresh_started = time.time()
-		control.log_refresh_diagnostic('post-playback-worker-start', 'worker=%s' % request_id)
 		# used to detect when the full screen playback window has been destroyed.
 		for _ in range(20):
 			if (not control.player.isPlaying()
@@ -97,9 +95,7 @@ def _refresh_after_player_closes(request_id, watched_update_thread=None):
 		if _mdblist_restore_started(refresh_started): return
 		if control.monitor.waitForAbort(0.5): return
 		if homeWindow.getProperty('umbrella.container_refresh_request') != request_id:
-			control.log_refresh_diagnostic('post-playback-worker-superseded', 'worker=%s' % request_id)
 			return
-		control.log_refresh_diagnostic('post-playback-worker-dispatch', 'worker=%s' % request_id)
 		homeWindow.clearProperty('umbrella.container_refresh_request')
 		homeWindow.clearProperty('umbrella.playback_cleanup')
 		homeWindow.clearProperty('umbrella.widget_refresh_pending')
@@ -302,9 +298,10 @@ class Player(xbmc.Player):
 			#item.setUniqueIDs(self.ids) #changed for kodi20 setinfo method
 			setUniqueIDs = self.ids #changed for kodi20 setinfo method
 			if self.media_type == 'episode':
-				item.setArt({'tvshow.clearart': clearart, 'tvshow.clearlogo': clearlogo, 'tvshow.discart': discart, 'thumb': thumb, 'tvshow.poster': season_poster, 'season.poster': season_poster, 'tvshow.fanart': fanart})
+				art = {'tvshow.clearart': clearart, 'tvshow.clearlogo': clearlogo, 'tvshow.discart': discart, 'thumb': thumb, 'tvshow.poster': season_poster, 'season.poster': season_poster, 'tvshow.fanart': fanart}
 			else:
-				item.setArt({'clearart': clearart, 'clearlogo': clearlogo, 'discart': discart, 'thumb': thumb, 'poster': poster, 'fanart': fanart})
+				art = {'clearart': clearart, 'clearlogo': clearlogo, 'discart': discart, 'thumb': thumb, 'poster': poster, 'fanart': fanart}
+			item.setArt({key: value or '' for key, value in art.items()})
 			#if 'castandart' in meta: item.setCast(meta.get('castandart', '')) #changed for kodi20 setinfo method
 			#item.setInfo(type='video', infoLabels=control.metadataClean(meta))
 			control.set_info(item, meta, setUniqueIDs=setUniqueIDs, fileNameandPath=url) #changed for kodi20 setinfo method
@@ -919,6 +916,8 @@ class Player(xbmc.Player):
 			playingvideo = self.isPlayingVideo()
 		except:
 			playingvideo = False
+		if not playing or not playingvideo:
+			return False
 		try:
 			playTime = self.getTime() >= 0
 		except:

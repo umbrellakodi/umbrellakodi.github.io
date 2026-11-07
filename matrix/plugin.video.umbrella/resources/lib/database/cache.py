@@ -39,7 +39,6 @@ def get_coalesced(function, duration, *args):
 		con.execute('CREATE TABLE IF NOT EXISTS result (id INTEGER PRIMARY KEY, completed REAL, value TEXT)')
 		row = con.execute('SELECT completed, value FROM result WHERE id=1').fetchone()
 		if row and row[0] >= started:
-			control.log_refresh_diagnostic('mdb-build-shared-result')
 			return literal_eval(row[1])
 		result = get(function, duration, *args)
 		if result is not None:
@@ -56,29 +55,17 @@ def get(function, duration, *args):
 	:param duration: Duration of validity of cache in hours
 	:param args: Optional arguments for the provided function
 	"""
-	from time import monotonic
-	from resources.lib.modules import performance
-	started = monotonic()
-	outcome = 'error'
 	try:
 		key = _hash_function(function, args)
-		lookup_started = monotonic()
 		cache_result = cache_get(key)
-		performance.record('cache-lookup', lookup_started, getattr(function, '__name__', 'callable'))
 		if cache_result:
 			from resources.lib.modules import log_utils
 			try: result = literal_eval(cache_result['value'])
 			except: result = None
 			if _is_cache_valid(cache_result['date'], duration):
-				outcome = 'hit'
 				return result
 
-		outcome = 'expired' if cache_result else 'miss'
-		fetch_started = monotonic()
-		try:
-			fresh_result = repr(function(*args)) # may need a try-except block for server timeouts
-		finally:
-			performance.record('cache-fetch', fetch_started, getattr(function, '__name__', 'callable'))
+		fresh_result = repr(function(*args)) # may need a try-except block for server timeouts
 
 		if cache_result and (result and len(result) == 1) and fresh_result == '[]': # fix for syncSeason mark unwatched season when it's the last item remaining
 			if isinstance(result[0], str) and result[0].isdigit():
@@ -93,7 +80,6 @@ def get(function, duration, *args):
 		except: pass
 
 		if invalid: # If the cache is old, but we didn't get "fresh_result", return the old cache
-			outcome = 'stale-fallback' if cache_result else 'empty-or-failed'
 			if cache_result: return result
 			else: return None # do not cache_insert() None type, sometimes servers just down momentarily
 		else:
@@ -103,12 +89,9 @@ def get(function, duration, *args):
 			else: cache_insert(key, fresh_result)
 			return literal_eval(fresh_result)
 	except:
-		outcome = 'error'
 		from resources.lib.modules import log_utils
 		log_utils.error()
 		return None
-	finally:
-		performance.record('cache', started, getattr(function, '__name__', 'callable'), outcome)
 
 def _is_cache_valid(cached_time, cache_timeout):
 	now = int(time())
@@ -506,7 +489,7 @@ def update_cache_version():
 		with open(versionFile, 'r') as fh: oldVersion = fh.read()
 	except: oldVersion = '0'
 	try:
-		curVersion = control.addon('plugin.video.umbrella').getAddonInfo('version')
+		curVersion = control.getUmbrellaVersion()
 		if oldVersion != curVersion:
 			with open(versionFile, 'w') as fh: fh.write(curVersion)
 			return oldVersion, True

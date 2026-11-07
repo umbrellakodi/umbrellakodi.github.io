@@ -3,8 +3,6 @@
 	Umbrella Add-on
 """
 
-from time import monotonic as _import_clock
-_module_import_started = _import_clock()
 
 from datetime import datetime, timedelta
 import time
@@ -1438,40 +1436,34 @@ class Movies:
 			log_utils.error()
 
 	def sort(self, type='movies'):
-		from time import monotonic
-		from resources.lib.modules import performance
-		stage_started = monotonic()
 		try:
-			try:
-				if not self.list: return
-				attribute = int(getSetting('sort.%s.type' % type) or '0')
-				reverse = int(getSetting('sort.%s.order' % type) or '0') == 1
-				if attribute == 0: reverse = False # Sorting Order is not enabled when sort method is "Default"
-				if attribute > 0:
-					if attribute == 1:
-						try: self.list = sorted(self.list, key=lambda k: re.sub(r'(^the |^a |^an )', '', k['title'].lower()), reverse=reverse)
-						except: self.list = sorted(self.list, key=lambda k: k['title'].lower(), reverse=reverse)
-					elif attribute == 2: self.list = sorted(self.list, key=lambda k: float(k['rating']), reverse=reverse)
-					elif attribute == 3: self.list = sorted(self.list, key=lambda k: int(str(k['votes']).replace(',', '')), reverse=reverse)
-					elif attribute == 4:
-						for i in range(len(self.list)):
-							if 'premiered' not in self.list[i]: self.list[i]['premiered'] = ''
-						self.list = sorted(self.list, key=lambda k: k['premiered'], reverse=reverse)
-					elif attribute == 5:
-						for i in range(len(self.list)):
-							if 'added' not in self.list[i]: self.list[i]['added'] = ''
-						self.list = sorted(self.list, key=lambda k: k['added'], reverse=reverse)
-					elif attribute == 6:
-						for i in range(len(self.list)):
-							if 'lastplayed' not in self.list[i]: self.list[i]['lastplayed'] = ''
-						self.list = sorted(self.list, key=lambda k: k['lastplayed'], reverse=reverse)
-				elif reverse:
-					self.list = list(reversed(self.list))
-			except:
-				from resources.lib.modules import log_utils
-				log_utils.error()
-		finally:
-			performance.record('stage', stage_started, 'movies-sort')
+			if not self.list: return
+			attribute = int(getSetting('sort.%s.type' % type) or '0')
+			reverse = int(getSetting('sort.%s.order' % type) or '0') == 1
+			if attribute == 0: reverse = False # Sorting Order is not enabled when sort method is "Default"
+			if attribute > 0:
+				if attribute == 1:
+					try: self.list = sorted(self.list, key=lambda k: re.sub(r'(^the |^a |^an )', '', k['title'].lower()), reverse=reverse)
+					except: self.list = sorted(self.list, key=lambda k: k['title'].lower(), reverse=reverse)
+				elif attribute == 2: self.list = sorted(self.list, key=lambda k: float(k['rating']), reverse=reverse)
+				elif attribute == 3: self.list = sorted(self.list, key=lambda k: int(str(k['votes']).replace(',', '')), reverse=reverse)
+				elif attribute == 4:
+					for i in range(len(self.list)):
+						if 'premiered' not in self.list[i]: self.list[i]['premiered'] = ''
+					self.list = sorted(self.list, key=lambda k: k['premiered'], reverse=reverse)
+				elif attribute == 5:
+					for i in range(len(self.list)):
+						if 'added' not in self.list[i]: self.list[i]['added'] = ''
+					self.list = sorted(self.list, key=lambda k: k['added'], reverse=reverse)
+				elif attribute == 6:
+					for i in range(len(self.list)):
+						if 'lastplayed' not in self.list[i]: self.list[i]['lastplayed'] = ''
+					self.list = sorted(self.list, key=lambda k: k['lastplayed'], reverse=reverse)
+			elif reverse:
+				self.list = list(reversed(self.list))
+		except:
+			from resources.lib.modules import log_utils
+			log_utils.error()
 
 	def imdb_sort(self, type='movies'):
 		sort = int(getSetting('sort.%s.type' % type) or '0')
@@ -3515,48 +3507,42 @@ class Movies:
 # 			from resources.lib.modules import log_utils
 # 			log_utils.error()
 	def worker(self):
-		from time import monotonic
-		from resources.lib.modules import performance
-		stage_started = monotonic()
 		try:
-			try:
-				if not self.list:
-					return
+			if not self.list:
+				return
 
-				self.meta = []
-				total = len(self.list)
+			self.meta = []
+			total = len(self.list)
 
-				# Initialize metacache in a single loop
-				for item in self.list:
-					item.update({'metacache': False})
+			# Initialize metacache in a single loop
+			for item in self.list:
+				item.update({'metacache': False})
 
-				# Fetch metacache data
-				self.list = metacache.fetch(self.list, self.lang, self.user)
+			# Fetch metacache data
+			self.list = metacache.fetch(self.list, self.lang, self.user)
 
-				# Use ThreadPoolExecutor to process super_info concurrently
-				pending = [i for i in range(total) if not self.list[i].get('metacache')]
-				if pending:
-					with ThreadPoolExecutor(max_workers=min(40, len(pending))) as executor:
-						futures = [executor.submit(self.super_info, i) for i in pending]
-						for future in as_completed(futures):
-							try:
-								future.result()  # Ensure exceptions are raised if any
-							except Exception as e:
-								from resources.lib.modules import log_utils
-								log_utils.error(f"Error processing item: {e}")
+			# Use ThreadPoolExecutor to process super_info concurrently
+			pending = [i for i in range(total) if not self.list[i].get('metacache')]
+			if pending:
+				with ThreadPoolExecutor(max_workers=min(40, len(pending))) as executor:
+					futures = [executor.submit(self.super_info, i) for i in pending]
+					for future in as_completed(futures):
+						try:
+							future.result()  # Ensure exceptions are raised if any
+						except Exception as e:
+							from resources.lib.modules import log_utils
+							log_utils.error(f"Error processing item: {e}")
 
-				# Insert meta data into the cache if available
-				if self.meta:
-					metacache.insert(self.meta)
+			# Insert meta data into the cache if available
+			if self.meta:
+				metacache.insert(self.meta)
 
-				# Filter the list for valid tmdb entries
-				self.list = [item for item in self.list if item.get('tmdb')]
+			# Filter the list for valid tmdb entries
+			self.list = [item for item in self.list if item.get('tmdb')]
 
-			except Exception as e:
-				from resources.lib.modules import log_utils
-				log_utils.error(f"Error in worker: {e}")
-		finally:
-			performance.record('stage', stage_started, 'movies-metadata')
+		except Exception as e:
+			from resources.lib.modules import log_utils
+			log_utils.error(f"Error in worker: {e}")
 
 	def super_info(self, i):
 		try:
@@ -3660,289 +3646,283 @@ class Movies:
 			log_utils.error(f"Error in super_info for index {i}: {e}")
 
 	def movieDirectory(self, items, unfinished=False, next=True, isCollection=False, folderName='', finalize=True, label_media=False):
-		from time import monotonic
-		from resources.lib.modules import performance
-		stage_started = monotonic()
+		from sys import argv # some functions like ActivateWindow() throw invalid handle less this is imported here.
+		is_widget = 'plugin' not in control.infoLabel('Container.PluginName')
+		if not items: # with reuselanguageinvoker on an empty directory must be loaded, do not use sys.exit()
+			control.hide()
+			if is_widget != True: control.notification(title=32001, message=33049)
+		if self.useContainerTitles: control.setContainerName(folderName)
+		from resources.lib.modules.player import Bookmarks
+		sysaddon, syshandle = 'plugin://plugin.video.umbrella/', int(argv[1])
+		play_mode = getSetting('play.mode.movie')
+		rescrape_useDefault = getSetting('rescrape.default') == 'true'
+		rescrape_method = getSetting('rescrape.default2')
+	
+		settingFanart = getSetting('fanart') == 'true'
+		addonPoster, addonFanart, addonBanner = control.addonPoster(), control.addonFanart(), control.addonBanner()
+		indicators = getMovieIndicators() # refresh not needed now due to service sync
+		if play_mode == '1': playbackMenu = getLS(32063)
+		else: playbackMenu = getLS(32064)
+		_indicators_alt = getSetting('indicators.alt')
+		_trakt_marks = self.traktCredentials and (_indicators_alt == '1' or getSetting('trakt.markwatched') == 'true')
+		_simkl_marks = self.simklCredentials and (_indicators_alt == '2' or getSetting('simkl.markwatched') == 'true')
+		_mdblist_marks = self.mdblist_authed and (_indicators_alt == '3' or getSetting('mdblist.markwatched') == 'true')
+		if sum([bool(_trakt_marks), bool(_simkl_marks), bool(_mdblist_marks)]) > 1:
+			watchedMenu, unwatchedMenu = getLS(40564), getLS(40565)
+		elif _trakt_marks:
+			watchedMenu, unwatchedMenu = getLS(32068), getLS(32069)
+		elif _simkl_marks:
+			watchedMenu, unwatchedMenu = getLS(40554), getLS(40555)
+		elif _mdblist_marks:
+			watchedMenu, unwatchedMenu = getLS(40631), getLS(40632)
+		else:
+			watchedMenu, unwatchedMenu = getLS(32066), getLS(32067)
+		playlistManagerMenu, queueMenu, trailerMenu = getLS(35522), getLS(32065), getLS(40431)
+		traktManagerMenu, addToLibrary, addToFavourites, removeFromFavourites = '[COLOR %s]Trakt Manager[/COLOR]' % self.highlight_color, getLS(32551), getLS(40463), getLS(40468)
+		nextMenu, clearSourcesMenu = getLS(32053), getLS(32611)
+		rescrapeMenu, findSimilarMenu = getLS(32185), getLS(32184)
+		simklManagerMenu = getLS(40577) % self.highlight_color
+		mdblistManagerMenu = '[COLOR %s]MDBList Manager[/COLOR]' % self.highlight_color
+		customManagerMenu = '[COLOR %s]%s Manager[/COLOR]' % (self.highlight_color, customtrakt.getCustomServiceName())
+		floppyManagerMenu = '[COLOR %s]Floppy Manager[/COLOR]' % self.highlight_color
+		scrobManagerMenu = '[COLOR %s]Scrob Manager[/COLOR]' % self.highlight_color
+		punchplayManagerMenu = '[COLOR %s]PunchPlay Manager[/COLOR]' % self.highlight_color
+		from resources.lib.modules import favourites
+		favoriteItems = favourites.getFavourites(content='movies')
+		favoriteItems = [x[1].get('imdb') for x in favoriteItems]
 		try:
-			from sys import argv # some functions like ActivateWindow() throw invalid handle less this is imported here.
-			is_widget = 'plugin' not in control.infoLabel('Container.PluginName')
-			if not items: # with reuselanguageinvoker on an empty directory must be loaded, do not use sys.exit()
-				control.hide()
-				if is_widget != True: control.notification(title=32001, message=33049)
-			if self.useContainerTitles: control.setContainerName(folderName)
-			from resources.lib.modules.player import Bookmarks
-			sysaddon, syshandle = 'plugin://plugin.video.umbrella/', int(argv[1])
-			play_mode = getSetting('play.mode.movie')
-			rescrape_useDefault = getSetting('rescrape.default') == 'true'
-			rescrape_method = getSetting('rescrape.default2')
-		
-			settingFanart = getSetting('fanart') == 'true'
-			addonPoster, addonFanart, addonBanner = control.addonPoster(), control.addonFanart(), control.addonBanner()
-			indicators = getMovieIndicators() # refresh not needed now due to service sync
-			if play_mode == '1': playbackMenu = getLS(32063)
-			else: playbackMenu = getLS(32064)
-			_indicators_alt = getSetting('indicators.alt')
-			_trakt_marks = self.traktCredentials and (_indicators_alt == '1' or getSetting('trakt.markwatched') == 'true')
-			_simkl_marks = self.simklCredentials and (_indicators_alt == '2' or getSetting('simkl.markwatched') == 'true')
-			_mdblist_marks = self.mdblist_authed and (_indicators_alt == '3' or getSetting('mdblist.markwatched') == 'true')
-			if sum([bool(_trakt_marks), bool(_simkl_marks), bool(_mdblist_marks)]) > 1:
-				watchedMenu, unwatchedMenu = getLS(40564), getLS(40565)
-			elif _trakt_marks:
-				watchedMenu, unwatchedMenu = getLS(32068), getLS(32069)
-			elif _simkl_marks:
-				watchedMenu, unwatchedMenu = getLS(40554), getLS(40555)
-			elif _mdblist_marks:
-				watchedMenu, unwatchedMenu = getLS(40631), getLS(40632)
-			else:
-				watchedMenu, unwatchedMenu = getLS(32066), getLS(32067)
-			playlistManagerMenu, queueMenu, trailerMenu = getLS(35522), getLS(32065), getLS(40431)
-			traktManagerMenu, addToLibrary, addToFavourites, removeFromFavourites = '[COLOR %s]Trakt Manager[/COLOR]' % self.highlight_color, getLS(32551), getLS(40463), getLS(40468)
-			nextMenu, clearSourcesMenu = getLS(32053), getLS(32611)
-			rescrapeMenu, findSimilarMenu = getLS(32185), getLS(32184)
-			simklManagerMenu = getLS(40577) % self.highlight_color
-			mdblistManagerMenu = '[COLOR %s]MDBList Manager[/COLOR]' % self.highlight_color
-			customManagerMenu = '[COLOR %s]%s Manager[/COLOR]' % (self.highlight_color, customtrakt.getCustomServiceName())
-			floppyManagerMenu = '[COLOR %s]Floppy Manager[/COLOR]' % self.highlight_color
-			scrobManagerMenu = '[COLOR %s]Scrob Manager[/COLOR]' % self.highlight_color
-			punchplayManagerMenu = '[COLOR %s]PunchPlay Manager[/COLOR]' % self.highlight_color
-			from resources.lib.modules import favourites
-			favoriteItems = favourites.getFavourites(content='movies')
-			favoriteItems = [x[1].get('imdb') for x in favoriteItems]
+			nexturl = items[0]['next']
+			url_params = dict(parse_qsl(urlsplit(nexturl).query))
+			if 'imdb.com' in nexturl and 'start' in url_params: page = int(((int(url_params.get('start')) - 1) / int(self.page_limit)) + 1)
+			elif 'www.imdb.com/movies-coming-soon/' in nexturl: page = int(re.search(r'(\d{4}-\d{2})', nexturl).group(1))
+			else: page = int(url_params.get('page'))
+		except:
+			page = 1
+		tmdb_v4_watchlist_ids = set()
+		if self.tmdbv4Credentials:
+			from resources.lib.modules import tmdb4 as _tmdb4
+			tmdb_v4_watchlist_ids = _tmdb4.get_watchlist_ids('movie')
+		for i in items:
 			try:
-				nexturl = items[0]['next']
-				url_params = dict(parse_qsl(urlsplit(nexturl).query))
-				if 'imdb.com' in nexturl and 'start' in url_params: page = int(((int(url_params.get('start')) - 1) / int(self.page_limit)) + 1)
-				elif 'www.imdb.com/movies-coming-soon/' in nexturl: page = int(re.search(r'(\d{4}-\d{2})', nexturl).group(1))
-				else: page = int(url_params.get('page'))
-			except:
-				page = 1
-			tmdb_v4_watchlist_ids = set()
-			if self.tmdbv4Credentials:
-				from resources.lib.modules import tmdb4 as _tmdb4
-				tmdb_v4_watchlist_ids = _tmdb4.get_watchlist_ids('movie')
-			for i in items:
+				imdb, tmdb, title, year = i.get('imdb', ''), i.get('tmdb', ''), i['title'], i.get('year', '')
+				if isCollection and self.collection_hideWatched and getMovieOverlay(indicators, imdb) == '5': continue
+				trailer, runtime = i.get('trailer'), i.get('duration')
+				if self.useReleaseYear:
+					label = '%s (%s)' % (title, year)
+				else:
+					label = '%s' % title
+				try: labelProgress = label + '[COLOR %s]  [%s][/COLOR]' % (self.highlight_color, str(round(float(i['progress']), 1)) + '%')
+				except: labelProgress = label
+				if i.get('punchplay_date'):
+					labelProgress += ' [%s - %s]' % (i['punchplay_date'], i.get('punchplay_release', 'Release'))
 				try:
-					imdb, tmdb, title, year = i.get('imdb', ''), i.get('tmdb', ''), i['title'], i.get('year', '')
-					if isCollection and self.collection_hideWatched and getMovieOverlay(indicators, imdb) == '5': continue
-					trailer, runtime = i.get('trailer'), i.get('duration')
-					if self.useReleaseYear:
-						label = '%s (%s)' % (title, year)
-					else:
-						label = '%s' % title
-					try: labelProgress = label + '[COLOR %s]  [%s][/COLOR]' % (self.highlight_color, str(round(float(i['progress']), 1)) + '%')
-					except: labelProgress = label
-					if i.get('punchplay_date'):
-						labelProgress += ' [%s - %s]' % (i['punchplay_date'], i.get('punchplay_release', 'Release'))
+					if int(re.sub(r'[^0-9]', '', str(i['premiered']))) > int(re.sub(r'[^0-9]', '', str(self.today_date))): 
+						if self.hidecinema:
+							continue
+						else:
+							labelProgress = '[COLOR %s][I]%s[/I][/COLOR]' % (self.unairedcolor, labelProgress)
+				except: pass
+				if i.get('traktHistory') is True: # uses Trakt lastplayed
 					try:
-						if int(re.sub(r'[^0-9]', '', str(i['premiered']))) > int(re.sub(r'[^0-9]', '', str(self.today_date))): 
-							if self.hidecinema:
-								continue
+						air_datetime = tools.convert_time(stringTime=i.get('lastplayed', ''), zoneFrom='utc', zoneTo='local', formatInput='%Y-%m-%dT%H:%M:%S.000Z', formatOutput='%b %d %Y %I:%M %p', remove_zeroes=True)
+						labelProgress = labelProgress + '[COLOR %s]  [%s][/COLOR]' % (self.highlight_color, air_datetime)
+					except: pass
+				sysname, systitle = quote_plus(label), quote_plus(title)
+				meta = dict((k, v) for k, v in iter(i.items()) if v is not None and v != '')
+				meta.update({'code': imdb, 'imdbnumber': imdb, 'mediatype': 'movie', 'tag': [imdb, tmdb]})
+				try: meta.update({'genre': cleangenre.lang(meta['genre'], self.lang)})
+				except: pass
+				#since you are so bored you are reading my comments in my code from my test repo. below is how you do it correctly. when you figure out a variable it is important to actually apply it. you can fix yours by putting clearlogo in the art.update below or just copy what I did here. "i am mad about comments in your code" cannot wait for that one.
+				if self.prefer_tmdbArt: 
+					poster = meta.get('poster3') or meta.get('poster') or meta.get('poster2') or addonPoster
+					clearlogo = meta.get('tmdblogo') or meta.get('clearlogo','')
+					meta.update({'clearlogo': clearlogo})
+				else: 
+					poster = meta.get('poster2') or meta.get('poster3') or meta.get('poster') or addonPoster
+					clearlogo = meta.get('clearlogo') or meta.get('tmdblogo','')
+					meta.update({'clearlogo': clearlogo})
+				fanart = ''
+				if settingFanart:
+					if self.prefer_tmdbArt: fanart = meta.get('fanart3') or meta.get('fanart') or meta.get('fanart2') or addonFanart
+					else: fanart = meta.get('fanart2') or meta.get('fanart3') or meta.get('fanart') or addonFanart
+				landscape = meta.get('landscape') or fanart
+				#thumb = meta.get('thumb') or poster or landscape
+				if self.prefer_fanArt:
+					if fanart: thumb = fanart or meta.get('thumb') or poster or landscape
+					else:
+						meta.get('fanart') or poster or landscape
+				else:
+					thumb = meta.get('thumb') or poster or landscape
+				icon = meta.get('icon') or poster
+				banner = meta.get('banner3') or meta.get('banner2') or meta.get('banner') or addonBanner
+				art = {}
+				useCustomArtwork = customArtwork.fetch_movie(imdb, tmdb) #new custom artwork database check
+				clearart = meta.get('clearart', '')
+				discart = meta.get('discart', '')
+				keyart = meta.get('keyart', '')
+				if useCustomArtwork:
+					allowed_keys = {"poster", "fanart", "landscape", "banner", "clearart", "clearlogo", "discart", "keyart"}
+					for key in allowed_keys:
+						value = useCustomArtwork[0].get(key)
+						if value not in (None, "", " "):  # Ignore empty values. ugly but local() will not change values
+							if key == 'poster': poster = value
+							if key == 'fanart': fanart = value
+							if key == 'landscape': landscape = value
+							if key == 'banner': banner = value
+							if key == 'clearart': clearart = value
+							if key == 'clearlogo': clearlogo = value
+							if key == 'discart': discart = value
+							if key == 'keyart': keyart = value
+					if "poster" in useCustomArtwork[0] and useCustomArtwork[0].get("poster") not in (None, "", " "):
+						thumb = useCustomArtwork[0].get("poster")
+				art.update({'icon': icon, 'thumb': thumb, 'banner': banner, 'poster': poster, 'fanart': fanart, 'landscape': landscape, 'clearlogo': clearlogo,
+								'clearart': clearart, 'discart': discart, 'keyart': keyart})
+				for k in ('metacache', 'poster2', 'poster3', 'fanart2', 'fanart3', 'banner2', 'banner3', 'trailer'): meta.pop(k, None)
+				meta.update({'poster': poster, 'fanart': fanart, 'banner': banner})
+				sysmeta, sysart = quote_plus(jsdumps(meta)), quote_plus(jsdumps(art))
+				url = '%s?action=play_Item&title=%s&year=%s&imdb=%s&tmdb=%s&meta=%s' % (sysaddon, systitle, year, imdb, tmdb, sysmeta)
+				#url = '%s?action=play_info&title=%s&year=%s&imdb=%s&tmdb=%s&meta=%s' % (sysaddon, systitle, year, imdb, tmdb, sysmeta)
+				sysurl = quote_plus(url)
+####-Context Menu and Overlays-####
+				cm = []
+				if trailer:
+					cm.append((trailerMenu, 'RunPlugin(%s?action=play_Trailer_Context&type=%s&name=%s&year=%s&imdb=%s&url=%s)' % (sysaddon, 'movie', sysname, year, imdb, trailer)))
+				cm.append(('Play Trailer (Select)', 'RunPlugin(%s?action=play_Trailer_Select&type=%s&name=%s&year=%s&windowedtrailer=0)' % (sysaddon, 'movie', sysname, year)))
+				try:
+					watched = getMovieOverlay(indicators, imdb) == '5'
+					if self.traktCredentials:
+						cm.append((traktManagerMenu, 'RunPlugin(%s?action=tools_traktManager&name=%s&imdb=%s&watched=%s&unfinished=%s)' % (sysaddon, sysname, imdb, watched, unfinished)))
+					if self.simklCredentials:
+						cm.append((simklManagerMenu, 'RunPlugin(%s?action=tools_simklManager&name=%s&imdb=%s&watched=%s&unfinished=%s)' % (sysaddon, sysname, imdb, watched, unfinished)))
+					if self.mdblist_authed:
+						cm.append((mdblistManagerMenu, 'RunPlugin(%s?action=tools_mdbWatchlist&name=%s&imdb=%s&watched=%s)' % (sysaddon, sysname, imdb, watched)))
+					if self.customCredentials:
+						cm.append((customManagerMenu, 'RunPlugin(%s?action=tools_customManager&name=%s&imdb=%s&watched=%s&unfinished=%s)' % (sysaddon, sysname, imdb, watched, unfinished)))
+					if self.floppyCredentials:
+						cm.append((floppyManagerMenu, 'RunPlugin(%s?action=tools_floppyManager&name=%s&imdb=%s&watched=%s&unfinished=%s)' % (sysaddon, sysname, imdb, watched, unfinished)))
+					if self.scrobCredentials:
+						cm.append((scrobManagerMenu, 'RunPlugin(%s?action=tools_scrobManager&name=%s&imdb=%s&tmdb=%s&watched=%s&unfinished=%s)' % (sysaddon, sysname, imdb, tmdb, watched, unfinished)))
+					if self.punchplayCredentials:
+						cm.append((punchplayManagerMenu, 'RunPlugin(%s?action=tools_punchplayManager&name=%s&imdb=%s&tmdb=%s&watched=%s&unfinished=%s)' % (sysaddon, sysname, imdb, tmdb, watched, unfinished)))
+					if self.tmdbv4Credentials:
+						cm.append((getLS(40606) if getLS(40606) else 'TMDB List Manager', 'RunPlugin(%s?action=tools_tmdbListManager&name=%s&tmdb=%s&mediatype=movie)' % (sysaddon, sysname, tmdb)))
+						if tmdb:
+							if str(tmdb) in tmdb_v4_watchlist_ids:
+								cm.append((getLS(40614), 'RunPlugin(%s?action=tmdb_v4_watchlist_remove&tmdb=%s&mediatype=movie)' % (sysaddon, tmdb)))
 							else:
-								labelProgress = '[COLOR %s][I]%s[/I][/COLOR]' % (self.unairedcolor, labelProgress)
-					except: pass
-					if i.get('traktHistory') is True: # uses Trakt lastplayed
-						try:
-							air_datetime = tools.convert_time(stringTime=i.get('lastplayed', ''), zoneFrom='utc', zoneTo='local', formatInput='%Y-%m-%dT%H:%M:%S.000Z', formatOutput='%b %d %Y %I:%M %p', remove_zeroes=True)
-							labelProgress = labelProgress + '[COLOR %s]  [%s][/COLOR]' % (self.highlight_color, air_datetime)
-						except: pass
-					sysname, systitle = quote_plus(label), quote_plus(title)
-					meta = dict((k, v) for k, v in iter(i.items()) if v is not None and v != '')
-					meta.update({'code': imdb, 'imdbnumber': imdb, 'mediatype': 'movie', 'tag': [imdb, tmdb]})
-					try: meta.update({'genre': cleangenre.lang(meta['genre'], self.lang)})
-					except: pass
-					#since you are so bored you are reading my comments in my code from my test repo. below is how you do it correctly. when you figure out a variable it is important to actually apply it. you can fix yours by putting clearlogo in the art.update below or just copy what I did here. "i am mad about comments in your code" cannot wait for that one.
-					if self.prefer_tmdbArt: 
-						poster = meta.get('poster3') or meta.get('poster') or meta.get('poster2') or addonPoster
-						clearlogo = meta.get('tmdblogo') or meta.get('clearlogo','')
-						meta.update({'clearlogo': clearlogo})
-					else: 
-						poster = meta.get('poster2') or meta.get('poster3') or meta.get('poster') or addonPoster
-						clearlogo = meta.get('clearlogo') or meta.get('tmdblogo','')
-						meta.update({'clearlogo': clearlogo})
-					fanart = ''
-					if settingFanart:
-						if self.prefer_tmdbArt: fanart = meta.get('fanart3') or meta.get('fanart') or meta.get('fanart2') or addonFanart
-						else: fanart = meta.get('fanart2') or meta.get('fanart3') or meta.get('fanart') or addonFanart
-					landscape = meta.get('landscape') or fanart
-					#thumb = meta.get('thumb') or poster or landscape
-					if self.prefer_fanArt:
-						if fanart: thumb = fanart or meta.get('thumb') or poster or landscape
-						else:
-							meta.get('fanart') or poster or landscape
+								cm.append((getLS(40613), 'RunPlugin(%s?action=tmdb_v4_watchlist_add&tmdb=%s&mediatype=movie)' % (sysaddon, tmdb)))
+					if watched:
+						cm.append((unwatchedMenu, 'RunPlugin(%s?action=playcount_Movie&name=%s&imdb=%s&query=4)' % (sysaddon, sysname, imdb)))
+						meta.update({'playcount': 1, 'overlay': 5})
+						# meta.update({'lastplayed': trakt.watchedMoviesTime(imdb)}) # no skin support
 					else:
-						thumb = meta.get('thumb') or poster or landscape
-					icon = meta.get('icon') or poster
-					banner = meta.get('banner3') or meta.get('banner2') or meta.get('banner') or addonBanner
-					art = {}
-					useCustomArtwork = customArtwork.fetch_movie(imdb, tmdb) #new custom artwork database check
-					clearart = meta.get('clearart', '')
-					discart = meta.get('discart', '')
-					keyart = meta.get('keyart', '')
-					if useCustomArtwork:
-						allowed_keys = {"poster", "fanart", "landscape", "banner", "clearart", "clearlogo", "discart", "keyart"}
-						for key in allowed_keys:
-							value = useCustomArtwork[0].get(key)
-							if value not in (None, "", " "):  # Ignore empty values. ugly but local() will not change values
-								if key == 'poster': poster = value
-								if key == 'fanart': fanart = value
-								if key == 'landscape': landscape = value
-								if key == 'banner': banner = value
-								if key == 'clearart': clearart = value
-								if key == 'clearlogo': clearlogo = value
-								if key == 'discart': discart = value
-								if key == 'keyart': keyart = value
-						if "poster" in useCustomArtwork[0] and useCustomArtwork[0].get("poster") not in (None, "", " "):
-							thumb = useCustomArtwork[0].get("poster")
-					art.update({'icon': icon, 'thumb': thumb, 'banner': banner, 'poster': poster, 'fanart': fanart, 'landscape': landscape, 'clearlogo': clearlogo,
-									'clearart': clearart, 'discart': discart, 'keyart': keyart})
-					for k in ('metacache', 'poster2', 'poster3', 'fanart2', 'fanart3', 'banner2', 'banner3', 'trailer'): meta.pop(k, None)
-					meta.update({'poster': poster, 'fanart': fanart, 'banner': banner})
-					sysmeta, sysart = quote_plus(jsdumps(meta)), quote_plus(jsdumps(art))
-					url = '%s?action=play_Item&title=%s&year=%s&imdb=%s&tmdb=%s&meta=%s' % (sysaddon, systitle, year, imdb, tmdb, sysmeta)
-					#url = '%s?action=play_info&title=%s&year=%s&imdb=%s&tmdb=%s&meta=%s' % (sysaddon, systitle, year, imdb, tmdb, sysmeta)
-					sysurl = quote_plus(url)
-	####-Context Menu and Overlays-####
-					cm = []
-					if trailer:
-						cm.append((trailerMenu, 'RunPlugin(%s?action=play_Trailer_Context&type=%s&name=%s&year=%s&imdb=%s&url=%s)' % (sysaddon, 'movie', sysname, year, imdb, trailer)))
-					cm.append(('Play Trailer (Select)', 'RunPlugin(%s?action=play_Trailer_Select&type=%s&name=%s&year=%s&windowedtrailer=0)' % (sysaddon, 'movie', sysname, year)))
-					try:
-						watched = getMovieOverlay(indicators, imdb) == '5'
-						if self.traktCredentials:
-							cm.append((traktManagerMenu, 'RunPlugin(%s?action=tools_traktManager&name=%s&imdb=%s&watched=%s&unfinished=%s)' % (sysaddon, sysname, imdb, watched, unfinished)))
-						if self.simklCredentials:
-							cm.append((simklManagerMenu, 'RunPlugin(%s?action=tools_simklManager&name=%s&imdb=%s&watched=%s&unfinished=%s)' % (sysaddon, sysname, imdb, watched, unfinished)))
-						if self.mdblist_authed:
-							cm.append((mdblistManagerMenu, 'RunPlugin(%s?action=tools_mdbWatchlist&name=%s&imdb=%s&watched=%s)' % (sysaddon, sysname, imdb, watched)))
-						if self.customCredentials:
-							cm.append((customManagerMenu, 'RunPlugin(%s?action=tools_customManager&name=%s&imdb=%s&watched=%s&unfinished=%s)' % (sysaddon, sysname, imdb, watched, unfinished)))
-						if self.floppyCredentials:
-							cm.append((floppyManagerMenu, 'RunPlugin(%s?action=tools_floppyManager&name=%s&imdb=%s&watched=%s&unfinished=%s)' % (sysaddon, sysname, imdb, watched, unfinished)))
-						if self.scrobCredentials:
-							cm.append((scrobManagerMenu, 'RunPlugin(%s?action=tools_scrobManager&name=%s&imdb=%s&tmdb=%s&watched=%s&unfinished=%s)' % (sysaddon, sysname, imdb, tmdb, watched, unfinished)))
-						if self.punchplayCredentials:
-							cm.append((punchplayManagerMenu, 'RunPlugin(%s?action=tools_punchplayManager&name=%s&imdb=%s&tmdb=%s&watched=%s&unfinished=%s)' % (sysaddon, sysname, imdb, tmdb, watched, unfinished)))
-						if self.tmdbv4Credentials:
-							cm.append((getLS(40606) if getLS(40606) else 'TMDB List Manager', 'RunPlugin(%s?action=tools_tmdbListManager&name=%s&tmdb=%s&mediatype=movie)' % (sysaddon, sysname, tmdb)))
-							if tmdb:
-								if str(tmdb) in tmdb_v4_watchlist_ids:
-									cm.append((getLS(40614), 'RunPlugin(%s?action=tmdb_v4_watchlist_remove&tmdb=%s&mediatype=movie)' % (sysaddon, tmdb)))
-								else:
-									cm.append((getLS(40613), 'RunPlugin(%s?action=tmdb_v4_watchlist_add&tmdb=%s&mediatype=movie)' % (sysaddon, tmdb)))
-						if watched:
-							cm.append((unwatchedMenu, 'RunPlugin(%s?action=playcount_Movie&name=%s&imdb=%s&query=4)' % (sysaddon, sysname, imdb)))
-							meta.update({'playcount': 1, 'overlay': 5})
-							# meta.update({'lastplayed': trakt.watchedMoviesTime(imdb)}) # no skin support
-						else:
-							cm.append((watchedMenu, 'RunPlugin(%s?action=playcount_Movie&name=%s&imdb=%s&query=5)' % (sysaddon, sysname, imdb)))
-							meta.update({'playcount': 0, 'overlay': 4})
-					except: pass
-					cm.append(('Customize Artwork', 'RunPlugin(%s?action=customizeArt&mediatype=%s&imdb=%s&tmdb=%s&poster=%s&fanart=%s&landscape=%s&banner=%s&clearart=%s&clearlogo=%s&discart=%s&keyart=%s)' % (sysaddon, 'movie', imdb, tmdb, poster, fanart, landscape, banner, clearart, clearlogo, discart, keyart)))
-					cm.append((playlistManagerMenu, 'RunPlugin(%s?action=playlist_Manager&name=%s&url=%s&meta=%s&art=%s)' % (sysaddon, sysname, sysurl, sysmeta, sysart)))
-					cm.append((queueMenu, 'RunPlugin(%s?action=playlist_QueueItem&name=%s)' % (sysaddon, sysname)))
-					cm.append((addToLibrary, 'RunPlugin(%s?action=library_movieToLibrary&name=%s&title=%s&year=%s&imdb=%s&tmdb=%s)' % (sysaddon, sysname, systitle, year, imdb, tmdb)))
-					if favoriteItems:
-						if imdb in favoriteItems:
-							cm.append((removeFromFavourites, 'RunPlugin(%s?action=remove_favorite&meta=%s&content=%s)' % (sysaddon, sysmeta, 'movies')))
-						else:
-							cm.append((addToFavourites, 'RunPlugin(%s?action=add_favorite&meta=%s&content=%s)' % (sysaddon, sysmeta, 'movies')))
+						cm.append((watchedMenu, 'RunPlugin(%s?action=playcount_Movie&name=%s&imdb=%s&query=5)' % (sysaddon, sysname, imdb)))
+						meta.update({'playcount': 0, 'overlay': 4})
+				except: pass
+				cm.append(('Customize Artwork', 'RunPlugin(%s?action=customizeArt&mediatype=%s&imdb=%s&tmdb=%s&poster=%s&fanart=%s&landscape=%s&banner=%s&clearart=%s&clearlogo=%s&discart=%s&keyart=%s)' % (sysaddon, 'movie', imdb, tmdb, poster, fanart, landscape, banner, clearart, clearlogo, discart, keyart)))
+				cm.append((playlistManagerMenu, 'RunPlugin(%s?action=playlist_Manager&name=%s&url=%s&meta=%s&art=%s)' % (sysaddon, sysname, sysurl, sysmeta, sysart)))
+				cm.append((queueMenu, 'RunPlugin(%s?action=playlist_QueueItem&name=%s)' % (sysaddon, sysname)))
+				cm.append((addToLibrary, 'RunPlugin(%s?action=library_movieToLibrary&name=%s&title=%s&year=%s&imdb=%s&tmdb=%s)' % (sysaddon, sysname, systitle, year, imdb, tmdb)))
+				if favoriteItems:
+					if imdb in favoriteItems:
+						cm.append((removeFromFavourites, 'RunPlugin(%s?action=remove_favorite&meta=%s&content=%s)' % (sysaddon, sysmeta, 'movies')))
 					else:
 						cm.append((addToFavourites, 'RunPlugin(%s?action=add_favorite&meta=%s&content=%s)' % (sysaddon, sysmeta, 'movies')))
-					cm.append((findSimilarMenu, 'Container.Update(%s?action=movies&url=%s)' % (sysaddon, quote_plus('https://api.trakt.tv/movies/%s/related?limit=20&page=1,return' % imdb))))
-					if i.get('belongs_to_collection', ''):
-						if getSetting('tmdb.baseaddress') == 'true':
-							cm.append(('Browse Collection', 'Container.Update(%s?action=collections&url=%s)' % (
-								sysaddon, quote_plus('https://api.tmdb.org/3/collection/%s?api_key=%s&page=1,return' % (i['belongs_to_collection']['id'], self.tmdb_key)))))
-						else:
-							cm.append(('Browse Collection', 'Container.Update(%s?action=collections&url=%s)' % (
-								sysaddon, quote_plus('https://api.themoviedb.org/3/collection/%s?api_key=%s&page=1,return' % (i['belongs_to_collection']['id'], self.tmdb_key)))))
-					cm.append((playbackMenu, 'RunPlugin(%s?action=alterSources&url=%s&meta=%s)' % (sysaddon, sysurl, sysmeta)))
-					if not rescrape_useDefault:
-						cm.append(('Rescrape Options ------>', 'PlayMedia(%s?action=rescrapeMenu&title=%s&year=%s&imdb=%s&tmdb=%s&meta=%s)' % (sysaddon, systitle, year, imdb, tmdb, sysmeta)))
+				else:
+					cm.append((addToFavourites, 'RunPlugin(%s?action=add_favorite&meta=%s&content=%s)' % (sysaddon, sysmeta, 'movies')))
+				cm.append((findSimilarMenu, 'Container.Update(%s?action=movies&url=%s)' % (sysaddon, quote_plus('https://api.trakt.tv/movies/%s/related?limit=20&page=1,return' % imdb))))
+				if i.get('belongs_to_collection', ''):
+					if getSetting('tmdb.baseaddress') == 'true':
+						cm.append(('Browse Collection', 'Container.Update(%s?action=collections&url=%s)' % (
+							sysaddon, quote_plus('https://api.tmdb.org/3/collection/%s?api_key=%s&page=1,return' % (i['belongs_to_collection']['id'], self.tmdb_key)))))
 					else:
-						if rescrape_method == '0':
-							cm.append((rescrapeMenu, 'PlayMedia(%s?action=play_Item&title=%s&year=%s&imdb=%s&tmdb=%s&meta=%s&rescrape=true&select=1)' % (sysaddon, systitle, year, imdb, tmdb, sysmeta)))
-						if rescrape_method == '1':
-							cm.append((rescrapeMenu, 'PlayMedia(%s?action=play_Item&title=%s&year=%s&imdb=%s&tmdb=%s&meta=%s&rescrape=true&select=0)' % (sysaddon, systitle, year, imdb, tmdb, sysmeta)))
-						if rescrape_method == '2':
-							cm.append((rescrapeMenu, 'PlayMedia(%s?action=play_Item&title=%s&year=%s&imdb=%s&tmdb=%s&meta=%s&rescrape=true&all_providers=true&select=1)' % (sysaddon, systitle, year, imdb, tmdb, sysmeta)))
-						if rescrape_method == '3':
-							cm.append((rescrapeMenu, 'PlayMedia(%s?action=play_Item&title=%s&year=%s&imdb=%s&tmdb=%s&meta=%s&rescrape=true&all_providers=true&select=0)' % (sysaddon, systitle, year, imdb, tmdb, sysmeta)))
-					cm.append((clearSourcesMenu, 'RunPlugin(%s?action=cache_clearSources)' % sysaddon))
-					if not is_widget and page > 2:
-						cm.append((getLS(40476), 'RunPlugin(%s?action=return_home&folder=%s)' % (sysaddon, 'movies')))
-					cm.append(('[COLOR %s]Umbrella Settings[/COLOR]' % self.highlight_color, 'RunPlugin(%s?action=tools_openSettings)' % sysaddon))
-	####################################
-					if trailer: meta.update({'trailer': trailer}) # removed temp so it's not passed to CM items, only infoLabels for skin
-					else: meta.update({'trailer': '%s?action=play_Trailer&type=%s&name=%s&year=%s&imdb=%s' % (sysaddon, 'movie', sysname, year, imdb)})
-					if label_media: labelProgress += ' [I](%s)[/I]' % (getLS(40865) or 'Movie')
-					item = control.item(label=labelProgress, offscreen=True)
-					#if 'castandart' in i: item.setCast(i['castandart'])#changed for kodi20 setinfo method
-					if 'castandart' in i: meta.update({'castandart':i['castandart']})
-					item.setArt(art)
-					#item.setUniqueIDs({'imdb': imdb, 'tmdb': tmdb}) #changed for kodi20 setinfo method
-					setUniqueIDs = {'imdb': imdb, 'tmdb': tmdb}
-	###########################################################
-					item.setProperty('IsPlayable', 'true')
-					if is_widget: 
-						item.setProperty('isUmbrella_widget', 'true')
-						if self.hide_watched_in_widget and str(xbmc.getInfoLabel("Window.Property(xmlfile)")) != 'Custom_1114_Search.xml':
-							if str(meta.get('playcount', 0)) == '1':
-								continue
-					if self.unairedcolor not in labelProgress:
-						resumetime = Bookmarks().get(name=label, imdb=imdb, tmdb=tmdb, year=str(year), runtime=runtime, ck=True)
-						# item.setProperty('TotalTime', str(meta['duration'])) # Adding this property causes the Kodi bookmark CM items to be added
-						#item.setProperty('ResumeTime', str(resumetime))
-						try: item.setProperty('WatchedProgress', str(int(float(resumetime) / float(runtime) * 100)))
-						except: pass
-					#item.setInfo(type='video', infoLabels=control.metadataClean(meta))
-					if unfinished: item.setProperty('unfinished', 'true') 
-					try: 
-						resumetime = resumetime
-					except:
-						resumetime = ''
-					control.set_info(item, meta, setUniqueIDs=setUniqueIDs, resumetime=resumetime)
+						cm.append(('Browse Collection', 'Container.Update(%s?action=collections&url=%s)' % (
+							sysaddon, quote_plus('https://api.themoviedb.org/3/collection/%s?api_key=%s&page=1,return' % (i['belongs_to_collection']['id'], self.tmdb_key)))))
+				cm.append((playbackMenu, 'RunPlugin(%s?action=alterSources&url=%s&meta=%s)' % (sysaddon, sysurl, sysmeta)))
+				if not rescrape_useDefault:
+					cm.append(('Rescrape Options ------>', 'PlayMedia(%s?action=rescrapeMenu&title=%s&year=%s&imdb=%s&tmdb=%s&meta=%s)' % (sysaddon, systitle, year, imdb, tmdb, sysmeta)))
+				else:
+					if rescrape_method == '0':
+						cm.append((rescrapeMenu, 'PlayMedia(%s?action=play_Item&title=%s&year=%s&imdb=%s&tmdb=%s&meta=%s&rescrape=true&select=1)' % (sysaddon, systitle, year, imdb, tmdb, sysmeta)))
+					if rescrape_method == '1':
+						cm.append((rescrapeMenu, 'PlayMedia(%s?action=play_Item&title=%s&year=%s&imdb=%s&tmdb=%s&meta=%s&rescrape=true&select=0)' % (sysaddon, systitle, year, imdb, tmdb, sysmeta)))
+					if rescrape_method == '2':
+						cm.append((rescrapeMenu, 'PlayMedia(%s?action=play_Item&title=%s&year=%s&imdb=%s&tmdb=%s&meta=%s&rescrape=true&all_providers=true&select=1)' % (sysaddon, systitle, year, imdb, tmdb, sysmeta)))
+					if rescrape_method == '3':
+						cm.append((rescrapeMenu, 'PlayMedia(%s?action=play_Item&title=%s&year=%s&imdb=%s&tmdb=%s&meta=%s&rescrape=true&all_providers=true&select=0)' % (sysaddon, systitle, year, imdb, tmdb, sysmeta)))
+				cm.append((clearSourcesMenu, 'RunPlugin(%s?action=cache_clearSources)' % sysaddon))
+				if not is_widget and page > 2:
+					cm.append((getLS(40476), 'RunPlugin(%s?action=return_home&folder=%s)' % (sysaddon, 'movies')))
+				cm.append(('[COLOR %s]Umbrella Settings[/COLOR]' % self.highlight_color, 'RunPlugin(%s?action=tools_openSettings)' % sysaddon))
+####################################
+				if trailer: meta.update({'trailer': trailer}) # removed temp so it's not passed to CM items, only infoLabels for skin
+				else: meta.update({'trailer': '%s?action=play_Trailer&type=%s&name=%s&year=%s&imdb=%s' % (sysaddon, 'movie', sysname, year, imdb)})
+				if label_media: labelProgress += ' [I](%s)[/I]' % (getLS(40865) or 'Movie')
+				item = control.item(label=labelProgress, offscreen=True)
+				#if 'castandart' in i: item.setCast(i['castandart'])#changed for kodi20 setinfo method
+				if 'castandart' in i: meta.update({'castandart':i['castandart']})
+				item.setArt(art)
+				#item.setUniqueIDs({'imdb': imdb, 'tmdb': tmdb}) #changed for kodi20 setinfo method
+				setUniqueIDs = {'imdb': imdb, 'tmdb': tmdb}
+###########################################################
+				item.setProperty('IsPlayable', 'true')
+				if is_widget: 
+					item.setProperty('isUmbrella_widget', 'true')
+					if self.hide_watched_in_widget and str(xbmc.getInfoLabel("Window.Property(xmlfile)")) != 'Custom_1114_Search.xml':
+						if str(meta.get('playcount', 0)) == '1':
+							continue
+				if self.unairedcolor not in labelProgress:
+					resumetime = Bookmarks().get(name=label, imdb=imdb, tmdb=tmdb, year=str(year), runtime=runtime, ck=True)
+					# item.setProperty('TotalTime', str(meta['duration'])) # Adding this property causes the Kodi bookmark CM items to be added
+					#item.setProperty('ResumeTime', str(resumetime))
+					try: item.setProperty('WatchedProgress', str(int(float(resumetime) / float(runtime) * 100)))
+					except: pass
+				#item.setInfo(type='video', infoLabels=control.metadataClean(meta))
+				if unfinished: item.setProperty('unfinished', 'true') 
+				try: 
+					resumetime = resumetime
+				except:
+					resumetime = ''
+				control.set_info(item, meta, setUniqueIDs=setUniqueIDs, resumetime=resumetime)
 
-					if is_widget and control.getKodiVersion() > 19.5 and self.useFullContext != True:
-						pass
-					else:
-						item.addContextMenuItems(cm)
-					control.addItem(handle=syshandle, url=url, listitem=item, isFolder=False)
-				except:
-					from resources.lib.modules import log_utils
-					log_utils.error()
-		
-			if next:
-				try:
-					if not items: raise Exception()
-					url = items[0].get('next', None)
-					if not url: raise Exception()
-					url_params = dict(parse_qsl(urlsplit(url).query))
-					if 'imdb.com' in url and 'start' in url_params: page = '  [I](%s)[/I]' % str(int(((int(url_params.get('start')) - 1) / int(self.page_limit)) + 1))
-					elif 'www.imdb.com/movies-coming-soon/' in url: page = '  [I](%s)[/I]' % re.search(r'(\d{4}-\d{2})', url).group(1)
-					else: page = '  [I](%s)[/I]' % url_params.get('page')
-					if 'None' in page: page = page.split('  [I]')[0]
-					nextColor ='[COLOR %s]' % getSetting('highlight.color')
-					nextMenu = nextColor + nextMenu + page + '[/COLOR]'
-					u = urlparse(url).netloc.lower()
-					if url.startswith(sysaddon): pass  # already a plugin action URL, use as-is
-					elif u not in self.tmdb_link: url = '%s?action=moviePage&url=%s&folderName=%s' % (sysaddon, quote_plus(url), quote_plus(folderName))
-					elif u in self.tmdb_link: url = '%s?action=tmdbmoviePage&url=%s&folderName=%s' % (sysaddon, quote_plus(url), quote_plus(folderName))
-					elif u in self.mbdlist_list_items: url = '%s?action=moviePage&url=%s&folderName=%s' % (sysaddon, quote_plus(url), quote_plus(folderName))
-					item = control.item(label=nextMenu, offscreen=True)
-					icon = control.addonNext()
-					item.setArt({'icon': icon, 'thumb': icon, 'poster': icon, 'banner': icon})
-					item.setProperty ('SpecialSort', 'bottom')
-					control.addItem(handle=syshandle, url=url, listitem=item, isFolder=True)
-				except:
-					from resources.lib.modules import log_utils
-					log_utils.error()
-			if not finalize: return
-			control.content(syshandle, 'movies')
-			control.directory(syshandle, cacheToDisc=True)
-			views.setView('movies', {'skin.estuary': 55, 'skin.confluence': 500})
-		finally:
-			performance.record('stage', stage_started, 'movies-directory')
+				if is_widget and control.getKodiVersion() > 19.5 and self.useFullContext != True:
+					pass
+				else:
+					item.addContextMenuItems(cm)
+				control.addItem(handle=syshandle, url=url, listitem=item, isFolder=False)
+			except:
+				from resources.lib.modules import log_utils
+				log_utils.error()
+	
+		if next:
+			try:
+				if not items: raise Exception()
+				url = items[0].get('next', None)
+				if not url: raise Exception()
+				url_params = dict(parse_qsl(urlsplit(url).query))
+				if 'imdb.com' in url and 'start' in url_params: page = '  [I](%s)[/I]' % str(int(((int(url_params.get('start')) - 1) / int(self.page_limit)) + 1))
+				elif 'www.imdb.com/movies-coming-soon/' in url: page = '  [I](%s)[/I]' % re.search(r'(\d{4}-\d{2})', url).group(1)
+				else: page = '  [I](%s)[/I]' % url_params.get('page')
+				if 'None' in page: page = page.split('  [I]')[0]
+				nextColor ='[COLOR %s]' % getSetting('highlight.color')
+				nextMenu = nextColor + nextMenu + page + '[/COLOR]'
+				u = urlparse(url).netloc.lower()
+				if url.startswith(sysaddon): pass  # already a plugin action URL, use as-is
+				elif u not in self.tmdb_link: url = '%s?action=moviePage&url=%s&folderName=%s' % (sysaddon, quote_plus(url), quote_plus(folderName))
+				elif u in self.tmdb_link: url = '%s?action=tmdbmoviePage&url=%s&folderName=%s' % (sysaddon, quote_plus(url), quote_plus(folderName))
+				elif u in self.mbdlist_list_items: url = '%s?action=moviePage&url=%s&folderName=%s' % (sysaddon, quote_plus(url), quote_plus(folderName))
+				item = control.item(label=nextMenu, offscreen=True)
+				icon = control.addonNext()
+				item.setArt({'icon': icon, 'thumb': icon, 'poster': icon, 'banner': icon})
+				item.setProperty ('SpecialSort', 'bottom')
+				control.addItem(handle=syshandle, url=url, listitem=item, isFolder=True)
+			except:
+				from resources.lib.modules import log_utils
+				log_utils.error()
+		if not finalize: return
+		control.content(syshandle, 'movies')
+		control.directory(syshandle, cacheToDisc=True)
+		views.setView('movies', {'skin.estuary': 55, 'skin.confluence': 500})
 
 	def addDirectory(self, items, queue=False, folderName=''):
 		from sys import argv # some functions like ActivateWindow() throw invalid handle less this is imported here.
@@ -4039,5 +4019,3 @@ class Movies:
 		control.content(syshandle, content) # some skins use their own thumb for things like "genres" when content type is set here
 		control.directory(syshandle, cacheToDisc=True)
 
-from resources.lib.modules import performance as _performance
-_performance.record('module-import', _module_import_started, 'movies')

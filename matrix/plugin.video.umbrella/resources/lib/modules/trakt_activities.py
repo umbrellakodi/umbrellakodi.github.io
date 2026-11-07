@@ -1,9 +1,9 @@
 """Briefly share successful menu activity probes between Kodi invocations."""
 from hashlib import sha256
 from json import dumps, loads
-from time import time, monotonic
+from time import time
 from uuid import uuid4
-from resources.lib.modules import control, performance
+from resources.lib.modules import control
 
 _VALUE = 'umbrella.trakt.browse_activities'
 _GENERATION = 'umbrella.trakt.browse_activities.generation'
@@ -21,14 +21,12 @@ def invalidate():
 
 
 def get(fetch, account, fresh=False):
-	started = monotonic()
 	scope = sha256(account.encode('utf-8')).hexdigest()
 	marker = None
 	try:
 		if fresh: invalidate()
 		retry = loads(control.homeWindow.getProperty(_RETRY) or '{}')
 		if retry.get('scope') == scope and time() < retry.get('until', 0):
-			performance.record('trakt-activity-cache', started, outcome='deferred')
 			return None
 		marker = control.homeWindow.getProperty(_GENERATION)
 		if not marker:
@@ -39,11 +37,9 @@ def get(fetch, account, fresh=False):
 			age = time() - entry.get('stored', 0)
 			if (entry.get('scope') == scope and entry.get('generation') == marker
 					and 0 <= age < _TTL and _valid(entry.get('activities'))):
-				performance.record('trakt-activity-cache', started, outcome='hit')
 				return entry['activities']
 	except Exception:
 		pass
-	performance.record('trakt-activity-cache', started, outcome='bypass' if fresh else 'miss')
 	result = fetch()
 	try:
 		if marker and _valid(result) and control.homeWindow.getProperty(_GENERATION) == marker:

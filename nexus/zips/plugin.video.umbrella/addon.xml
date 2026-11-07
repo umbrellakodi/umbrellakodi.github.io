@@ -1,4 +1,4 @@
-<addon id="plugin.video.umbrella" name="Umbrella" provider-name="Umbrella" version="6.7.745">
+<addon id="plugin.video.umbrella" name="Umbrella" provider-name="Umbrella" version="6.7.746">
 	<requires>
 		<import addon="xbmc.python" version="3.0.0" />
 		<import addon="script.module.requests" />
@@ -270,10 +270,11 @@
 			<screenshot>resources/screenshots/screenshot003.jpg</screenshot>
 		</assets>
 		<news>
-[B]Update - v6.7.745 - Nov 4th, 2026[/B]
---[Fix] Quietly cancel playback when backing out of source selection, including after choosing Download.
---[Enhancement] Added safe Floppy sync diagnostics for authorization and connection failures.
---[Feature] Added Download Manager to the Downloads page and to Tools when downloads are enabled.
+[B]Update - v6.7.746 - Nov 7th, 2026[/B]
+--[Fix] Log uploads now clearly confirm completion and explain how to use the link. Fixed clipboard copying on cancellation and added an upload timeout.
+--[Fix] Restore the saved language invoker preference after updates without forcing a profile reload. The restored preference takes effect on the next normal Kodi restart.
+--[Fix] Prevent artwork and version lookups from failing during add-on reloads and interrupting startup or account sync.
+--[Fix] Floppy sync cancellation during shutdown or profile reload no longer logs an error.
 		</news>
 	</extension>
 

@@ -19,6 +19,8 @@ api_url = 'http://localhost:8080/jsonrpc'
 addon = xbmcaddon.Addon
 AddonID = xbmcaddon.Addon().getAddonInfo('id')
 addonInfo = xbmcaddon.Addon().getAddonInfo
+ADDON_PATH = addonInfo('path')
+ADDON_VERSION = addonInfo('version')
 addonName = addonInfo('name')
 addonVersion = addonInfo('version')
 getLangString = xbmcaddon.Addon().getLocalizedString
@@ -239,7 +241,7 @@ def getCurrentViewId():
 	return str(win.getFocusId())
 
 def getUmbrellaVersion():
-	return xbmcaddon.Addon('plugin.video.umbrella').getAddonInfo('version')
+	return ADDON_VERSION
 
 def addonVersion(addon):
 	return xbmcaddon.Addon(addon).getAddonInfo('version')
@@ -251,6 +253,9 @@ def addonName():
 	return addonInfo('name')
 
 def addonPath(addon):
+	# Kodi can briefly unregister the add-on while replacing an update. The
+	# running process already knows its own location; don't look it up again.
+	if addon == 'plugin.video.umbrella': return transPath(ADDON_PATH)
 	try: addonID = xbmcaddon.Addon(addon)
 	except: addonID = None
 	if addonID is None: return ''
@@ -266,7 +271,7 @@ def artPath():
 	user_path = joinPath(userIconFolders(), theme)
 	if os.path.isdir(user_path):
 		return user_path
-	return joinPath(xbmcaddon.Addon('plugin.video.umbrella').getAddonInfo('path'), 'resources', 'artwork', theme)
+	return joinPath(ADDON_PATH, 'resources', 'artwork', theme)
 
 def themedIcon(filename):
 	path = joinPath(artPath(), filename)
@@ -278,21 +283,21 @@ def genreIconPath():
 	user_path = joinPath(userIconFolders(), theme, 'genre_media', 'icons')
 	if os.path.isdir(user_path):
 		return user_path
-	return joinPath(xbmcaddon.Addon('plugin.video.umbrella').getAddonInfo('path'), 'resources', 'artwork', theme, 'genre_media', 'icons')
+	return joinPath(ADDON_PATH, 'resources', 'artwork', theme, 'genre_media', 'icons')
 
 def genrePosterPath():
 	theme = appearance()
 	user_path = joinPath(userIconFolders(), theme, 'genre_media', 'posters')
 	if os.path.isdir(user_path):
 		return user_path
-	return joinPath(xbmcaddon.Addon('plugin.video.umbrella').getAddonInfo('path'), 'resources', 'artwork', theme, 'genre_media', 'posters')
+	return joinPath(ADDON_PATH, 'resources', 'artwork', theme, 'genre_media', 'posters')
 
 def appearance():
 	theme = setting('skinpackicons').lower()
 	return theme
 
 def iconFolders():
-	return joinPath(xbmcaddon.Addon('plugin.video.umbrella').getAddonInfo('path'), 'resources', 'artwork')
+	return joinPath(ADDON_PATH, 'resources', 'artwork')
 
 def userIconFolders():
 	return joinPath(dataPath, 'icon_packs')
@@ -434,29 +439,9 @@ def closeAll():
 def closeOk():
 	return execute('Dialog.Close(okdialog,true)')
 
-def log_refresh_diagnostic(event, detail=''):
-	"""Trace refresh ordering without logging container URLs or credentials."""
-	try:
-		if setting('debug.enabled') != 'true' or setting('debug.level') != '1': return
-		import os
-		import threading
-		from resources.lib.modules import log_utils
-		log_utils.log('RefreshDiag event=%s pid=%s thread=%s container=%s items=%s playing=%s fullscreen=%s cleanup=%s request=%s %s' % (
-			event, os.getpid(), threading.get_ident(), infoLabel('Container.PluginName'),
-			infoLabel('Container.NumItems'), player.isPlaying(), condVisibility('Window.IsActive(fullscreenvideo)'),
-			homeWindow.getProperty('umbrella.playback_cleanup'),
-			homeWindow.getProperty('umbrella.container_refresh_request'), detail), level=log_utils.LOGDEBUG)
-	except: pass
 
 
 def refresh():
-	try:
-		import sys
-		caller = sys._getframe(1)
-		log_refresh_diagnostic('Container.Refresh', 'caller=%s.%s:%s' % (
-			caller.f_globals.get('__name__', ''), caller.f_code.co_name, caller.f_lineno))
-		del caller
-	except: pass
 	try:
 		from resources.lib.modules import trakt_activities
 		trakt_activities.invalidate()
@@ -472,11 +457,9 @@ def queueItem():
 def clear_idle_playlist():
 	"""Directory reloads must not discard a playing or resolving episode chain."""
 	if player.isPlaying() or playerWindow.getProperty('umbrella.playnext.transition') == 'true':
-		log_refresh_diagnostic('browse-playlist-preserved', 'reason=playing-or-resolving')
 		return False
 	next_url = playerWindow.getProperty('umbrella.standalone.next')
 	if next_url and any(playlist[index].getPath() == next_url for index in range(playlist.size())):
-		log_refresh_diagnostic('browse-playlist-preserved', 'reason=queued-next')
 		return False
 	playlist.clear()
 	return True
@@ -598,7 +581,6 @@ def trigger_widget_refresh(update_library=True, force=False):
 		playback_cleanup = homeWindow.getProperty('umbrella.playback_cleanup') == 'true'
 		player_window_active = condVisibility('Window.IsActive(fullscreenvideo)')
 		if player.isPlaying() or player_window_active or playback_cleanup:
-			log_refresh_diagnostic('widget-refresh-deferred')
 			homeWindow.setProperty('umbrella.widget_refresh_pending', 'true')
 			return
 	except: pass
@@ -606,7 +588,6 @@ def trigger_widget_refresh(update_library=True, force=False):
 	try: last_refresh = float(homeWindow.getProperty('umbrella.widget_refresh_at') or 0)
 	except: last_refresh = 0
 	if not force and now - last_refresh < 2:
-		log_refresh_diagnostic('widget-refresh-throttled')
 		return
 	homeWindow.setProperty('umbrella.widget_refresh_at', str(now))
 	homeWindow.clearProperty('umbrella.widget_refresh_pending')
@@ -623,10 +604,8 @@ def trigger_widget_refresh(update_library=True, force=False):
 		try: last_library_refresh = float(homeWindow.getProperty('umbrella.widget_library_refresh_at') or 0)
 		except: last_library_refresh = 0
 		if not force and now - last_library_refresh < 300:
-			log_refresh_diagnostic('library-refresh-throttled')
 			return
 		homeWindow.setProperty('umbrella.widget_library_refresh_at', str(now))
-		log_refresh_diagnostic('UpdateLibrary', 'force=%s' % force)
 		execute('UpdateLibrary(video,/fake/path/to/force/refresh/on/home)')
 
 def refresh_playAction(): # for umbrella global CM play actions

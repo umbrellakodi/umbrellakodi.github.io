@@ -3,8 +3,6 @@
 	Umbrella Add-on
 """
 
-from time import monotonic as _import_clock
-_module_import_started = _import_clock()
 
 from importlib import import_module
 from sys import exit as sysexit
@@ -48,33 +46,27 @@ class Navigator:
 		return value
 
 	def __init__(self, lightweight=False):
-		from time import monotonic
-		from resources.lib.modules import performance
-		stage_started = monotonic()
-		try:
-			self.artPath = control.artPath()
-			self.iconLogos = getSetting('icon.logos') != 'Traditional'
-			self.indexLabels = getSetting('index.labels') == 'true'
-			self.simkltoken = getSetting('simkltoken') != ''
-			self.alldebridCredentials = getSetting('alldebridtoken') != ''
-			self.easynewsCredentials = getSetting('easynews.user') != ''
-			self.offcloudCredentials = getSetting('offcloudtoken') != ''
-			self.torboxCredentials = getSetting('torboxtoken') != ''
-			self.premiumizeCredentials = getSetting('premiumizetoken') != ''
-			self.realdebridCredentials = getSetting('realdebridtoken') != ''
-			self.tmdbSessionID = getSetting('tmdb.sessionid') != ''
-			self.reuselanguageinv = getSetting('reuse.languageinvoker') == 'true'
-			self.highlight_color = getSetting('highlight.color')
-			self.useContainerTitles = getSetting('enable.containerTitles') == 'true'
-			if lightweight:
-				self.hasLibMovies = False
-				self.favoriteMovie = False
-				self.favoriteTVShows = False
-				self.favoriteEpisodes = False
-				return
-			self.hasLibMovies = None
-		finally:
-			performance.record('stage', stage_started, 'navigator-init')
+		self.artPath = control.artPath()
+		self.iconLogos = getSetting('icon.logos') != 'Traditional'
+		self.indexLabels = getSetting('index.labels') == 'true'
+		self.simkltoken = getSetting('simkltoken') != ''
+		self.alldebridCredentials = getSetting('alldebridtoken') != ''
+		self.easynewsCredentials = getSetting('easynews.user') != ''
+		self.offcloudCredentials = getSetting('offcloudtoken') != ''
+		self.torboxCredentials = getSetting('torboxtoken') != ''
+		self.premiumizeCredentials = getSetting('premiumizetoken') != ''
+		self.realdebridCredentials = getSetting('realdebridtoken') != ''
+		self.tmdbSessionID = getSetting('tmdb.sessionid') != ''
+		self.reuselanguageinv = getSetting('reuse.languageinvoker') == 'true'
+		self.highlight_color = getSetting('highlight.color')
+		self.useContainerTitles = getSetting('enable.containerTitles') == 'true'
+		if lightweight:
+			self.hasLibMovies = False
+			self.favoriteMovie = False
+			self.favoriteTVShows = False
+			self.favoriteEpisodes = False
+			return
+		self.hasLibMovies = None
 
 	def _has_library_movies(self):
 		# Cache only for this menu instance so subsequent visits see library changes.
@@ -1212,17 +1204,9 @@ class Navigator:
 			log_utils.error()
 
 	def endDirectory(self):
-		from time import monotonic
-		from resources.lib.modules import performance
-		stage_started = monotonic()
-		try:
-			from sys import argv # some functions throw invalid handle -1 unless this is imported here.
-			syshandle = int(argv[1])
-			content = 'addons' if control.skin == 'skin.auramod' else ''
-			control.content(syshandle, content) # some skins use their own thumb for things like "genres" when content type is set here
-			control.directory(syshandle, cacheToDisc=True)
-		finally:
-			performance.record('stage', stage_started, 'navigator-submit')
+		from sys import argv # some functions throw invalid handle -1 unless this is imported here.
+		syshandle = int(argv[1])
+		content = 'addons' if control.skin == 'skin.auramod' else ''
+		control.content(syshandle, content) # some skins use their own thumb for things like "genres" when content type is set here
+		control.directory(syshandle, cacheToDisc=True)
 
-from resources.lib.modules import performance as _performance
-_performance.record('module-import', _module_import_started, 'navigator')

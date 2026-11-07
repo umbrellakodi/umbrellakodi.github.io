@@ -1097,6 +1097,10 @@ def sync_incremental(forced=False, progress_callback=None):
 			floppysync.clear_cache()
 			control.trigger_widget_refresh()
 		return True
+	except floppy_incremental.Cancelled:
+		# A profile reload stops active syncs. Keep existing data and release the
+		# lock without treating Kodi's normal shutdown as an account/API failure.
+		return False
 	except floppy_incremental.Unavailable:
 		# Release the common lock before the older snapshot implementations take it.
 		if lock is not None: lock.close(); lock = None
