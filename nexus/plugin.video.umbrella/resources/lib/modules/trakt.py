@@ -1206,7 +1206,11 @@ def getProgressActivity(activities=None):
 		activity = [int(cleandate.iso_2_utc(i)) for i in activity]
 		activity = sorted(activity, key=int)[-1]
 		return activity
-	except: log_utils.error()
+	except:
+		log_utils.error()
+		# Callers compare this value with numeric cache timestamps. An invalid
+		# activity response must not abort the parent Progress Episodes listing.
+		return 0
 
 def cachesyncMovies(timeout=0):
 	indicators = traktsync.get(syncMovies, timeout)
