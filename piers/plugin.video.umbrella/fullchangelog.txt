@@ -1,3 +1,6 @@
+[B]Update - v6.8.002 - Nov 9th, 2026[/B]
+--[Fix] Prevent delayed playback refreshes from interrupting Back navigation and skipping the Progress Episodes list.
+
 [B]Update - v6.8.001 - Nov 7th, 2026[/B]
 --[Fix] Prevent incomplete Trakt activity responses from interrupting Progress Episodes list loading; cached results remain available.
 --[Fix] Log uploads now clearly confirm completion and explain how to use the link. Fixed clipboard copying on cancellation and added an upload timeout.

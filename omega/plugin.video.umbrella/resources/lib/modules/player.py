@@ -66,7 +66,16 @@ def _mdblist_restore_started(since):
 	return False # no automatic reload appeared; retain the explicit fallback
 
 
-def _refresh_after_player_closes(request_id, watched_update_thread=None):
+def _playback_refresh_target_matches(folder):
+	# FolderPath still names the previous directory while Back is loading its
+	# parent. Refreshing then cancels that navigation and reloads the old folder.
+	if (control.condVisibility('Window.IsActive(busydialog)')
+			or control.condVisibility('Window.IsActive(busydialognocancel)')):
+		return False
+	return not folder or control.infoLabel('Container.FolderPath') == folder
+
+
+def _refresh_after_player_closes(request_id, watched_update_thread=None, folder=''):
 	"""Refresh only after Kodi has restored the underlying window."""
 	try:
 		refresh_started = time.time()
@@ -95,6 +104,9 @@ def _refresh_after_player_closes(request_id, watched_update_thread=None):
 		if _mdblist_restore_started(refresh_started): return
 		if control.monitor.waitForAbort(0.5): return
 		if homeWindow.getProperty('umbrella.container_refresh_request') != request_id:
+			return
+		if not _playback_refresh_target_matches(folder):
+			log_utils.log('post-playback container refresh skipped: directory changed or navigation is loading', level=log_utils.LOGDEBUG)
 			return
 		homeWindow.clearProperty('umbrella.container_refresh_request')
 		homeWindow.clearProperty('umbrella.playback_cleanup')
@@ -221,7 +233,7 @@ class Player(xbmc.Player):
 		playerWindow.setProperty('umbrella.playnextPlayPressed', str(0))
 
 	def play_source(self, title, year, season, episode, imdb, tmdb, tvdb, url, meta, debridPackCall=False):
-		
+		self._playback_folder = control.infoLabel('Container.FolderPath')
 		#if self.debuglog:
 			#try:
 				#log_utils.log('play_source Title: %s Type: %s' % (str(title), type(title)), level=log_utils.LOGDEBUG)
@@ -322,6 +334,10 @@ class Player(xbmc.Player):
 					log_utils.log('Played file as resolve.', level=log_utils.LOGDEBUG)
 			homeWindow.setProperty('script.trakt.ids', jsdumps(self.ids))
 			self.keepAlive()
+			# Kodi tears down this invocation when play_source returns. Keep the
+			# bounded refresh worker alive long enough to finish its final checks.
+			refresh_thread = getattr(self, '_container_refresh_thread', None)
+			if refresh_thread and refresh_thread.is_alive(): refresh_thread.join(32)
 			homeWindow.clearProperty('script.trakt.ids')
 		except:
 			log_utils.error()
@@ -1207,7 +1223,8 @@ class Player(xbmc.Player):
 						and not has_next_queued):
 					request_id = str(time.time_ns())
 					homeWindow.setProperty('umbrella.container_refresh_request', request_id)
-					refresh_thread = Thread(target=_refresh_after_player_closes, args=(request_id, self.watched_update_thread))
+					refresh_thread = Thread(target=_refresh_after_player_closes, args=(request_id, self.watched_update_thread, getattr(self, '_playback_folder', '')))
+					self._container_refresh_thread = refresh_thread
 					refresh_thread.daemon = True
 					refresh_thread.start()
 				else:
@@ -1303,7 +1320,8 @@ class Player(xbmc.Player):
 			if getSetting('crefresh') == 'true' and not has_next_queued:
 				request_id = str(time.time_ns())
 				homeWindow.setProperty('umbrella.container_refresh_request', request_id)
-				refresh_thread = Thread(target=_refresh_after_player_closes, args=(request_id, self.watched_update_thread))
+				refresh_thread = Thread(target=_refresh_after_player_closes, args=(request_id, self.watched_update_thread, getattr(self, '_playback_folder', '')))
+				self._container_refresh_thread = refresh_thread
 				refresh_thread.daemon = True
 				refresh_thread.start()
 			else:

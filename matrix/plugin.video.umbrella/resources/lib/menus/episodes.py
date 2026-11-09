@@ -2412,6 +2412,7 @@ class Episodes:
 					try:duration = (int(item['show']['runtime']) * 60)
 					except: duration = ''
 				values['duration'] = duration
+				values['trakt_summary_id'] = ids.get('trakt') or ids.get('slug') or ''
 				try: values['trailer'] = control.trailer % item['show']['trailer'].split('v=')[1]
 				except: values['trailer'] = ''
 				try:
@@ -2430,7 +2431,11 @@ class Episodes:
 				# `extended=progress` can omit the `airs` object. Fill it from the
 				# full show summary so Air Information works in Progress Episodes.
 				if not (values.get('airday') or values.get('airtime')):
-					show_summary = trakt.getTVShowSummary(imdb or tvdb, full=True) if (imdb or tvdb) else None
+					# Numeric TVDB IDs are not Trakt show IDs. Retain the native ID
+					# from the watched-show response rather than repeatedly requesting
+					# the wrong show (404 responses are not cached).
+					summary_id = imdb or i.get('trakt_summary_id')
+					show_summary = trakt.getTVShowSummary(summary_id, full=True) if summary_id else None
 					airs = (show_summary or {}).get('airs', {}) or {}
 					values['airday'] = airs.get('day', '')
 					values['airtime'] = airs.get('time', '')[:5]

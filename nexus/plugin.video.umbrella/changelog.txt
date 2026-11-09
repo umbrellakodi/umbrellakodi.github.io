@@ -1,6 +1,2 @@
-[B]Update - v6.8.001 - Nov 7th, 2026[/B]
---[Fix] Prevent incomplete Trakt activity responses from interrupting Progress Episodes list loading; cached results remain available.
---[Fix] Log uploads now clearly confirm completion and explain how to use the link. Fixed clipboard copying on cancellation and added an upload timeout.
---[Fix] Restore the saved language invoker preference after updates without forcing a profile reload. The restored preference takes effect on the next normal Kodi restart.
---[Fix] Prevent artwork and version lookups from failing during add-on reloads and interrupting startup or account sync.
---[Fix] Floppy sync cancellation during shutdown or profile reload no longer logs an error.
+[B]Update - v6.8.002 - Nov 9th, 2026[/B]
+--[Fix] Prevent delayed playback refreshes from interrupting Back navigation and skipping the Progress Episodes list.
