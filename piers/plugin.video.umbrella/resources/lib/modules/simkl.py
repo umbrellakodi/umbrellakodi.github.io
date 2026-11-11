@@ -3,9 +3,7 @@
 	Umbrella Add-on (added by Umbrella Dev 12/23/22)
 """
 
-import requests
-from requests.adapters import HTTPAdapter
-from urllib3.util.retry import Retry
+from resources.lib.modules.lazy_network import requests, LazySession
 from resources.lib.modules import control
 from resources.lib.database import simklsync, cache
 from resources.lib.modules import log_utils
@@ -25,9 +23,7 @@ BASE_URL = 'https://api.simkl.com'
 oauth_base_url = 'https://api.simkl.com/oauth/pin'
 simkl_icon = control.joinPath(control.artPath(), 'simkl.png')
 simklclientid = 'cecec23773dff71d940876860a316a4b74666c4c31ad719fe0af8bb3064a34ab'
-session = requests.Session()
-retries = Retry(total=5, backoff_factor=0.1, status_forcelist=[500, 502, 503, 504])
-session.mount('https://api.simkl.com', HTTPAdapter(max_retries=retries, pool_maxsize=100))
+session = LazySession(dict(total=5, backoff_factor=0.1, status_forcelist=[500, 502, 503, 504]), ('https://api.simkl.com',))
 #sim_qr = control.joinPath(control.artPath(), 'simklqr.png')
 highlightColor = control.setting('highlight.color')
 headers = {}

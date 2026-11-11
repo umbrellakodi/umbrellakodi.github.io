@@ -1,2 +1,4 @@
-[B]Update - v6.8.002 - Nov 9th, 2026[/B]
---[Fix] Prevent delayed playback refreshes from interrupting Back navigation and skipping the Progress Episodes list.
+[B]Update - v6.8.003 - Nov 10th, 2026[/B]
+--[Fix] Watched checkmarks now update after playback even if a brief loading spinner is showing when the list refreshes.
+--[Fix] Season counts for shows without an IMDb ID stay correct when a new episode airs.
+--[Fix] Floppy, Custom, Scrob and PunchPlay Progress Episodes now use each show's broadcast time and timezone, so new episodes no longer appear up to a day early outside the US.

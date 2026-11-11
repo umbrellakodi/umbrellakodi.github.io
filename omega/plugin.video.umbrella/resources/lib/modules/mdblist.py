@@ -5,11 +5,9 @@
 """
 
 
-import requests
+from resources.lib.modules.lazy_network import requests, LazySession
 import re
 import time
-from requests.adapters import HTTPAdapter
-from urllib3.util.retry import Retry
 from resources.lib.modules import control
 from resources.lib.modules import log_utils
 from resources.lib.database import mdbsync
@@ -41,9 +39,7 @@ mdblist_liked_list = '/lists/liked'
 mdblist_official_list = '/lists/official'
 mdblist_page_limit = '?limit=%s' % getSetting('page.item.limit')
 _CLIENT_ID = 'YVFS6WW6GT4c2LvaHxHGa8YlB6u9zGgL6KjtDsHg'
-session = requests.Session()
-retries = Retry(total=4, backoff_factor=0.3, status_forcelist=[429, 500, 502, 503, 504, 520, 521, 522, 524, 530])
-session.mount('https://api.mdblist.com', HTTPAdapter(max_retries=retries, pool_maxsize=100))
+session = LazySession(dict(total=4, backoff_factor=0.3, status_forcelist=[429, 500, 502, 503, 504, 520, 521, 522, 524, 530]), ('https://api.mdblist.com',))
 _mdblist_token = getSetting('mdblist.token')
 if _mdblist_token:
 	session.headers.update({'Authorization': 'Bearer %s' % _mdblist_token})

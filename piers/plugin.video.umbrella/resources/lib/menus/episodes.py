@@ -36,7 +36,7 @@ getSetting = control.setting
 KODI_VERSION = control.getKodiVersion()
 
 
-def _mdblist_episode_unaired(item, now):
+def _episode_unaired(item, now):
 	"""Evaluate release time on each view, including rows read from cache."""
 	air_date = str(item.get('premiered') or '').split('T')[0]
 	try:
@@ -209,8 +209,9 @@ class Episodes:
 				try:
 					from resources.lib.modules.playcount import getTVShowIndicators, getEpisodeOverlay
 					_progress_ind = getTVShowIndicators()
+					_progress_cache = {}
 					if _progress_ind:
-						while self.list and getEpisodeOverlay(_progress_ind, self.list[0].get('imdb', ''), str(self.list[0].get('tvdb', '')), self.list[0].get('season', 0), self.list[0].get('episode', 0), tmdb=self.list[0].get('tmdb', '')) == '5':
+						while self.list and getEpisodeOverlay(_progress_ind, self.list[0].get('imdb', ''), str(self.list[0].get('tvdb', '')), self.list[0].get('season', 0), self.list[0].get('episode', 0), tmdb=self.list[0].get('tmdb', ''), custom_progress=_progress_cache) == '5':
 							self.list = self.list[1:]
 				except: pass
 				if self.trakt_progressFlatten or self.mdblist_progressFlatten:
@@ -984,7 +985,7 @@ class Episodes:
 			from sys import argv
 			self.list = _unique_mdblist_progress(self.list)
 			for item in self.list:
-				item['unaired'] = _mdblist_episode_unaired(item, self.date_time)
+				item['unaired'] = _episode_unaired(item, self.date_time)
 			self.sort(type='progress')
 			if self.list is None: self.list = []
 			# place new season ep1's at top of list for 1 week
@@ -1122,7 +1123,7 @@ class Episodes:
 				if duration:
 					try: values['duration'] = int(duration) * 60
 					except: pass
-				values['unaired'] = _mdblist_episode_unaired(values, self.date_time)
+				values['unaired'] = _episode_unaired(values, self.date_time)
 				if self.enable_fanarttv:
 					tvdb = values.get('tvdb', '')
 					extended_art = fanarttv_cache.get(FanartTv().get_tvshow_art, 336, tvdb)
@@ -1507,7 +1508,7 @@ class Episodes:
 						try:
 							if values.get('status', '').lower() == 'ended': return
 							elif not air_date: values['unaired'] = 'true'
-							elif int(re.sub(r'[^0-9]', '', air_date)) > int(re.sub(r'[^0-9]', '', str(self.today_date))):
+							elif _episode_unaired(values, self.date_time):
 								values['unaired'] = 'true'
 							else: return  # already aired (today or earlier) - not "upcoming"
 						except:
@@ -1518,7 +1519,7 @@ class Episodes:
 						try:
 							if values.get('status', '').lower() == 'ended': pass
 							elif not air_date: values['unaired'] = 'true'
-							elif int(re.sub(r'[^0-9]', '', air_date)) > int(re.sub(r'[^0-9]', '', str(self.today_date))):
+							elif _episode_unaired(values, self.date_time):
 								values['unaired'] = 'true'
 						except: pass
 					if self.enable_fanarttv:
@@ -1713,7 +1714,7 @@ class Episodes:
 						try:
 							if values.get('status', '').lower() == 'ended': return
 							elif not air_date: values['unaired'] = 'true'
-							elif int(re.sub(r'[^0-9]', '', air_date)) > int(re.sub(r'[^0-9]', '', str(self.today_date))):
+							elif _episode_unaired(values, self.date_time):
 								values['unaired'] = 'true'
 							else: return  # already aired (today or earlier) - not "upcoming"
 						except:
@@ -1724,7 +1725,7 @@ class Episodes:
 						try:
 							if values.get('status', '').lower() == 'ended': pass
 							elif not air_date: values['unaired'] = 'true'
-							elif int(re.sub(r'[^0-9]', '', air_date)) > int(re.sub(r'[^0-9]', '', str(self.today_date))):
+							elif _episode_unaired(values, self.date_time):
 								values['unaired'] = 'true'
 						except: pass
 					if self.enable_fanarttv:
@@ -1985,7 +1986,7 @@ class Episodes:
 						try:
 							if values.get('status', '').lower() == 'ended': return
 							elif not air_date: values['unaired'] = 'true'
-							elif int(re.sub(r'[^0-9]', '', air_date)) > int(re.sub(r'[^0-9]', '', str(self.today_date))):
+							elif _episode_unaired(values, self.date_time):
 								values['unaired'] = 'true'
 							else: return  # already aired (today or earlier) - not "upcoming"
 						except:
@@ -1996,7 +1997,7 @@ class Episodes:
 						try:
 							if values.get('status', '').lower() == 'ended': pass
 							elif not air_date: values['unaired'] = 'true'
-							elif int(re.sub(r'[^0-9]', '', air_date)) > int(re.sub(r'[^0-9]', '', str(self.today_date))):
+							elif _episode_unaired(values, self.date_time):
 								values['unaired'] = 'true'
 						except: pass
 					if self.enable_fanarttv:
@@ -2108,7 +2109,7 @@ class Episodes:
 						try:
 							if values.get('status', '').lower() == 'ended': return
 							elif not air_date: values['unaired'] = 'true'
-							elif int(re.sub(r'[^0-9]', '', air_date)) > int(re.sub(r'[^0-9]', '', str(self.today_date))):
+							elif _episode_unaired(values, self.date_time):
 								values['unaired'] = 'true'
 							else: return  # already aired (today or earlier) - not "upcoming"
 						except:
@@ -2119,7 +2120,7 @@ class Episodes:
 						try:
 							if values.get('status', '').lower() == 'ended': pass
 							elif not air_date: values['unaired'] = 'true'
-							elif int(re.sub(r'[^0-9]', '', air_date)) > int(re.sub(r'[^0-9]', '', str(self.today_date))):
+							elif _episode_unaired(values, self.date_time):
 								values['unaired'] = 'true'
 						except: pass
 					if self.enable_fanarttv:
@@ -3028,6 +3029,7 @@ class Episodes:
 		rescrape_method = getSetting('rescrape.default2')
 		enable_playnext = getSetting('enable.playnext') == 'true'
 		indicators = getTVShowIndicators() # gives breakdown of (season, ep) watched
+		custom_progress = {}
 		isFolder = False if sysaction != 'episodes' else True
 		if airEnabled == 'true':
 			airZone, airLocation = getSetting('tvshows.air.zone'), getSetting('tvshows.air.location')
@@ -3240,7 +3242,7 @@ class Episodes:
 ####-Context Menu and Overlays-####
 				cm = []
 				try:
-					watched = getEpisodeOverlay(indicators, imdb, tvdb, season, episode, tmdb=tmdb) == '5'
+					watched = getEpisodeOverlay(indicators, imdb, tvdb, season, episode, tmdb=tmdb, custom_progress=custom_progress) == '5'
 					if self.traktCredentials:
 						cm.append((traktManagerMenu, 'RunPlugin(%s?action=tools_traktManager&name=%s&imdb=%s&tmdb=%s&tvdb=%s&season=%s&episode=%s&watched=%s&unfinished=%s)' % (sysaddon, systvshowtitle, imdb, tmdb, tvdb, season, episode, watched, unfinished)))
 					if self.simklCredentials:

@@ -6,10 +6,8 @@
 from datetime import datetime
 from json import dumps as jsdumps, loads as jsloads
 import re
-import requests
-from requests.adapters import HTTPAdapter
+from resources.lib.modules.lazy_network import requests, LazySession, HTTPAdapter
 from threading import Thread, Lock
-from urllib3.util.retry import Retry
 from urllib.parse import urljoin, urlparse, parse_qsl, urlencode, urlunparse
 from resources.lib.database import cache, traktsync
 from resources.lib.modules import cleandate
@@ -25,10 +23,7 @@ BASE_URL = 'https://api.trakt.tv'
 AUTH_URL = 'https://auth.trakt.tv'
 headers = {'Content-Type': 'application/json', 'trakt-api-key': '', 'trakt-api-version': '2'}
 REDIRECT_URI = 'urn:ietf:wg:oauth:2.0:oob'
-session = requests.Session()
-retries = Retry(total=4, backoff_factor=1, status_forcelist=[429, 500, 502, 503, 504, 520, 521, 522, 524, 530])
-session.mount('https://api.trakt.tv', HTTPAdapter(max_retries=retries, pool_maxsize=100))
-session.mount(AUTH_URL, HTTPAdapter(max_retries=retries, pool_maxsize=100))
+session = LazySession(dict(total=4, backoff_factor=1, status_forcelist=[429, 500, 502, 503, 504, 520, 521, 522, 524, 530]), (BASE_URL, AUTH_URL))
 highlight_color = getSetting('highlight.color')
 server_notification = getSetting('trakt.server.notifications') == 'true'
 service_syncInterval = int(getSetting('background.service.syncInterval')) if getSetting('background.service.syncInterval') else 15

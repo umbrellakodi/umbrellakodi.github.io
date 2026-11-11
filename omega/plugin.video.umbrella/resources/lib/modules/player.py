@@ -66,12 +66,15 @@ def _mdblist_restore_started(since):
 	return False # no automatic reload appeared; retain the explicit fallback
 
 
+def _navigation_busy():
+	return (control.condVisibility('Window.IsActive(busydialog)')
+		or control.condVisibility('Window.IsActive(busydialognocancel)'))
+
+
 def _playback_refresh_target_matches(folder):
 	# FolderPath still names the previous directory while Back is loading its
 	# parent. Refreshing then cancels that navigation and reloads the old folder.
-	if (control.condVisibility('Window.IsActive(busydialog)')
-			or control.condVisibility('Window.IsActive(busydialognocancel)')):
-		return False
+	if _navigation_busy(): return False
 	return not folder or control.infoLabel('Container.FolderPath') == folder
 
 
@@ -103,6 +106,12 @@ def _refresh_after_player_closes(request_id, watched_update_thread=None, folder=
 				log_utils.log('post-playback refresh continuing after watched update timeout', level=log_utils.LOGWARNING)
 		if _mdblist_restore_started(refresh_started): return
 		if control.monitor.waitForAbort(0.5): return
+		# A loading spinner is usually brief. Let it settle (up to 3 seconds), then
+		# check the folder: if Back was pressed it will have changed and we skip,
+		# otherwise the watched-state refresh still happens.
+		for _ in range(12):
+			if not _navigation_busy(): break
+			if control.monitor.waitForAbort(0.25): return
 		if homeWindow.getProperty('umbrella.container_refresh_request') != request_id:
 			return
 		if not _playback_refresh_target_matches(folder):
@@ -337,7 +346,7 @@ class Player(xbmc.Player):
 			# Kodi tears down this invocation when play_source returns. Keep the
 			# bounded refresh worker alive long enough to finish its final checks.
 			refresh_thread = getattr(self, '_container_refresh_thread', None)
-			if refresh_thread and refresh_thread.is_alive(): refresh_thread.join(32)
+			if refresh_thread and refresh_thread.is_alive(): refresh_thread.join(36)
 			homeWindow.clearProperty('script.trakt.ids')
 		except:
 			log_utils.error()
