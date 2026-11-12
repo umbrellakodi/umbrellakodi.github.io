@@ -1,3 +1,7 @@
+[B]Update - v6.8.005 - Nov 12th, 2026[/B]
+--[Fix] MDBList Finish Watching no longer fills up with episodes and movies you finished. Umbrella now closes the MDBList playback session when an item is completed, and resuming past 80% no longer marks it watched early.
+--[Feature] Added MDBList Tools > Clean up finished items in MDBList Finish Watching (also in Settings > Shortcuts). It removes items you already finished that older versions left in Finish Watching, and keeps unfinished items and rewatches in progress.
+
 [B]Update - v6.8.004 - Nov 11th, 2026[/B]
 --[Fix] Account sync no longer stalls for minutes when Trakt rate-limits requests, so Custom, Floppy, Scrob and PunchPlay sync on time and Kodi closes promptly. Trakt rate-limit waits are now logged, capped at 60 seconds and retried at most twice.
 --[Fix] Simkl Progress Episodes now loads shows in batches using the batch size setting instead of all at once, which avoids rate limits.

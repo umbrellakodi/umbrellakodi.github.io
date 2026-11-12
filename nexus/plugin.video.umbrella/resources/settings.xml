@@ -7431,6 +7431,19 @@
 					</dependencies>
 					<control type="button" format="action"/>
 				</setting>
+				<setting id="cleanupMDBListPlaybackButton" type="action" label="40870" help="">
+					<level>0</level>
+					<data>RunPlugin(plugin://plugin.video.umbrella/?action=tools_cleanupMDBListPlayback)</data>
+					<constraints>
+						<allowempty>true</allowempty>
+					</constraints>
+					<dependencies>
+						<dependency type="visible">
+							<condition operator="!is" setting="mdblist.token"/>
+						</dependency>
+					</dependencies>
+					<control type="button" format="action"/>
+				</setting>
 				<setting id="cacheClearAllButton" type="action" label="32610" help="">
 					<level>0</level>
 					<data>RunPlugin(plugin://plugin.video.umbrella/?action=cache_clearAll)</data>
