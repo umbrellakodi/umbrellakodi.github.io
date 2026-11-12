@@ -1,3 +1,9 @@
+[B]Update - v6.8.004 - Nov 11th, 2026[/B]
+--[Fix] Account sync no longer stalls for minutes when Trakt rate-limits requests, so Custom, Floppy, Scrob and PunchPlay sync on time and Kodi closes promptly. Trakt rate-limit waits are now logged, capped at 60 seconds and retried at most twice.
+--[Fix] Simkl Progress Episodes now loads shows in batches using the batch size setting instead of all at once, which avoids rate limits.
+--[Fix] Progress Episodes no longer hides shows with episodes left to watch on devices where date parsing fails, such as Fire TV.
+--[Fix] Fixed the same date-parsing failure in the PunchPlay calendar, episode air time labels and time conversion.
+
 [B]Update - v6.8.003 - Nov 10th, 2026[/B]
 --[Fix] Watched checkmarks now update after playback even if a brief loading spinner is showing when the list refreshes.
 --[Fix] Season counts for shows without an IMDb ID stay correct when a new episode airs.

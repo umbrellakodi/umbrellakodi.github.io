@@ -483,7 +483,6 @@ def main():
 
 		syncServices = Thread(target=SyncServices().run, daemon=True) # run service in case user auth's trakt later, sync will loop and do nothing without valid auth'd account
 		syncServices.start()
-
 		# if getTraktCredentialsInfo():
 		# 	if control.setting('autoTraktOnStart') == 'true':
 		# 		SyncTraktCollection().run()

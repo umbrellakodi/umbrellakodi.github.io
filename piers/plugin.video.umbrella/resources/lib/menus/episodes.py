@@ -38,17 +38,22 @@ KODI_VERSION = control.getKodiVersion()
 
 def _episode_unaired(item, now):
 	"""Evaluate release time on each view, including rows read from cache."""
+	# No datetime.strptime() here: on some embedded Kodi Pythons (Fire TV) it raises
+	# TypeError ('NoneType' object is not callable) inside threads, which used to be
+	# swallowed as "unaired" and hid every non-Ended show from Custom/Floppy progress.
 	air_date = str(item.get('premiered') or '').split('T')[0]
 	try:
-		date = datetime.strptime(air_date, '%Y-%m-%d')
+		y, m, d = (int(x) for x in air_date.split('-'))
+		date = datetime(y, m, d)
 	except (TypeError, ValueError):
 		return 'true'
 	airtime, airzone = item.get('airtime'), item.get('airzone')
 	if airtime and airzone:
 		try:
 			from resources.lib.externals import pytz
-			try: scheduled = datetime.strptime('%sT%s' % (air_date, airtime), '%Y-%m-%dT%H:%M:%S')
-			except ValueError: scheduled = datetime.strptime('%sT%s' % (air_date, airtime), '%Y-%m-%dT%H:%M')
+			hms = [int(x) for x in str(airtime).strip().split(':')]
+			if not 2 <= len(hms) <= 3: raise ValueError(airtime)
+			scheduled = datetime(y, m, d, *hms)
 			local_zone = pytz.timezone(tools.localZone())
 			local_air = pytz.timezone(airzone).localize(scheduled).astimezone(local_zone)
 			local_now = local_zone.localize(now)
@@ -2929,12 +2934,17 @@ class Episodes:
 			except:
 				from resources.lib.modules import log_utils
 				log_utils.error()
-		threads = []
-		append = threads.append
-		for i in items:
-			append(Thread(target=items_list, args=(i,)))
-		[i.start() for i in threads]
-		[i.join() for i in threads]
+		threads = [Thread(target=items_list, args=(i,)) for i in items]
+		# Batched like the other providers' progress lists: one thread per show all at
+		# once fired ~200 simultaneous Trakt show-summary requests, tripping Trakt's
+		# rate limit and stalling the service sync loop.
+		_unlimited = getSetting('dev.batch.unlimited') == 'true'
+		_chunk = max(len(threads), 1) if _unlimited else max(int(getSetting('dev.batch.size') or '10'), 1)
+		for n in range(0, len(threads), _chunk):
+			if control.monitor.abortRequested(): break
+			batch = threads[n:n + _chunk]
+			[t.start() for t in batch]
+			[t.join() for t in batch]
 		return self.list
 
 	def episodeDirectory(self, items, unfinished=False, next=True, playlist=False, folderName=''):

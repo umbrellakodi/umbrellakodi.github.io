@@ -23,7 +23,13 @@ BASE_URL = 'https://api.trakt.tv'
 AUTH_URL = 'https://auth.trakt.tv'
 headers = {'Content-Type': 'application/json', 'trakt-api-key': '', 'trakt-api-version': '2'}
 REDIRECT_URI = 'urn:ietf:wg:oauth:2.0:oob'
-session = LazySession(dict(total=4, backoff_factor=1, status_forcelist=[429, 500, 502, 503, 504, 520, 521, 522, 524, 530]), (BASE_URL, AUTH_URL))
+# 429 is deliberately NOT in status_forcelist: urllib3 would honor Retry-After with an
+# un-logged, un-abortable time.sleep() up to 4 times per request. A burst of parallel
+# requests then stalled the whole service sync loop (and Kodi shutdown) for minutes
+# with nothing in the log. getTrakt() handles 429 itself: logged, bounded, abort-aware.
+session = LazySession(dict(total=4, backoff_factor=1, status_forcelist=[500, 502, 503, 504, 520, 521, 522, 524, 530], respect_retry_after_header=False), (BASE_URL, AUTH_URL))
+_MAX_THROTTLE_RETRIES = 2
+_MAX_THROTTLE_WAIT = 60  # seconds; longer Retry-After windows fail fast instead of blocking callers
 highlight_color = getSetting('highlight.color')
 server_notification = getSetting('trakt.server.notifications') == 'true'
 service_syncInterval = int(getSetting('background.service.syncInterval')) if getSetting('background.service.syncInterval') else 15
@@ -56,7 +62,7 @@ def traktVerificationURL(device_code):
 	return urlunparse(parsed._replace(query=urlencode(query)))
 
 
-def getTrakt(url, post=None, extended=False, silent=False, reauth_attempts=0, method=None):
+def getTrakt(url, post=None, extended=False, silent=False, reauth_attempts=0, method=None, throttle_attempts=0):
 	activity_write = post is not None or method == 'DELETE'
 	if activity_write:
 		try:
@@ -119,14 +125,20 @@ def getTrakt(url, post=None, extended=False, silent=False, reauth_attempts=0, me
 				return None
 			log_utils.log('TRAKT: %s Status Code Returned on call to url: %s (attempt %d)' % (status_code, url, reauth_attempts + 1), level=log_utils.LOGINFO)
 			success = re_auth(headers)
-			if success: return getTrakt(url, post=post, extended=extended, silent=silent, reauth_attempts=reauth_attempts + 1, method=method)
+			if success: return getTrakt(url, post=post, extended=extended, silent=silent, reauth_attempts=reauth_attempts + 1, method=method, throttle_attempts=throttle_attempts)
 		elif status_code == '429':
-			if 'Retry-After' in response.headers: # API REQUESTS ARE BEING THROTTLED, INTRODUCE WAIT TIME (1000 get requests every 5 minutes, 1 post/put/delte every per second)
-				throttleTime = response.headers['Retry-After']
-				if not silent and server_notification and not control.condVisibility('Player.HasVideo'):
-					control.notification(title=32315, message='Trakt Throttling Applied, Sleeping for %s seconds' % throttleTime) # message lang code 33674
-				control.sleep((int(throttleTime) + 1) * 1000)
-				return getTrakt(url, post=post, extended=extended, silent=silent, reauth_attempts=reauth_attempts, method=method)
+			# API REQUESTS ARE BEING THROTTLED (1000 GET requests every 5 minutes, 1 POST/PUT/DELETE per second)
+			try: throttleTime = int(float(response.headers.get('Retry-After', 0)))
+			except (TypeError, ValueError): throttleTime = 0
+			if throttle_attempts >= _MAX_THROTTLE_RETRIES or throttleTime > _MAX_THROTTLE_WAIT:
+				log_utils.log('TRAKT: 429 rate limited (Retry-After=%ss, attempt %d) - giving up: %s' % (throttleTime, throttle_attempts + 1, url), level=log_utils.LOGWARNING)
+				return None
+			log_utils.log('TRAKT: 429 rate limited - waiting %ss before retry %d: %s' % (throttleTime + 1, throttle_attempts + 1, url), level=log_utils.LOGINFO)
+			if not silent and server_notification and not control.condVisibility('Player.HasVideo'):
+				control.notification(title=32315, message='Trakt Throttling Applied, Sleeping for %s seconds' % throttleTime) # message lang code 33674
+			control.sleep((throttleTime + 1) * 1000)
+			if control.monitor.abortRequested(): return None
+			return getTrakt(url, post=post, extended=extended, silent=silent, reauth_attempts=reauth_attempts, method=method, throttle_attempts=throttle_attempts + 1)
 		else:
 			response_text = response.text[:300] if hasattr(response, 'text') else str(response)[:300]
 			log_utils.log_force('TRAKT: request failed url=%s status=%s response=%s' % (url, status_code, response_text), level=log_utils.LOGWARNING)

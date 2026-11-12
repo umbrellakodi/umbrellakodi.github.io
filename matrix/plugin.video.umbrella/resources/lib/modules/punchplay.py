@@ -1062,7 +1062,9 @@ def get_library_items(category, kind):
 
 def get_calendar(month):
     try:
-        month = datetime.strptime(month, '%Y-%m').strftime('%Y-%m')
+        # time.strptime, not datetime.strptime: the latter raises TypeError on some
+        # embedded Kodi Pythons (Fire TV), which made every month "invalid" here.
+        month = time.strftime('%Y-%m', time.strptime(month, '%Y-%m'))
     except (TypeError, ValueError):
         raise PunchPlayError('Invalid calendar month.')
     return _request('/calendar?' + urlencode({'month': month}))
