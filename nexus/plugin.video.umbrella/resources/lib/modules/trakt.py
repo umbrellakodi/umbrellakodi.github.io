@@ -1395,7 +1395,8 @@ def syncTVShows(): # sync all watched shows ex. [({'imdb': 'tt12571834', 'tvdb':
 		indicators = []
 		seen_ids = set()
 		page = 1
-		limit = 250
+		# Trakt caps extended=progress watched pages at 100 items, whatever limit is requested.
+		limit = 100
 		while True:
 			response = getTrakt('/users/me/watched/shows?extended=progress&page=%d&limit=%d' % (page, limit))
 			if not response: break
@@ -1419,18 +1420,14 @@ def syncTVShows(): # sync all watched shows ex. [({'imdb': 'tt12571834', 'tvdb':
 					indicators.append((ids, aired, episodes))
 				except: pass
 			log_utils.log('TRAKT: syncTVShows page %d: %d shows fetched' % (page, len(page_results)), level=log_utils.LOGDEBUG)
+			# Pagination headers are authoritative; a short page only ends the loop when
+			# they are missing (Trakt may return fewer items than the requested limit).
+			more_by_headers = None
 			if hasattr(response, 'headers'):
-				total_pages = response.headers.get('X-Pagination-Page-Count')
-				if total_pages:
-					try:
-						if page >= int(total_pages): break
-					except: pass
-				total_items = response.headers.get('X-Pagination-Item-Count')
-				if total_items:
-					try:
-						if len(indicators) >= int(total_items): break
-					except: pass
-			if len(page_results) < limit: break
+				try: more_by_headers = page < int(response.headers.get('X-Pagination-Page-Count'))
+				except (TypeError, ValueError): pass
+			if more_by_headers is False: break
+			if more_by_headers is None and len(page_results) < limit: break
 			page += 1
 			if page > 400: break
 		log_utils.log('TRAKT: syncTVShows complete: %d shows in %.1fs' % (len(indicators) if indicators else 0, time.time() - _start), level=log_utils.LOGINFO)

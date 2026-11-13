@@ -2594,7 +2594,9 @@ class TVshows:
 	def trakt_tvshow_progress(self, create_directory=True, folderName=''):
 		self.list = []
 		try:
-			historyurl = 'https://api.trakt.tv/users/me/watched/shows?extended=progress&limit=250&page=1'
+			# limit=100 matches Trakt's page cap for extended=progress, so trakt_list() can
+			# tell a full page from the last one and offer the next page.
+			historyurl = 'https://api.trakt.tv/users/me/watched/shows?extended=progress&limit=100&page=1'
 			self.list = self.trakt_list(historyurl, self.trakt_user, folderName)
 			next = ''
 			for i in range(len(self.list)): self.list[i]['next'] = next
@@ -3494,7 +3496,7 @@ class TVshows:
 	def trakt_tvshow_watched(self, create_directory=True, folderName=''):
 		self.list = []
 		try:
-			historyurl = 'https://api.trakt.tv/users/me/watched/shows?extended=progress&limit=250&page=1'
+			historyurl = 'https://api.trakt.tv/users/me/watched/shows?extended=progress&limit=100&page=1'
 			self.list = self.trakt_list(historyurl, self.trakt_user, folderName)
 			next = ''
 			for i in range(len(self.list)): self.list[i]['next'] = next
