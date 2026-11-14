@@ -1,3 +1,6 @@
+[B]Update - v6.8.008 - Nov 14th, 2026[/B]
+--[Feature] Added a read-only mode for Trakt (Settings > Online Services > Trakt). Umbrella still reads your Trakt watched status, lists and resume points but stops reporting playback and marking items watched automatically, so another add-on such as the Trakt add-on can handle that. Marking items watched manually still works.
+
 [B]Update - v6.8.007 - Nov 14th, 2026[/B]
 --[Fix] Progress Episodes and Progress Shows load much faster, especially on low-power devices such as Fire TV. They now reuse the last list until your watch history or dropped shows change, instead of rebuilding it on every load.
 --[Fix] Simkl no longer reloads every home-screen widget every 30 minutes when nothing has changed.

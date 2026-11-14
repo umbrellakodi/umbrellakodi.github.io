@@ -6368,3 +6368,7 @@ msgstr ""
 msgctxt "#40870"
 msgid "Clean up finished items in MDBList Finish Watching"
 msgstr ""
+
+msgctxt "#40871"
+msgid "Allows Umbrella to read Trakt indicators, lists, and resume information while preventing Umbrella from reporting playback or automatically marking items watched during playback. Use this when another add-on, such as the Trakt add-on, reports your playback."
+msgstr ""

@@ -1073,7 +1073,7 @@ class Player(xbmc.Player):
 				self.custom_rewatch = False
 			try: _start_percent = round((float(self.offset) / self.getTotalTime()) * 100, 2) if self.playback_resumed and self.getTotalTime() > 0 else 0
 			except: _start_percent = 0
-			if self.traktCredentials and _remote_playback_enabled(scrobble_source, '1', 'trakt.markwatched'):
+			if self.traktCredentials and not trakt.isReadOnly() and _remote_playback_enabled(scrobble_source, '1', 'trakt.markwatched'):
 				trakt.scrobbleReset(imdb=self.imdb, tmdb=self.tmdb, tvdb=self.tvdb, season=self.season, episode=self.episode, refresh=False) # refresh issues container.refresh()
 				trakt.scrobbleStart(media_type=self.media_type, title=self.title, tvshowtitle=self.title, year=self.year, imdb=self.imdb, tmdb=self.tmdb, tvdb=self.tvdb, season=self.season, episode=self.episode, watched_percent=_start_percent)
 			if self.simklCredentials and _remote_playback_enabled(scrobble_source, '2', 'simkl.markwatched'):
@@ -1111,7 +1111,7 @@ class Player(xbmc.Player):
 		self.scrobble_sent = True
 		self.scrobble_sent = True
 		_scrobble_source = getSetting('scrobble.source')
-		if self.traktCredentials and _remote_playback_enabled(_scrobble_source, '1', 'trakt.markwatched'):
+		if self.traktCredentials and not trakt.isReadOnly() and _remote_playback_enabled(_scrobble_source, '1', 'trakt.markwatched'):
 			Bookmarks().set_scrobble(self.current_time, self.media_length, self.media_type, self.imdb, self.tmdb, self.tvdb, self.season, self.episode, already_watched=self.watched_during_playback)
 		if self.simklCredentials and _remote_playback_enabled(_scrobble_source, '2', 'simkl.markwatched'):
 			Bookmarks().set_scrobble(self.current_time, self.media_length, self.media_type, self.imdb, self.tmdb, self.tvdb, self.season, self.episode, service='simkl', title=self.title, year=self.year, already_watched=self.watched_during_playback)
@@ -1270,7 +1270,7 @@ class Player(xbmc.Player):
 			if not self.scrobble_sent:
 				self.scrobble_sent = True
 				self.scrobble_sent = True
-				if self.traktCredentials and _remote_playback_enabled(_scrobble_source, '1', 'trakt.markwatched'):
+				if self.traktCredentials and not trakt.isReadOnly() and _remote_playback_enabled(_scrobble_source, '1', 'trakt.markwatched'):
 					Bookmarks().set_scrobble(self.current_time, self.media_length, self.media_type, self.imdb, self.tmdb, self.tvdb, self.season, self.episode, already_watched=self.watched_during_playback)
 				if self.simklCredentials and _remote_playback_enabled(_scrobble_source, '2', 'simkl.markwatched'):
 					Bookmarks().set_scrobble(self.current_time, self.media_length, self.media_type, self.imdb, self.tmdb, self.tvdb, self.season, self.episode, service='simkl', title=self.title, year=self.year, already_watched=self.watched_during_playback)
@@ -1359,7 +1359,7 @@ class Player(xbmc.Player):
 			if total_time <= 0: return
 			pause_percent = round((self.getTime() / total_time) * 100, 2)
 			scrobble_source = getSetting('scrobble.source')
-			if self.traktCredentials and _remote_playback_enabled(scrobble_source, '1', 'trakt.markwatched'):
+			if self.traktCredentials and not trakt.isReadOnly() and _remote_playback_enabled(scrobble_source, '1', 'trakt.markwatched'):
 				if self.media_type == 'movie':
 					trakt.scrobbleMovie(self.imdb, self.tmdb, pause_percent)
 				else:
@@ -1409,7 +1409,7 @@ class Player(xbmc.Player):
 			resume_position = self.getTime() or self.current_time
 			resume_percent = round((resume_position / total_time) * 100, 2)
 			scrobble_source = getSetting('scrobble.source')
-			if self.traktCredentials and _remote_playback_enabled(scrobble_source, '1', 'trakt.markwatched'):
+			if self.traktCredentials and not trakt.isReadOnly() and _remote_playback_enabled(scrobble_source, '1', 'trakt.markwatched'):
 				trakt.scrobbleStart(media_type=self.media_type, title=self.title, tvshowtitle=self.title, year=self.year, imdb=self.imdb, tmdb=self.tmdb, tvdb=self.tvdb, season=self.season, episode=self.episode, watched_percent=resume_percent)
 			if self.simklCredentials and _remote_playback_enabled(scrobble_source, '2', 'simkl.markwatched'):
 				simkl.scrobbleStart(media_type=self.media_type, title=self.title, tvshowtitle=self.title, year=self.year, imdb=self.imdb, tmdb=self.tmdb, tvdb=self.tvdb, season=self.season, episode=self.episode, watched_percent=resume_percent)

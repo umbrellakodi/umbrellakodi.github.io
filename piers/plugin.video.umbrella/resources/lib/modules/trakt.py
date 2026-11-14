@@ -596,6 +596,10 @@ def getTraktCredentialsInfo():
 	if (username == '' or token == '' or refresh == ''): return False
 	return True
 
+def isReadOnly():
+	"""True when another add-on (e.g. script.trakt) owns automatic Trakt playback reporting."""
+	return getSetting('trakt.readonly') == 'true'
+
 def getTraktIndicatorsInfo():
 	indicators = getSetting('indicators.alt')
 	indicators = True if indicators == '1' else False
@@ -1949,6 +1953,7 @@ def IdLookup(id_type, id, type): # ("id_type" can be trakt, imdb, tmdb, tvdb) (t
 
 def scrobbleMovie(imdb, tmdb, watched_percent):
 	log_utils.log('Trakt Scrobble Movie Called. Received: imdb: %s tmdb: %s watched_percent: %s' % (imdb, tmdb, watched_percent), level=log_utils.LOGDEBUG)
+	if isReadOnly(): return
 	try:
 		if not imdb.startswith('tt'): imdb = 'tt' + imdb
 		post = {"movie": {"ids": {"imdb": imdb}}, "progress": watched_percent}
@@ -1973,6 +1978,7 @@ def scrobbleMovie(imdb, tmdb, watched_percent):
 
 def scrobbleEpisode(imdb, tmdb, tvdb, season, episode, watched_percent):
 	#log_utils.log('Trakt Scrobble Episode Called. Received: imdb: %s tmdb: %s season: %s episode: %s watched_percent: %s' % (imdb, tmdb, season, episode, watched_percent), level=log_utils.LOGDEBUG)
+	if isReadOnly(): return
 	try:
 		season, episode = int('%01d' % int(season)), int('%01d' % int(episode))
 		post = {"show": {"ids": {"tvdb": tvdb}}, "episode": {"season": season, "number": episode}, "progress": watched_percent}
@@ -1995,6 +2001,7 @@ def scrobbleEpisode(imdb, tmdb, tvdb, season, episode, watched_percent):
 	except: log_utils.error()
 
 def scrobbleStart(media_type, title='', tvshowtitle='', year='0', imdb='', tmdb='', tvdb='', season='', episode='', watched_percent=0):
+	if isReadOnly(): return
 	try:
 		if media_type == 'movie':
 			post = {'movie': {'title': title, 'year': int(year) if year else 0,
