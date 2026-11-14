@@ -756,6 +756,13 @@ class Episodes:
 			return control.refresh()
 		if url == 'customprogress':
 			cache.remove(self.custom_progress_list, 'customepisodesprogress', self.custom_directProgressScrape)
+			cache.remove(self.custom_progress_snapshot, 'customepisodesprogress', self.custom_directProgressScrape)
+			try:
+				from resources.lib.menus.tvshows import TVshows
+				cache.remove(TVshows().custom_tvshow_progress_snapshot)
+			except Exception:
+				from resources.lib.modules import log_utils
+				log_utils.error()
 			control.sleep(200)
 			return control.refresh()
 		if url == 'floppyprogress':
@@ -1393,10 +1400,29 @@ class Episodes:
 			log_utils.error()
 		return self.list
 
+	def custom_progress_snapshot(self, url, direct):
+		# Revision is read before the build, so a change made while it runs forces
+		# the next view to rebuild instead of trusting a list built from older data.
+		revision = customtraktsync.progress_revision()
+		return {'revision': revision, 'items': self.custom_progress_list(url, direct) or []}
+
 	def custom_calendar(self, url, folderName=''):
 		self.list = []
 		try:
-			self.list = cache.get(self.custom_progress_list, 0, url, self.custom_directProgressScrape)
+			# Rebuilding means one TMDb/Trakt/fanart lookup per show in the history, which
+			# takes over a minute on low-power devices and ran on every widget refresh.
+			# Reuse the last build until the local watched history or dropped shows change
+			# (every local mark and history sync bumps the revision) or the window passes.
+			direct = self.custom_directProgressScrape
+			snapshot = cache.get(self.custom_progress_snapshot, customtraktsync.PROGRESS_CACHE_HOURS, url, direct)
+			if not isinstance(snapshot, dict) or snapshot.get('revision') != customtraktsync.progress_revision():
+				snapshot = cache.get(self.custom_progress_snapshot, 0, url, direct)
+			self.list = list((snapshot or {}).get('items') or [])
+			for item in self.list:
+				# Cached rows must not keep yesterday's "unaired" verdict.
+				if str(item.get('status', '')).lower() == 'ended': item['unaired'] = ''
+				elif not item.get('premiered'): item['unaired'] = 'true'
+				else: item['unaired'] = _episode_unaired(item, self.date_time)
 			self.sort(type='progress')
 			if self.list is None: self.list = []
 			prior_week = int(re.sub(r'[^0-9]', '', (self.date_time - timedelta(days=7)).strftime('%Y-%m-%d')))

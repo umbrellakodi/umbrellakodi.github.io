@@ -1183,12 +1183,20 @@ def sync_watchedProgress(activities=None, forced=False):
 		progressActivity = getProgressActivity(activities)
 		local_listCache = cache.timeout(episodes.Episodes().simkl_progress_list, url, direct)
 		if forced or (progressActivity > local_listCache) or progressActivity == 0 or time.time() - local_listCache >= progress_cache_hours() * 3600:
-			cache.get(episodes.Episodes().simkl_progress_list, 0, url, direct)
+			progress_list = episodes.Episodes().simkl_progress_list
+			# Read the previous build without rebuilding (any age is accepted here).
+			previous = cache.get(progress_list, 100000, url, direct) if local_listCache else None
+			current = cache.get(progress_list, 0, url, direct)
 			if forced: log_utils.log('Forced - SimKl Progress List Sync Complete', __name__, log_utils.LOGDEBUG)
 			else:
 				log_utils.log('SimKl Progress List Sync Update...(local db latest "list_cached_at" = %s, simkl api latest "progress_activity" = %s)' % \
 									(str(local_listCache), str(progressActivity)), __name__, log_utils.LOGDEBUG)
-			control.trigger_widget_refresh()
+			# The timed rebuild usually finds nothing new. Refreshing every home-screen
+			# widget anyway made slow widgets reload every sync interval.
+			# The list is built by threads, so compare contents regardless of order.
+			def _rows(items): return sorted(repr(i) for i in (items or []))
+			if forced or _rows(current) != _rows(previous):
+				control.trigger_widget_refresh()
 	except: log_utils.error()
 
 def _full_watchlist(status, pairs):
@@ -1350,8 +1358,13 @@ def sync_all_watchlists(activities=None, forced=False):
 		# A delta cannot identify entries removed entirely from the account.
 		# One unfiltered request replaces the previous delta request.
 		response = get_request('/sync/all-items/')
+		before = simklsync.watchlists_signature()
 		if simklsync.replace_watchlists(response):
-			control.trigger_widget_refresh()
+			# This runs every sync interval; refreshing all home-screen widgets when the
+			# library is unchanged made slow widgets reload every 30 minutes.
+			after = simklsync.watchlists_signature()
+			if before is None or after is None or before != after:
+				control.trigger_widget_refresh()
 	except Exception:
 		log_utils.error()
 

@@ -1,4 +1,4 @@
-<addon id="plugin.video.umbrella" name="Umbrella" provider-name="Umbrella" version="6.8.006">
+<addon id="plugin.video.umbrella" name="Umbrella" provider-name="Umbrella" version="6.8.007">
 	<requires>
 		<import addon="xbmc.python" version="3.0.0" />
 		<import addon="script.module.requests" />
@@ -270,8 +270,11 @@
 			<screenshot>resources/screenshots/screenshot003.jpg</screenshot>
 		</assets>
 		<news>
-[B]Update - v6.8.006 - Nov 12th, 2026[/B]
---[Fix] Trakt watched indicators and the Trakt Progress and Watched show lists now include every show. Umbrella stopped after the first 100 shows because Trakt returns at most 100 per page.		</news>
+[B]Update - v6.8.007 - Nov 14th, 2026[/B]
+--[Fix] Progress Episodes and Progress Shows load much faster, especially on low-power devices such as Fire TV. They now reuse the last list until your watch history or dropped shows change, instead of rebuilding it on every load.
+--[Fix] Simkl no longer reloads every home-screen widget every 30 minutes when nothing has changed.
+--[Enhancement] Progress Shows now lists a show at the top for a week when its new season premieres, matching Progress Episodes.
+		</news>
 	</extension>
 
 </addon>
