@@ -1,5 +1,5 @@
 <?xml version='1.0' encoding='utf-8'?>
-<addons><addon id="plugin.video.umbrella" name="Umbrella" provider-name="Umbrella" version="6.8.009">
+<addons><addon id="plugin.video.umbrella" name="Umbrella" provider-name="Umbrella" version="6.8.010">
 	<requires>
 		<import addon="xbmc.python" version="3.0.0" />
 		<import addon="script.module.requests" />
@@ -271,10 +271,14 @@
 			<screenshot>resources/screenshots/screenshot003.jpg</screenshot>
 		</assets>
 		<news>
-[B]Update - v6.8.009 - Nov 16th, 2026[/B]
---[Fix] Resume points work again when an episode or movie is started from a skin widget, an info screen Play button or a skin helper. Umbrella was treating these launches as "Start from beginning". Applies to Trakt, Simkl, MDBList and the other resume sources.
---[Fix] MDBList now keeps only the most recent resume point for each episode or movie.
---[Fix] Episode lists should no longer duplicate after finishing an episode or show, which happened most often with Simkl. Home-screen widget refreshes now wait until Kodi has finished reloading the list after playback.
+[B]Update - v6.8.010 - Nov 16th, 2026[/B]
+--[Fix] Starting an episode or movie and stopping or pausing it within the first moments no longer saves a resume point. Nothing under 1% watched is sent to Trakt, Simkl, MDBList, Floppy, Scrob or PunchPlay.
+--[Fix] Resume points under 1% that a service already has saved are now ignored. They no longer appear in Unfinished/Continue Watching lists or as progress on episodes and movies.
+--[Fix] Starting a movie or episode that has a resume point now asks only once. Kodi showed its own Resume/Play from beginning menu, then ignored the answer, so Umbrella had to ask again. Umbrella now handles the prompt itself, or resumes automatically if auto-resume is on. Progress bars still show in skins that use Umbrella's progress (such as Nimbus and Arctic Fuse 3).
+--[Fix] Home-screen widgets now update straight away after you clear an item's progress or remove items with a manager. They could stay unchanged for up to 5 minutes, so a second reset in a row did not remove the item from the widget.
+--[Fix] The resume prompt shows the correct time. A 16-minute resume point was shown as "16:18:35".
+--[Fix] PunchPlay resume progress in lists now shows the correct percentage.
+--[Fix] The Umbrella - MDBList Manager context menu item now appears for episodes and seasons in widgets, and acts on that episode or season instead of the whole show.
 </news>
 	</extension>
 

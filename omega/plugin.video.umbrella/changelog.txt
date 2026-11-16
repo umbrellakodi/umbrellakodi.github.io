@@ -1,5 +1,5 @@
 [B]Update - v6.8.010 - Nov 16th, 2026[/B]
---[Fix] Starting an episode or movie and stopping or pausing it within the first moments no longer saves a resume point. Nothing under 1% watched is sent to Trakt, Simkl, MDBList, Custom, Floppy, Scrob or PunchPlay.
+--[Fix] Starting an episode or movie and stopping or pausing it within the first moments no longer saves a resume point. Nothing under 1% watched is sent to Trakt, Simkl, MDBList, Floppy, Scrob or PunchPlay.
 --[Fix] Resume points under 1% that a service already has saved are now ignored. They no longer appear in Unfinished/Continue Watching lists or as progress on episodes and movies.
 --[Fix] Starting a movie or episode that has a resume point now asks only once. Kodi showed its own Resume/Play from beginning menu, then ignored the answer, so Umbrella had to ask again. Umbrella now handles the prompt itself, or resumes automatically if auto-resume is on. Progress bars still show in skins that use Umbrella's progress (such as Nimbus and Arctic Fuse 3).
 --[Fix] Home-screen widgets now update straight away after you clear an item's progress or remove items with a manager. They could stay unchanged for up to 5 minutes, so a second reset in a row did not remove the item from the widget.
