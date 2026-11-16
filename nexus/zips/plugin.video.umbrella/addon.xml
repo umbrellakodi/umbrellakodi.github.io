@@ -1,4 +1,4 @@
-<addon id="plugin.video.umbrella" name="Umbrella" provider-name="Umbrella" version="6.8.008">
+<addon id="plugin.video.umbrella" name="Umbrella" provider-name="Umbrella" version="6.8.009">
 	<requires>
 		<import addon="xbmc.python" version="3.0.0" />
 		<import addon="script.module.requests" />
@@ -270,8 +270,10 @@
 			<screenshot>resources/screenshots/screenshot003.jpg</screenshot>
 		</assets>
 		<news>
-[B]Update - v6.8.008 - Nov 14th, 2026[/B]
---[Feature] Added a read-only mode for Trakt (Settings > Online Services > Trakt). Umbrella still reads your Trakt watched status, lists and resume points but stops reporting playback and marking items watched automatically, so another add-on such as the Trakt add-on can handle that. Marking items watched manually still works.
+[B]Update - v6.8.009 - Nov 16th, 2026[/B]
+--[Fix] Resume points work again when an episode or movie is started from a skin widget, an info screen Play button or a skin helper. Umbrella was treating these launches as "Start from beginning". Applies to Trakt, Simkl, MDBList and the other resume sources.
+--[Fix] MDBList now keeps only the most recent resume point for each episode or movie.
+--[Fix] Episode lists should no longer duplicate after finishing an episode or show, which happened most often with Simkl. Home-screen widget refreshes now wait until Kodi has finished reloading the list after playback.
 </news>
 	</extension>
 
