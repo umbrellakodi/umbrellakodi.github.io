@@ -1713,7 +1713,7 @@ def scrobbleReset(imdb, tmdb='', tvdb='', season=None, episode=None, refresh=Fal
 		resume_info = simklsync.fetch_bookmarks(imdb, tmdb, tvdb, season, episode, ret_type='resume_info')
 		if clear_local and resume_info != '0': simklsync.delete_bookmark(resume_info[1])
 		if refresh: control.refresh()
-		control.trigger_widget_refresh()
+		control.trigger_widget_refresh(force=bool(refresh)) # refresh=True is a user action; widgets must reload now
 		if getSetting('scrobble.notify') == 'true': control.notification(title='Simkl', message='Playback progress cleared')
 		return True
 	except:

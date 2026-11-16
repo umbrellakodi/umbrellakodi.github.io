@@ -761,7 +761,7 @@ def scrobbleReset(imdb, tmdb=None, tvdb=None, season=None, episode=None, refresh
 			return False
 		if clear_local: customtraktsync.delete_bookmark(imdb, tvdb or '', season if season is not None else '', episode if episode is not None else '', tmdb=tmdb)
 		if refresh: control.refresh()
-		if widgetRefresh or refresh: control.trigger_widget_refresh()
+		if widgetRefresh or refresh: control.trigger_widget_refresh(force=True)
 		return True
 	except:
 		log_utils.error()

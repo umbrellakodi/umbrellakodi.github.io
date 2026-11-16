@@ -849,9 +849,12 @@ def scrobbleStopEpisode(imdb, tmdb, tvdb, season, episode, watched_percent, comp
                      total_time=total_time, already_watched=already_watched)
 
 
-def get_continue_watching():
-    """Adapt exact resume items to Umbrella's existing unfinished-item renderer."""
-    return [_resume_item(i) for i in _pages('/playback/in-progress')]
+def get_continue_watching(include_all=False):
+    """Adapt exact resume items to Umbrella's existing unfinished-item renderer.
+    Under 1% is not a resume point; include_all keeps them so removal can find them."""
+    from resources.lib.modules.playback_progress import has_resume_progress
+    return [_resume_item(i) for i in _pages('/playback/in-progress')
+            if include_all or has_resume_progress(i.get('progressPercent'))]
 
 
 def _resume_item(i):
@@ -863,8 +866,8 @@ def _resume_item(i):
                       'season_number': i.get('season'), 'episode_number': i.get('episode')}}
 
 
-def get_resume_item(tmdb, season=None, episode=None):
-    for item in get_continue_watching():
+def get_resume_item(tmdb, season=None, episode=None, include_all=False):
+    for item in get_continue_watching(include_all):
         media = item['media']
         if season is not None and episode is not None:
             if media['type'] == 'episode' and str(media['show_tmdb_id']) == str(tmdb) and media['season_number'] == int(season) and media['episode_number'] == int(episode):
@@ -882,7 +885,7 @@ def get_resume_percent(tmdb, season=None, episode=None):
 def _resetPlaybackProgress(imdb, tmdb=None, tvdb=None, season=None, episode=None, refresh=True,
                   widgetRefresh=False, clear_local=True):
     tmdb = tmdb or _resolve_tmdb('movie' if season is None else 'show', imdb, tvdb)
-    item = get_resume_item(tmdb, season, episode)
+    item = get_resume_item(tmdb, season, episode, include_all=True)
     if item:
         _request('/playback/in-progress/%s' % item['id'], 'DELETE')
     if clear_local:
@@ -1257,7 +1260,9 @@ def sync_account(forced=False, progress_callback=None, refresh_widgets=True):
                 _put(con, 'resume', raw_bookmarks)
                 punchplaysync._ensure_bookmarks_table(con.cursor())
                 con.execute('DELETE FROM bookmarks')
+                from resources.lib.modules.playback_progress import has_resume_progress
                 for i in raw_bookmarks:
+                    if not has_resume_progress(i.get('progressPercent')): continue  # under 1% is not a resume point
                     episode = i['type'] == 'episode'
                     con.execute('INSERT OR REPLACE INTO bookmarks VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)',
                                 (i.get('showTitle') or i['title'] if episode else '', i['title'], str(i['id']), '',

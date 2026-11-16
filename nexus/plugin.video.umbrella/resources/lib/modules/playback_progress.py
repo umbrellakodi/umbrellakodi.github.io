@@ -1,5 +1,16 @@
 """Identify paused movie/episode sessions without depending on local bookmarks."""
 
+# Progress below this (in percent) means playback was only just started. Umbrella never
+# sends it as a resume point and ignores it when services report it back.
+MIN_RESUME_PERCENT = 1.0
+
+
+def has_resume_progress(percent):
+	"""True when a 0-100 progress value is a real resume point."""
+	try: return float(percent) >= MIN_RESUME_PERCENT
+	except (TypeError, ValueError): return False
+
+
 def matching_sessions(items, imdb='', tmdb='', tvdb='', season=None, episode=None):
 	if not isinstance(items, list): raise ValueError('Incomplete playback response')
 	is_episode = episode not in (None, '', 'None')

@@ -22,10 +22,14 @@ if __name__ == '__main__':
 	imdb = params.get('imdb', '')
 	tvdb = params.get('tvdb', '')
 	tmdb = params.get('tmdb', '')
+	# Episodes and seasons must reach the manager as such, not as the whole show.
+	season = params.get('season', '')
+	episode = params.get('episode', '')
+	tvshow = 'tvshow' if getInfoLabel('ListItem.DBType') == 'tvshow' else ''
 
 	playcount = getInfoLabel('ListItem.Playcount')
 	watched = (int(playcount) >= 1) if playcount else False
 
-	path = 'RunPlugin(%s?action=tools_mdbWatchlist&name=%s&imdb=%s&tvdb=%s&tmdb=%s&watched=%s)' % (
-				plugin, sysname, imdb, tvdb, tmdb, watched)
+	path = 'RunPlugin(%s?action=tools_mdbWatchlist&name=%s&imdb=%s&tvdb=%s&tmdb=%s&season=%s&episode=%s&watched=%s&tvshow=%s)' % (
+				plugin, sysname, imdb, tvdb, tmdb, season, episode, watched, tvshow)
 	executebuiltin(path)

@@ -1234,7 +1234,9 @@ def get_continue_watching(strict=False):
 		items = data.get('continue_watching') if isinstance(data, dict) else None
 		if not isinstance(items, list) or any(not isinstance(item, dict) for item in items):
 			return None if strict else []
-		return items
+		# progress_percent is a 0-1 fraction; under 1% is not a resume point.
+		from resources.lib.modules.playback_progress import has_resume_progress
+		return [item for item in items if has_resume_progress(float(item.get('progress_percent') or 0) * 100)]
 	except:
 		log_utils.error()
 		return None if strict else []

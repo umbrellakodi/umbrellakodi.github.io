@@ -36,6 +36,8 @@ def fetch_bookmarks(imdb, tmdb='', tvdb='', season=None, episode=None, ret_all=N
 				match = dbcur.execute('''SELECT * FROM bookmarks WHERE NOT (tvshowtitle='')''').fetchall()
 				progress = [{'tvshowtitle': i[0], 'title': i[1], 'resume_id': i[2], 'imdb': i[3], 'tmdb': i[4], 'tvdb': i[5], 'season': int(i[6]), 'episode': int(i[7]), 'genre': i[8], 'mpaa': i[9],
 									'studio': i[10], 'duration': int(i[11]), 'progress': i[12], 'paused_at': i[13]} for i in match]
+			from resources.lib.modules.playback_progress import has_resume_progress
+			progress = [i for i in progress if has_resume_progress(i['progress'])]
 		else:
 			if not episode:
 				try: # Lookup both IMDb and TMDb first for more accurate movie match.
@@ -84,7 +86,9 @@ def insert_bookmarks(items, new_scrobble=False):
 			dbcur.execute('''DELETE FROM bookmarks''') # this just wipes the data but if table is corrupt this won't allow write to work
 			dbcur.connection.commit() # added this for what looks like a 19 bug not found in 18, normal commit is at end
 			dbcur.execute('''VACUUM''')
+		from resources.lib.modules.playback_progress import has_resume_progress
 		for i in items:
+			if not has_resume_progress(i.get('progress')): continue
 			tvshowtitle, tvdb, season, episode = '', '', '', ''
 			if i.get('type') == 'episode':
 				ids = i.get('show').get('ids')

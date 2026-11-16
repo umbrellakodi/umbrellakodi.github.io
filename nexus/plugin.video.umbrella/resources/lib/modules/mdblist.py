@@ -1294,7 +1294,9 @@ def scrobbleReset(imdb, tmdb='', tvdb='', season=None, episode=None, refresh=Fal
 			else: mdbsync.delete_bookmark(imdb, tvdb or '', '', '', tmdb=tmdb)
 		sync_playbackProgress(forced=True)
 		_clr_episode_progress_cache()
-		control.trigger_widget_refresh()
+		# refresh=True is a user action (context menu); skins such as Nimbus only reload
+		# widgets on UpdateLibrary, which is otherwise held to once per 5 minutes.
+		control.trigger_widget_refresh(force=bool(refresh))
 		if refresh: control.refresh()
 		if getSetting('scrobble.notify') == 'true': control.notification(title='MDBList', message='Successfully Removed MDBList playback progress')
 		return True
@@ -1308,7 +1310,10 @@ def sync_playbackProgress(forced=False):
 		items = get_request('/sync/playback')
 		if items is None: return
 		server_ids = set()
+		from resources.lib.modules.playback_progress import has_resume_progress
 		for i in items:
+			# Under 1% is not a resume point; leaving it out of server_ids also drops any stored copy.
+			if not has_resume_progress(i.get('progress')): continue
 			resume_id = str(i.get('id', ''))
 			server_ids.add(resume_id)
 			percent_played = str(i.get('progress', '0'))

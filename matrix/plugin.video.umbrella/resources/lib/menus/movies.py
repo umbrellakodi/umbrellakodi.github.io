@@ -908,7 +908,7 @@ class Movies:
 				succeeded = 0
 				for imdb in selected_items: succeeded += bool(mdblist.scrobbleReset(imdb=imdb, refresh=False))
 				mdblist.finishProgressRemoval(succeeded, len(selected_items))
-				control.trigger_widget_refresh()
+				control.trigger_widget_refresh(force=True)
 				if 'plugin.video.umbrella' in control.infoLabel('Container.PluginName'): control.refresh()
 		except:
 			from resources.lib.modules import log_utils
@@ -2069,7 +2069,7 @@ class Movies:
 			if selected_items:
 				for imdb in selected_items: customtrakt.remove_from_watchlist(imdb=imdb, media_type='movie')
 				customtrakt.sync_watch_list(forced=True)
-				control.trigger_widget_refresh()
+				control.trigger_widget_refresh(force=True)
 		except:
 			from resources.lib.modules import log_utils
 			log_utils.error()
@@ -2090,7 +2090,7 @@ class Movies:
 			if selected_items:
 				for imdb in selected_items: customtrakt.remove_from_collection(imdb=imdb, media_type='movie')
 				customtrakt.sync_collection(forced=True)
-				control.trigger_widget_refresh()
+				control.trigger_widget_refresh(force=True)
 		except:
 			from resources.lib.modules import log_utils
 			log_utils.error()
@@ -2111,7 +2111,7 @@ class Movies:
 			if selected_items:
 				for imdb in selected_items: customtrakt.remove_from_dropped(imdb=imdb, media_type='movie')
 				customtrakt.sync_dropped(forced=True)
-				control.trigger_widget_refresh()
+				control.trigger_widget_refresh(force=True)
 		except:
 			from resources.lib.modules import log_utils
 			log_utils.error()
@@ -2132,7 +2132,7 @@ class Movies:
 			del window
 			if selected_items:
 				scrob.remove_dropped_items(selected_items, 'movies')
-				control.trigger_widget_refresh()
+				control.trigger_widget_refresh(force=True)
 		except:
 			from resources.lib.modules import log_utils
 			log_utils.error()
@@ -2153,7 +2153,7 @@ class Movies:
 			del window
 			if selected_items:
 				punchplay.remove_dropped_items(selected_items, 'movies')
-				control.trigger_widget_refresh()
+				control.trigger_widget_refresh(force=True)
 		except:
 			from resources.lib.modules import log_utils
 			log_utils.error()
@@ -2172,7 +2172,7 @@ class Movies:
 				succeeded = 0
 				for imdb in selected_items: succeeded += bool(customtrakt.scrobbleReset(imdb=imdb, refresh=False))
 				customtrakt.finishProgressRemoval(succeeded, len(selected_items))
-				control.trigger_widget_refresh()
+				control.trigger_widget_refresh(force=True)
 				if 'plugin.video.umbrella' in control.infoLabel('Container.PluginName'): control.refresh()
 		except:
 			from resources.lib.modules import log_utils
@@ -2554,7 +2554,7 @@ class Movies:
 			if selected_items:
 				for tmdb in selected_items: floppy.remove_from_watchlist(tmdb=tmdb, media_type='movie')
 				floppy.sync_watch_list(forced=True)
-				control.trigger_widget_refresh()
+				control.trigger_widget_refresh(force=True)
 		except:
 			from resources.lib.modules import log_utils
 			log_utils.error()
@@ -2574,7 +2574,7 @@ class Movies:
 			if selected_items:
 				for entry_id in selected_items: floppy.remove_from_collection(entry_id)
 				floppy.sync_collection(forced=True)
-				control.trigger_widget_refresh()
+				control.trigger_widget_refresh(force=True)
 		except:
 			from resources.lib.modules import log_utils
 			log_utils.error()
@@ -2595,7 +2595,7 @@ class Movies:
 			if selected_items:
 				for tmdb in selected_items: floppy.set_status(tmdb=tmdb, media_type='movie', status=floppy.STATUS_PLANNING)
 				floppy.sync_watch_list(forced=True)
-				control.trigger_widget_refresh()
+				control.trigger_widget_refresh(force=True)
 		except:
 			from resources.lib.modules import log_utils
 			log_utils.error()
@@ -2842,7 +2842,7 @@ class Movies:
 					if simkl.remove_item_from_list(imdb=imdb, mediatype='Movie', listname='plantowatch'):
 						simklsync.delete_plantowatch_items([imdb], 'movies_plantowatch', 'imdb')
 				simkl.sync_plantowatch(forced=True)
-				control.trigger_widget_refresh()
+				control.trigger_widget_refresh(force=True)
 		except:
 
 			log_utils.error()
@@ -2865,7 +2865,7 @@ class Movies:
 					if simkl.remove_item_from_list(imdb=imdb, mediatype='Movie', listname='dropped'):
 						simklsync.delete_dropped_items([imdb], 'movies_dropped', 'imdb')
 				simkl.sync_dropped(forced=True)
-				control.trigger_widget_refresh()
+				control.trigger_widget_refresh(force=True)
 		except:
 
 			log_utils.error()

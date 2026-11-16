@@ -39,6 +39,9 @@ getSetting = control.setting
 homeWindow = control.homeWindow
 playerWindow = control.playerWindow
 
+# Progress below this is "just started"; it must never become a remote resume point.
+from resources.lib.modules.playback_progress import MIN_RESUME_PERCENT as _MIN_SCROBBLE_PERCENT
+
 
 def _remote_playback_enabled(scrobble_source, provider_source, markwatched_setting):
 	"""Local resume tracking does not send remote progress/scrobble events."""
@@ -296,9 +299,10 @@ class Player(xbmc.Player):
 				bookmark = Bookmarks()
 				self.trakt_resume_percent = None
 				self.mdblist_resume_percent = None
-				# Kodi passes the result of its native Resume/Start from beginning
-				# dialog as a fourth plugin argument. Respect it instead of displaying
-				# Umbrella's legacy bookmark dialog a second time.
+				# Kodi's fourth plugin argument is resume:true only when the caller asked
+				# Kodi to resume (PlayMedia(url,resume) or JSON-RPC Player.Open with
+				# resume). Umbrella list items carry no Kodi resume point, so Kodi shows
+				# no resume menu of its own; Umbrella's prompt/auto-resume decides.
 				kodi_resume = None
 				if len(argv) > 3 and str(argv[3]).lower() in ('resume:true', 'resume:false'):
 					kodi_resume = str(argv[3]).lower() == 'resume:true'
@@ -730,7 +734,7 @@ class Player(xbmc.Player):
 						if self.current_time - self._scrob_heartbeat_at >= 30:
 							self._scrob_heartbeat_at = self.current_time
 							heartbeat_percent = round((self.current_time / self.media_length) * 100, 2) if self.media_length else 0
-							Thread(target=scrob.scrobbleProgress, kwargs={
+							if heartbeat_percent >= _MIN_SCROBBLE_PERCENT: Thread(target=scrob.scrobbleProgress, kwargs={
 								'media_type': self.media_type, 'imdb': self.imdb, 'tmdb': self.tmdb, 'tvdb': self.tvdb,
 								'season': self.season, 'episode': self.episode, 'watched_percent': heartbeat_percent,
 								'current_time': self.current_time, 'total_time': self.media_length}).start()
@@ -738,7 +742,7 @@ class Player(xbmc.Player):
 						if self.current_time - self._punchplay_heartbeat_at >= 30:
 							self._punchplay_heartbeat_at = self.current_time
 							heartbeat_percent = round((self.current_time / self.media_length) * 100, 2) if self.media_length else 0
-							Thread(target=punchplay.scrobbleProgress, kwargs={
+							if heartbeat_percent >= _MIN_SCROBBLE_PERCENT: Thread(target=punchplay.scrobbleProgress, kwargs={
 								'media_type': self.media_type, 'imdb': self.imdb, 'tmdb': self.tmdb, 'tvdb': self.tvdb,
 								'season': self.season, 'episode': self.episode, 'watched_percent': heartbeat_percent,
 								'current_time': self.current_time, 'total_time': self.media_length}).start()
@@ -1130,9 +1134,9 @@ class Player(xbmc.Player):
 		watcher = self.getWatchedPercent()
 		seekable = (int(self.current_time) > 180 and (watcher < int(self.markwatched_percentage)))
 		# Remote services can retain progress before Umbrella's three-minute local
-		# bookmark cutoff. Custom/ScrobbleSync accepts any positive progress; the
-		# other percentage-based resume sources become visible from two percent.
-		remote_resume_saved = (_scrobble_source == '4' and watcher > 0
+		# bookmark cutoff. Custom/ScrobbleSync keeps progress from one percent (nothing
+		# below that is sent); the other resume sources become visible from two percent.
+		remote_resume_saved = (_scrobble_source == '4' and watcher >= _MIN_SCROBBLE_PERCENT
 				or _scrobble_source in ('1', '2', '3', '5', '6', '7') and watcher >= 2)
 		resume_available = ((seekable or remote_resume_saved)
 				and watcher < int(self.markwatched_percentage))
@@ -1363,6 +1367,7 @@ class Player(xbmc.Player):
 			total_time = self.getTotalTime()
 			if total_time <= 0: return
 			pause_percent = round((self.getTime() / total_time) * 100, 2)
+			if pause_percent < _MIN_SCROBBLE_PERCENT: return # a pause this early must not save a resume point
 			scrobble_source = getSetting('scrobble.source')
 			if self.traktCredentials and not trakt.isReadOnly() and _remote_playback_enabled(scrobble_source, '1', 'trakt.markwatched'):
 				if self.media_type == 'movie':
@@ -2003,7 +2008,7 @@ class Bookmarks:
 				if not runtime or runtime == 'None': return offset # TMDB sometimes return None as string. duration pulled from kodi library if missing from meta
 				progress = float(fetch_bookmarks(imdb, tmdb, tvdb, season, episode))
 				offset = (progress / 100) * runtime # runtime vs. media_length can differ resulting in 10-30sec difference using Trakt scrobble, meta providers report runtime in full minutes
-				display_offset = offset * 60
+				display_offset = offset # offset is already in seconds (runtime is in seconds)
 				seekable = (2 <= progress <= int(markwatched_percentage))
 				if not seekable: return '0'
 				self.trakt_resume_percent = progress
@@ -2017,7 +2022,7 @@ class Bookmarks:
 				if not runtime or runtime == 'None': return offset
 				progress = float(simklsync.fetch_bookmarks(imdb, tmdb, tvdb, season, episode))
 				offset = (progress / 100) * runtime
-				display_offset = offset * 60
+				display_offset = offset # offset is already in seconds (runtime is in seconds)
 				seekable = (2 <= progress <= int(markwatched_percentage))
 				if not seekable: return '0'
 			except:
@@ -2031,7 +2036,7 @@ class Bookmarks:
 				from resources.lib.database import mdbsync
 				progress = float(mdbsync.fetch_bookmarks(imdb, tmdb, tvdb, season, episode))
 				offset = (progress / 100) * runtime
-				display_offset = offset * 60
+				display_offset = offset # offset is already in seconds (runtime is in seconds)
 				seekable = (2 <= progress <= int(markwatched_percentage))
 				if not seekable: return '0'
 				self.mdblist_resume_percent = progress
@@ -2051,10 +2056,10 @@ class Bookmarks:
 				if not runtime or runtime == 'None': return offset
 				progress = float(customtraktsync.fetch_bookmarks(imdb, tmdb, tvdb, season, episode))
 				offset = (progress / 100) * runtime
-				display_offset = offset * 60
-				# A custom-server rewatch may be stopped very early. Any positive progress
+				display_offset = offset # offset is already in seconds (runtime is in seconds)
+				# A custom-server rewatch may be stopped very early. Any real progress
 				# belongs to the new watch cycle and must remain resumable.
-				seekable = (0 < progress < int(markwatched_percentage))
+				seekable = (_MIN_SCROBBLE_PERCENT <= progress < int(markwatched_percentage))
 				if not seekable: return '0'
 			except:
 				log_utils.error()
@@ -2067,7 +2072,7 @@ class Bookmarks:
 				from resources.lib.database import floppysync
 				progress = float(floppysync.fetch_bookmarks(imdb, tmdb, tvdb, season, episode))
 				offset = (progress / 100) * runtime
-				display_offset = offset * 60
+				display_offset = offset # offset is already in seconds (runtime is in seconds)
 				seekable = (2 <= progress <= int(markwatched_percentage))
 				if not seekable: return '0'
 			except:
@@ -2082,7 +2087,7 @@ class Bookmarks:
 				if progress <= 0:
 					progress = float(scrob.get_resume_percent(tmdb, season=season, episode=episode) or 0)
 				offset = (progress / 100) * runtime
-				display_offset = offset * 60
+				display_offset = offset # offset is already in seconds (runtime is in seconds)
 				seekable = (2 <= progress <= int(markwatched_percentage))
 				if not seekable: return '0'
 			except:
@@ -2095,7 +2100,7 @@ class Bookmarks:
 				if not item: return '0'
 				progress = item['progress_percent'] * 100
 				display_offset = item['position_seconds']
-				offset = display_offset / 60
+				offset = display_offset
 				seekable = (2 <= progress <= int(markwatched_percentage))
 				if not seekable: return '0'
 			except:
@@ -2121,10 +2126,12 @@ class Bookmarks:
 			offset = float(match[1])
 			display_offset = offset
 		if ck: return offset
-		# Kodi's resume:true means the user accepted Kodi's native resume prompt.
-		# resume:false is ambiguous: Kodi also sends it for skin widgets, info
-		# dialog Play buttons and PlayMedia() calls that never offered a choice,
-		# so it must fall through to Umbrella's own auto-resume/prompt settings.
+		# resume:true is an explicit request to resume (PlayMedia(url,resume),
+		# Player.Open with resume). resume:false carries no choice: Kodi sends it for
+		# every normal click, widgets, info dialogs and skin helpers (verified on
+		# Kodi 21.3 even after "Resume" in Kodi's own menu), so Umbrella's own
+		# auto-resume/prompt setting decides. The prompt is the only one shown
+		# because list items give Kodi no resume point (see control.set_info).
 		if kodi_resume is True: return offset
 		minutes, seconds = divmod(display_offset, 60)
 		hours, minutes = divmod(minutes, 60)
@@ -2182,8 +2189,12 @@ class Bookmarks:
 			# Always close active sessions, even below the local three-minute bookmark threshold.
 			# Skip scrobble API call if item was already marked watched during playback (avoids duplicate submission)
 			skip_scrobble = already_watched and percent >= int(markwatched_percentage)
+			# Stopped right after starting: close the session but never leave a resume point.
+			too_early = percent < _MIN_SCROBBLE_PERCENT and not completed
+			if too_early and getSetting('debug.level') == '1':
+				log_utils.log('set_scrobble: %s stopped at %.2f%% (below %s%%), no resume point saved' % (service, percent, _MIN_SCROBBLE_PERCENT), level=log_utils.LOGDEBUG)
 			if service == 'simkl':
-				if not skip_scrobble:
+				if not skip_scrobble and not too_early:
 					simkl.scrobbleMovie(title, year, imdb, tmdb, percent) if media_type == 'movie' else simkl.scrobbleEpisode(tvshowtitle or title, year, imdb, tmdb, tvdb, season, episode, percent)
 				if percent >= int(markwatched_percentage):
 					# Capture the local ID before the remote delete. Completion remains
@@ -2195,11 +2206,17 @@ class Bookmarks:
 				# Do not create a new pause bookmark immediately before clearing a
 				# completed item. If the subsequent clear is delayed or fails, that
 				# final pause point is synced back and leaves the episode in progress.
-				if not skip_scrobble and percent < markwatched_percentage:
+				if too_early:
+					# MDBList keeps the started session open and later saves it as paused progress.
+					mdblist._clear_scrobble_session('movie' if media_type == 'movie' else 'episode', imdb, tmdb, tvdb, season, episode)
+					from resources.lib.database import mdbsync
+					if media_type == 'movie': mdbsync.delete_bookmark(imdb, '', '', '', tmdb=tmdb)
+					else: mdbsync.delete_bookmark(imdb, str(tvdb or ''), season, episode, tmdb=tmdb)
+				elif not skip_scrobble and percent < markwatched_percentage:
 					mdblist.scrobbleMovie(title, year, imdb, tmdb, percent) if media_type == 'movie' else mdblist.scrobbleEpisode(tvshowtitle or title, year, imdb, tmdb, tvdb, season, episode, percent)
 				if percent >= int(markwatched_percentage): mdblist.scrobbleReset(imdb, tmdb, tvdb, season, episode, refresh=False, already_watched=skip_scrobble, completed=True)
 			elif service == 'custom':
-				if not skip_scrobble:
+				if not skip_scrobble and not too_early:
 					customtrakt.scrobbleMovie(imdb, tmdb, percent) if media_type == 'movie' else customtrakt.scrobbleEpisode(imdb, tmdb, tvdb, season, episode, percent)
 				if percent >= int(markwatched_percentage):
 					customtrakt.scrobbleReset(imdb, tmdb, tvdb, season, episode, refresh=False)
@@ -2210,6 +2227,10 @@ class Bookmarks:
 				floppy.scrobbleStopMovie(imdb, tmdb, percent, completed=completed, current_time=current_time, total_time=media_length, already_watched=skip_scrobble) if media_type == 'movie' else floppy.scrobbleStopEpisode(imdb, tmdb, tvdb, season, episode, percent, completed=completed, current_time=current_time, total_time=media_length, already_watched=skip_scrobble)
 				if completed:
 					floppy.scrobbleReset(imdb, tmdb, tvdb, season, episode, refresh=False, remote=False)
+				elif percent < _MIN_SCROBBLE_PERCENT:
+					# The stop closes the live session; drop the near-zero position it stored.
+					floppy.removePlaybackProgress(imdb, tmdb, tvdb, season, episode)
+					floppy.scrobbleReset(imdb, tmdb, tvdb, season, episode, refresh=False, remote=False)
 			elif service == 'scrob':
 				completed = percent >= int(markwatched_percentage)
 				if getSetting('debug.level') == '1':
@@ -2217,14 +2238,19 @@ class Bookmarks:
 				scrob.scrobbleStopMovie(imdb, tmdb, percent, completed=completed, current_time=current_time, total_time=media_length, already_watched=skip_scrobble) if media_type == 'movie' else scrob.scrobbleStopEpisode(imdb, tmdb, tvdb, season, episode, percent, completed=completed, current_time=current_time, total_time=media_length, already_watched=skip_scrobble)
 				if percent >= int(markwatched_percentage):
 					scrob.scrobbleReset(imdb, tmdb, tvdb, season, episode, refresh=False, remote=False)
+				elif too_early:
+					scrob.removePlaybackProgress(imdb, tmdb, tvdb, season, episode)
+					scrob.scrobbleReset(imdb, tmdb, tvdb, season, episode, refresh=False, remote=False)
 			elif service == 'punchplay':
 				completed = percent >= int(markwatched_percentage)
 				if media_type == 'movie':
 					punchplay.scrobbleStopMovie(imdb, tmdb, percent, completed=completed, current_time=current_time, total_time=media_length)
 				else:
 					punchplay.scrobbleStopEpisode(imdb, tmdb, tvdb, season, episode, percent, completed=completed, current_time=current_time, total_time=media_length)
+				if not completed and percent < _MIN_SCROBBLE_PERCENT:
+					punchplay.scrobbleReset(imdb, tmdb, tvdb, None if media_type == 'movie' else season, None if media_type == 'movie' else episode, refresh=False)
 			else:
-				if not skip_scrobble:
+				if not skip_scrobble and not too_early:
 					trakt.scrobbleMovie(imdb, tmdb, percent) if media_type == 'movie' else trakt.scrobbleEpisode(imdb, tmdb, tvdb, season, episode, percent)
 				if percent >= int(markwatched_percentage):
 					trakt.scrobbleReset(imdb, tmdb, tvdb, season, episode, refresh=False)

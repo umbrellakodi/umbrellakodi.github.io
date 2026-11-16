@@ -673,9 +673,13 @@ def metadataClean(metadata):
 	return {k: v for k, v in iter(metadata.items()) if k in allowed}
 
 def set_info(item, meta, setUniqueIDs=None, resumetime='', fileNameandPath=None):
-	# ResumeTime and TotalTime are deprecated ListItem properties on Kodi 20+.
-	# Keep the custom progress property for skins, and use VideoInfoTag's resume
-	# point below on supported Kodi versions.
+	# Resume progress is exposed to skins only through the WatchedProgress property
+	# (Nimbus, Arctic Fuse and FENtastic-style skins draw their progress from it).
+	# Umbrella deliberately gives Kodi no resume point (no setResumePoint and no
+	# ResumeTime/TotalTime): with one, Kodi shows its own Resume/Play from beginning
+	# menu, then calls Umbrella with resume:false whatever was chosen (Kodi 21/22,
+	# widgets and folders alike), so the choice was lost and Umbrella had to ask
+	# again. Without it, Umbrella's single prompt (or auto-resume) decides.
 	if resumetime:
 		try:
 			total_time = float(meta.get('duration') or 2700)
@@ -687,7 +691,6 @@ def set_info(item, meta, setUniqueIDs=None, resumetime='', fileNameandPath=None)
 		try:
 			meta_get = meta.get
 			info_tag = item.getVideoInfoTag()
-			if resumetime: info_tag.setResumePoint(float(resumetime), float(meta_get('duration') or 2700))
 			info_tag.setMediaType(meta_get('mediatype') or '')
 			if setUniqueIDs:
 				info_tag.setUniqueIDs(setUniqueIDs)
@@ -751,8 +754,6 @@ def set_info(item, meta, setUniqueIDs=None, resumetime='', fileNameandPath=None)
 		try: meta.pop('cast')
 		except: pass
 		item.setInfo('video', meta)
-		if resumetime:
-			item.setProperties({'ResumeTime': resumetime, 'TotalTime': str(meta.get('duration', 2700))})
 	return item
 
 def convert_type(_type, _value):

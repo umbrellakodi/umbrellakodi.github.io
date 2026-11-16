@@ -999,9 +999,14 @@ def get_continue_watching(media_type=None):
 	items = get_all_pages('/playback/progress/?completed=false&media_type=movie,episode', silent=True)
 	if items is None: return None
 	watched = _watched_playback_keys()
+	from resources.lib.modules.playback_progress import has_resume_progress
+	def _started(item):
+		# Under 1% is not a resume point. Without a duration the percent is unknown, so keep it.
+		position, duration = float(item.get('position_seconds') or 0), float(item.get('duration_seconds') or 0)
+		return position > 0 and (duration <= 0 or has_resume_progress(position / duration * 100))
 	return [item for item in items if item.get('media_type') in ('movie', 'episode')
 		and (media_type is None or item.get('media_type') == media_type)
-		and float(item.get('position_seconds') or 0) > 0 and not _playback_progress_finished(item, watched)]
+		and _started(item) and not _playback_progress_finished(item, watched)]
 
 
 def cleanup_playback_progress():

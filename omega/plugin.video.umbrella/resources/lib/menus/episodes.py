@@ -360,7 +360,7 @@ class Episodes:
 				for i in selected_items:
 					succeeded += bool(mdblist.scrobbleReset(imdb=i.get('imdb', ''), tvdb=i.get('tvdb', ''), season=i.get('season'), episode=i.get('episode'), tmdb=i.get('tmdb', ''), refresh=False))
 				mdblist.finishProgressRemoval(succeeded, len(selected_items))
-				control.trigger_widget_refresh()
+				control.trigger_widget_refresh(force=True)
 				if 'plugin.video.umbrella' in control.infoLabel('Container.PluginName'): control.refresh()
 		except:
 			from resources.lib.modules import log_utils
@@ -470,7 +470,7 @@ class Episodes:
 				for i in selected_items:
 					succeeded += bool(customtrakt.scrobbleReset(imdb=i.get('imdb', ''), tvdb=i.get('tvdb', ''), season=i.get('season'), episode=i.get('episode'), tmdb=i.get('tmdb', ''), refresh=False))
 				customtrakt.finishProgressRemoval(succeeded, len(selected_items))
-				control.trigger_widget_refresh()
+				control.trigger_widget_refresh(force=True)
 				if 'plugin.video.umbrella' in control.infoLabel('Container.PluginName'): control.refresh()
 		except:
 			from resources.lib.modules import log_utils

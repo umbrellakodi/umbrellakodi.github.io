@@ -2045,7 +2045,7 @@ def scrobbleReset(imdb, tmdb=None, tvdb=None, season=None, episode=None, refresh
 		for item in items: item['paused_at'] = datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%S.000Z")
 		if clear_local: traktsync.delete_bookmark(items)
 		if refresh: control.refresh()
-		if refresh or widgetRefresh: control.trigger_widget_refresh()
+		if refresh or widgetRefresh: control.trigger_widget_refresh(force=True)
 		if getSetting('scrobble.notify') == 'true': control.notification(title='Trakt', message='Playback progress cleared')
 		return True
 	except:
@@ -2063,7 +2063,7 @@ def scrobbleResetItems(imdb_ids, tvdb_dicts=None, refresh=True, widgetRefresh=Fa
 				succeeded += 1
 		if succeeded:
 			if refresh: control.refresh()
-			if refresh or widgetRefresh: control.trigger_widget_refresh()
+			if refresh or widgetRefresh: control.trigger_widget_refresh(force=True)
 		control.notification(title='Trakt Playback Progress Manager', message='Removed playback progress for %s of %s items.%s' %
 			(succeeded, len(items), ' Some requests failed; their local progress was retained.' if succeeded < len(items) else ''))
 		return succeeded == len(items)
