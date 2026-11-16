@@ -3647,6 +3647,10 @@ class Movies:
 
 	def movieDirectory(self, items, unfinished=False, next=True, isCollection=False, folderName='', finalize=True, label_media=False):
 		from sys import argv # some functions like ActivateWindow() throw invalid handle less this is imported here.
+		if unfinished:
+			# A pause followed by a watched record (on any service) is finished, not unfinished.
+			from resources.lib.modules.resume_superseded import drop_superseded
+			items = drop_superseded(items)
 		is_widget = 'plugin' not in control.infoLabel('Container.PluginName')
 		if not items: # with reuselanguageinvoker on an empty directory must be loaded, do not use sys.exit()
 			control.hide()

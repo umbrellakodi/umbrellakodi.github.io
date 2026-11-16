@@ -1,3 +1,7 @@
+[B]Update - v6.8.011 - Nov 16th, 2026[/B]
+--[Fix] In Arctic Fuse 3, home-screen widgets now update after you clear an item's progress or remove items with a manager. Before, the item stayed on the widget until Kodi was restarted.
+--[Fix] Movies and episodes marked as watched after their resume point no longer show in Finish Watching, show a progress bar, or offer to resume. This uses the watched history of every connected service, because one service can hold an old resume point while another records the watch.
+
 [B]Update - v6.8.010 - Nov 16th, 2026[/B]
 --[Fix] Starting an episode or movie and stopping or pausing it within the first moments no longer saves a resume point. Nothing under 1% watched is sent to Trakt, Simkl, MDBList, Floppy, Scrob or PunchPlay.
 --[Fix] Resume points under 1% that a service already has saved are now ignored. They no longer appear in Unfinished/Continue Watching lists or as progress on episodes and movies.

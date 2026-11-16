@@ -2975,6 +2975,10 @@ class Episodes:
 
 	def episodeDirectory(self, items, unfinished=False, next=True, playlist=False, folderName=''):
 		from sys import argv # some functions like ActivateWindow() throw invalid handle less this is imported here.
+		if unfinished:
+			# A pause followed by a watched record (on any service) is finished, not unfinished.
+			from resources.lib.modules.resume_superseded import drop_superseded
+			items = drop_superseded(items)
 		unique_items = []
 		seen_episodes = set()
 		for episode_item in items or []:

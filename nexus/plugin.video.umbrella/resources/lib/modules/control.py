@@ -603,7 +603,10 @@ def trigger_widget_refresh(update_library=True, force=False):
 	homeWindow.setProperty('widgetreload', timestr)
 	homeWindow.setProperty('widgetreload-episodes', timestr)
 	homeWindow.setProperty('widgetreload-movies', timestr)
-	if update_library and xbmc.getSkinDir() != 'skin.arctic.fuse.3':
+	# Arctic Fuse 3 reloads every home widget on UpdateLibrary (one after another), so
+	# background syncs skip it there. Explicit user actions (force=True) still need it:
+	# AF3 widget paths are static and nothing else makes Kodi reload them.
+	if update_library and (force or xbmc.getSkinDir() != 'skin.arctic.fuse.3'):
 		# Several enabled account services can finish one after another. Each one
 		# updates the widget properties above, but using UpdateLibrary for every
 		# completion makes Kodi visibly reload the home container several times per

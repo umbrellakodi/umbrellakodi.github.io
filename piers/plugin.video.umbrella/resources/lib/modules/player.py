@@ -1999,6 +1999,7 @@ class Bookmarks:
 		offset = '0'
 		scrobbble = 'Local Bookmark'
 		scrobbble = 'Local Bookmark'
+		punchplay_paused_at = None
 		if getSetting('bookmarks') != 'true': return offset
 		resume_source = getSetting('scrobble.source')
 		if self.traktCredentials and resume_source == '1':
@@ -2099,6 +2100,7 @@ class Bookmarks:
 				item = punchplay.get_resume_item(tmdb, season, episode)
 				if not item: return '0'
 				progress = item['progress_percent'] * 100
+				punchplay_paused_at = item.get('watched_at')
 				display_offset = item['position_seconds']
 				offset = display_offset
 				seekable = (2 <= progress <= int(markwatched_percentage))
@@ -2125,6 +2127,10 @@ class Bookmarks:
 			#changed to correct issue with resumes.
 			offset = float(match[1])
 			display_offset = offset
+		if offset not in ('0', 0) and self._resume_superseded(resume_source, imdb, tmdb, tvdb, season, episode, punchplay_paused_at):
+			# Watched (on any service) after this pause: the item was finished, so there is
+			# nothing to resume and no progress to show.
+			return '0'
 		if ck: return offset
 		# resume:true is an explicit request to resume (PlayMedia(url,resume),
 		# Player.Open with resume). resume:false carries no choice: Kodi sends it for
@@ -2142,6 +2148,18 @@ class Bookmarks:
 			if select == 1: offset = '0'
 			elif select == -1 or select == 2: offset = '-1'
 		return offset
+
+	def _resume_superseded(self, resume_source, imdb, tmdb, tvdb, season, episode, punchplay_paused_at=None):
+		try:
+			from resources.lib.modules import resume_superseded
+			if resume_source == '7':
+				return resume_superseded.superseded(punchplay_paused_at, imdb, tmdb, tvdb, season, episode)
+			db_path = {'1': control.traktSyncFile, '2': control.simKLSyncFile, '3': control.mdbSyncFile, '4': control.customTraktSyncFile,
+				'5': control.floppySyncFile, '6': control.scrobSyncFile}.get(resume_source)
+			return bool(db_path) and resume_superseded.bookmark_superseded(db_path, imdb, tmdb, tvdb, season, episode)
+		except:
+			log_utils.error()
+			return False
 
 	def reset(self, current_time, media_length, name, year='0'):
 		try:
