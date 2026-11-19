@@ -762,6 +762,7 @@ class Navigator:
 		self.endDirectory()
 
 	def customTools(self, folderName=''):
+		from resources.lib.modules import customtrakt
 		if self.useContainerTitles: control.setContainerName(folderName)
 		self.addDirectoryItem(getLS(35061) % self.highlight_color, 'movies_customWatchlistManager', 'icon.png', 'DefaultAddonService.png', isFolder=False)
 		self.addDirectoryItem(getLS(35062) % self.highlight_color, 'shows_customWatchlistManager', 'icon.png', 'DefaultAddonService.png', isFolder=False)
